@@ -1,0 +1,12 @@
+# Generado por `xcodegen generate` a partir de project.yml — no se versiona.
+*.xcodeproj/
+*.xcworkspace/
+
+# Xcode / SPM
+.build/
+.swiftpm/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+
+.DS_Store

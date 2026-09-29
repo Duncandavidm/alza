@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleURLTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleURLSchemes</key>
+      <array>
+        <!--
+          TODO(David): reemplaza por el "REVERSED_CLIENT_ID" de tu
+          GoogleService-Info.plist / cliente OAuth iOS de Google Cloud
+          Console, para que el redirect de Google Sign-In regrese a la app.
+        -->
+        <string>com.googleusercontent.apps.TODO-REVERSED-CLIENT-ID</string>
+      </array>
+    </dict>
+  </array>
+</dict>
+</plist>

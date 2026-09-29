@@ -1,0 +1,67 @@
+name: Alza
+options:
+  bundleIdPrefix: app.alza
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+configs:
+  Debug: debug
+  Release: release
+packages:
+  Supabase:
+    url: https://github.com/supabase/supabase-swift
+    from: 2.5.1
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS
+    from: 7.1.0
+targets:
+  Alza:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: Alza
+        excludes:
+          - Resources/Assets.xcassets
+          - Resources/Info.plist
+          - Resources/Alza.entitlements
+    resources:
+      - path: Alza/Resources/Assets.xcassets
+    info:
+      path: Alza/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: Alza
+        UILaunchScreen: {}
+        ITSAppUsesNonExemptEncryption: false
+        NSUserTrackingUsageDescription: ""
+    entitlements:
+      path: Alza/Resources/Alza.entitlements
+      properties:
+        com.apple.developer.applesignin:
+          - Default
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.alza
+        PRODUCT_NAME: Alza
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1"
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: "" # TODO(David): tu Team ID de Apple Developer
+    dependencies:
+      - package: Supabase
+        product: Supabase
+      - package: GoogleSignIn
+        product: GoogleSignIn
+      - package: GoogleSignIn
+        product: GoogleSignInSwift
+schemes:
+  Alza:
+    build:
+      targets:
+        Alza: all
+    run:
+      config: Debug
+    archive:
+      config: Release

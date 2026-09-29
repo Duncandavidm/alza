@@ -12,8 +12,12 @@ struct AddTransactionView: View {
     @State private var category: TransactionCategory = .other
     @State private var description = ""
     @State private var isSaving = false
-    @State private var showingCartAnimation = false
+    @State private var showingSavingAnimation = false
     @State private var errorMessage: String?
+
+    private var enteredMagnitude: Decimal {
+        Decimal(string: amountText.replacingOccurrences(of: ",", with: ".")) ?? 0
+    }
 
     var body: some View {
         NavigationStack {
@@ -57,11 +61,12 @@ struct AddTransactionView: View {
                 }
             }
             .overlay {
-                if showingCartAnimation {
-                    Color(.systemBackground).opacity(0.85).ignoresSafeArea()
-                    CartLoadingView(
+                if showingSavingAnimation {
+                    MovementSavingOverlay(
+                        movementType: movementType,
                         itemEmoji: category.emoji,
-                        message: "Anotando tu \(movementType.displayName.lowercased())..."
+                        description: description.isEmpty ? category.rawValue : description,
+                        amount: enteredMagnitude
                     )
                 }
             }
@@ -76,7 +81,7 @@ struct AddTransactionView: View {
         else { return }
 
         isSaving = true
-        showingCartAnimation = true
+        showingSavingAnimation = true
         defer { isSaving = false }
 
         do {
@@ -91,11 +96,11 @@ struct AddTransactionView: View {
                     occurredAt: Date()
                 )
             )
-            async let minDelay: Void = Task.sleep(nanoseconds: 1_200_000_000)
+            async let minDelay: Void = Task.sleep(nanoseconds: MovementSavingOverlay.minDisplayNanoseconds(for: movementType))
             _ = try await (saved, minDelay)
             dismiss()
         } catch {
-            showingCartAnimation = false
+            showingSavingAnimation = false
             errorMessage = error.localizedDescription
         }
     }

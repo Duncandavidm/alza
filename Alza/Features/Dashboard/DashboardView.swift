@@ -50,8 +50,9 @@ struct DashboardView: View {
                     }
                     ForEach(viewModel.recentTransactions) { transaction in
                         HStack {
+                            Text(transaction.movementType.emoji)
                             VStack(alignment: .leading) {
-                                Text(transaction.description ?? transaction.category ?? "Movimiento")
+                                Text(transaction.description ?? transaction.category ?? transaction.movementType.displayName)
                                 if let category = transaction.category {
                                     Text(category)
                                         .font(.caption)
@@ -60,7 +61,7 @@ struct DashboardView: View {
                             }
                             Spacer()
                             Text(transaction.amount, format: .currency(code: "USD"))
-                                .foregroundStyle(transaction.amount < 0 ? .red : .green)
+                                .foregroundStyle(transaction.movementType.tintColor)
                         }
                     }
 
@@ -72,7 +73,7 @@ struct DashboardView: View {
                     .disabled(viewModel.accounts.isEmpty)
                 }
             }
-            .navigationTitle("Alza")
+            .navigationTitle("Cuentas")
             .refreshable { await refresh() }
             .task { await refresh() }
             .sheet(isPresented: $isAddingAccount) {

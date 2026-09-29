@@ -3,6 +3,7 @@ import SwiftUI
 struct PaywallView: View {
     @EnvironmentObject private var appState: AppState
     @ObservedObject var subscriptionStore: SubscriptionStore
+    @State private var isSigningOut = false
 
     var body: some View {
         VStack(spacing: 24) {
@@ -61,11 +62,22 @@ struct PaywallView: View {
                         .multilineTextAlignment(.center)
                 }
 
-                Button("Cerrar sesion") {
-                    Task { await appState.signOut() }
+                Button {
+                    Task {
+                        isSigningOut = true
+                        await appState.signOut()
+                        isSigningOut = false
+                    }
+                } label: {
+                    if isSigningOut {
+                        ProgressView()
+                    } else {
+                        Text("Cerrar sesion")
+                    }
                 }
                 .font(.footnote)
                 .foregroundStyle(.secondary)
+                .disabled(isSigningOut)
             }
             .padding(.horizontal, 24)
 

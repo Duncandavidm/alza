@@ -8,7 +8,7 @@ struct AddTransactionView: View {
 
     @State private var selectedAccountId: UUID?
     @State private var amountText = ""
-    @State private var isExpense = true
+    @State private var movementType: MovementType = .gasto
     @State private var category: TransactionCategory = .other
     @State private var description = ""
     @State private var isSaving = false
@@ -17,22 +17,22 @@ struct AddTransactionView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    MovementTypePicker(selection: $movementType)
+                        .listRowInsets(EdgeInsets())
+                        .padding(.vertical, 4)
+                }
+
                 Picker("Cuenta", selection: $selectedAccountId) {
                     ForEach(accounts) { account in
                         Text(account.name).tag(Optional(account.id))
                     }
                 }
 
-                Picker("Tipo", selection: $isExpense) {
-                    Text("Gasto").tag(true)
-                    Text("Ingreso").tag(false)
-                }
-                .pickerStyle(.segmented)
-
                 TextField("Monto", text: $amountText)
                     .keyboardType(.decimalPad)
 
-                Picker("Categoria", selection: $category) {
+                Picker("Categoria (opcional)", selection: $category) {
                     ForEach(TransactionCategory.allCases) { category in
                         Text(category.rawValue).tag(category)
                     }
@@ -65,7 +65,6 @@ struct AddTransactionView: View {
             let magnitude = Decimal(string: amountText.replacingOccurrences(of: ",", with: "."))
         else { return }
 
-        let signedAmount = isExpense ? -abs(magnitude) : abs(magnitude)
         isSaving = true
         defer { isSaving = false }
 
@@ -74,7 +73,8 @@ struct AddTransactionView: View {
                 NewTransaction(
                     userId: userId,
                     accountId: accountId,
-                    amount: signedAmount,
+                    amount: movementType.signedAmount(from: magnitude),
+                    movementType: movementType,
                     category: category.rawValue,
                     description: description.isEmpty ? nil : description,
                     occurredAt: Date()

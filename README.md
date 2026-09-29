@@ -129,12 +129,24 @@ el Contents.json, o simplemente arrastralo en Xcode).
 ## Alcance de este MVP
 
 - Auth: Sign in with Apple + Google (nativos, sin redirect web).
-- Dashboard: cuentas y movimientos dados de alta a mano (no hay conexion
-  bancaria tipo Plaid en este MVP).
+- **"Hoy" (Mi cuaderno del dia)**: pantalla principal — feed cronologico de
+  todo lo que paso hoy (como una libreta, no una tabla), boton flotante "+"
+  para el ingreso ultra-rapido (solo ¿cuanto? + ¿que fue?, tipo de
+  movimiento opcional con un toque), total del dia siempre visible arriba
+  ("Hoy llevas: +$X ingresos — $Y gastos = $Z en tu bolsillo"), y "Cerrar el
+  dia" con un resumen de si fue buen dia / dia normal / dia flojo
+  (comparado contra el promedio de los ultimos 7 dias).
+- Tipos de movimiento: 💰 Ingreso, 💸 Gasto, 🏭 Pago a proveedor,
+  📈 Inversion, 💳 Transferencia — columna `movement_type` en
+  `transactions` (migracion `0002_movement_types.sql`).
+- "Cuentas": alta manual de cuentas y formulario detallado de movimientos
+  (con categoria opcional), para cuando el ingreso rapido no basta.
 - Insights: boton "Generar" que manda tus cuentas/movimientos a Claude y
   guarda 2-4 insights.
 - Paywall: un solo boton "Suscribirme" a $29.99/mes, mas "Restaurar compras"
   y "Administrar suscripcion".
+- Cerrar sesion (en Ajustes y en el Paywall) muestra un spinner y se
+  deshabilita mientras corre, para que quede claro que esta funcionando.
 
 Conexion bancaria automatica, presupuestos, notificaciones locales, etc. no
 estan en este primer corte — quedan para una siguiente iteracion.

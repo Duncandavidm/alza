@@ -3,8 +3,11 @@ import SwiftUI
 struct DashboardTabView: View {
     var body: some View {
         TabView {
+            DayJournalView()
+                .tabItem { Label("Hoy", systemImage: "book.fill") }
+
             DashboardView()
-                .tabItem { Label("Dashboard", systemImage: "house.fill") }
+                .tabItem { Label("Cuentas", systemImage: "creditcard.fill") }
 
             InsightsView()
                 .tabItem { Label("Insights", systemImage: "sparkles") }

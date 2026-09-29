@@ -66,24 +66,11 @@ final class DashboardViewModel: ObservableObject {
     }
 
     func addTransaction(_ new: NewTransaction) async throws {
-        let created: FinanceTransaction = try await supabase
-            .from("transactions")
-            .insert(new)
-            .select()
-            .single()
-            .execute()
-            .value
+        let created = try await TransactionsRepository.shared.add(new)
         recentTransactions.insert(created, at: 0)
 
-        // Refleja el movimiento en el balance de la cuenta.
         if let index = accounts.firstIndex(where: { $0.id == new.accountId }) {
-            let updatedBalance = accounts[index].balance + new.amount
-            try await supabase
-                .from("accounts")
-                .update(["balance": updatedBalance])
-                .eq("id", value: new.accountId)
-                .execute()
-            accounts[index].balance = updatedBalance
+            accounts[index].balance += new.amount
         }
     }
 }

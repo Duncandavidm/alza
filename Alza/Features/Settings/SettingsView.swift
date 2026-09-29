@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var appState: AppState
+    @State private var isSigningOut = false
 
     var body: some View {
         NavigationStack {
@@ -36,9 +37,20 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    Button("Cerrar sesion", role: .destructive) {
-                        Task { await appState.signOut() }
+                    Button(role: .destructive) {
+                        Task {
+                            isSigningOut = true
+                            await appState.signOut()
+                            isSigningOut = false
+                        }
+                    } label: {
+                        if isSigningOut {
+                            ProgressView()
+                        } else {
+                            Text("Cerrar sesion")
+                        }
                     }
+                    .disabled(isSigningOut)
                 }
             }
             .navigationTitle("Ajustes")

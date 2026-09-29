@@ -13,6 +13,7 @@ struct QuickAddView: View {
     @State private var amountText = ""
     @State private var description = ""
     @State private var isSaving = false
+    @State private var showingCartAnimation = false
     @State private var errorMessage: String?
 
     var body: some View {
@@ -53,16 +54,10 @@ struct QuickAddView: View {
                 Button {
                     Task { await save() }
                 } label: {
-                    if isSaving {
-                        ProgressView()
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                    } else {
-                        Text("Guardar")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                    }
+                    Text("Guardar")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(movementType.tintColor)
@@ -76,6 +71,15 @@ struct QuickAddView: View {
                 }
             }
             .onAppear { amountFieldFocused = true }
+            .overlay {
+                if showingCartAnimation {
+                    Color(.systemBackground).opacity(0.85).ignoresSafeArea()
+                    CartLoadingView(
+                        itemEmoji: movementType.emoji,
+                        message: "Anotando tu \(movementType.displayName.lowercased())..."
+                    )
+                }
+            }
         }
         .presentationDetents([.medium, .large])
     }
@@ -88,18 +92,22 @@ struct QuickAddView: View {
         else { return }
 
         isSaving = true
+        showingCartAnimation = true
         defer { isSaving = false }
 
         do {
-            try await viewModel.quickAdd(
+            async let saved: Void = viewModel.quickAdd(
                 userId: userId,
                 accountId: accountId,
                 magnitude: magnitude,
                 description: description,
                 movementType: movementType
             )
+            async let minDelay: Void = Task.sleep(nanoseconds: 1_200_000_000)
+            _ = try await (saved, minDelay)
             dismiss()
         } catch {
+            showingCartAnimation = false
             errorMessage = error.localizedDescription
         }
     }

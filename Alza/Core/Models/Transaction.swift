@@ -104,4 +104,19 @@ enum TransactionCategory: String, CaseIterable, Identifiable {
     case other = "Otro"
 
     var id: String { rawValue }
+
+    /// Se usa como el "producto" que cae en el carrito de CartLoadingView
+    /// al guardar un movimiento.
+    var emoji: String {
+        switch self {
+        case .income: return "💰"
+        case .housing: return "🏠"
+        case .food: return "🍔"
+        case .transport: return "🚗"
+        case .entertainment: return "🎬"
+        case .health: return "🩺"
+        case .savings: return "💵"
+        case .other: return "🛍️"
+        }
+    }
 }

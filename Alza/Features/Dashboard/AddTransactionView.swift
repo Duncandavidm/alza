@@ -12,6 +12,7 @@ struct AddTransactionView: View {
     @State private var category: TransactionCategory = .other
     @State private var description = ""
     @State private var isSaving = false
+    @State private var showingCartAnimation = false
     @State private var errorMessage: String?
 
     var body: some View {
@@ -55,6 +56,15 @@ struct AddTransactionView: View {
                         .disabled(selectedAccountId == nil || amountText.isEmpty || isSaving)
                 }
             }
+            .overlay {
+                if showingCartAnimation {
+                    Color(.systemBackground).opacity(0.85).ignoresSafeArea()
+                    CartLoadingView(
+                        itemEmoji: category.emoji,
+                        message: "Anotando tu \(movementType.displayName.lowercased())..."
+                    )
+                }
+            }
         }
     }
 
@@ -66,10 +76,11 @@ struct AddTransactionView: View {
         else { return }
 
         isSaving = true
+        showingCartAnimation = true
         defer { isSaving = false }
 
         do {
-            try await viewModel.addTransaction(
+            async let saved: Void = viewModel.addTransaction(
                 NewTransaction(
                     userId: userId,
                     accountId: accountId,
@@ -80,8 +91,11 @@ struct AddTransactionView: View {
                     occurredAt: Date()
                 )
             )
+            async let minDelay: Void = Task.sleep(nanoseconds: 1_200_000_000)
+            _ = try await (saved, minDelay)
             dismiss()
         } catch {
+            showingCartAnimation = false
             errorMessage = error.localizedDescription
         }
     }

@@ -4,6 +4,11 @@ Alza es una app de iPhone **100% nativa** (SwiftUI + StoreKit 2), sin
 WKWebView y sin ninguna relacion con maday.app: backend propio (Supabase),
 UI propia, suscripcion propia.
 
+**El diferenciador**: Alza no solo registra tus movimientos, te aconseja.
+Cuando registras un ingreso, si tienes cuentas por pagar pendientes o
+recurrentes vencidas, te dice — con IA, viendo tus datos reales — que
+pagar primero y por que. Ver "Cuentas por pagar + consejo de pago" abajo.
+
 ## Que hay en este repo
 
 ```
@@ -14,24 +19,27 @@ Alza/                       # codigo de la app
     Auth/                   # Sign in with Apple + Sign in with Google (nativos)
     Paywall/                # suscripcion unica $29.99/mes, "Suscribirme"
     Dashboard/              # "Hoy" (cuaderno del dia, voz), cuentas + busqueda
+    Bills/                  # EL DIFERENCIADOR: cuentas por pagar + consejo de pago con IA
     Budgets/                # presupuestos por categoria, semanal o mensual
     Recurring/              # transacciones recurrentes (gestion en Ajustes)
     Insights/               # insights de IA (Claude) sobre tus finanzas
     Settings/               # suscripcion, modo avanzado, recurrentes,
-                             # exportar/importar CSV, logout
+                             # cuentas por pagar, exportar/importar CSV, logout
   Resources/                # Info.plist, Assets.xcassets (icono/color)
 project.yml                 # spec de XcodeGen -> genera Alza.xcodeproj
 supabase/
   migrations/               # 0001 esquema base, 0002 tipos de movimiento,
                              # 0003 RPC de balance, 0004 presupuestos,
                              # 0005 recurrentes + etiquetas, 0006 moneda
-                             # (+ WhatsApp, revertido en 0007)
+                             # (+ WhatsApp, revertido en 0007), 0008 cuentas
+                             # por pagar
   functions/
     generate-insights/         # Edge Function: llama a Claude, escribe ai_insights
     verify-apple-receipt/      # Edge Function: valida compras con Apple, escribe subscriptions
     parse-voice-transaction/   # Edge Function: interpreta un movimiento dicho en voz alta
     ask-finances/               # Edge Function: responde preguntas en lenguaje natural
     exchange-rate/               # Edge Function: convierte moneda (frankfurter.app)
+    prioritize-payments/         # Edge Function: EL DIFERENCIADOR, arma el consejo de pago
 ```
 
 Este entorno (contenedor Linux, sin Xcode/Swift/CocoaPods/Deno) no puede
@@ -129,7 +137,8 @@ supabase secrets set --project-ref jfhevxztsvnlsuwkwtmd \
   ANTHROPIC_API_KEY=<tu API key de Anthropic>
 ```
 
-El mismo secret lo usa tambien `parse-voice-transaction` y `ask-finances` —
+El mismo secret lo usa tambien `parse-voice-transaction`, `ask-finances`, y
+`prioritize-payments` (el diferenciador — ver "Cuentas por pagar" abajo) —
 no hace falta configurarlo aparte para cada una.
 
 No hace falta ninguna capability nueva en el Apple Developer portal para el
@@ -151,6 +160,17 @@ nombre de archivo) y ajusta el `AccentColor` si el color cambio.
 
 ## Alcance de este MVP
 
+- **Cuentas por pagar + consejo de pago con IA (Bills/, el diferenciador)**:
+  das de alta facturas/recibos pendientes con fecha de vencimiento
+  (Ajustes > Cuentas por pagar; tambien visible como franja arriba de
+  "Hoy"). Cada vez que registras un **ingreso** — desde el ingreso
+  ultra-rapido o el formulario detallado — si hay cuentas por pagar
+  pendientes o recurrentes vencidas, `prioritize-payments` (Claude) arma un
+  plan priorizado: que pagar primero, por que (vencimiento, riesgo de
+  corte en servicios, prioridad que le pusiste), y si el ingreso alcanza
+  para todo. Aparece como un pop-up justo despues de guardar, con un boton
+  "Pagar" por cada item que registra el gasto real y lo marca resuelto sin
+  salir de la pantalla.
 - Auth: Sign in with Apple + Google (nativos, sin redirect web).
 - **"Hoy" (Mi cuaderno del dia)**: pantalla principal — feed cronologico de
   todo lo que paso hoy (como una libreta, no una tabla), boton flotante "+"
@@ -231,3 +251,14 @@ demasiado alcance nuevo de una vez):
   cambiar las policies de RLS.
 - **Bot de WhatsApp** — se exploro (Edge Function + vinculo de numero) pero
   se descarto; no esta en la app.
+
+### Sobre "cuentas por cobrar" y el historial de clientes
+
+El consejo de pago de arriba solo cubre **cuentas por pagar** (lo que tu
+negocio debe). Lo de "cuenta por cobrar segun el historial del cliente"
+que se pidio junto con esto — es decir, llevar clientes, las facturas que
+les emitiste, y un puntaje de que tan confiables son para pagar a tiempo —
+es un modulo bastante mas grande (tabla de clientes, facturas emitidas por
+cliente, historial de pagos, logica de puntaje) que no se armo en esta
+pasada para no mezclar dos features grandes a la vez. Si se quiere, es la
+siguiente pieza natural a construir sobre esta misma base.

@@ -16,6 +16,9 @@ struct QuickAddView: View {
     @State private var isSaving = false
     @State private var showingSavingAnimation = false
     @State private var errorMessage: String?
+    @State private var showingAdvice = false
+    @State private var adviceText = ""
+    @State private var adviceItems: [PaymentAdviceItem] = []
 
     private var enteredMagnitude: Decimal {
         Decimal(string: amountText.replacingOccurrences(of: ",", with: ".")) ?? 0
@@ -86,6 +89,11 @@ struct QuickAddView: View {
                         description: description,
                         amount: enteredMagnitude
                     )
+                }
+            }
+            .sheet(isPresented: $showingAdvice, onDismiss: { dismiss() }) {
+                if let userId = appState.currentUserId {
+                    PaymentAdviceView(advice: adviceText, items: adviceItems, userId: userId)
                 }
             }
         }
@@ -171,6 +179,15 @@ struct QuickAddView: View {
             )
             async let minDelay: Void = Task.sleep(nanoseconds: MovementSavingOverlay.minDisplayNanoseconds(for: movementType))
             _ = try await (saved, minDelay)
+
+            if movementType == .ingreso, let advice = try? await PaymentAdviceService.fetch(userId: userId, incomeAmount: magnitude),
+               advice.hasAdvice {
+                adviceText = advice.advice ?? ""
+                adviceItems = advice.items ?? []
+                showingAdvice = true
+                return
+            }
+
             dismiss()
         } catch {
             showingSavingAnimation = false

@@ -19,6 +19,12 @@ struct SettingsView: View {
 
                 Section {
                     NavigationLink {
+                        BillsView()
+                    } label: {
+                        Label("Cuentas por pagar", systemImage: "tray.full.fill")
+                    }
+
+                    NavigationLink {
                         RecurringTransactionsView()
                     } label: {
                         Label("Recurrentes", systemImage: "arrow.trianglehead.2.clockwise")

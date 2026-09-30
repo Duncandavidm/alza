@@ -7,6 +7,7 @@ struct DayJournalView: View {
     @StateObject private var viewModel = DayJournalViewModel()
     @StateObject private var budgetsViewModel = BudgetsViewModel()
     @StateObject private var recurringViewModel = RecurringTransactionsViewModel()
+    @StateObject private var billsViewModel = BillsViewModel()
     @State private var isQuickAdding = false
     @State private var daySummary: DaySummary?
     @State private var isClosingDay = false
@@ -16,6 +17,10 @@ struct DayJournalView: View {
             ZStack(alignment: .bottomTrailing) {
                 VStack(spacing: 0) {
                     liveTotalBanner
+
+                    if !billsViewModel.pending.isEmpty {
+                        billsStrip
+                    }
 
                     if !budgetsViewModel.progresses.isEmpty {
                         budgetsStrip
@@ -74,6 +79,7 @@ struct DayJournalView: View {
             .task { await refresh() }
             .task { await refreshBudgets() }
             .task { await refreshRecurring() }
+            .task { await refreshBills() }
             .sheet(isPresented: $isQuickAdding) {
                 QuickAddView(viewModel: viewModel)
             }
@@ -117,6 +123,34 @@ struct DayJournalView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
+        .background(Color(.secondarySystemBackground))
+    }
+
+    /// Cuentas por pagar pendientes, mas cercanas primero — el diferenciador
+    /// de Alza necesita ser visible aqui, no escondido en Ajustes.
+    private var billsStrip: some View {
+        NavigationLink {
+            BillsView()
+        } label: {
+            HStack(spacing: 10) {
+                Text("🧾")
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(billsViewModel.pending.count) cuenta(s) por pagar")
+                        .font(.subheadline.weight(.medium))
+                    if let next = billsViewModel.pending.first {
+                        Text("\(next.name) — \(next.dueDateValue.formatted(date: .abbreviated, time: .omitted))\(next.isOverdue ? " (vencida)" : "")")
+                            .font(.caption)
+                            .foregroundStyle(next.isOverdue ? .red : .secondary)
+                    }
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(12)
+            .foregroundStyle(.primary)
+        }
         .background(Color(.secondarySystemBackground))
     }
 
@@ -200,6 +234,11 @@ struct DayJournalView: View {
     private func refreshRecurring() async {
         guard let userId = appState.currentUserId else { return }
         await recurringViewModel.refresh(userId: userId)
+    }
+
+    private func refreshBills() async {
+        guard let userId = appState.currentUserId else { return }
+        await billsViewModel.refresh(userId: userId)
     }
 
     private func confirmRecurring(_ item: RecurringTransaction) async {

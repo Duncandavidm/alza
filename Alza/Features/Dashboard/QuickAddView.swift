@@ -6,6 +6,7 @@ import SwiftUI
 struct QuickAddView: View {
     @EnvironmentObject private var appState: AppState
     @ObservedObject var viewModel: DayJournalViewModel
+    @StateObject private var voiceRecognizer = VoiceTransactionRecognizer()
     @Environment(\.dismiss) private var dismiss
     @FocusState private var amountFieldFocused: Bool
 
@@ -49,6 +50,8 @@ struct QuickAddView: View {
                         .font(.title3)
                 }
 
+                voiceButton
+
                 if let errorMessage {
                     Text(errorMessage).foregroundStyle(.red).font(.footnote)
                 }
@@ -87,6 +90,64 @@ struct QuickAddView: View {
             }
         }
         .presentationDetents([.medium, .large])
+    }
+
+    /// Alternativa al llenado manual: dictar el movimiento en voz alta y
+    /// que Claude lo interprete (monto, descripcion, tipo). Inspirado en el
+    /// reconocimiento de voz de MonAi.
+    private var voiceButton: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                Task { await handleMicTap() }
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: voiceRecognizer.isRecording ? "waveform" : "mic.fill")
+                        .foregroundStyle(voiceRecognizer.isRecording ? .red : .accentColor)
+                    Text(micLabel)
+                        .font(.subheadline.weight(.medium))
+                    Spacer()
+                    if voiceRecognizer.isProcessing {
+                        ProgressView()
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(voiceRecognizer.isRecording ? Color.red.opacity(0.12) : Color(.secondarySystemBackground))
+                )
+            }
+            .buttonStyle(.plain)
+            .disabled(voiceRecognizer.isProcessing)
+
+            if voiceRecognizer.isRecording && !voiceRecognizer.liveTranscript.isEmpty {
+                Text(voiceRecognizer.liveTranscript)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+
+            if let voiceError = voiceRecognizer.errorMessage {
+                Text(voiceError)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+            }
+        }
+    }
+
+    private var micLabel: String {
+        if voiceRecognizer.isProcessing { return "Entendiendo lo que dijiste..." }
+        if voiceRecognizer.isRecording { return "Escuchando... toca para terminar" }
+        return "O dilo en voz alta"
+    }
+
+    private func handleMicTap() async {
+        if let parsed = await voiceRecognizer.toggleRecording() {
+            movementType = parsed.movementType
+            amountText = parsed.amount == 0 ? "" : String(format: "%.2f", parsed.amount)
+            description = parsed.description
+            amountFieldFocused = false
+        }
     }
 
     private func save() async {

@@ -6,6 +6,9 @@ struct DashboardTabView: View {
             DayJournalView()
                 .tabItem { Label("Hoy", systemImage: "book.fill") }
 
+            BudgetsView()
+                .tabItem { Label("Presupuestos", systemImage: "chart.bar.fill") }
+
             DashboardView()
                 .tabItem { Label("Cuentas", systemImage: "creditcard.fill") }
 

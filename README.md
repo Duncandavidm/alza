@@ -13,16 +13,19 @@ Alza/                       # codigo de la app
   Features/
     Auth/                   # Sign in with Apple + Sign in with Google (nativos)
     Paywall/                # suscripcion unica $29.99/mes, "Suscribirme"
-    Dashboard/              # cuentas + movimientos (alta manual)
+    Dashboard/              # "Hoy" (cuaderno del dia, voz), cuentas + movimientos
+    Budgets/                # presupuestos por categoria, semanal o mensual
     Insights/               # insights de IA (Claude) sobre tus finanzas
     Settings/               # administrar suscripcion, restaurar, cerrar sesion
   Resources/                # Info.plist, Assets.xcassets (icono/color)
 project.yml                 # spec de XcodeGen -> genera Alza.xcodeproj
 supabase/
-  migrations/0001_init.sql  # esquema ya aplicado al proyecto Supabase
+  migrations/               # 0001 esquema base, 0002 tipos de movimiento,
+                             # 0003 RPC de balance, 0004 presupuestos
   functions/
-    generate-insights/      # Edge Function: llama a Claude, escribe ai_insights
-    verify-apple-receipt/   # Edge Function: valida compras con Apple, escribe subscriptions
+    generate-insights/         # Edge Function: llama a Claude, escribe ai_insights
+    verify-apple-receipt/      # Edge Function: valida compras con Apple, escribe subscriptions
+    parse-voice-transaction/   # Edge Function: interpreta un movimiento dicho en voz alta
 ```
 
 Este entorno (contenedor Linux, sin Xcode/Swift/CocoaPods/Deno) no puede
@@ -113,12 +116,20 @@ manejo de la respuesta de Apple. Pruebalo con
 `supabase functions serve verify-apple-receipt` y una compra sandbox antes
 de confiar en el.
 
-### 7. Insights de IA
+### 7. Insights de IA (y registro por voz)
 
 ```bash
 supabase secrets set --project-ref jfhevxztsvnlsuwkwtmd \
   ANTHROPIC_API_KEY=<tu API key de Anthropic>
 ```
+
+El mismo secret lo usa tambien `parse-voice-transaction` (interpreta lo que
+dictas al anotar un movimiento por voz), no hace falta configurarlo aparte.
+
+No hace falta ninguna capability nueva en el Apple Developer portal para el
+microfono/reconocimiento de voz — son solo los textos de permiso en
+`Info.plist` (`NSMicrophoneUsageDescription`,
+`NSSpeechRecognitionUsageDescription`), ya incluidos.
 
 ### 8. Icono y marca
 
@@ -142,11 +153,21 @@ nombre de archivo) y ajusta el `AccentColor` si el color cambio.
   ("Hoy llevas: +$X ingresos — $Y gastos = $Z en tu bolsillo"), y "Cerrar el
   dia" con un resumen de si fue buen dia / dia normal / dia flojo
   (comparado contra el promedio de los ultimos 7 dias).
+- **Anotar por voz** (inspirado en MonAi): en el ingreso ultra-rapido, boton
+  de microfono — dictas el movimiento ("pague veinte dolares de gasolina"),
+  Speech framework lo transcribe (on-device cuando el dispositivo lo
+  soporta) y `parse-voice-transaction` (Claude) lo convierte en monto,
+  descripcion, tipo de movimiento y categoria. El usuario revisa y confirma
+  antes de guardar, no se guarda solo.
 - Tipos de movimiento: 💰 Ingreso, 💸 Gasto, 🏭 Pago a proveedor,
   📈 Inversion, 💳 Transferencia — columna `movement_type` en
   `transactions` (migracion `0002_movement_types.sql`).
 - "Cuentas": alta manual de cuentas y formulario detallado de movimientos
   (con categoria opcional), para cuando el ingreso rapido no basta.
+- **Presupuestos** (inspirado en MonAi): limite semanal o mensual por
+  categoria, con barra de progreso — visible tanto en su propia pestaña
+  como en una franja arriba de "Hoy" ("justo en la pantalla principal"),
+  con semaforo verde/amarillo/rojo segun cuanto te falta.
 - Insights: boton "Generar" que manda tus cuentas/movimientos a Claude y
   guarda 2-4 insights.
 - Paywall: un solo boton "Suscribirme" a $29.99/mes, mas "Restaurar compras"
@@ -154,5 +175,20 @@ nombre de archivo) y ajusta el `AccentColor` si el color cambio.
 - Cerrar sesion (en Ajustes y en el Paywall) muestra un spinner y se
   deshabilita mientras corre, para que quede claro que esta funcionando.
 
-Conexion bancaria automatica, presupuestos, notificaciones locales, etc. no
-estan en este primer corte — quedan para una siguiente iteracion.
+Conexion bancaria automatica y notificaciones locales no estan en este
+primer corte — quedan para una siguiente iteracion.
+
+### Ideas de MonAi que se dejaron fuera por ahora
+
+Tambien exploradas, pero no implementadas en esta pasada (para no meter
+demasiado alcance nuevo de una vez):
+
+- **Widgets de pantalla de inicio** con el progreso de presupuestos — pide
+  un target de Widget Extension nuevo, App Group compartido, y no se pudo
+  armar/probar con confianza sin Xcode en este entorno.
+- **Listas compartidas** (invitar a alguien mas a ver/anotar en el mismo
+  negocio) — hoy el modelo de datos es un usuario = sus propios datos
+  (RLS por `user_id`); compartir requeriria una tabla de invitaciones y
+  cambiar las policies de RLS.
+- **Conversor de moneda** — `accounts.currency` ya existe en el esquema
+  pero no hay logica de conversion activa todavia.

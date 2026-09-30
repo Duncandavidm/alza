@@ -5,6 +5,7 @@ import SwiftUI
 struct DayJournalView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = DayJournalViewModel()
+    @StateObject private var budgetsViewModel = BudgetsViewModel()
     @State private var isQuickAdding = false
     @State private var daySummary: DaySummary?
     @State private var isClosingDay = false
@@ -14,6 +15,10 @@ struct DayJournalView: View {
             ZStack(alignment: .bottomTrailing) {
                 VStack(spacing: 0) {
                     liveTotalBanner
+
+                    if !budgetsViewModel.progresses.isEmpty {
+                        budgetsStrip
+                    }
 
                     List {
                         if viewModel.todayTransactions.isEmpty && !viewModel.isLoading {
@@ -27,7 +32,10 @@ struct DayJournalView: View {
                         }
                     }
                     .listStyle(.plain)
-                    .refreshable { await refresh() }
+                    .refreshable {
+                        await refresh()
+                        await refreshBudgets()
+                    }
                 }
 
                 Button {
@@ -59,6 +67,7 @@ struct DayJournalView: View {
                 }
             }
             .task { await refresh() }
+            .task { await refreshBudgets() }
             .sheet(isPresented: $isQuickAdding) {
                 QuickAddView(viewModel: viewModel)
             }
@@ -105,6 +114,21 @@ struct DayJournalView: View {
         .background(Color(.secondarySystemBackground))
     }
 
+    /// Progreso de presupuestos, visible "justo en la pantalla principal"
+    /// (inspirado en MonAi) en vez de escondido en un reporte aparte.
+    private var budgetsStrip: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                ForEach(budgetsViewModel.progresses) { progress in
+                    BudgetProgressChip(progress: progress)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+        }
+        .background(Color(.systemBackground))
+    }
+
     @ViewBuilder
     private func journalRow(_ transaction: FinanceTransaction) -> some View {
         HStack(alignment: .top, spacing: 12) {
@@ -131,6 +155,11 @@ struct DayJournalView: View {
     private func refresh() async {
         guard let userId = appState.currentUserId else { return }
         await viewModel.refresh(userId: userId)
+    }
+
+    private func refreshBudgets() async {
+        guard let userId = appState.currentUserId else { return }
+        await budgetsViewModel.refresh(userId: userId)
     }
 
     private func closeDay() async {

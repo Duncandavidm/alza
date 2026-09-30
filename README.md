@@ -120,11 +120,17 @@ supabase secrets set --project-ref jfhevxztsvnlsuwkwtmd \
   ANTHROPIC_API_KEY=<tu API key de Anthropic>
 ```
 
-### 8. Icono y splash
+### 8. Icono y marca
 
-`Alza/Resources/Assets.xcassets/AppIcon.appiconset/Contents.json` esta vacio
-de imagenes — falta que pongas el icono de 1024x1024 ahi (y su referencia en
-el Contents.json, o simplemente arrastralo en Xcode).
+Ya resuelto con el logo que diste (el mark de la "a" con flecha):
+
+- `AppIcon.appiconset/AppIcon-1024.png` — icono de App Store, fondo blanco.
+- `AlzaMark.imageset/alza-mark.png` — el mark con fondo transparente, usado
+  dentro de la app (header de login, paywall).
+- `AccentColor` actualizado al verde/teal real de la marca (`#00A585`).
+
+Si en algun momento cambias el logo, solo reemplaza esos dos PNG (mismo
+nombre de archivo) y ajusta el `AccentColor` si el color cambio.
 
 ## Alcance de este MVP
 

@@ -10,9 +10,10 @@ struct PaywallView: View {
             Spacer()
 
             VStack(spacing: 8) {
-                Image(systemName: "chart.line.uptrend.xyaxis")
-                    .font(.system(size: 48))
-                    .foregroundStyle(.tint)
+                Image("AlzaMark")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 56, height: 56)
                 Text("Alza Pro")
                     .font(.largeTitle.bold())
                 Text("Dashboard financiero completo + insights de IA personalizados sobre tus cuentas y gastos.")

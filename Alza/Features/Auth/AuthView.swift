@@ -42,6 +42,7 @@ struct AuthView: View {
     private var header: some View {
         AuthHeaderShape()
             .fill(Color.black)
+            .clipped()
             .overlay(alignment: .bottomLeading) {
                 HStack(spacing: 12) {
                     Image("AlzaMark")
@@ -89,9 +90,20 @@ struct AuthView: View {
             }
             .buttonStyle(SubtleBorderedButtonStyle())
 
+            separator
+
+            emailForm
+
             if viewModel.isSigningIn {
                 ProgressView()
                     .padding(.top, 4)
+            }
+
+            if let infoMessage = viewModel.infoMessage {
+                Text(infoMessage)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
             }
 
             if let errorMessage = viewModel.errorMessage {
@@ -102,6 +114,78 @@ struct AuthView: View {
             }
         }
         .disabled(viewModel.isSigningIn)
+    }
+
+    private var separator: some View {
+        HStack(spacing: 12) {
+            Rectangle().fill(Color(.separator)).frame(height: 1)
+            Text("o con tu correo")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Rectangle().fill(Color(.separator)).frame(height: 1)
+        }
+        .padding(.vertical, 4)
+    }
+
+    private var emailForm: some View {
+        VStack(spacing: 12) {
+            TextField("Correo", text: $viewModel.email)
+                .textContentType(.username)
+                .keyboardType(.emailAddress)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .padding(.horizontal, 16)
+                .frame(height: 50)
+                .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemBackground)))
+
+            SecureField("Contraseña", text: $viewModel.password)
+                .textContentType(viewModel.emailAuthMode == .signUp ? .newPassword : .password)
+                .padding(.horizontal, 16)
+                .frame(height: 50)
+                .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemBackground)))
+
+            if viewModel.emailAuthMode == .signUp {
+                SecureField("Confirma tu contraseña", text: $viewModel.confirmPassword)
+                    .textContentType(.newPassword)
+                    .padding(.horizontal, 16)
+                    .frame(height: 50)
+                    .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemBackground)))
+            }
+
+            Button {
+                Task { await viewModel.submitEmailForm() }
+            } label: {
+                Text(viewModel.emailAuthMode == .signIn ? "Iniciar sesion" : "Crear cuenta")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.black)
+            .disabled(!viewModel.isEmailFormValid)
+
+            HStack {
+                Button {
+                    viewModel.emailAuthMode = viewModel.emailAuthMode == .signIn ? .signUp : .signIn
+                    viewModel.errorMessage = nil
+                    viewModel.infoMessage = nil
+                } label: {
+                    Text(viewModel.emailAuthMode == .signIn ? "¿No tienes cuenta? Creala" : "¿Ya tienes cuenta? Inicia sesion")
+                        .font(.footnote)
+                }
+
+                Spacer()
+
+                if viewModel.emailAuthMode == .signIn {
+                    Button {
+                        Task { await viewModel.sendPasswordReset() }
+                    } label: {
+                        Text("Olvidaste tu contraseña?")
+                            .font(.footnote)
+                    }
+                }
+            }
+        }
     }
 }
 

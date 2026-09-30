@@ -4,13 +4,33 @@ import AuthenticationServices
 import Supabase
 import GoogleSignIn
 
+enum EmailAuthMode {
+    case signIn
+    case signUp
+}
+
 @MainActor
 final class AuthViewModel: ObservableObject {
     @Published var errorMessage: String?
+    @Published var infoMessage: String?
     @Published var isSigningIn = false
+
+    @Published var emailAuthMode: EmailAuthMode = .signIn
+    @Published var email = ""
+    @Published var password = ""
+    @Published var confirmPassword = ""
 
     private let supabase = SupabaseManager.shared.client
     private(set) var currentAppleNonce: String?
+
+    var isEmailFormValid: Bool {
+        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmedEmail.contains("@"), password.count >= 6 else { return false }
+        if emailAuthMode == .signUp {
+            return password == confirmPassword
+        }
+        return true
+    }
 
     // MARK: - Sign in with Apple
 
@@ -72,6 +92,66 @@ final class AuthViewModel: ObservableObject {
             )
         } catch {
             errorMessage = "No se pudo iniciar sesion con Google: \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: - Correo y contraseña
+
+    func submitEmailForm() async {
+        errorMessage = nil
+        infoMessage = nil
+
+        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard isEmailFormValid else {
+            if password.count < 6 {
+                errorMessage = "La contraseña debe tener al menos 6 caracteres."
+            } else if emailAuthMode == .signUp && password != confirmPassword {
+                errorMessage = "Las contraseñas no coinciden."
+            } else {
+                errorMessage = "Escribe un correo valido."
+            }
+            return
+        }
+
+        isSigningIn = true
+        defer { isSigningIn = false }
+
+        do {
+            switch emailAuthMode {
+            case .signIn:
+                _ = try await supabase.auth.signIn(email: trimmedEmail, password: password)
+            case .signUp:
+                let response = try await supabase.auth.signUp(email: trimmedEmail, password: password)
+                if response.session == nil {
+                    infoMessage = "Te mandamos un correo a \(trimmedEmail) para confirmar tu cuenta. Confirma y vuelve a iniciar sesion."
+                    emailAuthMode = .signIn
+                    password = ""
+                    confirmPassword = ""
+                }
+            }
+        } catch {
+            errorMessage = "No se pudo \(emailAuthMode == .signIn ? "iniciar sesion" : "crear la cuenta"): \(error.localizedDescription)"
+        }
+    }
+
+    func sendPasswordReset() async {
+        errorMessage = nil
+        infoMessage = nil
+
+        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmedEmail.contains("@") else {
+            errorMessage = "Escribe tu correo arriba para poder enviarte el link de recuperacion."
+            return
+        }
+
+        isSigningIn = true
+        defer { isSigningIn = false }
+
+        do {
+            try await supabase.auth.resetPasswordForEmail(trimmedEmail)
+            infoMessage = "Te mandamos un correo a \(trimmedEmail) con un link para restablecer tu contraseña."
+        } catch {
+            errorMessage = "No se pudo enviar el correo de recuperacion: \(error.localizedDescription)"
         }
     }
 }

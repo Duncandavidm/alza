@@ -2,7 +2,7 @@ name: Alza
 options:
   bundleIdPrefix: app.alza
   deploymentTarget:
-    iOS: "16.0"
+    iOS: "17.0"
   createIntermediateGroups: true
 configs:
   Debug: debug
@@ -18,7 +18,7 @@ targets:
   Alza:
     type: application
     platform: iOS
-    deploymentTarget: "16.0"
+    deploymentTarget: "17.0"
     sources:
       - path: Alza
         excludes:

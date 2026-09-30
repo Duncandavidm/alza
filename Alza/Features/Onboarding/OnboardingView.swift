@@ -66,6 +66,7 @@ struct OnboardingView: View {
 
     // MARK: - Pasos
 
+    @ViewBuilder
     private var welcomeStep: some View {
         Section {
             VStack(alignment: .leading, spacing: 8) {

@@ -2,11 +2,18 @@ import Foundation
 import Supabase
 import StoreKit
 
+enum OnboardingStatus: Equatable {
+    case unknown
+    case pending
+    case completed
+}
+
 @MainActor
 final class AppState: ObservableObject {
     @Published private(set) var session: Session?
     @Published private(set) var isLoadingSession = true
     @Published private(set) var subscriptionStatus: SubscriptionStatus = .unknown
+    @Published private(set) var onboardingStatus: OnboardingStatus = .unknown
 
     let subscriptionStore = SubscriptionStore()
     private let supabase = SupabaseManager.shared.client
@@ -28,9 +35,11 @@ final class AppState: ObservableObject {
 
                 if state.session != nil {
                     await self.refreshSubscriptionStatus()
+                    await self.refreshOnboardingStatus()
                     await self.subscriptionStore.loadProduct()
                 } else {
                     self.subscriptionStatus = .none
+                    self.onboardingStatus = .unknown
                 }
             }
         }
@@ -57,6 +66,35 @@ final class AppState: ObservableObject {
         } catch {
             subscriptionStatus = .unknown
         }
+    }
+
+    func refreshOnboardingStatus() async {
+        guard let userId = session?.user.id else {
+            onboardingStatus = .unknown
+            return
+        }
+        struct Row: Decodable {
+            let onboardingCompletedAt: Date?
+            enum CodingKeys: String, CodingKey { case onboardingCompletedAt = "onboarding_completed_at" }
+        }
+        do {
+            let row: Row = try await supabase
+                .from("profiles")
+                .select("onboarding_completed_at")
+                .eq("id", value: userId)
+                .single()
+                .execute()
+                .value
+            onboardingStatus = row.onboardingCompletedAt != nil ? .completed : .pending
+        } catch {
+            onboardingStatus = .unknown
+        }
+    }
+
+    /// Se llama justo al terminar el wizard, para no tener que esperar un
+    /// round trip antes de dejar entrar al usuario al dashboard.
+    func markOnboardingCompleted() {
+        onboardingStatus = .completed
     }
 
     /// Manda la transaccion verificada por StoreKit a la Edge Function

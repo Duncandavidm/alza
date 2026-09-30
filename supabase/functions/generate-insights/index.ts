@@ -1,6 +1,7 @@
 // Edge Function: generate-insights
 //
-// Lee las cuentas y movimientos recientes de un usuario, le pide a un LLM
+// Lee el panorama financiero completo del usuario (perfil, cuentas,
+// movimientos recientes, recurrentes y cuentas por pagar), le pide a un LLM
 // (Claude, via ANTHROPIC_API_KEY) que genere 2-4 insights financieros, y los
 // guarda en public.ai_insights usando la service role key (el usuario nunca
 // tiene permiso de insertar ahi directo, ver la migracion 0001_init.sql).
@@ -33,21 +34,38 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-    const [{ data: accounts, error: accountsError }, { data: transactions, error: transactionsError }] =
-      await Promise.all([
-        supabase.from("accounts").select("*").eq("user_id", userId),
-        supabase
-          .from("transactions")
-          .select("*")
-          .eq("user_id", userId)
-          .order("occurred_at", { ascending: false })
-          .limit(50),
-      ]);
+    const [
+      { data: profile, error: profileError },
+      { data: accounts, error: accountsError },
+      { data: transactions, error: transactionsError },
+      { data: recurring, error: recurringError },
+      { data: bills, error: billsError },
+    ] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
+      supabase.from("accounts").select("*").eq("user_id", userId),
+      supabase
+        .from("transactions")
+        .select("*")
+        .eq("user_id", userId)
+        .order("occurred_at", { ascending: false })
+        .limit(50),
+      supabase.from("recurring_transactions").select("*").eq("user_id", userId).eq("active", true),
+      supabase.from("bills").select("*").eq("user_id", userId).eq("status", "pendiente"),
+    ]);
 
+    if (profileError) throw profileError;
     if (accountsError) throw accountsError;
     if (transactionsError) throw transactionsError;
+    if (recurringError) throw recurringError;
+    if (billsError) throw billsError;
 
-    const suggestions = await requestInsightsFromClaude(accounts ?? [], transactions ?? []);
+    const suggestions = await requestInsightsFromClaude(
+      profile,
+      accounts ?? [],
+      transactions ?? [],
+      recurring ?? [],
+      bills ?? [],
+    );
 
     if (suggestions.length > 0) {
       const { error: insertError } = await supabase.from("ai_insights").insert(
@@ -71,20 +89,35 @@ Deno.serve(async (req) => {
 });
 
 async function requestInsightsFromClaude(
+  profile: Record<string, unknown> | null,
   accounts: Record<string, unknown>[],
   transactions: Record<string, unknown>[],
+  recurring: Record<string, unknown>[],
+  bills: Record<string, unknown>[],
 ): Promise<InsightSuggestion[]> {
-  const prompt = `Eres el asesor financiero de la app Alza. Con estos datos del \
-usuario (cuentas y sus ultimos movimientos, en JSON), genera entre 2 y 4 \
-insights financieros cortos y accionables en espanol. Responde UNICAMENTE \
-con un JSON array de objetos {"kind": "general"|"spending"|"saving"|"alert", \
+  const prompt = `Eres el asesor financiero personal de la app Alza. Con el \
+panorama financiero completo de este usuario (perfil, cuentas, ultimos \
+movimientos, ingresos/gastos fijos recurrentes, y cuentas por pagar \
+pendientes, todo en JSON), genera entre 2 y 4 insights financieros cortos, \
+accionables y personalizados en espanol — que le ayuden a mejorar su vida \
+financiera, no observaciones genericas. Responde UNICAMENTE con un JSON \
+array de objetos {"kind": "general"|"spending"|"saving"|"alert", \
 "title": string, "body": string}, sin texto extra ni markdown.
+
+Perfil:
+${JSON.stringify(profile)}
 
 Cuentas:
 ${JSON.stringify(accounts)}
 
 Movimientos recientes:
-${JSON.stringify(transactions)}`;
+${JSON.stringify(transactions)}
+
+Ingresos y gastos fijos recurrentes:
+${JSON.stringify(recurring)}
+
+Cuentas por pagar pendientes:
+${JSON.stringify(bills)}`;
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",

@@ -2,7 +2,8 @@
 //
 // "Informes con IA": el usuario pregunta algo en lenguaje normal sobre sus
 // finanzas ("¿cuanto gaste en comida este mes?") y Claude responde usando
-// sus cuentas, movimientos y presupuestos reales como contexto. Inspirado
+// su panorama financiero completo (perfil, cuentas, movimientos,
+// presupuestos, recurrentes y cuentas por pagar) como contexto. Inspirado
 // en "Pregunta por tus gastos en lenguaje normal y recibe un informe
 // completo con los numeros que lo respaldan" de MonAi.
 //
@@ -37,10 +38,14 @@ Deno.serve(async (req) => {
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
     const [
+      { data: profile, error: profileError },
       { data: accounts, error: accountsError },
       { data: transactions, error: transactionsError },
       { data: budgets, error: budgetsError },
+      { data: recurring, error: recurringError },
+      { data: bills, error: billsError },
     ] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
       supabase.from("accounts").select("*").eq("user_id", userId),
       supabase
         .from("transactions")
@@ -50,13 +55,26 @@ Deno.serve(async (req) => {
         .order("occurred_at", { ascending: false })
         .limit(300),
       supabase.from("budgets").select("*").eq("user_id", userId),
+      supabase.from("recurring_transactions").select("*").eq("user_id", userId).eq("active", true),
+      supabase.from("bills").select("*").eq("user_id", userId).eq("status", "pendiente"),
     ]);
 
+    if (profileError) throw profileError;
     if (accountsError) throw accountsError;
     if (transactionsError) throw transactionsError;
     if (budgetsError) throw budgetsError;
+    if (recurringError) throw recurringError;
+    if (billsError) throw billsError;
 
-    const answer = await askClaude(question, accounts ?? [], transactions ?? [], budgets ?? []);
+    const answer = await askClaude(
+      question,
+      profile,
+      accounts ?? [],
+      transactions ?? [],
+      budgets ?? [],
+      recurring ?? [],
+      bills ?? [],
+    );
 
     return new Response(JSON.stringify({ answer }), {
       headers: { "Content-Type": "application/json" },
@@ -69,17 +87,23 @@ Deno.serve(async (req) => {
 
 async function askClaude(
   question: string,
+  profile: Record<string, unknown> | null,
   accounts: Record<string, unknown>[],
   transactions: Record<string, unknown>[],
   budgets: Record<string, unknown>[],
+  recurring: Record<string, unknown>[],
+  bills: Record<string, unknown>[],
 ): Promise<string> {
-  const prompt = `Eres el asesor financiero de la app Alza. El dueño del \
-negocio te esta preguntando algo sobre sus finanzas. Respondele en espanol,\
+  const prompt = `Eres el asesor financiero personal de la app Alza. El \
+usuario te esta preguntando algo sobre sus finanzas. Respondele en espanol,\
  en lenguaje sencillo (nada de jerga contable), con los numeros exactos que \
 respalden tu respuesta. Si la pregunta no se puede responder con estos \
 datos, dilo claramente en vez de inventar numeros.
 
 Pregunta: "${question}"
+
+Perfil del usuario (nombre, si tiene ingresos variables y notas sobre ellos):
+${JSON.stringify(profile)}
 
 Cuentas:
 ${JSON.stringify(accounts)}
@@ -89,6 +113,12 @@ ${JSON.stringify(transactions)}
 
 Presupuestos:
 ${JSON.stringify(budgets)}
+
+Ingresos y gastos fijos recurrentes (mensuales):
+${JSON.stringify(recurring)}
+
+Cuentas por pagar pendientes:
+${JSON.stringify(bills)}
 
 Responde solo con el texto de la respuesta (2-5 oraciones), sin JSON, sin markdown.`;
 

@@ -171,6 +171,23 @@ nombre de archivo) y ajusta el `AccentColor` si el color cambio.
   para todo. Aparece como un pop-up justo despues de guardar, con un boton
   "Pagar" por cada item que registra el gasto real y lo marca resuelto sin
   salir de la pantalla.
+- **Estudio financiero inicial (Onboarding/)**: la primera vez que el usuario
+  entra (despues de autenticarse, antes del paywall), un wizard de 8 pasos
+  cortos le pregunta su nombre, su cuenta principal, si tiene un ingreso fijo
+  (salario) y cuanto/que dia, si tiene ingresos variables (ventas, freelance),
+  cuales cuentas fijas comunes paga (luz, alquiler, agua, telefono, internet)
+  y cuanto, sus suscripciones (Netflix, gimnasio, etc.) y otras cuentas fijas
+  mensuales (colegio, mesada, prestamos). Al terminar, todo se guarda de una
+  sola vez: crea la cuenta principal y un `recurring_transactions` por cada
+  ingreso/gasto fijo marcado, y actualiza el perfil (`full_name`,
+  `has_variable_income`, `variable_income_notes`,
+  `onboarding_completed_at`). `AppState.onboardingStatus` (derivado de
+  `onboarding_completed_at`) decide en `RootView` si mostrar el wizard antes
+  del resto de la app; si el usuario sale a mitad de camino no queda a medias
+  porque no hay escrituras parciales por paso. Este panorama completo es lo
+  que le da a `prioritize-payments`, `generate-insights` y `ask-finances`
+  contexto real desde el primer dia en vez de esperar a que el usuario cargue
+  todo a mano con el tiempo.
 - Auth: Sign in with Apple + Google (nativos, sin redirect web).
 - **"Hoy" (Mi cuaderno del dia)**: pantalla principal — feed cronologico de
   todo lo que paso hoy (como una libreta, no una tabla), boton flotante "+"

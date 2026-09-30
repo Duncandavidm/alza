@@ -33,7 +33,6 @@ targets:
         CFBundleDisplayName: Alza
         UILaunchScreen: {}
         ITSAppUsesNonExemptEncryption: false
-        NSUserTrackingUsageDescription: ""
     entitlements:
       path: Alza/Resources/Alza.entitlements
       properties:

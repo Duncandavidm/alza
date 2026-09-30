@@ -1,6 +1,7 @@
 import Foundation
 import Speech
 import AVFoundation
+import Supabase
 
 /// Resultado de parse-voice-transaction: los campos con los que se
 /// pre-llena el formulario de "Anotar movimiento" para que el usuario los

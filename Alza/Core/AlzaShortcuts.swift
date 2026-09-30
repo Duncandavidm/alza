@@ -1,5 +1,6 @@
 import AppIntents
 import Foundation
+import Supabase
 
 /// Permite que un Atajo de Apple (ej. una automatizacion personal disparada
 /// por "Transaccion de Apple Pay") anote un gasto en Alza sin abrir la app.

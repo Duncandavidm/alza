@@ -17,22 +17,21 @@ Alza/                       # codigo de la app
     Budgets/                # presupuestos por categoria, semanal o mensual
     Recurring/              # transacciones recurrentes (gestion en Ajustes)
     Insights/               # insights de IA (Claude) sobre tus finanzas
-    Settings/               # suscripcion, modo avanzado, recurrentes, WhatsApp,
+    Settings/               # suscripcion, modo avanzado, recurrentes,
                              # exportar/importar CSV, logout
   Resources/                # Info.plist, Assets.xcassets (icono/color)
 project.yml                 # spec de XcodeGen -> genera Alza.xcodeproj
 supabase/
   migrations/               # 0001 esquema base, 0002 tipos de movimiento,
                              # 0003 RPC de balance, 0004 presupuestos,
-                             # 0005 recurrentes + etiquetas, 0006 moneda +
-                             # vinculo de WhatsApp
+                             # 0005 recurrentes + etiquetas, 0006 moneda
+                             # (+ WhatsApp, revertido en 0007)
   functions/
     generate-insights/         # Edge Function: llama a Claude, escribe ai_insights
     verify-apple-receipt/      # Edge Function: valida compras con Apple, escribe subscriptions
     parse-voice-transaction/   # Edge Function: interpreta un movimiento dicho en voz alta
     ask-finances/               # Edge Function: responde preguntas en lenguaje natural
     exchange-rate/               # Edge Function: convierte moneda (frankfurter.app)
-    whatsapp-webhook/            # Edge Function: bot de WhatsApp (formato Twilio)
 ```
 
 Este entorno (contenedor Linux, sin Xcode/Swift/CocoaPods/Deno) no puede
@@ -130,42 +129,15 @@ supabase secrets set --project-ref jfhevxztsvnlsuwkwtmd \
   ANTHROPIC_API_KEY=<tu API key de Anthropic>
 ```
 
-El mismo secret lo usa tambien `parse-voice-transaction`, `ask-finances`, y
-`whatsapp-webhook` — no hace falta configurarlo aparte para cada una.
+El mismo secret lo usa tambien `parse-voice-transaction` y `ask-finances` —
+no hace falta configurarlo aparte para cada una.
 
 No hace falta ninguna capability nueva en el Apple Developer portal para el
 microfono/reconocimiento de voz — son solo los textos de permiso en
 `Info.plist` (`NSMicrophoneUsageDescription`,
 `NSSpeechRecognitionUsageDescription`), ya incluidos.
 
-### 8. WhatsApp (opcional)
-
-`whatsapp-webhook` ya esta desplegada, pero sin nada conectado del lado de
-WhatsApp todavia. Para activarla:
-
-1. Crea una cuenta en [Twilio](https://www.twilio.com) (tiene capa gratis).
-2. Activa el **WhatsApp Sandbox** (Messaging > Try it out > Send a WhatsApp
-   message) — te da un numero de prueba y un codigo para unirte desde tu
-   propio WhatsApp.
-3. En la configuracion del Sandbox, en **"When a message comes in"**, pon
-   la URL de la funcion:
-   `https://jfhevxztsvnlsuwkwtmd.supabase.co/functions/v1/whatsapp-webhook`
-   (metodo POST).
-4. En `Alza/Core/Config.swift`, reemplaza `whatsappBotNumber` con el numero
-   que te dio Twilio (el mismo que pusiste en el paso 2).
-5. Desde la app (Ajustes > WhatsApp), genera tu codigo y mandale
-   `VINCULAR <codigo>` al bot — despues de eso, cualquier mensaje de texto
-   se interpreta como un movimiento.
-
-El Sandbox de Twilio es gratis pero solo funciona con numeros que se
-"unieron" manualmente (no sirve para usuarios reales al azar) — para eso
-hace falta pasar por la verificacion de WhatsApp Business de Meta, que es
-un tramite aparte y puede tardar dias. Las notas de voz por WhatsApp **no
-estan implementadas** (Twilio no las transcribe solo, haria falta contratar
-un servicio de speech-to-text aparte) — por ahora el bot solo entiende
-texto.
-
-### 9. Icono y marca
+### 8. Icono y marca
 
 Ya resuelto con el logo que diste (el mark de la "a" con flecha):
 
@@ -216,11 +188,6 @@ nombre de archivo) y ajusta el `AccentColor` si el color cambio.
   / Importar): exporta todos tus movimientos y recurrentes a un CSV
   (compartible por cualquier medio), o importa uno de vuelta a una cuenta
   que elijas.
-- **Bot de WhatsApp** (inspirado en MonAi 1.10, Ajustes > WhatsApp):
-  vincula tu numero con un codigo, y de ahi en adelante cualquier mensaje
-  de texto al bot se anota como movimiento (`whatsapp-webhook`, formato
-  Twilio). Notas de voz por WhatsApp no estan soportadas todavia. Necesita
-  que configures Twilio — ver seccion 8 arriba.
 - Paywall: un solo boton "Suscribirme" a $29.99/mes, mas "Restaurar compras"
   y "Administrar suscripcion".
 - Cerrar sesion (en Ajustes y en el Paywall) muestra un spinner y se
@@ -262,6 +229,5 @@ demasiado alcance nuevo de una vez):
   negocio) — hoy el modelo de datos es un usuario = sus propios datos
   (RLS por `user_id`); compartir requeriria una tabla de invitaciones y
   cambiar las policies de RLS.
-- **Notas de voz por WhatsApp** — el bot de WhatsApp solo entiende texto
-  por ahora (ver seccion 8); transcribir audio necesitaria un servicio de
-  speech-to-text aparte de Twilio.
+- **Bot de WhatsApp** — se exploro (Edge Function + vinculo de numero) pero
+  se descarto; no esta en la app.

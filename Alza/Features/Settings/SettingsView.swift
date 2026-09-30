@@ -25,12 +25,6 @@ struct SettingsView: View {
                     }
 
                     NavigationLink {
-                        WhatsAppLinkView()
-                    } label: {
-                        Label("WhatsApp", systemImage: "message.fill")
-                    }
-
-                    NavigationLink {
                         DataPortabilityView()
                     } label: {
                         Label("Exportar / Importar CSV", systemImage: "arrow.up.arrow.down.circle")

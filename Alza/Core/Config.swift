@@ -17,9 +17,4 @@ enum Config {
     /// Console, habilitado para "Sign in with Google". Debe coincidir con
     /// el REVERSED_CLIENT_ID puesto en Info.plist.
     static let googleSignInClientId = "TODO-google-oauth-client-id.apps.googleusercontent.com"
-
-    /// TODO(David): el numero de WhatsApp del bot, una vez tengas el
-    /// Sandbox/numero de Twilio (o WhatsApp Business) conectado a la Edge
-    /// Function whatsapp-webhook. Formato con codigo de pais, ej. "+14155238886".
-    static let whatsappBotNumber = "TODO-numero-de-whatsapp"
 }

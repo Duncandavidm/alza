@@ -24,6 +24,15 @@ struct BudgetProgressChip: View {
         .padding(10)
         .frame(width: 150, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
+        .overlay(
+            // Borde punteado cuando se acerca o se pasa del limite, para que
+            // salte a la vista sin tener que leer el numero.
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(
+                    statusColor.opacity(progress.status == .onTrack ? 0 : 0.7),
+                    style: StrokeStyle(lineWidth: 1.5, dash: [5, 4])
+                )
+        )
     }
 
     private var categoryEmoji: String {

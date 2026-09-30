@@ -5,6 +5,7 @@ import Supabase
 final class DashboardViewModel: ObservableObject {
     @Published private(set) var accounts: [Account] = []
     @Published private(set) var recentTransactions: [FinanceTransaction] = []
+    @Published private(set) var searchResults: [FinanceTransaction]?
     @Published private(set) var isLoading = false
     @Published var errorMessage: String?
 
@@ -52,6 +53,22 @@ final class DashboardViewModel: ObservableObject {
         } catch {
             errorMessage = "No se pudo cargar tu informacion: \(error.localizedDescription)"
         }
+    }
+
+    func search(userId: UUID, query: String) async {
+        guard !query.trimmingCharacters(in: .whitespaces).isEmpty else {
+            searchResults = nil
+            return
+        }
+        do {
+            searchResults = try await TransactionsRepository.shared.search(userId: userId, query: query)
+        } catch {
+            errorMessage = "No se pudo buscar: \(error.localizedDescription)"
+        }
+    }
+
+    func clearSearch() {
+        searchResults = nil
     }
 
     func addAccount(_ new: NewAccount) async throws {

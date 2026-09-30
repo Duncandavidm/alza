@@ -6,6 +6,7 @@ struct DayJournalView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = DayJournalViewModel()
     @StateObject private var budgetsViewModel = BudgetsViewModel()
+    @StateObject private var recurringViewModel = RecurringTransactionsViewModel()
     @State private var isQuickAdding = false
     @State private var daySummary: DaySummary?
     @State private var isClosingDay = false
@@ -18,6 +19,10 @@ struct DayJournalView: View {
 
                     if !budgetsViewModel.progresses.isEmpty {
                         budgetsStrip
+                    }
+
+                    ForEach(recurringViewModel.dueToday) { item in
+                        recurringReminderRow(item)
                     }
 
                     List {
@@ -68,6 +73,7 @@ struct DayJournalView: View {
             }
             .task { await refresh() }
             .task { await refreshBudgets() }
+            .task { await refreshRecurring() }
             .sheet(isPresented: $isQuickAdding) {
                 QuickAddView(viewModel: viewModel)
             }
@@ -129,6 +135,35 @@ struct DayJournalView: View {
         .background(Color(.systemBackground))
     }
 
+    /// "¿Pagaste el Gimnasio hoy?" — recordatorio de una recurrente que le
+    /// toca hoy y todavia no se ha confirmado este mes.
+    @ViewBuilder
+    private func recurringReminderRow(_ item: RecurringTransaction) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                Text("⚠️")
+                Text("¿Pagaste \(item.name) hoy? \(item.amount, format: .currency(code: "USD"))")
+                    .font(.subheadline)
+                Spacer()
+            }
+            HStack(spacing: 10) {
+                Button("Si, lo pague") {
+                    Task { await confirmRecurring(item) }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.orange)
+
+                Button("Recordarme despues") {
+                    recurringViewModel.dismissReminder(for: item)
+                }
+                .buttonStyle(.bordered)
+            }
+            .font(.footnote)
+        }
+        .padding(12)
+        .background(Color.orange.opacity(0.12))
+    }
+
     @ViewBuilder
     private func journalRow(_ transaction: FinanceTransaction) -> some View {
         HStack(alignment: .top, spacing: 12) {
@@ -160,6 +195,17 @@ struct DayJournalView: View {
     private func refreshBudgets() async {
         guard let userId = appState.currentUserId else { return }
         await budgetsViewModel.refresh(userId: userId)
+    }
+
+    private func refreshRecurring() async {
+        guard let userId = appState.currentUserId else { return }
+        await recurringViewModel.refresh(userId: userId)
+    }
+
+    private func confirmRecurring(_ item: RecurringTransaction) async {
+        guard let userId = appState.currentUserId else { return }
+        try? await recurringViewModel.confirmPayment(for: item, userId: userId)
+        await refresh()
     }
 
     private func closeDay() async {

@@ -5,15 +5,25 @@ struct AddTransactionView: View {
     @ObservedObject var viewModel: DashboardViewModel
     let accounts: [Account]
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("isAdvancedMode") private var isAdvancedMode = false
 
     @State private var selectedAccountId: UUID?
     @State private var amountText = ""
     @State private var movementType: MovementType = .gasto
     @State private var category: TransactionCategory = .other
     @State private var description = ""
+    @State private var tagsText = ""
     @State private var isSaving = false
     @State private var showingSavingAnimation = false
     @State private var errorMessage: String?
+
+    /// "#cine #viaje" -> ["cine", "viaje"] (inspirado en "Buscar con Etiquetas").
+    private var parsedTags: [String] {
+        tagsText
+            .split(whereSeparator: { $0 == " " || $0 == "," })
+            .map { $0.hasPrefix("#") ? String($0.dropFirst()) : String($0) }
+            .filter { !$0.isEmpty }
+    }
 
     private var enteredMagnitude: Decimal {
         Decimal(string: amountText.replacingOccurrences(of: ",", with: ".")) ?? 0
@@ -37,13 +47,18 @@ struct AddTransactionView: View {
                 TextField("Monto", text: $amountText)
                     .keyboardType(.decimalPad)
 
-                Picker("Categoria (opcional)", selection: $category) {
-                    ForEach(TransactionCategory.allCases) { category in
-                        Text(category.rawValue).tag(category)
-                    }
-                }
-
                 TextField("Descripcion (opcional)", text: $description)
+
+                if isAdvancedMode {
+                    Picker("Categoria (opcional)", selection: $category) {
+                        ForEach(TransactionCategory.allCases) { category in
+                            Text("\(category.emoji) \(category.rawValue)").tag(category)
+                        }
+                    }
+
+                    TextField("Etiquetas (ej. #cine #viaje)", text: $tagsText)
+                        .autocapitalization(.none)
+                }
 
                 if let errorMessage {
                     Text(errorMessage).foregroundStyle(.red)
@@ -91,8 +106,9 @@ struct AddTransactionView: View {
                     accountId: accountId,
                     amount: movementType.signedAmount(from: magnitude),
                     movementType: movementType,
-                    category: category.rawValue,
+                    category: isAdvancedMode ? category.rawValue : nil,
                     description: description.isEmpty ? nil : description,
+                    tags: isAdvancedMode ? parsedTags : [],
                     occurredAt: Date()
                 )
             )

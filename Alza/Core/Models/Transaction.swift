@@ -57,6 +57,7 @@ struct FinanceTransaction: Codable, Identifiable, Hashable {
     var movementType: MovementType
     var category: String?
     var description: String?
+    var tags: [String]
     var occurredAt: Date
     let createdAt: Date
 
@@ -68,6 +69,7 @@ struct FinanceTransaction: Codable, Identifiable, Hashable {
         case movementType = "movement_type"
         case category
         case description
+        case tags
         case occurredAt = "occurred_at"
         case createdAt = "created_at"
     }
@@ -80,6 +82,7 @@ struct NewTransaction: Encodable {
     let movementType: MovementType
     let category: String?
     let description: String?
+    var tags: [String] = []
     let occurredAt: Date
 
     enum CodingKeys: String, CodingKey {
@@ -89,6 +92,7 @@ struct NewTransaction: Encodable {
         case movementType = "movement_type"
         case category
         case description
+        case tags
         case occurredAt = "occurred_at"
     }
 }

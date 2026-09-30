@@ -13,15 +13,17 @@ Alza/                       # codigo de la app
   Features/
     Auth/                   # Sign in with Apple + Sign in with Google (nativos)
     Paywall/                # suscripcion unica $29.99/mes, "Suscribirme"
-    Dashboard/              # "Hoy" (cuaderno del dia, voz), cuentas + movimientos
+    Dashboard/              # "Hoy" (cuaderno del dia, voz), cuentas + busqueda
     Budgets/                # presupuestos por categoria, semanal o mensual
+    Recurring/              # transacciones recurrentes (gestion en Ajustes)
     Insights/               # insights de IA (Claude) sobre tus finanzas
-    Settings/               # administrar suscripcion, restaurar, cerrar sesion
+    Settings/               # suscripcion, modo avanzado, recurrentes, logout
   Resources/                # Info.plist, Assets.xcassets (icono/color)
 project.yml                 # spec de XcodeGen -> genera Alza.xcodeproj
 supabase/
   migrations/               # 0001 esquema base, 0002 tipos de movimiento,
-                             # 0003 RPC de balance, 0004 presupuestos
+                             # 0003 RPC de balance, 0004 presupuestos,
+                             # 0005 recurrentes + etiquetas
   functions/
     generate-insights/         # Edge Function: llama a Claude, escribe ai_insights
     verify-apple-receipt/      # Edge Function: valida compras con Apple, escribe subscriptions
@@ -174,6 +176,27 @@ nombre de archivo) y ajusta el `AccentColor` si el color cambio.
   y "Administrar suscripcion".
 - Cerrar sesion (en Ajustes y en el Paywall) muestra un spinner y se
   deshabilita mientras corre, para que quede claro que esta funcionando.
+- **Recurrentes** (Ajustes > Recurrentes): pagos/ingresos fijos mensuales
+  (renta, Netflix). El dia que le toca a una, "Hoy" muestra un recordatorio
+  ("¿Pagaste Netflix hoy? [Si, lo pague] [Recordarme despues]") que registra
+  el movimiento real al confirmar.
+- **Etiquetas + busqueda**: en el formulario detallado (modo avanzado),
+  etiquetas tipo `#cine #viaje`; en "Cuentas", una barra de busqueda que
+  busca por texto o, si escribes `#algo`, por esa etiqueta.
+- **Modo Simple / Avanzado** (Ajustes): en Simple (default), el formulario
+  detallado de movimiento solo pide cuenta, tipo, monto y descripcion. En
+  Avanzado se agregan categoria y etiquetas.
+- **Anotar gasto por Atajos de Apple** (`AlzaShortcuts.swift`): expone un
+  App Intent ("Anotar un gasto en Alza") que cualquier Atajo puede llamar,
+  pensado para automatizarlo con el disparador "Transaccion de Apple Pay"
+  de la app Atajos. Alza no tiene ni puede tener acceso directo a Apple
+  Pay/Wallet (eso no existe para apps de terceros) — la automatizacion la
+  arma el propio David en Atajos:
+  1. Atajos > Automatizacion > Nueva automatizacion personal > Transaccion
+     de Apple Pay.
+  2. Agregar accion > buscar "Anotar un gasto en Alza" > llenar monto y
+     descripcion (o mapearlos desde lo que entregue el disparador).
+  3. Desactivar "Preguntar antes de ejecutar" si quieres que corra solo.
 
 Conexion bancaria automatica y notificaciones locales no estan en este
 primer corte — quedan para una siguiente iteracion.

@@ -36,6 +36,35 @@ final class TransactionsRepository {
             .value
     }
 
+    /// Busca movimientos por descripcion, o por etiqueta si el texto
+    /// empieza con "#" (inspirado en "Buscar con Etiquetas").
+    func search(userId: UUID, query: String) async throws -> [FinanceTransaction] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return [] }
+
+        if trimmed.hasPrefix("#") {
+            let tag = String(trimmed.dropFirst())
+            guard !tag.isEmpty else { return [] }
+            return try await supabase
+                .from("transactions")
+                .select()
+                .eq("user_id", value: userId)
+                .contains("tags", value: [tag])
+                .order("occurred_at", ascending: false)
+                .execute()
+                .value
+        }
+
+        return try await supabase
+            .from("transactions")
+            .select()
+            .eq("user_id", value: userId)
+            .ilike("description", pattern: "%\(trimmed)%")
+            .order("occurred_at", ascending: false)
+            .execute()
+            .value
+    }
+
     /// Neto (entradas - salidas) de cada uno de los `days` dias anteriores a
     /// hoy. Se usa para comparar el dia de hoy contra "como te ha ido" al
     /// cerrarlo (mejora #5, resumen al cerrar el dia).

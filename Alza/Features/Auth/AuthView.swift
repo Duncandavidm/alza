@@ -43,12 +43,12 @@ struct AuthView: View {
         AuthHeaderShape()
             .fill(Color.black)
             .clipped()
-            .overlay(alignment: .bottomLeading) {
+            .overlay(alignment: .topLeading) {
                 HStack(spacing: 12) {
                     Image("AlzaMarkWhite")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 44, height: 44)
+                        .frame(width: 40, height: 40)
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Alza")
@@ -60,7 +60,7 @@ struct AuthView: View {
                     }
                 }
                 .padding(.horizontal, 28)
-                .padding(.bottom, 40)
+                .padding(.top, 64)
             }
     }
 

@@ -45,7 +45,7 @@ struct AuthView: View {
             .clipped()
             .overlay(alignment: .bottomLeading) {
                 HStack(spacing: 12) {
-                    Image("AlzaMark")
+                    Image("AlzaMarkWhite")
                         .resizable()
                         .scaledToFit()
                         .frame(width: 44, height: 44)

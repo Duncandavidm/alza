@@ -3,15 +3,17 @@ import SwiftUI
 struct PaywallView: View {
     @EnvironmentObject private var appState: AppState
     @ObservedObject var subscriptionStore: SubscriptionStore
+    @State private var isSigningOut = false
 
     var body: some View {
         VStack(spacing: 24) {
             Spacer()
 
             VStack(spacing: 8) {
-                Image(systemName: "chart.line.uptrend.xyaxis")
-                    .font(.system(size: 48))
-                    .foregroundStyle(.tint)
+                Image("AlzaMark")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 56, height: 56)
                 Text("Alza Pro")
                     .font(.largeTitle.bold())
                 Text("Dashboard financiero completo + insights de IA personalizados sobre tus cuentas y gastos.")
@@ -61,11 +63,22 @@ struct PaywallView: View {
                         .multilineTextAlignment(.center)
                 }
 
-                Button("Cerrar sesion") {
-                    Task { await appState.signOut() }
+                Button {
+                    Task {
+                        isSigningOut = true
+                        await appState.signOut()
+                        isSigningOut = false
+                    }
+                } label: {
+                    if isSigningOut {
+                        ProgressView()
+                    } else {
+                        Text("Cerrar sesion")
+                    }
                 }
                 .font(.footnote)
                 .foregroundStyle(.secondary)
+                .disabled(isSigningOut)
             }
             .padding(.horizontal, 24)
 

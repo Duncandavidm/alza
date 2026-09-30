@@ -16,5 +16,10 @@
       </array>
     </dict>
   </array>
+
+  <key>NSMicrophoneUsageDescription</key>
+  <string>Alza usa el microfono para que anotes un ingreso o gasto diciendolo en voz alta.</string>
+  <key>NSSpeechRecognitionUsageDescription</key>
+  <string>Alza transcribe lo que dices para llenar el monto, la descripcion y la categoria del movimiento por ti.</string>
 </dict>
 </plist>

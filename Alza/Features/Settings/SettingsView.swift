@@ -2,10 +2,29 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var appState: AppState
+    @State private var isSigningOut = false
+    @AppStorage("isAdvancedMode") private var isAdvancedMode = false
 
     var body: some View {
         NavigationStack {
             List {
+                Section("Preferencias") {
+                    Toggle("Modo avanzado", isOn: $isAdvancedMode)
+                    Text(isAdvancedMode
+                        ? "Ves categoria y etiquetas al anotar un movimiento detallado."
+                        : "Solo lo esencial al anotar: cuenta, tipo y monto.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Section {
+                    NavigationLink {
+                        RecurringTransactionsView()
+                    } label: {
+                        Label("Recurrentes", systemImage: "arrow.trianglehead.2.clockwise")
+                    }
+                }
+
                 Section("Suscripcion") {
                     switch appState.subscriptionStatus {
                     case .active(let expiresAt):
@@ -36,9 +55,20 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    Button("Cerrar sesion", role: .destructive) {
-                        Task { await appState.signOut() }
+                    Button(role: .destructive) {
+                        Task {
+                            isSigningOut = true
+                            await appState.signOut()
+                            isSigningOut = false
+                        }
+                    } label: {
+                        if isSigningOut {
+                            ProgressView()
+                        } else {
+                            Text("Cerrar sesion")
+                        }
                     }
+                    .disabled(isSigningOut)
                 }
             }
             .navigationTitle("Ajustes")

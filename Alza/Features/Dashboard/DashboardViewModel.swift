@@ -5,6 +5,7 @@ import Supabase
 final class DashboardViewModel: ObservableObject {
     @Published private(set) var accounts: [Account] = []
     @Published private(set) var recentTransactions: [FinanceTransaction] = []
+    @Published private(set) var searchResults: [FinanceTransaction]?
     @Published private(set) var isLoading = false
     @Published var errorMessage: String?
 
@@ -54,6 +55,22 @@ final class DashboardViewModel: ObservableObject {
         }
     }
 
+    func search(userId: UUID, query: String) async {
+        guard !query.trimmingCharacters(in: .whitespaces).isEmpty else {
+            searchResults = nil
+            return
+        }
+        do {
+            searchResults = try await TransactionsRepository.shared.search(userId: userId, query: query)
+        } catch {
+            errorMessage = "No se pudo buscar: \(error.localizedDescription)"
+        }
+    }
+
+    func clearSearch() {
+        searchResults = nil
+    }
+
     func addAccount(_ new: NewAccount) async throws {
         let created: Account = try await supabase
             .from("accounts")
@@ -66,24 +83,11 @@ final class DashboardViewModel: ObservableObject {
     }
 
     func addTransaction(_ new: NewTransaction) async throws {
-        let created: FinanceTransaction = try await supabase
-            .from("transactions")
-            .insert(new)
-            .select()
-            .single()
-            .execute()
-            .value
+        let created = try await TransactionsRepository.shared.add(new)
         recentTransactions.insert(created, at: 0)
 
-        // Refleja el movimiento en el balance de la cuenta.
         if let index = accounts.firstIndex(where: { $0.id == new.accountId }) {
-            let updatedBalance = accounts[index].balance + new.amount
-            try await supabase
-                .from("accounts")
-                .update(["balance": updatedBalance])
-                .eq("id", value: new.accountId)
-                .execute()
-            accounts[index].balance = updatedBalance
+            accounts[index].balance += new.amount
         }
     }
 }

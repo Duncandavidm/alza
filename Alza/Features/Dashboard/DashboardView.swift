@@ -116,6 +116,11 @@ struct DashboardView: View {
                         }
                     }
                 }
+                if let originalAmount = transaction.originalAmount, let originalCurrency = transaction.originalCurrency {
+                    Text("Originalmente \(originalAmount, format: .currency(code: originalCurrency))")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
             }
             Spacer()
             Text(transaction.amount, format: .currency(code: "USD"))

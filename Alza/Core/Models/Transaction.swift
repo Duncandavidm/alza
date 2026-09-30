@@ -58,6 +58,11 @@ struct FinanceTransaction: Codable, Identifiable, Hashable {
     var category: String?
     var description: String?
     var tags: [String]
+    /// Si el movimiento se origino en otra moneda (conversion automatica,
+    /// inspirado en MonAi), aqui queda el registro de esa moneda/monto
+    /// original. `amount` siempre queda en la moneda de la cuenta.
+    var originalCurrency: String?
+    var originalAmount: Decimal?
     var occurredAt: Date
     let createdAt: Date
 
@@ -70,6 +75,8 @@ struct FinanceTransaction: Codable, Identifiable, Hashable {
         case category
         case description
         case tags
+        case originalCurrency = "original_currency"
+        case originalAmount = "original_amount"
         case occurredAt = "occurred_at"
         case createdAt = "created_at"
     }
@@ -83,6 +90,8 @@ struct NewTransaction: Encodable {
     let category: String?
     let description: String?
     var tags: [String] = []
+    var originalCurrency: String?
+    var originalAmount: Decimal?
     let occurredAt: Date
 
     enum CodingKeys: String, CodingKey {
@@ -93,6 +102,8 @@ struct NewTransaction: Encodable {
         case category
         case description
         case tags
+        case originalCurrency = "original_currency"
+        case originalAmount = "original_amount"
         case occurredAt = "occurred_at"
     }
 }

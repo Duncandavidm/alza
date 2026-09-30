@@ -25,6 +25,17 @@ final class TransactionsRepository {
             .value
     }
 
+    /// Todos los movimientos del usuario, sin limite — para exportar a CSV.
+    func fetchAll(userId: UUID) async throws -> [FinanceTransaction] {
+        try await supabase
+            .from("transactions")
+            .select()
+            .eq("user_id", value: userId)
+            .order("occurred_at", ascending: false)
+            .execute()
+            .value
+    }
+
     func fetchRecent(userId: UUID, limit: Int = 20) async throws -> [FinanceTransaction] {
         try await supabase
             .from("transactions")

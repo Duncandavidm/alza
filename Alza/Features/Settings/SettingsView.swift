@@ -23,6 +23,18 @@ struct SettingsView: View {
                     } label: {
                         Label("Recurrentes", systemImage: "arrow.trianglehead.2.clockwise")
                     }
+
+                    NavigationLink {
+                        WhatsAppLinkView()
+                    } label: {
+                        Label("WhatsApp", systemImage: "message.fill")
+                    }
+
+                    NavigationLink {
+                        DataPortabilityView()
+                    } label: {
+                        Label("Exportar / Importar CSV", systemImage: "arrow.up.arrow.down.circle")
+                    }
                 }
 
                 Section("Suscripcion") {

@@ -13,6 +13,8 @@ struct AddTransactionView: View {
     @State private var category: TransactionCategory = .other
     @State private var description = ""
     @State private var tagsText = ""
+    @State private var selectedCurrency = "USD"
+    @State private var isConverting = false
     @State private var isSaving = false
     @State private var showingSavingAnimation = false
     @State private var errorMessage: String?
@@ -27,6 +29,15 @@ struct AddTransactionView: View {
 
     private var enteredMagnitude: Decimal {
         Decimal(string: amountText.replacingOccurrences(of: ",", with: ".")) ?? 0
+    }
+
+    private var selectedAccount: Account? {
+        accounts.first { $0.id == selectedAccountId }
+    }
+
+    private var isForeignCurrency: Bool {
+        guard let accountCurrency = selectedAccount?.currency else { return false }
+        return selectedCurrency != accountCurrency
     }
 
     var body: some View {
@@ -58,6 +69,17 @@ struct AddTransactionView: View {
 
                     TextField("Etiquetas (ej. #cine #viaje)", text: $tagsText)
                         .autocapitalization(.none)
+
+                    Picker("Moneda del pago", selection: $selectedCurrency) {
+                        ForEach(ExchangeRateService.commonCurrencies, id: \.self) { code in
+                            Text(code).tag(code)
+                        }
+                    }
+                    if isForeignCurrency, let accountCurrency = selectedAccount?.currency {
+                        Text("Se convierte de \(selectedCurrency) a \(accountCurrency) al guardar.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 if let errorMessage {
@@ -65,14 +87,17 @@ struct AddTransactionView: View {
                 }
             }
             .navigationTitle("Nuevo movimiento")
-            .onAppear { selectedAccountId = selectedAccountId ?? accounts.first?.id }
+            .onAppear {
+                selectedAccountId = selectedAccountId ?? accounts.first?.id
+                selectedCurrency = selectedAccount?.currency ?? "USD"
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Guardar") { Task { await save() } }
-                        .disabled(selectedAccountId == nil || amountText.isEmpty || isSaving)
+                        .disabled(selectedAccountId == nil || amountText.isEmpty || isSaving || isConverting)
                 }
             }
             .overlay {
@@ -95,6 +120,29 @@ struct AddTransactionView: View {
             let magnitude = Decimal(string: amountText.replacingOccurrences(of: ",", with: "."))
         else { return }
 
+        var convertedMagnitude = magnitude
+        var originalCurrency: String?
+        var originalAmount: Decimal?
+
+        if isAdvancedMode, isForeignCurrency, let accountCurrency = selectedAccount?.currency {
+            isConverting = true
+            do {
+                let result = try await ExchangeRateService.convert(
+                    amount: magnitude,
+                    from: selectedCurrency,
+                    to: accountCurrency
+                )
+                convertedMagnitude = Decimal(result.convertedAmount)
+                originalCurrency = selectedCurrency
+                originalAmount = magnitude
+            } catch {
+                isConverting = false
+                errorMessage = "No se pudo convertir \(selectedCurrency) a \(accountCurrency): \(error.localizedDescription)"
+                return
+            }
+            isConverting = false
+        }
+
         isSaving = true
         showingSavingAnimation = true
         defer { isSaving = false }
@@ -104,11 +152,13 @@ struct AddTransactionView: View {
                 NewTransaction(
                     userId: userId,
                     accountId: accountId,
-                    amount: movementType.signedAmount(from: magnitude),
+                    amount: movementType.signedAmount(from: convertedMagnitude),
                     movementType: movementType,
                     category: isAdvancedMode ? category.rawValue : nil,
                     description: description.isEmpty ? nil : description,
                     tags: isAdvancedMode ? parsedTags : [],
+                    originalCurrency: originalCurrency,
+                    originalAmount: originalAmount,
                     occurredAt: Date()
                 )
             )

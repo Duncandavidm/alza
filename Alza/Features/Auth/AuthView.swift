@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import AuthenticationServices
 
 struct AuthView: View {
@@ -44,24 +45,28 @@ struct AuthView: View {
             .fill(Color.black)
             .clipped()
             .overlay(alignment: .topLeading) {
-                HStack(spacing: 12) {
-                    Image("AlzaMarkWhite")
+                VStack(alignment: .leading, spacing: 8) {
+                    markImage
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 40, height: 40)
+                        .frame(width: 52, height: 52)
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Alza")
-                            .font(.system(size: 26, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
-                        Text("Tu asesor financiero con IA")
-                            .font(.subheadline)
-                            .foregroundStyle(.white.opacity(0.65))
-                    }
+                    Text("Tu asesor financiero con IA")
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.65))
                 }
                 .padding(.horizontal, 28)
                 .padding(.top, 64)
             }
+    }
+
+    /// Fallback defensivo: si el asset "AlzaMarkWhite" no resuelve en el
+    /// catalogo (ha pasado en este proyecto), usamos un simbolo del sistema
+    /// en vez de dejar el header sin nada ahi.
+    private var markImage: Image {
+        UIImage(named: "AlzaMarkWhite") != nil
+            ? Image("AlzaMarkWhite")
+            : Image(systemName: "a.circle.fill")
     }
 
     private var buttons: some View {

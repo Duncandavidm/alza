@@ -119,6 +119,7 @@ final class AppState: ObservableObject {
                 )
             )
             await refreshSubscriptionStatus()
+            await subscriptionStore.refreshRenewalInfo()
         } catch {
             // Se reintentara en el proximo refreshSubscriptionStatus() /
             // en el proximo lanzamiento via Transaction.currentEntitlements.

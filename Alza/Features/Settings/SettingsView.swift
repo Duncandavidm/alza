@@ -61,8 +61,15 @@ struct SettingsView: View {
                     switch appState.subscriptionStatus {
                     case .active(let expiresAt):
                         LabeledContent("Estado", value: "Activa")
-                        if let expiresAt {
-                            LabeledContent("Renueva", value: expiresAt.formatted(date: .abbreviated, time: .omitted))
+                        let periodEndDate = appState.subscriptionStore.currentPeriodEndDate ?? expiresAt
+                        if appState.subscriptionStore.willAutoRenew == false {
+                            if let periodEndDate {
+                                Text("Tu suscripcion no se va a renovar. Finaliza el \(periodEndDate.formatted(date: .long, time: .omitted)) — hasta esa fecha sigues con acceso completo.")
+                                    .font(.footnote)
+                                    .foregroundStyle(AlzaBrand.alert)
+                            }
+                        } else if let periodEndDate {
+                            LabeledContent("Renueva", value: periodEndDate.formatted(date: .abbreviated, time: .omitted))
                         }
                     case .inGracePeriod:
                         LabeledContent("Estado", value: "En periodo de gracia")
@@ -104,6 +111,9 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Ajustes")
+            .task {
+                await appState.subscriptionStore.refreshRenewalInfo()
+            }
         }
     }
 }

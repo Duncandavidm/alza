@@ -13,6 +13,16 @@ final class SubscriptionStore: ObservableObject {
     @Published private(set) var isLoadingProduct = false
     @Published private(set) var purchaseError: String?
 
+    /// Si la suscripcion activa se va a renovar sola o no (el usuario la
+    /// cancelo desde Ajustes de iOS / el sheet de administrar suscripcion,
+    /// algo que pasa FUERA de la app, no hay forma de que lo sepamos salvo
+    /// preguntandole a StoreKit). nil = todavia no se ha podido consultar.
+    @Published private(set) var willAutoRenew: Bool?
+    /// Fecha en que termina el periodo pagado actual — si willAutoRenew es
+    /// false, es la fecha en que el usuario pierde el acceso (no antes:
+    /// Apple nunca corta el acceso a mitad del periodo ya pagado).
+    @Published private(set) var currentPeriodEndDate: Date?
+
     private var updatesTask: Task<Void, Never>?
 
     /// Callback inyectado por AppState: se dispara con cada transaccion
@@ -40,8 +50,39 @@ final class SubscriptionStore: ObservableObject {
         do {
             let products = try await Product.products(for: [Config.subscriptionProductId])
             product = products.first
+            await refreshRenewalInfo()
         } catch {
             purchaseError = "No se pudo cargar el producto: \(error.localizedDescription)"
+        }
+    }
+
+    /// Le pregunta a StoreKit (directo, sin pasar por nuestro backend) si
+    /// la suscripcion activa se va a renovar sola y cuando termina el
+    /// periodo pagado actual. StoreKit siempre tiene esto al dia porque lo
+    /// sincroniza con Apple solo — asi nos enteramos de una cancelacion
+    /// hecha fuera de la app (Ajustes de iOS, el sheet de "Administrar
+    /// suscripcion") sin necesitar un webhook de App Store Server
+    /// Notifications en el backend.
+    func refreshRenewalInfo() async {
+        guard let subscriptionInfo = product?.subscription else { return }
+
+        do {
+            let statuses = try await subscriptionInfo.status
+            guard let status = statuses.first else {
+                willAutoRenew = nil
+                currentPeriodEndDate = nil
+                return
+            }
+
+            if case .verified(let renewalInfo) = status.renewalInfo {
+                willAutoRenew = renewalInfo.willAutoRenew
+            }
+            if case .verified(let transaction) = status.transaction {
+                currentPeriodEndDate = transaction.expirationDate
+            }
+        } catch {
+            // Deja los valores anteriores — se reintenta en el siguiente
+            // refresh (login, compra, o al entrar a Ajustes).
         }
     }
 

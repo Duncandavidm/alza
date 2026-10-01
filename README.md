@@ -130,6 +130,20 @@ manejo de la respuesta de Apple. Pruebalo con
 `supabase functions serve verify-apple-receipt` y una compra sandbox antes
 de confiar en el.
 
+**Cancelaciones**: cuando un cliente cancela (desde Ajustes de iOS o el
+sheet "Administrar suscripcion"), Apple NO corta el acceso de inmediato —
+sigue activa hasta que termina el periodo ya pagado. Eso pasa automatico,
+no hay nada que implementar ahi. Lo que SI se implemento es que el cliente
+se entere: `SubscriptionStore.refreshRenewalInfo()` le pregunta a StoreKit
+(local, sin pasar por el backend — no hay webhook de App Store Server
+Notifications configurado) si la suscripcion activa se va a renovar sola
+(`willAutoRenew`) y cuando termina el periodo pagado
+(`currentPeriodEndDate`). Si `willAutoRenew == false`, aparece un banner en
+"Hoy" ("Tu suscripcion no se va a renovar... Finaliza el [fecha]...") y el
+mismo mensaje en Ajustes > Suscripcion, en vez del "Renueva el [fecha]"
+normal. Se refresca al abrir la app, al entrar a Ajustes, y despues de
+cualquier compra/restauracion.
+
 ### 7. Insights de IA (y registro por voz)
 
 ```bash

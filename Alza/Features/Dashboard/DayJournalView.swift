@@ -18,6 +18,10 @@ struct DayJournalView: View {
                 VStack(spacing: 0) {
                     liveTotalBanner
 
+                    if appState.subscriptionStatus.isEntitled && appState.subscriptionStore.willAutoRenew == false {
+                        cancellationBanner
+                    }
+
                     if !billsViewModel.pending.isEmpty {
                         billsStrip
                     }
@@ -80,6 +84,7 @@ struct DayJournalView: View {
             .task { await refreshBudgets() }
             .task { await refreshRecurring() }
             .task { await refreshBills() }
+            .task { await appState.subscriptionStore.refreshRenewalInfo() }
             .sheet(isPresented: $isQuickAdding) {
                 QuickAddView(viewModel: viewModel)
             }
@@ -124,6 +129,37 @@ struct DayJournalView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
         .background(Color(.secondarySystemBackground))
+    }
+
+    /// El cliente cancelo la suscripcion (desde Ajustes de iOS o el sheet de
+    /// "Administrar suscripcion", algo que pasa fuera de la app) pero sigue
+    /// con acceso hasta que termine el periodo ya pagado — Apple nunca
+    /// corta el acceso a mitad de un periodo pagado. Esto tiene que
+    /// verselo el cliente aqui, no quedar escondido en Ajustes.
+    private var cancellationBanner: some View {
+        Button {
+            Task { await appState.subscriptionStore.openManageSubscriptions() }
+        } label: {
+            HStack(spacing: 10) {
+                Text("⏳")
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Tu suscripcion no se va a renovar")
+                        .font(.subheadline.weight(.medium))
+                    if let endDate = appState.subscriptionStore.currentPeriodEndDate {
+                        Text("Finaliza el \(endDate.formatted(date: .long, time: .omitted)) — hasta ahi tienes acceso completo.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(12)
+            .foregroundStyle(.primary)
+        }
+        .background(AlzaBrand.alert.opacity(0.12))
     }
 
     /// Cuentas por pagar pendientes, mas cercanas primero — el diferenciador

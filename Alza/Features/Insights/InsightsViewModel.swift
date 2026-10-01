@@ -80,7 +80,7 @@ final class InsightsViewModel: ObservableObject {
 
     func dismiss(_ insight: AIInsight) async {
         insights.removeAll { $0.id == insight.id }
-        try? await supabase
+        _ = try? await supabase
             .from("ai_insights")
             .update(["dismissed": true])
             .eq("id", value: insight.id)

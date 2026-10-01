@@ -185,7 +185,7 @@ struct AddInvoiceView: View {
 private struct ProductPickerView: View {
     @ObservedObject var viewModel: ProductsViewModel
     @Environment(\.dismiss) private var dismiss
-    let onPick: (Product) -> Void
+    let onPick: (CatalogProduct) -> Void
 
     var body: some View {
         List(viewModel.products) { product in

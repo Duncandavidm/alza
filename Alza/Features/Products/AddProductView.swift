@@ -70,8 +70,8 @@ struct AddProductView: View {
                     isSaving = true
                     Task {
                         defer { isSaving = false }
-                        try? await viewModel.add(
-                            NewProduct(
+                        _ = try? await viewModel.add(
+                            NewCatalogProduct(
                                 userId: userId,
                                 name: name,
                                 unit: unit.isEmpty ? nil : unit,

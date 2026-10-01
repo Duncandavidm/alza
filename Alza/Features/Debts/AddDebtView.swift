@@ -72,7 +72,7 @@ struct AddDebtView: View {
                     isSaving = true
                     Task {
                         defer { isSaving = false }
-                        try? await viewModel.add(
+                        _ = try? await viewModel.add(
                             NewDebt(
                                 userId: userId,
                                 creditor: creditor,

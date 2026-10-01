@@ -3,7 +3,7 @@ import Supabase
 
 @MainActor
 final class ProductsViewModel: ObservableObject {
-    @Published private(set) var products: [Product] = []
+    @Published private(set) var products: [CatalogProduct] = []
     @Published private(set) var isLoading = false
     @Published var errorMessage: String?
 
@@ -27,8 +27,8 @@ final class ProductsViewModel: ObservableObject {
     }
 
     @discardableResult
-    func add(_ new: NewProduct) async throws -> Product {
-        let created: Product = try await supabase
+    func add(_ new: NewCatalogProduct) async throws -> CatalogProduct {
+        let created: CatalogProduct = try await supabase
             .from("products")
             .insert(new)
             .select()
@@ -40,7 +40,7 @@ final class ProductsViewModel: ObservableObject {
         return created
     }
 
-    func delete(_ product: Product) async {
+    func delete(_ product: CatalogProduct) async {
         do {
             try await supabase.from("products").delete().eq("id", value: product.id).execute()
             products.removeAll { $0.id == product.id }

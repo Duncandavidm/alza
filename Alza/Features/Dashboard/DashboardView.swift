@@ -75,7 +75,7 @@ struct DashboardView: View {
             }
             .navigationTitle("Cuentas")
             .searchable(text: $searchText, prompt: "Buscar por texto o #etiqueta")
-            .onChange(of: searchText) { newValue in
+            .onChange(of: searchText) { _, newValue in
                 Task { await search(newValue) }
             }
             .refreshable { await refresh() }

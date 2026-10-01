@@ -25,11 +25,16 @@ final class AuthViewModel: ObservableObject {
 
     var isEmailFormValid: Bool {
         let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmedEmail.contains("@"), password.count >= 6 else { return false }
+        guard trimmedEmail.contains("@") else { return false }
+
         if emailAuthMode == .signUp {
-            return password == confirmPassword
+            return PasswordPolicy.isValid(password) && password == confirmPassword
         }
-        return true
+        // Al iniciar sesion no se le vuelve a exigir la politica actual a
+        // una contraseña vieja que pudo crearse con una regla distinta —
+        // solo que no este vacia. La politica real se aplica al crear o
+        // cambiar la contraseña.
+        return !password.isEmpty
     }
 
     // MARK: - Sign in with Apple
@@ -103,8 +108,8 @@ final class AuthViewModel: ObservableObject {
 
         let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
         guard isEmailFormValid else {
-            if password.count < 6 {
-                errorMessage = "La contraseña debe tener al menos 6 caracteres."
+            if emailAuthMode == .signUp && !PasswordPolicy.isValid(password) {
+                errorMessage = PasswordPolicy.failureReason(for: password)
             } else if emailAuthMode == .signUp && password != confirmPassword {
                 errorMessage = "Las contraseñas no coinciden."
             } else {

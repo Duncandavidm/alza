@@ -192,6 +192,84 @@ nombre de archivo) y ajusta los valores en `Brand.swift` si el color
 cambio (y el `AccentColor` del asset catalog, que sigue siendo la
 fuente para los controles nativos de iOS).
 
+### 9. Seguridad
+
+Repaso punto por punto de lo que se pidio reforzar:
+
+1. **Token de sesion fuera de "local storage"**: en iOS no existe
+   localStorage — su equivalente inseguro es UserDefaults/plist (sin
+   cifrar, legible en un backup). `SupabaseManager` ahora pasa
+   `KeychainAuthLocalStorage` (Core/KeychainAuthLocalStorage.swift,
+   Security.framework puro, sin dependencias) al `SupabaseClient`, asi
+   que el access/refresh token vive en el Keychain del dispositivo
+   (cifrado por el Secure Enclave), nunca en UserDefaults. Con
+   `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`: no viaja por
+   iCloud Keychain a otros dispositivos.
+2. **Verificacion de admin del lado del servidor**: revisado — hoy la
+   app NO tiene ninguna feature de admin ni ningun check de rol hecho en
+   el cliente (`grep -rn "admin"` en todo `Alza/` no devuelve nada). No
+   habia nada que corregir. Si en el futuro se agrega un panel de
+   admin, la regla es: el cliente nunca decide quien es admin (nunca
+   `if user.email == "..."` en Swift) — eso se hace con una columna
+   `role`/`is_admin` en `profiles` verificada por una RLS policy o,
+   mejor, por una Edge Function con la service role key, igual que ya
+   hacen `verify-apple-receipt` y las funciones de IA.
+3. **Verificacion en 2 pasos (2FA/TOTP)**: implementada completa —
+   `Core/MFAService.swift` (envoltorio de `supabase.auth.mfa`),
+   `Core/QRCodeGenerator.swift` (QR nativo con CoreImage, sin parsear el
+   SVG que regresa Supabase), y en `Features/Security/`:
+   `SecuritySettingsView` (Ajustes > Seguridad, activar/desactivar),
+   `MFAEnrollView` (escanear QR + confirmar codigo) y
+   `MFAChallengeView` (pantalla que `RootView` inserta despues de
+   cualquier login si el usuario tiene 2FA activo y la sesion todavia
+   no completo el segundo paso — no hay forma de saltarsela desde la
+   app). Opcional, el usuario la activa el mismo desde Ajustes.
+4. **Rate limiting contra fuerza bruta**: Supabase Auth YA trae esto
+   activo por defecto en todos los proyectos — no es algo que se
+   "prenda", es parte de GoTrue (limite por IP tipo token-bucket en
+   login, refresh de token, challenge de MFA, etc.). Para verlo o
+   ajustarlo mas estricto: **Dashboard > Authentication > Rate
+   Limits**. Esto no se pudo tocar desde aqui porque requeriria un
+   Management API token de tu cuenta de Supabase (no un secret de
+   proyecto) — si quieres que lo ajuste, dame los valores que quieres y
+   lo configuras tu ahi, o me das un token con alcance limitado.
+5. **Reglas de contraseña**: lado del cliente ya reforzado —
+   `Core/PasswordPolicy.swift` exige minimo 8 caracteres con letras y
+   numeros (antes era solo 6 caracteres sin mas regla), con el mensaje
+   de que falta exactamente. **Importante**: esto es solo UX — un
+   cliente que le pega directo a la API de Supabase se salta cualquier
+   validacion hecha en Swift. La regla real tiene que vivir tambien del
+   lado del servidor: **Dashboard > Authentication > Policies >
+   Password Requirements**, sube el minimo ahi tambien (y si quieres,
+   activa el chequeo contra contraseñas filtradas, HaveIBeenPwned).
+   Pendiente aparte: "Olvidaste tu contraseña" ya manda el correo de
+   recuperacion, pero la app todavia no tiene la pantalla para
+   completarlo (necesitaria Universal Links/Associated Domains con un
+   dominio tuyo) — hoy el link de recuperacion no tiene donde
+   aterrizar en la app.
+6. **Acceso con Google**: ya estaba implementado (Sign in with Google
+   nativo, sin WebView) desde antes en esta misma pantalla de login,
+   con el mismo peso visual que Apple — no hizo falta cambiar nada ahi.
+7. **Bucket de Storage (S3-compatible) para fotos**: ya se hacia asi
+   para el logo del negocio (bucket `business-logos`, ver seccion de
+   Facturacion arriba); se generalizo el patron en
+   `Core/StorageUploadService.swift`, reutilizable para cualquier foto
+   futura (bucket + path configurable). La regla de fondo, que es la
+   que de verdad protege contra "cambiar de servidor rompe todo": la
+   base de datos NUNCA guarda bytes de imagen ni una URL firmada que
+   expira — solo guarda un PATH corto (ej.
+   `business_settings.logo_path`), y la URL publica se arma al vuelo
+   (`StorageUploadService.publicURL(bucket:path:)`). Si el dia de
+   mañana cambias de proyecto Supabase o migras a un bucket
+   self-hosted, solo hay que copiar los objetos del bucket — ninguna
+   fila de ningun usuario en la base de datos relacional tiene que
+   tocarse.
+
+**Nada de esto se guardo hardcodeado en el repo** ("no guardes nada en
+el backend de la app" — ningun secreto nuevo entro al codigo ni a
+`project.yml`; las claves siguen viviendo solo como Supabase secrets o
+en Apple/Google, igual que antes).
+
 ## Alcance de este MVP
 
 - **Facturacion con marca propia (Invoices/, Products/, Business/)**: el

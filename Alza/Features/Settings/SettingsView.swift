@@ -43,6 +43,14 @@ struct SettingsView: View {
                     }
                 }
 
+                Section {
+                    NavigationLink {
+                        SecuritySettingsView()
+                    } label: {
+                        Label("Seguridad", systemImage: "lock.shield.fill")
+                    }
+                }
+
                 Section("Mi negocio") {
                     NavigationLink {
                         BusinessSettingsView()

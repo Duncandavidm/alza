@@ -151,6 +151,13 @@ struct AuthView: View {
                 .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemBackground)))
 
             if viewModel.emailAuthMode == .signUp {
+                Text(PasswordPolicy.requirementsText)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            if viewModel.emailAuthMode == .signUp {
                 SecureField("Confirma tu contraseña", text: $viewModel.confirmPassword)
                     .textContentType(.newPassword)
                     .padding(.horizontal, 16)

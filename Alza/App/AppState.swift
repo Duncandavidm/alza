@@ -8,12 +8,23 @@ enum OnboardingStatus: Equatable {
     case completed
 }
 
+enum MFAChallengeStatus: Equatable {
+    case unknown
+    /// El usuario no tiene verificacion en 2 pasos activa, o ya la
+    /// completo en esta sesion.
+    case satisfied
+    /// Tiene un factor TOTP verificado pero la sesion actual todavia esta
+    /// en AAL1 — hay que resolver el challenge antes de dejarlo entrar.
+    case challengeRequired
+}
+
 @MainActor
 final class AppState: ObservableObject {
     @Published private(set) var session: Session?
     @Published private(set) var isLoadingSession = true
     @Published private(set) var subscriptionStatus: SubscriptionStatus = .unknown
     @Published private(set) var onboardingStatus: OnboardingStatus = .unknown
+    @Published private(set) var mfaStatus: MFAChallengeStatus = .unknown
 
     let subscriptionStore = SubscriptionStore()
     private let supabase = SupabaseManager.shared.client
@@ -34,12 +45,14 @@ final class AppState: ObservableObject {
                 self.isLoadingSession = false
 
                 if state.session != nil {
+                    await self.refreshMFAStatus()
                     await self.refreshSubscriptionStatus()
                     await self.refreshOnboardingStatus()
                     await self.subscriptionStore.loadProduct()
                 } else {
                     self.subscriptionStatus = .none
                     self.onboardingStatus = .unknown
+                    self.mfaStatus = .unknown
                 }
             }
         }
@@ -66,6 +79,17 @@ final class AppState: ObservableObject {
         } catch {
             subscriptionStatus = .unknown
         }
+    }
+
+    /// Le pregunta a Supabase si la sesion actual necesita (y todavia no
+    /// completo) el segundo paso de verificacion. Se llama al entrar y
+    /// otra vez cuando MFAChallengeView resuelve el codigo.
+    func refreshMFAStatus() async {
+        guard session != nil else {
+            mfaStatus = .unknown
+            return
+        }
+        mfaStatus = await MFAService.isChallengeRequired() ? .challengeRequired : .satisfied
     }
 
     func refreshOnboardingStatus() async {

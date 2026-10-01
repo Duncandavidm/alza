@@ -9,6 +9,10 @@ struct RootView: View {
                 ProgressView()
             } else if !appState.isSignedIn {
                 AuthView()
+            } else if appState.mfaStatus == .unknown {
+                ProgressView()
+            } else if appState.mfaStatus == .challengeRequired {
+                MFAChallengeView()
             } else if appState.onboardingStatus == .unknown {
                 ProgressView()
             } else if appState.onboardingStatus == .pending {

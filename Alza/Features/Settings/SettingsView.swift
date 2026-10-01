@@ -37,6 +37,20 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Mi negocio") {
+                    NavigationLink {
+                        BusinessSettingsView()
+                    } label: {
+                        Label("Marca (logo, color, tipografia)", systemImage: "building.2.fill")
+                    }
+
+                    NavigationLink {
+                        ProductsView()
+                    } label: {
+                        Label("Catalogo y precios", systemImage: "tag.fill")
+                    }
+                }
+
                 Section("Suscripcion") {
                     switch appState.subscriptionStatus {
                     case .active(let expiresAt):

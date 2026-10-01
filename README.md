@@ -160,6 +160,27 @@ nombre de archivo) y ajusta el `AccentColor` si el color cambio.
 
 ## Alcance de este MVP
 
+- **Facturacion con marca propia (Invoices/, Products/, Business/)**: el
+  pestaña "Facturas" del tab bar deja crear facturas, remisiones o cuentas
+  por cobrar para tus clientes, con items (manuales o desde tu catalogo de
+  productos) y total automatico. Cada documento se pinta con la marca que
+  configures en Ajustes > Mi negocio (logo subido a Supabase Storage,
+  color y tipografia), asi que lo que ve el cliente es tu diseño, no uno
+  generico. Flujo de estado: emitida -> entregada (boton "Marcar
+  entregada") -> pagada; el vencimiento se muestra como cuenta regresiva
+  ("Vence en 3 dias" / "Vencida hace 2 dias") igual que en Bills. Al
+  marcar una factura como pagada se reusa la animacion de impresora +
+  sello "PAGADO" (ReceiptStampView) y queda un recibo de pago guardado
+  (payment_receipts) que se puede compartir — y volver a compartir despues
+  — por el medio que el cliente prefiera (WhatsApp, correo, AirDrop...)
+  via el share sheet nativo de iOS, renderizando el documento a PNG con
+  ImageRenderer. Marcar como pagada tambien registra el ingreso real en la
+  cuenta elegida, asi el "Hoy"/presupuestos/insights quedan consistentes.
+- **Calculadora de precio costo -> precio de venta (Products/)**: Ajustes >
+  Catalogo y precios. Para comercios: pones el precio costo y el margen
+  que quieres ganar, Alza calcula el precio de venta en vivo (formula de
+  margen sobre precio de venta, no sobre costo). Los productos guardados
+  se pueden reusar como items al armar una factura.
 - **Cuentas por pagar + consejo de pago con IA (Bills/, el diferenciador)**:
   das de alta facturas/recibos pendientes con fecha de vencimiento
   (Ajustes > Cuentas por pagar; tambien visible como franja arriba de

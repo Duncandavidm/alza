@@ -12,6 +12,9 @@ struct DashboardTabView: View {
             DashboardView()
                 .tabItem { Label("Cuentas", systemImage: "creditcard.fill") }
 
+            InvoicesView()
+                .tabItem { Label("Facturas", systemImage: "doc.text.fill") }
+
             InsightsView()
                 .tabItem { Label("Insights", systemImage: "sparkles") }
 

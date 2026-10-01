@@ -9,6 +9,14 @@ struct InsightsView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    NavigationLink {
+                        SpendingInsightsView()
+                    } label: {
+                        Label("Gastos por categoria", systemImage: "chart.pie.fill")
+                    }
+                }
+
                 Section("Pregunta lo que sea") {
                     HStack(spacing: 8) {
                         TextField("ej. ¿Cuanto gaste en comida este mes?", text: $question)

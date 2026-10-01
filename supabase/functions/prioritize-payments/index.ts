@@ -19,7 +19,7 @@ const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY")!;
 
 interface RankedItem {
   id: string;
-  source: "bill" | "recurring";
+  source: "bill" | "recurring" | "debt";
   rank: number;
   reason: string;
 }
@@ -45,31 +45,38 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-    const [{ data: bills, error: billsError }, { data: recurring, error: recurringError }, { data: accounts, error: accountsError }] =
-      await Promise.all([
-        supabase
-          .from("bills")
-          .select("*")
-          .eq("user_id", userId)
-          .eq("status", "pendiente")
-          .order("due_date", { ascending: true }),
-        supabase.from("recurring_transactions").select("*").eq("user_id", userId).eq("active", true),
-        supabase.from("accounts").select("*").eq("user_id", userId),
-      ]);
+    const [
+      { data: bills, error: billsError },
+      { data: recurring, error: recurringError },
+      { data: accounts, error: accountsError },
+      { data: debts, error: debtsError },
+    ] = await Promise.all([
+      supabase
+        .from("bills")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("status", "pendiente")
+        .order("due_date", { ascending: true }),
+      supabase.from("recurring_transactions").select("*").eq("user_id", userId).eq("active", true),
+      supabase.from("accounts").select("*").eq("user_id", userId),
+      supabase.from("debts").select("*").eq("user_id", userId).neq("status", "paid_off"),
+    ]);
 
     if (billsError) throw billsError;
     if (recurringError) throw recurringError;
     if (accountsError) throw accountsError;
+    if (debtsError) throw debtsError;
 
     const dueRecurring = (recurring ?? []).filter((item) => isDueOrOverdue(item));
+    const activeDebts = debts ?? [];
 
-    if ((bills ?? []).length === 0 && dueRecurring.length === 0) {
+    if ((bills ?? []).length === 0 && dueRecurring.length === 0 && activeDebts.length === 0) {
       return new Response(JSON.stringify({ hasAdvice: false }), {
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    const result = await askClaude(incomeAmount, bills ?? [], dueRecurring, accounts ?? []);
+    const result = await askClaude(incomeAmount, bills ?? [], dueRecurring, activeDebts, accounts ?? []);
 
     return new Response(JSON.stringify({ hasAdvice: true, ...result }), {
       headers: { "Content-Type": "application/json" },
@@ -100,8 +107,14 @@ async function askClaude(
   incomeAmount: number,
   bills: Record<string, unknown>[],
   dueRecurring: Record<string, unknown>[],
+  debts: Record<string, unknown>[],
   accounts: Record<string, unknown>[],
 ): Promise<{ advice: string; items: (RankedItem & ItemDetails)[] }> {
+  // Las deudas no tienen cuenta propia (se pagan desde cualquiera), asi que
+  // por simplicidad usamos la primera cuenta del usuario como destino del
+  // movimiento de "pago de deuda" al marcarla pagada.
+  const primaryAccountId = accounts[0]?.id as string | undefined;
+
   const billsForPrompt = bills.map((b) => ({
     id: b.id,
     source: "bill",
@@ -123,11 +136,23 @@ async function askClaude(
     accountId: r.account_id,
     movementType: r.movement_type,
   }));
+  const debtsForPrompt = debts.map((d) => ({
+    id: d.id,
+    source: "debt",
+    name: d.creditor,
+    amount: d.minimum_payment ?? d.balance,
+    balance: d.balance,
+    interestRateMonthly: d.interest_rate_monthly,
+    isOverdue: d.is_overdue,
+    dueDate: d.due_date,
+    accountId: primaryAccountId,
+    movementType: "gasto",
+  }));
 
   const prompt = `Eres el asesor financiero de la app Alza. El dueño de un \
 negocio acaba de registrar un ingreso de $${incomeAmount.toFixed(2)}. Tiene \
-estas cuentas por pagar pendientes y pagos recurrentes vencidos o por \
-vencer pronto:
+estas cuentas por pagar pendientes, pagos recurrentes vencidos o por vencer \
+pronto, y deudas activas (tarjetas de credito, prestamos):
 
 Cuentas por pagar:
 ${JSON.stringify(billsForPrompt)}
@@ -135,19 +160,23 @@ ${JSON.stringify(billsForPrompt)}
 Recurrentes vencidas o por vencer:
 ${JSON.stringify(recurringForPrompt)}
 
+Deudas activas (el "amount" ya es el pago minimo o el saldo si no hay minimo definido):
+${JSON.stringify(debtsForPrompt)}
+
 Saldo actual de sus cuentas:
 ${JSON.stringify(accounts.map((a) => ({ name: a.name, balance: a.balance, currency: a.currency })))}
 
 Arma un plan de pago priorizado. Considera: que tan vencido/proximo esta \
 cada uno, si es un servicio con riesgo de corte (luz, agua, internet), la \
-prioridad que el usuario le puso, y si el ingreso alcanza para cubrir todo \
-o hay que elegir.
+prioridad que el usuario le puso a una cuenta por pagar, si una deuda esta \
+en mora o tiene una tasa de interes alta (esas deberian subir de \
+prioridad), y si el ingreso alcanza para cubrir todo o hay que elegir.
 
 Responde UNICAMENTE con este JSON (sin texto extra, sin markdown):
 {
   "advice": <2-3 oraciones en espanol, tono cercano, con el consejo general>,
   "items": [
-    {"id": <id>, "source": "bill"|"recurring", "rank": <1, 2, 3...>, "reason": <1 oracion, por que va en ese lugar>}
+    {"id": <id>, "source": "bill"|"recurring"|"debt", "rank": <1, 2, 3...>, "reason": <1 oracion, por que va en ese lugar>}
   ]
 }
 
@@ -194,6 +223,18 @@ Responde UNICAMENTE con este JSON (sin texto extra, sin markdown):
       accountId: r.accountId as string,
       movementType: r.movementType as string,
       category: (r.category as string | null) ?? null,
+    });
+  }
+  for (const d of debtsForPrompt) {
+    const overdueText = d.isOverdue ? "En mora. " : "";
+    const rateText = d.interestRateMonthly ? `Interes ${d.interestRateMonthly}%/mes.` : "";
+    byId.set(String(d.id), {
+      name: d.name as string,
+      amount: d.amount as number,
+      dueInfo: `${overdueText}${rateText}`.trim() || "Deuda activa",
+      accountId: (d.accountId as string) ?? "",
+      movementType: d.movementType as string,
+      category: "Deuda",
     });
   }
 

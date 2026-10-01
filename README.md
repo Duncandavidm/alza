@@ -193,15 +193,21 @@ nombre de archivo) y ajusta el `AccentColor` si el color cambio.
   "Pagar" por cada item que registra el gasto real y lo marca resuelto sin
   salir de la pantalla.
 - **Estudio financiero inicial (Onboarding/)**: la primera vez que el usuario
-  entra (despues de autenticarse, antes del paywall), un wizard de 8 pasos
-  cortos le pregunta su nombre, su cuenta principal, si tiene un ingreso fijo
-  (salario) y cuanto/que dia, si tiene ingresos variables (ventas, freelance),
-  cuales cuentas fijas comunes paga (luz, alquiler, agua, telefono, internet)
-  y cuanto, sus suscripciones (Netflix, gimnasio, etc.) y otras cuentas fijas
-  mensuales (colegio, mesada, prestamos). Al terminar, todo se guarda de una
-  sola vez: crea la cuenta principal y un `recurring_transactions` por cada
-  ingreso/gasto fijo marcado, y actualiza el perfil (`full_name`,
-  `has_variable_income`, `variable_income_notes`,
+  entra (despues de autenticarse, antes del paywall), un wizard de 14 pasos
+  cortos — inspirado en el detalle del prompt original de la version
+  web — le pregunta su nombre, panorama personal (edad, estado civil,
+  dependientes, a que se dedica), su cuenta principal, si tiene un ingreso
+  fijo (salario) y cuanto/que dia, si tiene ingresos variables (ventas,
+  freelance), cuales cuentas fijas comunes paga (luz, alquiler, agua,
+  telefono, internet) y cuanto, sus suscripciones (Netflix, gimnasio, etc.)
+  y otras cuentas fijas mensuales (colegio, mesada, prestamos), sus deudas
+  activas (tarjetas, prestamos — acreedor, saldo, interes, pago minimo, si
+  esta en mora), sus ahorros/inversiones actuales, su tolerancia al riesgo,
+  y sus metas de corto y largo plazo (texto libre). Al terminar, todo se
+  guarda de una sola vez: crea la cuenta principal (y una de ahorro si
+  aplica), un `recurring_transactions` por cada ingreso/gasto fijo
+  marcado, una fila en `debts` por cada deuda, y actualiza el perfil
+  (nombre, panorama personal, tolerancia al riesgo, metas,
   `onboarding_completed_at`). `AppState.onboardingStatus` (derivado de
   `onboarding_completed_at`) decide en `RootView` si mostrar el wizard antes
   del resto de la app; si el usuario sale a mitad de camino no queda a medias
@@ -209,6 +215,18 @@ nombre de archivo) y ajusta el `AccentColor` si el color cambio.
   que le da a `prioritize-payments`, `generate-insights` y `ask-finances`
   contexto real desde el primer dia en vez de esperar a que el usuario cargue
   todo a mano con el tiempo.
+- **Deudas (Debts/)**: Ajustes > Deudas. Tarjetas de credito, prestamos,
+  sobregiros, con saldo, tasa de interes mensual, pago minimo y si estan en
+  mora. `prioritize-payments` las toma en cuenta junto a cuentas por pagar y
+  recurrentes vencidas — una deuda en mora o con interes alto puede subir de
+  prioridad en el plan de pago. Marcar una deuda como pagada desde el
+  consejo reduce su saldo (y la marca `paid_off` si llega a cero) ademas de
+  registrar el gasto real.
+- **Gastos por categoria (Insights > Gastos por categoria)**: dona con Swift
+  Charts de en que se va el dinero (este mes o ultimos 3 meses), top 3
+  categorias, y el cambio % de cada categoria contra el periodo anterior
+  equivalente (ej. "Comida: +12% vs el mes pasado") para notar categorias
+  que van creciendo antes de que se vuelvan un problema.
 - Auth: Sign in with Apple + Google (nativos, sin redirect web).
 - **"Hoy" (Mi cuaderno del dia)**: pantalla principal — feed cronologico de
   todo lo que paso hoy (como una libreta, no una tabla), boton flotante "+"
@@ -292,11 +310,45 @@ demasiado alcance nuevo de una vez):
 
 ### Sobre "cuentas por cobrar" y el historial de clientes
 
-El consejo de pago de arriba solo cubre **cuentas por pagar** (lo que tu
-negocio debe). Lo de "cuenta por cobrar segun el historial del cliente"
-que se pidio junto con esto — es decir, llevar clientes, las facturas que
-les emitiste, y un puntaje de que tan confiables son para pagar a tiempo —
-es un modulo bastante mas grande (tabla de clientes, facturas emitidas por
-cliente, historial de pagos, logica de puntaje) que no se armo en esta
-pasada para no mezclar dos features grandes a la vez. Si se quiere, es la
-siguiente pieza natural a construir sobre esta misma base.
+El consejo de pago (`prioritize-payments`) cubre **cuentas por pagar**
+(lo que tu negocio debe) y **deudas**. Emitir **cuentas por cobrar**
+(facturas/remisiones a tus clientes) ya existe — ver Invoices/ arriba.
+Lo que SI sigue sin construir es un historial de confiabilidad por
+cliente (un puntaje de que tan a tiempo paga cada cliente segun su
+historial) — hoy `customer_name`/`customer_contact` son campos de texto
+libre en cada factura, no hay una tabla de clientes propia todavia. Es la
+siguiente pieza natural si se quiere ese nivel de detalle.
+
+### Ideas del prompt de la version web (Lovable) que se dejaron fuera por ahora
+
+David compartio el prompt completo que uso para construir una version web
+de Alza en Lovable (React/Supabase) y pidio aplicar mejoras de ahi a esta
+app nativa. Se tomaron las partes de mayor valor y mas faciles de integrar
+de verdad con lo que ya existe (perfil mas completo en el onboarding,
+deudas, gastos por categoria). Lo que se dejo fuera por ahora, para no
+disparar el alcance de una sola pasada:
+
+- **Multi-idioma (ES/EN)**: el prompt pedia i18n completo con
+  react-i18next; Alza es nativa SwiftUI, asi que el equivalente real seria
+  un String Catalog (.xcstrings) con cada string de cada pantalla
+  traducido — son decenas de archivos y requeriria revisar cada uno sin
+  poder compilar en este entorno. Queda pendiente como su propia pasada.
+- **Market & Opportunity Radar** (watchlist de acciones + feed de
+  noticias via Alpha Vantage/News API): el prompt original lo deja como
+  "Coming Soon" con datos de prueba hasta conectar llaves reales; no se
+  construyo aqui porque Alza no tiene esas integraciones y no es el
+  enfoque actual (asesoria personal/negocio, no trading).
+- **Guia de ejecucion de inversiones** (checklist paso a paso por activo) —
+  modulo nuevo grande, no conectado a lo que ya existe.
+- **Conexion bancaria (Plaid)** — igual que en el prompt original, quedaria
+  como integracion "Coming Soon"; la carga de movimientos sigue siendo
+  manual/por voz/por Atajos.
+- **Net worth con grafica de tendencia y Goals con barra de progreso** — se
+  guardan las metas como texto libre en el perfil (se usan para dar mejor
+  consejo con IA), pero no hay todavia una pantalla dedicada de metas con
+  montos objetivo/actual y progreso visual, ni una grafica de patrimonio
+  neto en el tiempo.
+- **Capital Leak Detector** (marcar suscripciones sin ingresos asociados
+  como "fuga de capital") — Recurring/ ya muestra los gastos recurrentes,
+  pero no tiene todavia la logica de "sin cliente activo hace 60 dias,
+  sugerir cancelar" ni el flag `flagged_as_leak`.

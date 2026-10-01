@@ -40,6 +40,7 @@ Deno.serve(async (req) => {
       { data: transactions, error: transactionsError },
       { data: recurring, error: recurringError },
       { data: bills, error: billsError },
+      { data: debts, error: debtsError },
     ] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
       supabase.from("accounts").select("*").eq("user_id", userId),
@@ -51,6 +52,7 @@ Deno.serve(async (req) => {
         .limit(50),
       supabase.from("recurring_transactions").select("*").eq("user_id", userId).eq("active", true),
       supabase.from("bills").select("*").eq("user_id", userId).eq("status", "pendiente"),
+      supabase.from("debts").select("*").eq("user_id", userId).neq("status", "paid_off"),
     ]);
 
     if (profileError) throw profileError;
@@ -58,6 +60,7 @@ Deno.serve(async (req) => {
     if (transactionsError) throw transactionsError;
     if (recurringError) throw recurringError;
     if (billsError) throw billsError;
+    if (debtsError) throw debtsError;
 
     const suggestions = await requestInsightsFromClaude(
       profile,
@@ -65,6 +68,7 @@ Deno.serve(async (req) => {
       transactions ?? [],
       recurring ?? [],
       bills ?? [],
+      debts ?? [],
     );
 
     if (suggestions.length > 0) {
@@ -94,13 +98,19 @@ async function requestInsightsFromClaude(
   transactions: Record<string, unknown>[],
   recurring: Record<string, unknown>[],
   bills: Record<string, unknown>[],
+  debts: Record<string, unknown>[],
 ): Promise<InsightSuggestion[]> {
   const prompt = `Eres el asesor financiero personal de la app Alza. Con el \
-panorama financiero completo de este usuario (perfil, cuentas, ultimos \
-movimientos, ingresos/gastos fijos recurrentes, y cuentas por pagar \
-pendientes, todo en JSON), genera entre 2 y 4 insights financieros cortos, \
+panorama financiero completo de este usuario (perfil — incluye edad, \
+estado civil, dependientes, ocupacion, tolerancia al riesgo y metas de \
+corto/largo plazo si las dio —, cuentas, ultimos movimientos, \
+ingresos/gastos fijos recurrentes, cuentas por pagar pendientes y deudas \
+activas, todo en JSON), genera entre 2 y 4 insights financieros cortos, \
 accionables y personalizados en espanol — que le ayuden a mejorar su vida \
-financiera, no observaciones genericas. Responde UNICAMENTE con un JSON \
+financiera, no observaciones genericas. Si tiene deudas con interes alto o \
+en mora, o si sus metas declaradas chocan con su situacion actual (ej. \
+quiere liquidar tarjetas pero sigue acumulando gastos variables altos), \
+dilo directamente. Responde UNICAMENTE con un JSON \
 array de objetos {"kind": "general"|"spending"|"saving"|"alert", \
 "title": string, "body": string}, sin texto extra ni markdown.
 
@@ -117,7 +127,10 @@ Ingresos y gastos fijos recurrentes:
 ${JSON.stringify(recurring)}
 
 Cuentas por pagar pendientes:
-${JSON.stringify(bills)}`;
+${JSON.stringify(bills)}
+
+Deudas activas:
+${JSON.stringify(debts)}`;
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",

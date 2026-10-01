@@ -1,15 +1,16 @@
 import SwiftUI
 
-/// El estudio financiero inicial: 8 pasos cortos que arman el panorama
-/// completo del usuario (datos, ingresos fijos/variables, cuentas fijas,
-/// suscripciones, otras cuentas) para que el resto de Alza pueda aconsejar
-/// desde el primer dia.
+/// El estudio financiero inicial: pasos cortos que arman el panorama
+/// completo del usuario (datos personales, ingresos fijos/variables,
+/// cuentas fijas, suscripciones, deudas, ahorros, tolerancia al riesgo y
+/// metas) para que el resto de Alza pueda aconsejar desde el primer dia,
+/// inspirado en el detalle del prompt original de la version web.
 struct OnboardingView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = OnboardingViewModel()
     @State private var step = 0
 
-    private let totalSteps = 8
+    private let totalSteps = 14
 
     var body: some View {
         NavigationStack {
@@ -21,12 +22,18 @@ struct OnboardingView: View {
                 Form {
                     switch step {
                     case 0: welcomeStep
-                    case 1: accountStep
-                    case 2: fixedIncomeStep
-                    case 3: variableIncomeStep
-                    case 4: commonBillsStep
-                    case 5: subscriptionsStep
-                    case 6: otherFixedItemsStep
+                    case 1: personalInfoStep
+                    case 2: accountStep
+                    case 3: fixedIncomeStep
+                    case 4: variableIncomeStep
+                    case 5: commonBillsStep
+                    case 6: subscriptionsStep
+                    case 7: otherFixedItemsStep
+                    case 8: debtsStep
+                    case 9: savingsStep
+                    case 10: riskToleranceStep
+                    case 11: shortTermGoalsStep
+                    case 12: longTermGoalsStep
                     default: summaryStep
                     }
                 }
@@ -181,6 +188,124 @@ struct OnboardingView: View {
                 viewModel.otherFixedItems.append(CustomFixedItemDraft())
             } label: {
                 Label("Agregar cuenta fija", systemImage: "plus.circle")
+            }
+        }
+    }
+
+    private var personalInfoStep: some View {
+        Section("Tu panorama personal") {
+            Text("Esto nos ayuda a dar consejos acordes a tu etapa de vida, no genericos.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            TextField("Edad", text: $viewModel.ageText)
+                .keyboardType(.numberPad)
+
+            Picker("Estado civil", selection: $viewModel.maritalStatus) {
+                Text("Prefiero no decir").tag(MaritalStatus?.none)
+                ForEach(MaritalStatus.allCases) { status in
+                    Text(status.displayName).tag(Optional(status))
+                }
+            }
+
+            TextField("Cuantos dependen de ti (hijos, etc.)", text: $viewModel.dependentsCountText)
+                .keyboardType(.numberPad)
+
+            TextField("A que te dedicas (ej. dueño de un negocio, empleado...)", text: $viewModel.occupation, axis: .vertical)
+                .lineLimit(2...4)
+        }
+    }
+
+    private var debtsStep: some View {
+        Section("¿Tienes deudas activas?") {
+            Text("Tarjetas de credito, prestamos, sobregiros — con esto Alza te puede avisar cual pagar primero segun la tasa de interes y si esta en mora.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            ForEach($viewModel.debts) { $debt in
+                VStack(alignment: .leading, spacing: 6) {
+                    TextField("Acreedor (ej. Tarjeta de credito)", text: $debt.creditor)
+                    TextField("Saldo actual", text: $debt.balanceText)
+                        .keyboardType(.decimalPad)
+                    HStack {
+                        TextField("Interes %/mes (opcional)", text: $debt.interestRateText)
+                            .keyboardType(.decimalPad)
+                        TextField("Pago minimo (opcional)", text: $debt.minimumPaymentText)
+                            .keyboardType(.decimalPad)
+                    }
+                    Toggle("Esta en mora / atrasada", isOn: $debt.isOverdue)
+                }
+                .padding(.vertical, 2)
+            }
+            .onDelete { viewModel.debts.remove(atOffsets: $0) }
+
+            Button {
+                viewModel.debts.append(DebtDraft())
+            } label: {
+                Label("Agregar deuda", systemImage: "plus.circle")
+            }
+        }
+    }
+
+    private var savingsStep: some View {
+        Section("¿Tienes ahorros o inversiones actuales?") {
+            Toggle("Si, tengo algo ahorrado", isOn: $viewModel.hasSavings)
+            if viewModel.hasSavings {
+                TextField("¿Cuanto tienes ahorrado/invertido?", text: $viewModel.savingsAmountText)
+                    .keyboardType(.decimalPad)
+                TextField("Nota (ej. meta banco, disponible en diciembre)", text: $viewModel.savingsNote, axis: .vertical)
+                    .lineLimit(2...4)
+            }
+        }
+    }
+
+    private var riskToleranceStep: some View {
+        Section("¿Que tanto riesgo te sientes comodo tomando al invertir?") {
+            Picker("Tolerancia al riesgo", selection: $viewModel.riskTolerance) {
+                Text("Prefiero no decir").tag(RiskTolerance?.none)
+                ForEach(RiskTolerance.allCases) { tolerance in
+                    Text(tolerance.displayName).tag(Optional(tolerance))
+                }
+            }
+            .pickerStyle(.inline)
+            .labelsHidden()
+        }
+    }
+
+    private var shortTermGoalsStep: some View {
+        Section("Tus metas a corto plazo (1 año)") {
+            Text("Ej. crear un fondo de emergencia, liquidar una deuda, organizar el presupuesto.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            ForEach($viewModel.shortTermGoals) { $goal in
+                TextField("Una meta", text: $goal.text)
+            }
+            .onDelete { viewModel.shortTermGoals.remove(atOffsets: $0) }
+
+            Button {
+                viewModel.shortTermGoals.append(GoalDraft())
+            } label: {
+                Label("Agregar meta", systemImage: "plus.circle")
+            }
+        }
+    }
+
+    private var longTermGoalsStep: some View {
+        Section("Tus metas a largo plazo (5+ años)") {
+            Text("Ej. educacion de la familia, invertir en bienes raices, independencia financiera.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            ForEach($viewModel.longTermGoals) { $goal in
+                TextField("Una meta", text: $goal.text)
+            }
+            .onDelete { viewModel.longTermGoals.remove(atOffsets: $0) }
+
+            Button {
+                viewModel.longTermGoals.append(GoalDraft())
+            } label: {
+                Label("Agregar meta", systemImage: "plus.circle")
             }
         }
     }

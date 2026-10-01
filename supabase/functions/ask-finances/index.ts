@@ -44,6 +44,7 @@ Deno.serve(async (req) => {
       { data: budgets, error: budgetsError },
       { data: recurring, error: recurringError },
       { data: bills, error: billsError },
+      { data: debts, error: debtsError },
     ] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
       supabase.from("accounts").select("*").eq("user_id", userId),
@@ -57,6 +58,7 @@ Deno.serve(async (req) => {
       supabase.from("budgets").select("*").eq("user_id", userId),
       supabase.from("recurring_transactions").select("*").eq("user_id", userId).eq("active", true),
       supabase.from("bills").select("*").eq("user_id", userId).eq("status", "pendiente"),
+      supabase.from("debts").select("*").eq("user_id", userId).neq("status", "paid_off"),
     ]);
 
     if (profileError) throw profileError;
@@ -65,6 +67,7 @@ Deno.serve(async (req) => {
     if (budgetsError) throw budgetsError;
     if (recurringError) throw recurringError;
     if (billsError) throw billsError;
+    if (debtsError) throw debtsError;
 
     const answer = await askClaude(
       question,
@@ -74,6 +77,7 @@ Deno.serve(async (req) => {
       budgets ?? [],
       recurring ?? [],
       bills ?? [],
+      debts ?? [],
     );
 
     return new Response(JSON.stringify({ answer }), {
@@ -93,6 +97,7 @@ async function askClaude(
   budgets: Record<string, unknown>[],
   recurring: Record<string, unknown>[],
   bills: Record<string, unknown>[],
+  debts: Record<string, unknown>[],
 ): Promise<string> {
   const prompt = `Eres el asesor financiero personal de la app Alza. El \
 usuario te esta preguntando algo sobre sus finanzas. Respondele en espanol,\
@@ -102,7 +107,8 @@ datos, dilo claramente en vez de inventar numeros.
 
 Pregunta: "${question}"
 
-Perfil del usuario (nombre, si tiene ingresos variables y notas sobre ellos):
+Perfil del usuario (nombre, edad, estado civil, dependientes, ocupacion, \
+tolerancia al riesgo, metas de corto/largo plazo, ingresos variables):
 ${JSON.stringify(profile)}
 
 Cuentas:
@@ -119,6 +125,9 @@ ${JSON.stringify(recurring)}
 
 Cuentas por pagar pendientes:
 ${JSON.stringify(bills)}
+
+Deudas activas (tarjetas, prestamos, con tasa de interes y si estan en mora):
+${JSON.stringify(debts)}
 
 Responde solo con el texto de la respuesta (2-5 oraciones), sin JSON, sin markdown.`;
 

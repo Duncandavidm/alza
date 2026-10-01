@@ -11,6 +11,12 @@ final class OnboardingViewModel: ObservableObject {
     // Paso 1: datos personales
     @Published var fullName = ""
 
+    // Paso 1b: panorama personal (edad, estado civil, dependientes, ocupacion)
+    @Published var ageText = ""
+    @Published var maritalStatus: MaritalStatus?
+    @Published var dependentsCountText = ""
+    @Published var occupation = ""
+
     // Paso 2: cuenta principal
     @Published var accountName = "Cuenta principal"
 
@@ -31,6 +37,21 @@ final class OnboardingViewModel: ObservableObject {
 
     // Paso 7: otras cuentas fijas
     @Published var otherFixedItems: [CustomFixedItemDraft] = []
+
+    // Paso 8: deudas
+    @Published var debts: [DebtDraft] = []
+
+    // Paso 9: ahorros/inversiones actuales
+    @Published var hasSavings = false
+    @Published var savingsAmountText = ""
+    @Published var savingsNote = ""
+
+    // Paso 10: tolerancia al riesgo
+    @Published var riskTolerance: RiskTolerance?
+
+    // Paso 11 y 12: metas
+    @Published var shortTermGoals: [GoalDraft] = [GoalDraft()]
+    @Published var longTermGoals: [GoalDraft] = [GoalDraft()]
 
     @Published private(set) var isSaving = false
     @Published var errorMessage: String?
@@ -119,16 +140,64 @@ final class OnboardingViewModel: ObservableObject {
                 )
             }
 
+            for debt in debts where !debt.creditor.isEmpty {
+                guard let balance = Decimal(string: debt.balanceText.replacingOccurrences(of: ",", with: ".")) else { continue }
+                try await supabase
+                    .from("debts")
+                    .insert(
+                        NewDebt(
+                            userId: userId,
+                            creditor: debt.creditor,
+                            balance: balance,
+                            creditLimit: nil,
+                            interestRateMonthly: Decimal(string: debt.interestRateText.replacingOccurrences(of: ",", with: ".")),
+                            minimumPayment: Decimal(string: debt.minimumPaymentText.replacingOccurrences(of: ",", with: ".")),
+                            dueDate: nil,
+                            isOverdue: debt.isOverdue
+                        )
+                    )
+                    .execute()
+            }
+
+            if hasSavings, let savingsAmount = Decimal(string: savingsAmountText.replacingOccurrences(of: ",", with: ".")), savingsAmount > 0 {
+                try await accountsViewModel.addAccount(
+                    NewAccount(
+                        userId: userId,
+                        name: savingsNote.isEmpty ? "Ahorro / inversion" : savingsNote,
+                        type: .savings,
+                        balance: savingsAmount,
+                        currency: "USD"
+                    )
+                )
+            }
+
+            let shortTermGoalTexts = shortTermGoals.map { $0.text.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+            let longTermGoalTexts = longTermGoals.map { $0.text.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+
             struct ProfileUpdate: Encodable {
                 let fullName: String?
                 let hasVariableIncome: Bool
                 let variableIncomeNotes: String?
+                let age: Int?
+                let maritalStatus: String?
+                let dependentsCount: Int?
+                let occupation: String?
+                let riskTolerance: String?
+                let shortTermGoals: [String]?
+                let longTermGoals: [String]?
                 let onboardingCompletedAt: String
 
                 enum CodingKeys: String, CodingKey {
                     case fullName = "full_name"
                     case hasVariableIncome = "has_variable_income"
                     case variableIncomeNotes = "variable_income_notes"
+                    case age
+                    case maritalStatus = "marital_status"
+                    case dependentsCount = "dependents_count"
+                    case occupation
+                    case riskTolerance = "risk_tolerance"
+                    case shortTermGoals = "short_term_goals"
+                    case longTermGoals = "long_term_goals"
                     case onboardingCompletedAt = "onboarding_completed_at"
                 }
             }
@@ -140,6 +209,13 @@ final class OnboardingViewModel: ObservableObject {
                         fullName: fullName.isEmpty ? nil : fullName,
                         hasVariableIncome: hasVariableIncome,
                         variableIncomeNotes: hasVariableIncome && !variableIncomeNotes.isEmpty ? variableIncomeNotes : nil,
+                        age: Int(ageText),
+                        maritalStatus: maritalStatus?.rawValue,
+                        dependentsCount: Int(dependentsCountText),
+                        occupation: occupation.isEmpty ? nil : occupation,
+                        riskTolerance: riskTolerance?.rawValue,
+                        shortTermGoals: shortTermGoalTexts.isEmpty ? nil : shortTermGoalTexts,
+                        longTermGoals: longTermGoalTexts.isEmpty ? nil : longTermGoalTexts,
                         onboardingCompletedAt: ISO8601DateFormatter().string(from: Date())
                     )
                 )

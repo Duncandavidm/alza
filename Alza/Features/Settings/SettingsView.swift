@@ -25,6 +25,12 @@ struct SettingsView: View {
                     }
 
                     NavigationLink {
+                        DebtsView()
+                    } label: {
+                        Label("Deudas", systemImage: "creditcard.trianglebadge.exclamationmark")
+                    }
+
+                    NavigationLink {
                         RecurringTransactionsView()
                     } label: {
                         Label("Recurrentes", systemImage: "arrow.trianglehead.2.clockwise")

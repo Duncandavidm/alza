@@ -17,6 +17,13 @@
 // verificar esa firma (ver "Verifying the signature" en la doc de Apple:
 // https://developer.apple.com/documentation/appstoreserverapi/verifying-the-signatures).
 //
+// Seguridad (ver supabase/functions/README_SECURITY.md): userId SIEMPRE
+// del JWT verificado (nunca del body) — antes esta funcion confiaba en el
+// userId que mandara el cliente y lo usaba con la service role key (que
+// salta RLS) para hacer upsert en subscriptions; cualquier usuario
+// autenticado podia pisar la suscripcion de otro con su propio
+// originalTransactionId. Rate limit: 10 llamadas / 10 minutos.
+//
 // Secrets necesarios (supabase secrets set ...):
 //   APPLE_BUNDLE_ID              -> ej. app.alza
 //   APPLE_ISSUER_ID              -> App Store Connect > Users and Access > Integrations > In-App Purchase
@@ -35,14 +42,73 @@ const APPLE_KEY_ID = Deno.env.get("APPLE_KEY_ID")!;
 const APPLE_PRIVATE_KEY = Deno.env.get("APPLE_PRIVATE_KEY")!;
 const FORCED_ENVIRONMENT = Deno.env.get("APPLE_ENVIRONMENT");
 
-Deno.serve(async (req) => {
+const CORS_HEADERS = {
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+function jsonResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+  });
+}
+
+function getVerifiedUserId(req: Request): string | null {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) return null;
+  const parts = authHeader.slice(7).split(".");
+  if (parts.length !== 3) return null;
   try {
-    const { userId, originalTransactionId } = await req.json();
-    if (!userId || !originalTransactionId) {
-      return new Response(
-        JSON.stringify({ error: "userId and originalTransactionId are required" }),
-        { status: 400 },
-      );
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return typeof payload.sub === "string" ? payload.sub : null;
+  } catch {
+    return null;
+  }
+}
+
+async function checkRateLimit(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  functionName: string,
+  maxRequests: number,
+  windowSeconds: number,
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc("check_and_increment_rate_limit", {
+    p_user_id: userId,
+    p_function_name: functionName,
+    p_max_requests: maxRequests,
+    p_window_seconds: windowSeconds,
+  });
+  if (error) {
+    console.error("rate limit check failed", error);
+    return true;
+  }
+  return data === true;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: CORS_HEADERS });
+  }
+
+  try {
+    const userId = getVerifiedUserId(req);
+    if (!userId) {
+      return jsonResponse({ error: "No autorizado" }, 401);
+    }
+
+    const body = await req.json();
+    const originalTransactionId = body?.originalTransactionId;
+    if (typeof originalTransactionId !== "string" || originalTransactionId.length === 0 || originalTransactionId.length > 100) {
+      return jsonResponse({ error: "originalTransactionId invalido" }, 400);
+    }
+
+    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+
+    const allowed = await checkRateLimit(supabase, userId, "verify-apple-receipt", 10, 600);
+    if (!allowed) {
+      return jsonResponse({ error: "Demasiadas solicitudes, intenta en unos minutos." }, 429);
     }
 
     const jwt = await createAppleServerJWT();
@@ -52,7 +118,6 @@ Deno.serve(async (req) => {
     const status = mapStatus(decoded);
     const expiresAt = decoded.expiresDate ? new Date(decoded.expiresDate).toISOString() : null;
 
-    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
     const { error } = await supabase.from("subscriptions").upsert({
       user_id: userId,
       product_id: decoded.productId,
@@ -63,12 +128,10 @@ Deno.serve(async (req) => {
     });
     if (error) throw error;
 
-    return new Response(JSON.stringify({ status, expiresAt }), {
-      headers: { "Content-Type": "application/json" },
-    });
+    return jsonResponse({ status, expiresAt });
   } catch (error) {
     console.error(error);
-    return new Response(JSON.stringify({ error: String(error) }), { status: 500 });
+    return jsonResponse({ error: String(error) }, 500);
   }
 });
 

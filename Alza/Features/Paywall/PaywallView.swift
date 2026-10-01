@@ -46,6 +46,7 @@ struct PaywallView: View {
                         .frame(height: 50)
                 }
                 .buttonStyle(.borderedProminent)
+                .pressable()
                 .disabled(subscriptionStore.product == nil)
 
                 Button("Restaurar compras") {

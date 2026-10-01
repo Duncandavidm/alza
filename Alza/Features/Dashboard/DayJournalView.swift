@@ -62,6 +62,7 @@ struct DayJournalView: View {
                         .background(Circle().fill(Color.accentColor))
                         .shadow(radius: 6, y: 3)
                 }
+                .pressable()
                 .padding(.trailing, 20)
                 .padding(.bottom, 20)
             }

@@ -175,6 +175,7 @@ struct AuthView: View {
             }
             .buttonStyle(.borderedProminent)
             .tint(AlzaBrand.primary)
+            .pressable()
             .disabled(!viewModel.isEmailFormValid)
 
             HStack {

@@ -270,6 +270,81 @@ el backend de la app" — ningun secreto nuevo entro al codigo ni a
 `project.yml`; las claves siguen viviendo solo como Supabase secrets o
 en Apple/Google, igual que antes).
 
+### 10. Hardening de las Edge Functions (CORS, validacion, rate limiting)
+
+Repaso de la segunda ronda de seguridad pedida — ver el detalle completo
+en `supabase/functions/README_SECURITY.md`, referenciado desde el
+encabezado de cada funcion:
+
+- **IDOR real corregido**: `verify-apple-receipt`, `generate-insights`,
+  `ask-finances` y `prioritize-payments` tomaban el `userId` directo del
+  body que mandaba el cliente y lo usaban con la service role key (que
+  salta RLS) para leer/escribir esa tabla. Cualquier usuario autenticado
+  podia mandar el `userId` de otra persona — el caso mas grave era
+  `verify-apple-receipt`, donde se podia pisar la suscripcion de otro
+  usuario. Corregido: el `userId` ahora SIEMPRE sale del JWT que el
+  gateway de Supabase ya verifico (`getVerifiedUserId(req)`), nunca del
+  body.
+- **Rate limiting**: nuevo, `edge_function_rate_limits` +
+  `check_and_increment_rate_limit` (migracion `0013_rate_limiting.sql`,
+  contador atomico por usuario+funcion con ventana deslizante). Las 6
+  Edge Functions de IA/terceros lo llaman antes de hacer trabajo real y
+  regresan 429 si se pasa el limite (10-60 llamadas/10 min segun la
+  funcion) — sin esto, cualquier usuario autenticado podia poner
+  `generate-insights`/`ask-finances` en loop y disparar el costo de
+  Anthropic.
+- **CORS**: cada funcion responde el preflight, pero a proposito nunca
+  manda `Access-Control-Allow-Origin` — ningun navegador puede llamarlas
+  cross-origin. No afecta a la app nativa (CORS es cosa de navegadores).
+  Documentado en el README de seguridad por que esto NO es lo mismo que
+  "solo mi app puede llamar al backend" (eso requeriria App Attest, fuera
+  de alcance).
+- **Validacion de inputs del lado del servidor**: montos (numero finito,
+  positivo, con tope), codigos de moneda (regex ISO 4217), texto libre
+  (recortado y limitado en longitud) — antes de tocar la base o entrar a
+  un prompt.
+- **Mitigacion de prompt injection**: los prompts que arman
+  generate-insights/ask-finances/prioritize-payments/parse-voice-transaction
+  le dicen explicitamente a Claude que los datos del usuario son
+  informacion a analizar, nunca instrucciones a seguir.
+- **RLS**: ya estaba activo en TODAS las tablas desde que se crearon
+  (verificado con el security advisor de Supabase — cero hallazgos de
+  RLS). Lo que SI encontro el advisor y se corrigio (migracion
+  `0012_security_hardening.sql`): dos funciones sin `search_path` fijo
+  (`set_updated_at`, `increment_account_balance`) y `handle_new_user`
+  (el trigger que crea el perfil al registrarse) expuesta como RPC
+  publica llamable sin necesitarlo — se le revoco el EXECUTE directo a
+  `anon`/`authenticated`.
+- **Funcion huerfana neutralizada**: `whatsapp-webhook` (de la feature de
+  WhatsApp que se descarto) seguia activa en el servidor con
+  `verify_jwt: false` — publicamente invocable sin autenticacion, aunque
+  su codigo ya no estaba en el repo. No hay forma de borrar la funcion
+  por completo con las herramientas de este entorno, asi que se
+  redeployo como un stub que regresa 410 + se activo verify_jwt. Si
+  quieres quitarla del todo: Dashboard > Edge Functions >
+  whatsapp-webhook > Delete.
+- **Pendiente, requiere el Dashboard**: "Leaked Password Protection"
+  (verificacion contra HaveIBeenPwned) sigue desactivada — es un toggle
+  en Authentication > Policies que no se pudo prender desde aqui.
+- **CSP**: no aplica — es un mecanismo que cumplen los navegadores al
+  renderizar HTML/JS; estas funciones regresan JSON puro y Alza es una
+  app nativa sin WebView, no hay nada que un CSP pudiera restringir.
+- **Microinteracciones nativas**: se pidio "transiciones de pestañas
+  fluidas, indicador de pestaña activa, microinteracciones, interfaz
+  moderna, React + CSS + Framer Motion" — como Alza es 100% SwiftUI
+  nativo (no hay React ni web de por medio), se tradujo la intencion al
+  equivalente nativo: `Core/Microinteractions.swift` (`PressableButtonStyle`
+  + `.pressable()`, el boton se encoge con resorte al presionarlo, igual
+  que lograrias con Framer Motion en web) aplicado a los botones
+  principales (+ flotante de "Hoy", "Suscribirme", "Iniciar sesion").
+  **No se reemplazo el `TabView` del sistema por uno custom con
+  indicador deslizante** — eso obligaria a mantener las 6 pestañas vivas
+  en memoria todo el tiempo en vez de cargar solo la activa (TabView
+  nativo es "lazy" por pestaña), un cambio de arquitectura y rendimiento
+  real que no quise meter a ciegas sin poder probarlo visualmente. El
+  indicador de pestaña activa que ya existe (icono relleno + texto en el
+  color de marca) es el nativo de iOS.
+
 ## Alcance de este MVP
 
 - **Facturacion con marca propia (Invoices/, Products/, Business/)**: el

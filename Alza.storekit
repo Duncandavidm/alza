@@ -75,7 +75,7 @@
             "internalID" : "E1891037-5188-4F5C-8BD2-1C13C7797434",
             "numberOfPeriods" : 1,
             "paymentMode" : "free",
-            "subscriptionPeriod" : "P5D"
+            "subscriptionPeriod" : "P1W"
           },
           "localizations" : [
             {

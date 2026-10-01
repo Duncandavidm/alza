@@ -23,7 +23,7 @@ final class SubscriptionStore: ObservableObject {
     /// Apple nunca corta el acceso a mitad del periodo ya pagado).
     @Published private(set) var currentPeriodEndDate: Date?
 
-    /// "Prueba gratis 5 dias, luego $X / mes" cuando el producto tiene una
+    /// "Prueba gratis 1 semana, luego $X / mes" cuando el producto tiene una
     /// oferta introductoria de tipo prueba gratis Y el usuario todavia es
     /// elegible para ella (nunca la ha usado). nil si no aplica — en ese
     /// caso el paywall muestra solo el precio normal.

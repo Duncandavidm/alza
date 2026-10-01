@@ -46,11 +46,10 @@ struct AuthView: View {
             .clipped()
             .overlay(alignment: .topLeading) {
                 VStack(alignment: .leading, spacing: 8) {
-                    markImage
+                    EmbeddedLogo.alzaMarkWhite
                         .resizable()
                         .scaledToFit()
                         .frame(width: 52, height: 52)
-                        .foregroundStyle(AlzaBrand.onDarkSurface)
 
                     Text("Tu asesor financiero con IA")
                         .font(.system(.subheadline, design: AlzaBrand.fontDesign))
@@ -59,15 +58,6 @@ struct AuthView: View {
                 .padding(.horizontal, 28)
                 .padding(.top, 64)
             }
-    }
-
-    /// Fallback defensivo: si el asset "AlzaMarkWhite" no resuelve en el
-    /// catalogo (ha pasado en este proyecto), usamos un simbolo del sistema
-    /// en vez de dejar el header sin nada ahi.
-    private var markImage: Image {
-        UIImage(named: "AlzaMarkWhite") != nil
-            ? Image("AlzaMarkWhite")
-            : Image(systemName: "a.circle.fill")
     }
 
     private var buttons: some View {

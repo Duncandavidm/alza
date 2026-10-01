@@ -10,7 +10,7 @@ struct PaywallView: View {
             Spacer()
 
             VStack(spacing: 8) {
-                Image("AlzaMark")
+                EmbeddedLogo.alzaMark
                     .resizable()
                     .scaledToFit()
                     .frame(width: 56, height: 56)

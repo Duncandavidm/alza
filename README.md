@@ -151,12 +151,32 @@ microfono/reconocimiento de voz — son solo los textos de permiso en
 Ya resuelto con el logo que diste (el mark de la "a" con flecha):
 
 - `AppIcon.appiconset/AppIcon-1024.png` — icono de App Store, fondo blanco.
-- `AlzaMark.imageset/alza-mark.png` — el mark con fondo transparente, usado
-  dentro de la app (header de login, paywall).
-- `AccentColor` actualizado al verde/teal real de la marca (`#00A585`).
+- `AlzaMark.imageset/alza-mark.png` — el mark con fondo transparente
+  (color), usado en el paywall.
+- `AlzaMarkWhite.imageset/alza-mark-white.png` — version blanca del mark,
+  usada sobre fondos oscuros (header de login).
+- `AccentColor` = el verde/teal real de la marca (`#00A585`, sampleado
+  directo del logo), aplicado automaticamente por iOS a casi todo
+  (botones, toggles, graficas) sin tener que tocar cada pantalla.
+- **`Alza/Core/Brand.swift`**: la paleta completa en un solo lugar
+  (`AlzaBrand.primary/.primaryDark/.darkSurface/.onDarkSurface/.alert/
+  .border/.headerGradient/.fontDesign`), para no repetir valores hex
+  sueltos por toda la app. El header del login usaba `Color.black` como
+  placeholder — ya no: ahora es `AlzaBrand.headerGradient` (degradado de
+  teal de marca a un charcoal-teal oscuro, `#0E1614`, tomado del prompt
+  original de la version web). La tipografia de marca usa el design
+  "rounded" del sistema (SF Pro Rounded) — Inter/Manrope (lo que pedia
+  el prompt original) requeriria embeber archivos .ttf reales en el
+  proyecto, que no se pudo hacer con confianza sin poder compilar en
+  este entorno; "rounded" da una energia moderna/geometrica similar sin
+  esa dependencia. Aplicado por ahora en Auth y Paywall (las pantallas
+  de marca mas fuertes); el resto de la app ya hereda el color via
+  AccentColor pero sigue en la tipografia default del sistema.
 
-Si en algun momento cambias el logo, solo reemplaza esos dos PNG (mismo
-nombre de archivo) y ajusta el `AccentColor` si el color cambio.
+Si en algun momento cambias el logo, reemplaza esos dos PNG (mismo
+nombre de archivo) y ajusta los valores en `Brand.swift` si el color
+cambio (y el `AccentColor` del asset catalog, que sigue siendo la
+fuente para los controles nativos de iOS).
 
 ## Alcance de este MVP
 

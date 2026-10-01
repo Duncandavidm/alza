@@ -15,9 +15,9 @@ struct PaywallView: View {
                     .scaledToFit()
                     .frame(width: 56, height: 56)
                 Text("Alza Pro")
-                    .font(.largeTitle.bold())
+                    .font(.system(.largeTitle, design: AlzaBrand.fontDesign, weight: .bold))
                 Text("Dashboard financiero completo + insights de IA personalizados sobre tus cuentas y gastos.")
-                    .font(.subheadline)
+                    .font(.system(.subheadline, design: AlzaBrand.fontDesign))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
@@ -33,7 +33,7 @@ struct PaywallView: View {
                     ProgressView()
                 } else {
                     Text("No se pudo cargar el precio")
-                        .foregroundStyle(.red)
+                        .foregroundStyle(AlzaBrand.alert)
                 }
 
                 Button {
@@ -41,7 +41,7 @@ struct PaywallView: View {
                     Task { await subscriptionStore.purchase(appAccountToken: userId) }
                 } label: {
                     Text("Suscribirme")
-                        .font(.headline)
+                        .font(.system(.headline, design: AlzaBrand.fontDesign))
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
                 }
@@ -59,7 +59,7 @@ struct PaywallView: View {
                 if let error = subscriptionStore.purchaseError {
                     Text(error)
                         .font(.footnote)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(AlzaBrand.alert)
                         .multilineTextAlignment(.center)
                 }
 

@@ -104,9 +104,8 @@ struct OnboardingView: View {
         Section("¿Tienes un salario u otro ingreso fijo?") {
             Toggle("Si, tengo un ingreso fijo", isOn: $viewModel.hasFixedIncome)
             if viewModel.hasFixedIncome {
-                TextField("¿Cuanto? (por mes)", text: $viewModel.fixedIncomeAmountText)
-                    .keyboardType(.decimalPad)
-                Stepper("Dia de pago: \(viewModel.fixedIncomeDay)", value: $viewModel.fixedIncomeDay, in: 1...28)
+                AmountField(placeholder: "¿Cuanto? (por mes)", text: $viewModel.fixedIncomeAmountText)
+                DayOfMonthField(label: "Dia de pago", day: $viewModel.fixedIncomeDay)
             }
         }
     }
@@ -126,20 +125,33 @@ struct OnboardingView: View {
 
     private var commonBillsStep: some View {
         Section("¿Cuales de estas pagas cada mes?") {
-            Text("Marca las que apliquen y pon cuanto pagas.")
+            Text("Marca las que apliquen, cambia el nombre si no coincide, y pon cuanto pagas. Si te falta alguna, agregala abajo.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
             ForEach($viewModel.commonBills) { $bill in
                 VStack(alignment: .leading, spacing: 6) {
-                    Toggle(bill.name, isOn: $bill.isEnabled)
+                    HStack {
+                        TextField("Nombre", text: $bill.name)
+                        Spacer()
+                        Toggle("", isOn: $bill.isEnabled)
+                            .labelsHidden()
+                    }
                     if bill.isEnabled {
-                        TextField("Monto mensual", text: $bill.amountText)
-                            .keyboardType(.decimalPad)
-                        Stepper("Dia aproximado: \(bill.dayOfMonth)", value: $bill.dayOfMonth, in: 1...28)
+                        AmountField(placeholder: "Monto mensual", text: $bill.amountText)
+                        DayOfMonthField(label: "Dia aproximado", day: $bill.dayOfMonth)
                     }
                 }
                 .padding(.vertical, 2)
+            }
+            .onDelete { viewModel.commonBills.remove(atOffsets: $0) }
+
+            Button {
+                viewModel.commonBills.append(
+                    CommonBillDraft(name: "", category: .other, isEnabled: true)
+                )
+            } label: {
+                Label("Agregar otra cuenta", systemImage: "plus.circle")
             }
         }
     }
@@ -153,8 +165,7 @@ struct OnboardingView: View {
             ForEach($viewModel.subscriptions) { $item in
                 VStack(alignment: .leading, spacing: 6) {
                     TextField("Nombre (ej. Netflix)", text: $item.name)
-                    TextField("Monto mensual", text: $item.amountText)
-                        .keyboardType(.decimalPad)
+                    AmountField(placeholder: "Monto mensual", text: $item.amountText)
                 }
                 .padding(.vertical, 2)
             }
@@ -177,8 +188,7 @@ struct OnboardingView: View {
             ForEach($viewModel.otherFixedItems) { $item in
                 VStack(alignment: .leading, spacing: 6) {
                     TextField("Nombre (ej. Colegio)", text: $item.name)
-                    TextField("Monto mensual", text: $item.amountText)
-                        .keyboardType(.decimalPad)
+                    AmountField(placeholder: "Monto mensual", text: $item.amountText)
                 }
                 .padding(.vertical, 2)
             }
@@ -225,13 +235,10 @@ struct OnboardingView: View {
             ForEach($viewModel.debts) { $debt in
                 VStack(alignment: .leading, spacing: 6) {
                     TextField("Acreedor (ej. Tarjeta de credito)", text: $debt.creditor)
-                    TextField("Saldo actual", text: $debt.balanceText)
-                        .keyboardType(.decimalPad)
+                    AmountField(placeholder: "Saldo actual", text: $debt.balanceText)
                     HStack {
-                        TextField("Interes %/mes (opcional)", text: $debt.interestRateText)
-                            .keyboardType(.decimalPad)
-                        TextField("Pago minimo (opcional)", text: $debt.minimumPaymentText)
-                            .keyboardType(.decimalPad)
+                        PercentField(placeholder: "Interes /mes (opcional)", text: $debt.interestRateText)
+                        AmountField(placeholder: "Pago minimo (opcional)", text: $debt.minimumPaymentText)
                     }
                     Toggle("Esta en mora / atrasada", isOn: $debt.isOverdue)
                 }
@@ -251,8 +258,7 @@ struct OnboardingView: View {
         Section("¿Tienes ahorros o inversiones actuales?") {
             Toggle("Si, tengo algo ahorrado", isOn: $viewModel.hasSavings)
             if viewModel.hasSavings {
-                TextField("¿Cuanto tienes ahorrado/invertido?", text: $viewModel.savingsAmountText)
-                    .keyboardType(.decimalPad)
+                AmountField(placeholder: "¿Cuanto tienes ahorrado/invertido?", text: $viewModel.savingsAmountText)
                 TextField("Nota (ej. meta banco, disponible en diciembre)", text: $viewModel.savingsNote, axis: .vertical)
                     .lineLimit(2...4)
             }

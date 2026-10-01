@@ -4,8 +4,8 @@ import Foundation
 /// pone monto/dia si aplica a su caso.
 struct CommonBillDraft: Identifiable {
     let id = UUID()
-    let name: String
-    let category: TransactionCategory
+    var name: String
+    var category: TransactionCategory
     var isEnabled: Bool = false
     var amountText: String = ""
     var dayOfMonth: Int = 1

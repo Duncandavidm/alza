@@ -64,5 +64,6 @@ schemes:
         Alza: all
     run:
       config: Debug
+      storeKitConfiguration: Alza.storekit
     archive:
       config: Release

@@ -27,8 +27,20 @@ struct PaywallView: View {
 
             VStack(spacing: 12) {
                 if let product = subscriptionStore.product {
-                    Text("\(product.displayPrice) / mes")
-                        .font(.title2.bold())
+                    if let trialOffer = subscriptionStore.freeTrialOfferDescription {
+                        VStack(spacing: 4) {
+                            Text(trialOffer)
+                                .font(.title3.bold())
+                                .multilineTextAlignment(.center)
+                            Text("Te vamos a pedir tu metodo de pago ahora, pero no se te cobra nada hasta que termine la prueba.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                    } else {
+                        Text("\(product.displayPrice) / mes")
+                            .font(.title2.bold())
+                    }
                 } else if subscriptionStore.isLoadingProduct {
                     ProgressView()
                 } else {
@@ -40,7 +52,7 @@ struct PaywallView: View {
                     guard let userId = appState.currentUserId else { return }
                     Task { await subscriptionStore.purchase(appAccountToken: userId) }
                 } label: {
-                    Text("Suscribirme")
+                    Text(subscriptionStore.freeTrialOfferDescription != nil ? "Empezar prueba gratis" : "Suscribirme")
                         .font(.system(.headline, design: AlzaBrand.fontDesign))
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)

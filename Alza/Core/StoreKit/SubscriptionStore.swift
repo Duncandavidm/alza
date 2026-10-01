@@ -23,6 +23,12 @@ final class SubscriptionStore: ObservableObject {
     /// Apple nunca corta el acceso a mitad del periodo ya pagado).
     @Published private(set) var currentPeriodEndDate: Date?
 
+    /// "Prueba gratis 5 dias, luego $X / mes" cuando el producto tiene una
+    /// oferta introductoria de tipo prueba gratis Y el usuario todavia es
+    /// elegible para ella (nunca la ha usado). nil si no aplica — en ese
+    /// caso el paywall muestra solo el precio normal.
+    @Published private(set) var freeTrialOfferDescription: String?
+
     private var updatesTask: Task<Void, Never>?
 
     /// Callback inyectado por AppState: se dispara con cada transaccion
@@ -50,9 +56,49 @@ final class SubscriptionStore: ObservableObject {
         do {
             let products = try await Product.products(for: [Config.subscriptionProductId])
             product = products.first
+            if product == nil {
+                purchaseError = "No se encontro el producto \"\(Config.subscriptionProductId)\". Revisa que exista en App Store Connect (o en el archivo .storekit local) con ese Product ID exacto."
+            }
             await refreshRenewalInfo()
+            await refreshFreeTrialEligibility()
         } catch {
             purchaseError = "No se pudo cargar el producto: \(error.localizedDescription)"
+        }
+    }
+
+    /// Arma el texto de "prueba gratis" solo si el producto trae una oferta
+    /// introductoria de tipo prueba gratis Y StoreKit confirma que el
+    /// usuario todavia no la ha usado (isEligibleForIntroOffer) — alguien
+    /// que ya tuvo una suscripcion antes no vuelve a ver la prueba gratis,
+    /// asi StoreKit evita que la misma persona la reclame dos veces.
+    private func refreshFreeTrialEligibility() async {
+        guard
+            let subscriptionInfo = product?.subscription,
+            let offer = subscriptionInfo.introductoryOffer,
+            offer.paymentMode == .freeTrial
+        else {
+            freeTrialOfferDescription = nil
+            return
+        }
+
+        guard await subscriptionInfo.isEligibleForIntroOffer else {
+            freeTrialOfferDescription = nil
+            return
+        }
+
+        let duration = Self.formattedPeriod(offer.period)
+        let price = product?.displayPrice ?? ""
+        freeTrialOfferDescription = "Prueba gratis \(duration), luego \(price) / mes"
+    }
+
+    private static func formattedPeriod(_ period: Product.SubscriptionPeriod) -> String {
+        let value = period.value
+        switch period.unit {
+        case .day: return value == 1 ? "1 dia" : "\(value) dias"
+        case .week: return value == 1 ? "1 semana" : "\(value) semanas"
+        case .month: return value == 1 ? "1 mes" : "\(value) meses"
+        case .year: return value == 1 ? "1 año" : "\(value) años"
+        @unknown default: return "\(value)"
         }
     }
 

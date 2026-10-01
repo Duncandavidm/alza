@@ -1,0 +1,100 @@
+{
+  "identifier" : "7E52980B-DB29-43DD-8BC3-83753CDB5505",
+  "nonRenewingSubscriptions" : [],
+  "products" : [],
+  "settings" : {
+    "_applicationInternalID" : "0",
+    "_developerTeamID" : "0000000000",
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 0,
+    "_locale" : "es_MX",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Purchase"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Verification"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Store Sync"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Subscription Status"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Transaction"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Manage Subscriptions Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Refund Request Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Offer Code Redeem Sheet"
+      }
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "62AFE553-CA8F-4ECB-A21F-9A1F28E0BB7E",
+      "localizations" : [],
+      "name" : "Alza Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "4.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "0168D85F-4FD1-447F-83BA-5F51DEE57756",
+          "introductoryOffer" : {
+            "displayPrice" : "0.00",
+            "internalID" : "E1891037-5188-4F5C-8BD2-1C13C7797434",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P5D"
+          },
+          "localizations" : [
+            {
+              "description" : "Dashboard financiero completo + insights de IA personalizados sobre tus cuentas y gastos.",
+              "displayName" : "Alza Pro",
+              "locale" : "es_MX"
+            }
+          ],
+          "productID" : "app.alza.sub.pro",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Alza Pro Mensual",
+          "subscriptionGroupID" : "62AFE553-CA8F-4ECB-A21F-9A1F28E0BB7E",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

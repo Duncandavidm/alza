@@ -18,13 +18,13 @@ enum Config {
     /// el REVERSED_CLIENT_ID puesto en Info.plist.
     static let googleSignInClientId = "TODO-google-oauth-client-id.apps.googleusercontent.com"
 
-    /// TODO(David): reemplaza con la URL real una vez publiques estas
-    /// paginas. Apple EXIGE que una app con suscripciones muestre links
-    /// visibles a la politica de privacidad y a los terminos de uso en el
-    /// paywall (App Store Review Guideline 3.1.2) — sin esto, el review de
-    /// Apple la rechaza. Mientras tanto estos links apuntan a un dominio
-    /// que todavia no existe.
-    static let privacyPolicyURL = URL(string: "https://alza.app/privacy")!
-    static let termsOfUseURL = URL(string: "https://alza.app/terms")!
+    /// Paginas reales en `docs/privacy.html` y `docs/terms.html`, servidas
+    /// gratis por GitHub Pages (ver README para activarlo) — asi no
+    /// dependen de comprar el dominio alza.app para pasar el review de
+    /// Apple (App Store Review Guideline 3.1.2, obligatorio por tener
+    /// suscripcion). Si mas adelante compras alza.app, apunta su DNS a
+    /// GitHub Pages como dominio personalizado y cambia estas dos URLs.
+    static let privacyPolicyURL = URL(string: "https://duncandavidm.github.io/alza/privacy.html")!
+    static let termsOfUseURL = URL(string: "https://duncandavidm.github.io/alza/terms.html")!
     static let supportEmail = "soporte@alza.app"
 }

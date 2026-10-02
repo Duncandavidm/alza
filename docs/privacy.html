@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Politica de Privacidad — Alza</title>
+<style>
+  :root { color-scheme: light dark; --teal: #00A585; --teal-dark: #027A64; --bg: #ffffff; --fg: #1a1f1e; --muted: #5b6462; --border: #e4e9e7; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #0e1614; --fg: #f2f5f4; --muted: #9aa6a3; --border: #243230; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; }
+  header { padding: 40px 20px 24px; border-bottom: 1px solid var(--border); }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 20px 80px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 20px; color: var(--teal-dark); }
+  .brand .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--teal); }
+  h1 { font-size: 26px; margin: 24px 0 4px; }
+  .updated { color: var(--muted); font-size: 14px; margin-bottom: 8px; }
+  h2 { font-size: 18px; margin-top: 36px; color: var(--teal-dark); }
+  p, li { color: var(--fg); font-size: 15px; }
+  ul { padding-left: 20px; }
+  a { color: var(--teal-dark); }
+  .footer-note { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<header><div class="wrap" style="padding:0"><div class="brand"><span class="dot"></span>Alza</div></div></header>
+<div class="wrap">
+  <h1>Politica de Privacidad</h1>
+  <p class="updated">Ultima actualizacion: 2 de octubre de 2026</p>
+
+  <p>Alza ("nosotros", "la app") es una aplicacion de finanzas personales y de negocio.
+  Esta politica explica que datos recopilamos, para que los usamos y que control tienes
+  sobre ellos.</p>
+
+  <h2>1. Que datos recopilamos</h2>
+  <ul>
+    <li><strong>Datos de cuenta:</strong> correo electronico y, si usas Apple o Google
+      para iniciar sesion, el identificador que esos servicios nos entregan.</li>
+    <li><strong>Datos financieros que tu ingresas:</strong> movimientos, cuentas,
+      presupuestos, facturas, deudas, metas de ahorro y cualquier otro dato que anotes
+      dentro de la app. Alza no se conecta a tu banco ni lee tus cuentas bancarias de
+      forma automatica — todo lo que aparece en la app lo registras tu (a mano, por voz,
+      o mediante un Atajo de Apple que tu mismo configuras).</li>
+    <li><strong>Datos de uso:</strong> informacion tecnica basica para mantener la app
+      funcionando (registros de error, version de la app, modelo de dispositivo).</li>
+    <li><strong>Datos de suscripcion:</strong> el estado de tu suscripcion y recibos de
+      compra, verificados a traves de Apple (App Store).</li>
+  </ul>
+
+  <h2>2. Como usamos tus datos</h2>
+  <ul>
+    <li>Para mostrarte tu propia informacion financiera dentro de la app.</li>
+    <li>Para generar los consejos y resumenes que la app te ofrece (por ejemplo, que
+      pagar primero segun tus cuentas por pagar).</li>
+    <li>Para enviarte notificaciones locales de vencimientos y pagos — estas se generan
+      y se entregan directamente en tu dispositivo; no usamos un servidor externo de
+      notificaciones push para esto.</li>
+    <li>Para verificar tu suscripcion con Apple y darte acceso a las funciones pagas.</li>
+    <li>Para responder a las sugerencias que nos envies desde la app.</li>
+  </ul>
+
+  <h2>3. Reconocimiento de voz</h2>
+  <p>Si usas la funcion de anotar un gasto por voz, el audio se procesa usando el
+  reconocimiento de voz nativo de iOS (Apple) unicamente para convertir lo que dices en
+  texto. Alza no almacena grabaciones de audio.</p>
+
+  <h2>4. Donde se guardan tus datos</h2>
+  <p>Tus datos se almacenan en una base de datos administrada por Supabase, con acceso
+  restringido unicamente a tu propia cuenta mediante reglas de seguridad a nivel de
+  fila (Row Level Security): ningun otro usuario puede ver tus movimientos, cuentas o
+  metas.</p>
+
+  <h2>5. Con quien compartimos datos</h2>
+  <p>No vendemos tus datos. Los compartimos unicamente con los proveedores necesarios
+  para operar la app:</p>
+  <ul>
+    <li><strong>Apple</strong> — para autenticacion (Sign in with Apple) y verificacion
+      de suscripciones.</li>
+    <li><strong>Google</strong> — si eliges iniciar sesion con tu cuenta de Google.</li>
+    <li><strong>Supabase</strong> — nuestro proveedor de base de datos y autenticacion.</li>
+  </ul>
+
+  <h2>6. Tus derechos</h2>
+  <p>Puedes solicitar la eliminacion de tu cuenta y de todos tus datos en cualquier
+  momento escribiendo a <a href="mailto:soporte@alza.app">soporte@alza.app</a>. Tambien
+  puedes exportar tus movimientos a un archivo CSV directamente desde Ajustes dentro de
+  la app.</p>
+
+  <h2>7. Menores de edad</h2>
+  <p>Alza no esta dirigida a menores de 13 anos y no recopilamos a sabiendas datos de
+  menores de esa edad.</p>
+
+  <h2>8. Cambios a esta politica</h2>
+  <p>Si actualizamos esta politica, cambiaremos la fecha de "Ultima actualizacion" en
+  esta misma pagina.</p>
+
+  <h2>9. Contacto</h2>
+  <p>Para cualquier pregunta sobre privacidad, escribenos a
+  <a href="mailto:soporte@alza.app">soporte@alza.app</a>.</p>
+
+  <div class="footer-note">Alza — Panama.</div>
+</div>
+</body>
+</html>

@@ -28,6 +28,9 @@ final class SubscriptionStore: ObservableObject {
     /// elegible para ella (nunca la ha usado). nil si no aplica — en ese
     /// caso el paywall muestra solo el precio normal.
     @Published private(set) var freeTrialOfferDescription: String?
+    /// Solo la duracion ("1 semana") — para el badge del boton de compra,
+    /// separado de la oracion completa de `freeTrialOfferDescription`.
+    @Published private(set) var freeTrialDurationText: String?
 
     private var updatesTask: Task<Void, Never>?
 
@@ -78,16 +81,19 @@ final class SubscriptionStore: ObservableObject {
             offer.paymentMode == .freeTrial
         else {
             freeTrialOfferDescription = nil
+            freeTrialDurationText = nil
             return
         }
 
         guard await subscriptionInfo.isEligibleForIntroOffer else {
             freeTrialOfferDescription = nil
+            freeTrialDurationText = nil
             return
         }
 
         let duration = Self.formattedPeriod(offer.period)
         let price = product?.displayPrice ?? ""
+        freeTrialDurationText = duration
         freeTrialOfferDescription = "Prueba gratis \(duration), luego \(price) / mes"
     }
 

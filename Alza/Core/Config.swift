@@ -17,4 +17,14 @@ enum Config {
     /// Console, habilitado para "Sign in with Google". Debe coincidir con
     /// el REVERSED_CLIENT_ID puesto en Info.plist.
     static let googleSignInClientId = "TODO-google-oauth-client-id.apps.googleusercontent.com"
+
+    /// TODO(David): reemplaza con la URL real una vez publiques estas
+    /// paginas. Apple EXIGE que una app con suscripciones muestre links
+    /// visibles a la politica de privacidad y a los terminos de uso en el
+    /// paywall (App Store Review Guideline 3.1.2) — sin esto, el review de
+    /// Apple la rechaza. Mientras tanto estos links apuntan a un dominio
+    /// que todavia no existe.
+    static let privacyPolicyURL = URL(string: "https://alza.app/privacy")!
+    static let termsOfUseURL = URL(string: "https://alza.app/terms")!
+    static let supportEmail = "soporte@alza.app"
 }

@@ -49,7 +49,7 @@ targets:
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
         CODE_SIGN_STYLE: Automatic
-        DEVELOPMENT_TEAM: "" # TODO(David): tu Team ID de Apple Developer
+        DEVELOPMENT_TEAM: S7ZS3G5284
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
     dependencies:
@@ -89,7 +89,7 @@ targets:
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
         CODE_SIGN_STYLE: Automatic
-        DEVELOPMENT_TEAM: "" # TODO(David): mismo Team ID que el target Alza
+        DEVELOPMENT_TEAM: S7ZS3G5284
 schemes:
   Alza:
     build:

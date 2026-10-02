@@ -379,6 +379,24 @@ encabezado de cada funcion:
   para todo. Aparece como un pop-up justo despues de guardar, con un boton
   "Pagar" por cada item que registra el gasto real y lo marca resuelto sin
   salir de la pantalla.
+- **Notificaciones locales** (`NotificationManager.swift`, Ajustes >
+  Notificaciones): avisos programados en el propio dispositivo, sin
+  servidor de por medio (no hace falta — todo esto ya lo sabe el telefono
+  de antemano o lo acaba de calcular):
+  - Cuenta por pagar y factura: un aviso X dias antes de vencer y otro el
+    dia que vence — X es configurable en Ajustes (1-7 dias, default 3).
+  - Recurrente (ej. luz el 20, tarjeta el 15): mismo aviso de X dias antes,
+    usando `dayOfMonth` — se reprograma solo cada vez que se refresca la
+    lista, calculando la proxima ocurrencia (evita el problema de un
+    disparador repetitivo tratando de restar dias cerca del limite de un
+    mes mas corto).
+  - Al registrar un ingreso con consejo de pago disponible: notificacion
+    inmediata con que pagar primero, ademas del pop-up que ya se mostraba
+    en pantalla.
+  Cada tipo de recordatorio se reprograma completo (se cancela lo
+  pendiente y se vuelve a crear) cada vez que su lista cambia, con un
+  identifier estable por registro, para que nunca queden duplicados ni
+  avisos de algo ya pagado o borrado.
 - **Estudio financiero inicial (Onboarding/)**: la primera vez que el usuario
   entra (despues de autenticarse, antes del paywall), un wizard de 14 pasos
   cortos — inspirado en el detalle del prompt original de la version

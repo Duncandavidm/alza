@@ -21,6 +21,7 @@ final class InvoicesViewModel: ObservableObject {
                 .order("issue_date", ascending: false)
                 .execute()
                 .value
+            NotificationManager.scheduleInvoiceReminders(invoices)
         } catch {
             errorMessage = "No se pudo cargar tus facturas: \(error.localizedDescription)"
         }
@@ -80,6 +81,7 @@ final class InvoicesViewModel: ObservableObject {
         }
 
         invoices.insert(created, at: 0)
+        NotificationManager.scheduleInvoiceReminders(invoices)
         return created
     }
 
@@ -150,6 +152,7 @@ final class InvoicesViewModel: ObservableObject {
         do {
             try await supabase.from("invoices").delete().eq("id", value: invoice.id).execute()
             invoices.removeAll { $0.id == invoice.id }
+            NotificationManager.scheduleInvoiceReminders(invoices)
         } catch {
             errorMessage = "No se pudo borrar: \(error.localizedDescription)"
         }
@@ -159,6 +162,7 @@ final class InvoicesViewModel: ObservableObject {
         if let index = invoices.firstIndex(where: { $0.id == invoice.id }) {
             invoices[index] = invoice
         }
+        NotificationManager.scheduleInvoiceReminders(invoices)
     }
 
     private func nextNumber(userId: UUID, docType: InvoiceDocType) async throws -> String {

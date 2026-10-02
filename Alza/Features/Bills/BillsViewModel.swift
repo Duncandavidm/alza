@@ -25,6 +25,7 @@ final class BillsViewModel: ObservableObject {
                 .order("due_date", ascending: true)
                 .execute()
                 .value
+            NotificationManager.scheduleBillReminders(bills)
         } catch {
             errorMessage = "No se pudieron cargar tus cuentas por pagar: \(error.localizedDescription)"
         }
@@ -39,11 +40,13 @@ final class BillsViewModel: ObservableObject {
             .execute()
             .value
         bills.append(created)
+        NotificationManager.scheduleBillReminders(bills)
     }
 
     func delete(_ bill: Bill) async throws {
         try await supabase.from("bills").delete().eq("id", value: bill.id).execute()
         bills.removeAll { $0.id == bill.id }
+        NotificationManager.scheduleBillReminders(bills)
     }
 
     /// Marca la cuenta como pagada Y registra el gasto real, en un solo paso
@@ -70,5 +73,6 @@ final class BillsViewModel: ObservableObject {
         if let index = bills.firstIndex(where: { $0.id == bill.id }) {
             bills[index].status = .pagada
         }
+        NotificationManager.scheduleBillReminders(bills)
     }
 }

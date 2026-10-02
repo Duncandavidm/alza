@@ -26,6 +26,7 @@ final class RecurringTransactionsViewModel: ObservableObject {
                 .order("day_of_month", ascending: true)
                 .execute()
                 .value
+            NotificationManager.scheduleRecurringReminders(items)
         } catch {
             errorMessage = "No se pudieron cargar tus recurrentes: \(error.localizedDescription)"
         }
@@ -40,11 +41,13 @@ final class RecurringTransactionsViewModel: ObservableObject {
             .execute()
             .value
         items.append(created)
+        NotificationManager.scheduleRecurringReminders(items)
     }
 
     func delete(_ item: RecurringTransaction) async throws {
         try await supabase.from("recurring_transactions").delete().eq("id", value: item.id).execute()
         items.removeAll { $0.id == item.id }
+        NotificationManager.scheduleRecurringReminders(items)
     }
 
     /// Registra el pago de hoy: crea el movimiento real y marca la

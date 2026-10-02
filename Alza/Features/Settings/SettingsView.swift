@@ -1,9 +1,13 @@
 import SwiftUI
+import UIKit
+import UserNotifications
 
 struct SettingsView: View {
     @EnvironmentObject private var appState: AppState
     @State private var isSigningOut = false
     @AppStorage("isAdvancedMode") private var isAdvancedMode = false
+    @AppStorage(NotificationManager.reminderLeadDaysKey) private var reminderLeadDays = NotificationManager.defaultLeadDays
+    @State private var notificationStatus: UNAuthorizationStatus = .notDetermined
 
     var body: some View {
         NavigationStack {
@@ -15,6 +19,20 @@ struct SettingsView: View {
                         : "Solo lo esencial al anotar: cuenta, tipo y monto.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                }
+
+                Section {
+                    notificationStatusRow
+
+                    Stepper(
+                        "Avisar \(reminderLeadDays) dia\(reminderLeadDays == 1 ? "" : "s") antes",
+                        value: $reminderLeadDays,
+                        in: NotificationManager.leadDaysRange
+                    )
+                } header: {
+                    Text("Notificaciones")
+                } footer: {
+                    Text("Te avisamos cuando una cuenta por pagar o una factura esta por vencer (y el dia que vence), cuando te toca un pago fijo del mes, y que pagar primero cada vez que anotas un ingreso.")
                 }
 
                 Section {
@@ -122,6 +140,37 @@ struct SettingsView: View {
             .task {
                 await appState.subscriptionStore.refreshRenewalInfo()
             }
+            .task {
+                notificationStatus = await NotificationManager.authorizationStatus()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var notificationStatusRow: some View {
+        switch notificationStatus {
+        case .authorized, .provisional, .ephemeral:
+            Label("Notificaciones activadas", systemImage: "checkmark.circle.fill")
+                .foregroundStyle(AlzaBrand.primary)
+        case .denied:
+            Button {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            } label: {
+                Label("Activar en Ajustes de iOS", systemImage: "bell.slash.fill")
+            }
+        case .notDetermined:
+            Button {
+                Task {
+                    await NotificationManager.requestAuthorization()
+                    notificationStatus = await NotificationManager.authorizationStatus()
+                }
+            } label: {
+                Label("Activar notificaciones", systemImage: "bell.fill")
+            }
+        @unknown default:
+            EmptyView()
         }
     }
 }

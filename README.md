@@ -531,6 +531,12 @@ encabezado de cada funcion:
   (transferencia, categoria Ahorro) para que ese dinero salga de ahi en
   el resto de la app, igual de simple que el resto de Alza (sin
   contabilidad de doble entrada).
+- **Sugerencias** (Ajustes > Sugerencias): buzon simple donde el cliente
+  escribe que le gustaria ver en Alza — se guarda en la tabla
+  `feedback_suggestions` (RLS: cada cliente solo ve/borra las suyas) y
+  queda ahi mismo como historial de lo ya enviado. No hay pantalla de
+  admin dentro de la app: David revisa las sugerencias de todos los
+  clientes directo en el dashboard de Supabase.
 
 Conexion bancaria automatica no esta en este primer corte — queda para
 una siguiente iteracion.

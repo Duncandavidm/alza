@@ -65,6 +65,12 @@ struct SettingsView: View {
                     } label: {
                         Label("Exportar / Importar CSV", systemImage: "arrow.up.arrow.down.circle")
                     }
+
+                    NavigationLink {
+                        FeedbackView()
+                    } label: {
+                        Label("Sugerencias", systemImage: "lightbulb")
+                    }
                 }
 
                 Section {

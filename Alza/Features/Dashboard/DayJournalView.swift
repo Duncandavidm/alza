@@ -1,7 +1,9 @@
 import SwiftUI
 
-/// "Mi cuaderno del dia" (mejora #1): todo lo que paso hoy, en el orden en
-/// que se anoto — como pasar el lapiz por la libreta al final del dia.
+/// El dashboard principal — rediseño inspirado en un paywall/dashboard de
+/// referencia que le gusto al cliente: numero grande, pastillas de
+/// ingreso/gasto, barras "candy" de presupuesto, y accesos rapidos de
+/// agregar/buscar/voz abajo. Con los colores de marca de Alza.
 struct DayJournalView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = DayJournalViewModel()
@@ -9,76 +11,71 @@ struct DayJournalView: View {
     @StateObject private var recurringViewModel = RecurringTransactionsViewModel()
     @StateObject private var billsViewModel = BillsViewModel()
     @State private var isQuickAdding = false
+    @State private var isVoiceQuickAdding = false
     @State private var daySummary: DaySummary?
     @State private var isClosingDay = false
+    @State private var isShowingDatePicker = false
+    @State private var isSearching = false
+    @State private var selectedBudgetProgress: BudgetProgress?
 
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .bottomTrailing) {
-                VStack(spacing: 0) {
-                    liveTotalBanner
+            ZStack(alignment: .bottom) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        header
 
-                    if appState.subscriptionStatus.isEntitled && appState.subscriptionStore.willAutoRenew == false {
-                        cancellationBanner
-                    }
-
-                    if !billsViewModel.pending.isEmpty {
-                        billsStrip
-                    }
-
-                    if !budgetsViewModel.progresses.isEmpty {
-                        budgetsStrip
-                    }
-
-                    ForEach(recurringViewModel.dueToday) { item in
-                        recurringReminderRow(item)
-                    }
-
-                    List {
-                        if viewModel.todayTransactions.isEmpty && !viewModel.isLoading {
-                            Text("Todavia no has anotado nada hoy. Toca el + para empezar.")
-                                .foregroundStyle(.secondary)
-                                .listRowSeparator(.hidden)
+                        if isSearching {
+                            searchField
                         }
 
-                        ForEach(viewModel.todayTransactions) { transaction in
-                            journalRow(transaction)
+                        if appState.subscriptionStatus.isEntitled && appState.subscriptionStore.willAutoRenew == false {
+                            cancellationBanner
                         }
+
+                        totalsCard
+
+                        if !budgetsViewModel.progresses.isEmpty {
+                            BudgetCandyBarRow(progresses: budgetsViewModel.progresses) { progress in
+                                selectedBudgetProgress = progress
+                            }
+                        }
+
+                        if !billsViewModel.pending.isEmpty {
+                            billsStrip
+                        }
+
+                        ForEach(recurringViewModel.dueToday) { item in
+                            recurringReminderRow(item)
+                        }
+
+                        transactionList
                     }
-                    .listStyle(.plain)
-                    .refreshable {
-                        await refresh()
-                        await refreshBudgets()
-                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .padding(.bottom, 110)
+                }
+                .refreshable {
+                    await refresh()
+                    await refreshBudgets()
                 }
 
-                Button {
-                    isQuickAdding = true
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.system(size: 26, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 60, height: 60)
-                        .background(Circle().fill(Color.accentColor))
-                        .shadow(radius: 6, y: 3)
-                }
-                .pressable()
-                .padding(.trailing, 20)
-                .padding(.bottom, 20)
+                fabRow
             }
-            .navigationTitle("Hoy")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        Task { await closeDay() }
-                    } label: {
-                        if isClosingDay {
-                            ProgressView()
-                        } else {
-                            Text("Cerrar el dia")
+                    if viewModel.isViewingToday {
+                        Button {
+                            Task { await closeDay() }
+                        } label: {
+                            if isClosingDay {
+                                ProgressView()
+                            } else {
+                                Text("Cerrar el dia")
+                            }
                         }
+                        .disabled(isClosingDay || viewModel.todayTransactions.isEmpty)
                     }
-                    .disabled(isClosingDay || viewModel.todayTransactions.isEmpty)
                 }
             }
             .task { await refresh() }
@@ -89,8 +86,17 @@ struct DayJournalView: View {
             .sheet(isPresented: $isQuickAdding) {
                 QuickAddView(viewModel: viewModel)
             }
+            .sheet(isPresented: $isVoiceQuickAdding) {
+                QuickAddView(viewModel: viewModel, autoStartVoice: true)
+            }
             .sheet(item: $daySummary) { summary in
                 DayCloseSummaryView(summary: summary)
+            }
+            .sheet(item: $selectedBudgetProgress) { progress in
+                BudgetDetailSheet(viewModel: budgetsViewModel, progress: progress)
+            }
+            .sheet(isPresented: $isShowingDatePicker) {
+                datePickerSheet
             }
             .alert("Algo salio mal", isPresented: .constant(viewModel.errorMessage != nil)) {
                 Button("OK") { viewModel.errorMessage = nil }
@@ -100,36 +106,126 @@ struct DayJournalView: View {
         }
     }
 
-    private var liveTotalBanner: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Hoy llevas")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            HStack(spacing: 6) {
-                Text("+\(viewModel.todayIncome, format: .currency(code: "USD")) ingresos")
-                    .foregroundStyle(.green)
-                Text("—")
-                    .foregroundStyle(.secondary)
-                Text("\(viewModel.todayExpense, format: .currency(code: "USD")) gastos")
-                    .foregroundStyle(.red)
-            }
-            .font(.subheadline.weight(.medium))
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
+    // MARK: - Encabezado
 
-            HStack(spacing: 4) {
-                Text("=")
-                    .foregroundStyle(.secondary)
-                Text(viewModel.todayNet, format: .currency(code: "USD"))
-                    .foregroundStyle(viewModel.todayNet >= 0 ? .green : .red)
-                Text("en tu bolsillo")
+    private var header: some View {
+        HStack(alignment: .center, spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(viewModel.isViewingToday ? "Hoy" : dateLabel)
+                    .font(.system(.title2, design: AlzaBrand.fontDesign, weight: .bold))
+                if !viewModel.isViewingToday {
+                    Button("Volver a hoy") {
+                        viewModel.selectedDate = Date()
+                        Task { await refresh() }
+                    }
+                    .font(.caption)
+                }
+            }
+
+            Spacer()
+
+            Button {
+                isShowingDatePicker = true
+            } label: {
+                Image(systemName: "calendar")
+                    .frame(width: 38, height: 38)
+            }
+            .background(Circle().fill(Color(.secondarySystemBackground)))
+
+            NavigationLink {
+                SettingsView()
+            } label: {
+                Image(systemName: "gearshape.fill")
+                    .frame(width: 38, height: 38)
+            }
+            .background(Circle().fill(Color(.secondarySystemBackground)))
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.primary)
+        .padding(.top, 4)
+    }
+
+    private var dateLabel: String {
+        viewModel.selectedDate.formatted(date: .abbreviated, time: .omitted)
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+            TextField("Buscar o #etiqueta", text: $viewModel.searchQuery)
+                .onChange(of: viewModel.searchQuery) {
+                    Task { await search() }
+                }
+            if viewModel.isSearching {
+                ProgressView().controlSize(.small)
+            } else if !viewModel.searchQuery.isEmpty {
+                Button {
+                    viewModel.clearSearch()
+                    isSearching = false
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemBackground)))
+        .transition(.move(edge: .top).combined(with: .opacity))
+    }
+
+    // MARK: - Totales
+
+    private var totalsCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if totalOverBudget > 0 {
+                Text("\(totalOverBudget, format: .currency(code: "USD")) sobre presupuesto")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AlzaBrand.alert)
+            }
+
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Image(systemName: viewModel.todayNet >= 0 ? "plus" : "minus")
+                    .font(.title2.weight(.heavy))
+                    .foregroundStyle(viewModel.todayNet >= 0 ? AlzaBrand.primary : AlzaBrand.alert)
+                Text(abs(viewModel.todayNet), format: .number.precision(.fractionLength(0)))
+                    .font(.system(size: 42, weight: .heavy, design: AlzaBrand.fontDesign))
+                Text("$")
+                    .font(.title2.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
-            .font(.title3.bold())
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
+
+            HStack(spacing: 10) {
+                pill(icon: "arrow.down", amount: viewModel.todayExpense, color: AlzaBrand.alert)
+                pill(icon: "arrow.up", amount: viewModel.todayIncome, color: AlzaBrand.primary)
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(Color(.secondarySystemBackground))
+    }
+
+    private var totalOverBudget: Decimal {
+        budgetsViewModel.progresses
+            .filter { $0.status == .over }
+            .reduce(Decimal(0)) { $0 + ($1.spent - $1.budget.limitAmount) }
+    }
+
+    private func pill(icon: String, amount: Decimal, color: Color) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(.white)
+                .frame(width: 18, height: 18)
+                .background(Circle().fill(color))
+            Text(amount, format: .currency(code: "USD"))
+                .font(.subheadline.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Capsule().fill(Color(.secondarySystemBackground)))
     }
 
     /// El cliente cancelo la suscripcion (desde Ajustes de iOS o el sheet de
@@ -160,7 +256,7 @@ struct DayJournalView: View {
             .padding(12)
             .foregroundStyle(.primary)
         }
-        .background(AlzaBrand.alert.opacity(0.12))
+        .background(RoundedRectangle(cornerRadius: 14).fill(AlzaBrand.alert.opacity(0.12)))
     }
 
     /// Cuentas por pagar pendientes, mas cercanas primero — el diferenciador
@@ -177,7 +273,7 @@ struct DayJournalView: View {
                     if let next = billsViewModel.pending.first {
                         Text("\(next.name) — \(next.dueDateValue.formatted(date: .abbreviated, time: .omitted))\(next.isOverdue ? " (vencida)" : "")")
                             .font(.caption)
-                            .foregroundStyle(next.isOverdue ? .red : .secondary)
+                            .foregroundStyle(next.isOverdue ? AlzaBrand.alert : .secondary)
                     }
                 }
                 Spacer()
@@ -188,22 +284,7 @@ struct DayJournalView: View {
             .padding(12)
             .foregroundStyle(.primary)
         }
-        .background(Color(.secondarySystemBackground))
-    }
-
-    /// Progreso de presupuestos, visible "justo en la pantalla principal"
-    /// (inspirado en MonAi) en vez de escondido en un reporte aparte.
-    private var budgetsStrip: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
-                ForEach(budgetsViewModel.progresses) { progress in
-                    BudgetProgressChip(progress: progress)
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-        }
-        .background(Color(.systemBackground))
+        .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemBackground)))
     }
 
     /// "¿Pagaste el Gimnasio hoy?" — recordatorio de una recurrente que le
@@ -232,7 +313,44 @@ struct DayJournalView: View {
             .font(.footnote)
         }
         .padding(12)
-        .background(Color.orange.opacity(0.12))
+        .background(RoundedRectangle(cornerRadius: 14).fill(Color.orange.opacity(0.12)))
+    }
+
+    // MARK: - Lista de movimientos
+
+    @ViewBuilder
+    private var transactionList: some View {
+        if isSearching, let results = viewModel.searchResults {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("\(results.count) resultado(s)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                if results.isEmpty && !viewModel.isSearching {
+                    Text("Nada por ahi.")
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 8)
+                } else {
+                    ForEach(results) { transaction in
+                        journalRow(transaction)
+                        Divider()
+                    }
+                }
+            }
+        } else {
+            VStack(alignment: .leading, spacing: 4) {
+                if viewModel.todayTransactions.isEmpty && !viewModel.isLoading {
+                    Text(viewModel.isViewingToday ? "Todavia no has anotado nada hoy. Toca el + para empezar." : "No hay movimientos ese dia.")
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 8)
+                } else {
+                    ForEach(viewModel.todayTransactions) { transaction in
+                        journalRow(transaction)
+                        Divider()
+                    }
+                }
+            }
+        }
     }
 
     @ViewBuilder
@@ -255,12 +373,97 @@ struct DayJournalView: View {
                 .font(.body.weight(.semibold))
                 .foregroundStyle(transaction.movementType.tintColor)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
     }
+
+    // MARK: - Accesos rapidos (abajo)
+
+    private var fabRow: some View {
+        HStack {
+            HStack(spacing: 10) {
+                Button {
+                    isQuickAdding = true
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 20, weight: .semibold))
+                        .frame(width: 50, height: 50)
+                }
+                .background(Circle().fill(Color(.systemBackground)))
+                .shadow(color: .black.opacity(0.08), radius: 8, y: 3)
+                .pressable()
+
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isSearching.toggle()
+                    }
+                } label: {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 18, weight: .semibold))
+                        .frame(width: 50, height: 50)
+                }
+                .background(Circle().fill(Color(.systemBackground)))
+                .shadow(color: .black.opacity(0.08), radius: 8, y: 3)
+                .pressable()
+            }
+            .foregroundStyle(.primary)
+
+            Spacer()
+
+            Button {
+                isVoiceQuickAdding = true
+            } label: {
+                Image(systemName: "mic.fill")
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 62, height: 62)
+                    .background(Circle().fill(AlzaBrand.headerGradient))
+                    .shadow(color: AlzaBrand.primary.opacity(0.4), radius: 10, y: 4)
+            }
+            .pressable()
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 20)
+        .padding(.bottom, 16)
+    }
+
+    private var datePickerSheet: some View {
+        NavigationStack {
+            DatePicker(
+                "Elige un dia",
+                selection: Binding(
+                    get: { viewModel.selectedDate },
+                    set: { newValue in
+                        viewModel.selectedDate = newValue
+                        isShowingDatePicker = false
+                        Task { await refresh() }
+                    }
+                ),
+                in: ...Date(),
+                displayedComponents: .date
+            )
+            .datePickerStyle(.graphical)
+            .padding()
+            .navigationTitle("Ver otro dia")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cerrar") { isShowingDatePicker = false }
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+
+    // MARK: - Datos
 
     private func refresh() async {
         guard let userId = appState.currentUserId else { return }
         await viewModel.refresh(userId: userId)
+    }
+
+    private func search() async {
+        guard let userId = appState.currentUserId else { return }
+        await viewModel.search(userId: userId)
     }
 
     private func refreshBudgets() async {

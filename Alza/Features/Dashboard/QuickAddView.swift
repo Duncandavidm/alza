@@ -6,6 +6,10 @@ import SwiftUI
 struct QuickAddView: View {
     @EnvironmentObject private var appState: AppState
     @ObservedObject var viewModel: DayJournalViewModel
+    /// true cuando se abre desde el boton grande de microfono del
+    /// dashboard — empieza a escuchar de una vez, sin que el usuario tenga
+    /// que tocar el boton de voz otra vez adentro.
+    var autoStartVoice: Bool = false
     @StateObject private var voiceRecognizer = VoiceTransactionRecognizer()
     @Environment(\.dismiss) private var dismiss
     @FocusState private var amountFieldFocused: Bool
@@ -80,7 +84,13 @@ struct QuickAddView: View {
                     Button("Cancelar") { dismiss() }
                 }
             }
-            .onAppear { amountFieldFocused = true }
+            .onAppear {
+                if autoStartVoice {
+                    Task { await handleMicTap() }
+                } else {
+                    amountFieldFocused = true
+                }
+            }
             .overlay {
                 if showingSavingAnimation {
                     MovementSavingOverlay(

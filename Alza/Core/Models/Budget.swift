@@ -34,6 +34,9 @@ struct Budget: Codable, Identifiable, Hashable {
     var category: String
     var period: BudgetPeriod
     var limitAmount: Decimal
+    /// Hex "#RRGGBB" elegido a mano, o nil para usar el color por defecto
+    /// (ver BudgetColorPalette.swift).
+    var color: String?
     let createdAt: Date
     let updatedAt: Date
 
@@ -43,6 +46,7 @@ struct Budget: Codable, Identifiable, Hashable {
         case category
         case period
         case limitAmount = "limit_amount"
+        case color
         case createdAt = "created_at"
         case updatedAt = "updated_at"
     }
@@ -59,6 +63,18 @@ struct NewBudget: Encodable {
         case category
         case period
         case limitAmount = "limit_amount"
+    }
+}
+
+/// Lo que se puede cambiar desde la hoja de detalle de un presupuesto
+/// (BudgetDetailSheet) — no toca category/period, esos no se editan ahi.
+struct BudgetUpdate: Encodable {
+    var limitAmount: Decimal
+    var color: String?
+
+    enum CodingKeys: String, CodingKey {
+        case limitAmount = "limit_amount"
+        case color
     }
 }
 

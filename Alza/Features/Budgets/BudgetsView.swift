@@ -4,6 +4,7 @@ struct BudgetsView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = BudgetsViewModel()
     @State private var isAdding = false
+    @State private var selectedProgress: BudgetProgress?
 
     var body: some View {
         NavigationStack {
@@ -18,6 +19,8 @@ struct BudgetsView: View {
 
                 ForEach(viewModel.progresses) { progress in
                     budgetRow(progress)
+                        .contentShape(Rectangle())
+                        .onTapGesture { selectedProgress = progress }
                 }
                 .onDelete { indexSet in
                     Task { await delete(at: indexSet) }
@@ -37,6 +40,9 @@ struct BudgetsView: View {
             .task { await refresh() }
             .sheet(isPresented: $isAdding) {
                 AddBudgetView(viewModel: viewModel)
+            }
+            .sheet(item: $selectedProgress) { progress in
+                BudgetDetailSheet(viewModel: viewModel, progress: progress)
             }
             .alert("Algo salio mal", isPresented: .constant(viewModel.errorMessage != nil)) {
                 Button("OK") { viewModel.errorMessage = nil }

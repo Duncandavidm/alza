@@ -46,6 +46,16 @@ final class DayJournalViewModel: ObservableObject {
     @Published private(set) var isLoading = false
     @Published var errorMessage: String?
 
+    /// El dia que se esta viendo — por default hoy. Cambiarlo y llamar a
+    /// `refresh` de nuevo es como "hojear" otro dia desde el icono de
+    /// calendario del dashboard.
+    @Published var selectedDate = Date()
+    var isViewingToday: Bool { Calendar.current.isDateInToday(selectedDate) }
+
+    @Published var searchQuery = ""
+    @Published private(set) var searchResults: [FinanceTransaction]?
+    @Published private(set) var isSearching = false
+
     private let repository = TransactionsRepository.shared
     private let supabase = SupabaseManager.shared.client
 
@@ -75,7 +85,7 @@ final class DayJournalViewModel: ObservableObject {
         defer { isLoading = false }
 
         do {
-            async let txTask = repository.fetchToday(userId: userId)
+            async let txTask = repository.fetchDay(userId: userId, date: selectedDate)
             async let accountsTask: [Account] = supabase
                 .from("accounts")
                 .select()
@@ -89,6 +99,23 @@ final class DayJournalViewModel: ObservableObject {
         } catch {
             errorMessage = "No se pudo cargar tu dia: \(error.localizedDescription)"
         }
+    }
+
+    /// Busqueda en vivo (texto, o "#etiqueta") sobre TODOS los movimientos,
+    /// no solo el dia que se esta viendo — activa por el icono de lupa.
+    func search(userId: UUID) async {
+        guard !searchQuery.trimmingCharacters(in: .whitespaces).isEmpty else {
+            searchResults = nil
+            return
+        }
+        isSearching = true
+        defer { isSearching = false }
+        searchResults = try? await repository.search(userId: userId, query: searchQuery)
+    }
+
+    func clearSearch() {
+        searchQuery = ""
+        searchResults = nil
     }
 
     /// El ingreso ultra-rapido (mejora #2): solo monto + descripcion. El

@@ -65,4 +65,48 @@ final class BudgetsViewModel: ObservableObject {
         try await supabase.from("budgets").delete().eq("id", value: budget.id).execute()
         progresses.removeAll { $0.id == budget.id }
     }
+
+    /// Edita limite y/o color desde BudgetDetailSheet — category/period no
+    /// se tocan ahi (cambiarlos de verdad seria crear otro presupuesto).
+    func updateBudget(_ budget: Budget, limitAmount: Decimal, color: String?) async throws {
+        let updated: Budget = try await supabase
+            .from("budgets")
+            .update(BudgetUpdate(limitAmount: limitAmount, color: color))
+            .eq("id", value: budget.id)
+            .select()
+            .single()
+            .execute()
+            .value
+
+        if let index = progresses.firstIndex(where: { $0.id == budget.id }) {
+            progresses[index] = BudgetProgress(budget: updated, spent: progresses[index].spent)
+        }
+    }
+
+    /// Promedio de gasto de los ultimos 3 meses ya cerrados (sin contar el
+    /// mes en curso, que todavia esta incompleto) — el "prom. $X/mes" que
+    /// se muestra en BudgetDetailSheet.
+    func averageMonthlySpent(for budget: Budget, userId: UUID) async throws -> Decimal {
+        let calendar = Calendar.current
+        let startOfThisMonth = calendar.dateInterval(of: .month, for: Date())?.start ?? Date()
+        guard let start = calendar.date(byAdding: .month, value: -3, to: startOfThisMonth) else {
+            return 0
+        }
+
+        let rows: [FinanceTransaction] = try await supabase
+            .from("transactions")
+            .select()
+            .eq("user_id", value: userId)
+            .eq("category", value: budget.category)
+            .gte("occurred_at", value: start)
+            .lt("occurred_at", value: startOfThisMonth)
+            .execute()
+            .value
+
+        let total = rows
+            .filter { $0.amount < 0 }
+            .reduce(Decimal(0)) { $0 + abs($1.amount) }
+
+        return total / 3
+    }
 }

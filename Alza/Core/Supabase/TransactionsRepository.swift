@@ -11,7 +11,13 @@ final class TransactionsRepository {
     private init() {}
 
     func fetchToday(userId: UUID) async throws -> [FinanceTransaction] {
-        let start = Calendar.current.startOfDay(for: Date())
+        try await fetchDay(userId: userId, date: Date())
+    }
+
+    /// Igual que `fetchToday` pero para cualquier dia — lo usa el icono de
+    /// calendario del dashboard para hojear dias anteriores.
+    func fetchDay(userId: UUID, date: Date) async throws -> [FinanceTransaction] {
+        let start = Calendar.current.startOfDay(for: date)
         guard let end = Calendar.current.date(byAdding: .day, value: 1, to: start) else { return [] }
 
         return try await supabase

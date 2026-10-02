@@ -11,12 +11,17 @@ struct QuickAddView: View {
     /// que tocar el boton de voz otra vez adentro.
     var autoStartVoice: Bool = false
     @StateObject private var voiceRecognizer = VoiceTransactionRecognizer()
+    @StateObject private var budgetsViewModel = BudgetsViewModel()
     @Environment(\.dismiss) private var dismiss
     @FocusState private var amountFieldFocused: Bool
 
     @State private var movementType: MovementType = .gasto
     @State private var amountText = ""
     @State private var description = ""
+    /// Opcional a proposito — la idea de quick-add es rapidez, asi que la
+    /// categoria sigue sin ser obligatoria. Si la marcas, de una vez ves
+    /// cuanto presupuesto te queda en esa categoria.
+    @State private var category: TransactionCategory?
     @State private var isSaving = false
     @State private var showingSavingAnimation = false
     @State private var errorMessage: String?
@@ -57,6 +62,10 @@ struct QuickAddView: View {
                         .font(.title3)
                 }
 
+                categoryChips
+
+                budgetHint
+
                 voiceButton
 
                 if let errorMessage {
@@ -91,6 +100,7 @@ struct QuickAddView: View {
                     amountFieldFocused = true
                 }
             }
+            .task { await refreshBudgets() }
             .overlay {
                 if showingSavingAnimation {
                     MovementSavingOverlay(
@@ -153,6 +163,61 @@ struct QuickAddView: View {
         }
     }
 
+    private var categoryChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(TransactionCategory.allCases) { option in
+                    Button {
+                        category = (category == option) ? nil : option
+                    } label: {
+                        Text("\(option.emoji) \(option.rawValue)")
+                            .font(.caption.weight(.medium))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .background(
+                                Capsule().fill(
+                                    category == option
+                                        ? AlzaBrand.primary
+                                        : Color(.secondarySystemBackground)
+                                )
+                            )
+                            .foregroundStyle(category == option ? .white : .primary)
+                    }
+                }
+            }
+        }
+    }
+
+    /// "Ve el presupuesto restante al agregar gastos" tambien en el camino
+    /// rapido, si el usuario decidio marcar una categoria.
+    private var matchingBudgetProgress: BudgetProgress? {
+        guard let category else { return nil }
+        return budgetsViewModel.progresses.first { $0.budget.category == category.rawValue }
+    }
+
+    @ViewBuilder
+    private var budgetHint: some View {
+        if movementType == .gasto, let progress = matchingBudgetProgress {
+            let remaining = progress.budget.limitAmount - progress.spent - enteredMagnitude
+            HStack(spacing: 6) {
+                Image(systemName: remaining >= 0 ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                    .foregroundStyle(remaining >= 0 ? AlzaBrand.primary : AlzaBrand.alert)
+                if remaining >= 0 {
+                    Text("Te quedarian \(remaining, format: .currency(code: "USD")).")
+                } else {
+                    Text("Te pasarias por \(abs(remaining), format: .currency(code: "USD")).")
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+    }
+
+    private func refreshBudgets() async {
+        guard let userId = appState.currentUserId else { return }
+        await budgetsViewModel.refresh(userId: userId)
+    }
+
     private var micLabel: String {
         if voiceRecognizer.isProcessing { return "Entendiendo lo que dijiste..." }
         if voiceRecognizer.isRecording { return "Escuchando... toca para terminar" }
@@ -185,7 +250,8 @@ struct QuickAddView: View {
                 accountId: accountId,
                 magnitude: magnitude,
                 description: description,
-                movementType: movementType
+                movementType: movementType,
+                category: category?.rawValue
             )
             async let minDelay: Void = Task.sleep(nanoseconds: MovementSavingOverlay.minDisplayNanoseconds(for: movementType))
             _ = try await (saved, minDelay)

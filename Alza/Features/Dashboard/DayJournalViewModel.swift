@@ -126,7 +126,8 @@ final class DayJournalViewModel: ObservableObject {
         accountId: UUID,
         magnitude: Decimal,
         description: String,
-        movementType: MovementType
+        movementType: MovementType,
+        category: String? = nil
     ) async throws {
         let created = try await repository.add(
             NewTransaction(
@@ -134,7 +135,7 @@ final class DayJournalViewModel: ObservableObject {
                 accountId: accountId,
                 amount: movementType.signedAmount(from: magnitude),
                 movementType: movementType,
-                category: nil,
+                category: category,
                 description: description.isEmpty ? nil : description,
                 occurredAt: Date()
             )

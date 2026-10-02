@@ -6,6 +6,7 @@ struct AddTransactionView: View {
     let accounts: [Account]
     @Environment(\.dismiss) private var dismiss
     @AppStorage("isAdvancedMode") private var isAdvancedMode = false
+    @StateObject private var budgetsViewModel = BudgetsViewModel()
 
     @State private var selectedAccountId: UUID?
     @State private var amountText = ""
@@ -70,6 +71,8 @@ struct AddTransactionView: View {
                         }
                     }
 
+                    budgetHint
+
                     TextField("Etiquetas (ej. #cine #viaje)", text: $tagsText)
                         .autocapitalization(.none)
 
@@ -94,6 +97,7 @@ struct AddTransactionView: View {
                 selectedAccountId = selectedAccountId ?? accounts.first?.id
                 selectedCurrency = selectedAccount?.currency ?? "USD"
             }
+            .task { await refreshBudgets() }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") { dismiss() }
@@ -119,6 +123,37 @@ struct AddTransactionView: View {
                 }
             }
         }
+    }
+
+    /// "Ve el presupuesto restante al agregar gastos": si la categoria
+    /// elegida tiene un presupuesto, muestra en vivo cuanto quedaria
+    /// (restando lo que ya llevas gastado Y el monto que estas a punto de
+    /// anotar), antes de guardar — no despues.
+    private var matchingBudgetProgress: BudgetProgress? {
+        budgetsViewModel.progresses.first { $0.budget.category == category.rawValue }
+    }
+
+    @ViewBuilder
+    private var budgetHint: some View {
+        if movementType == .gasto, let progress = matchingBudgetProgress {
+            let remaining = progress.budget.limitAmount - progress.spent - enteredMagnitude
+            HStack(spacing: 6) {
+                Image(systemName: remaining >= 0 ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                    .foregroundStyle(remaining >= 0 ? AlzaBrand.primary : AlzaBrand.alert)
+                if remaining >= 0 {
+                    Text("Te quedarian \(remaining, format: .currency(code: "USD")) de tu presupuesto \(progress.budget.period.displayName.lowercased()) de \(category.rawValue.lowercased()).")
+                } else {
+                    Text("Te pasarias por \(abs(remaining), format: .currency(code: "USD")) de tu presupuesto de \(category.rawValue.lowercased()).")
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+    }
+
+    private func refreshBudgets() async {
+        guard let userId = appState.currentUserId else { return }
+        await budgetsViewModel.refresh(userId: userId)
     }
 
     private func save() async {

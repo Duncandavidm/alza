@@ -38,6 +38,8 @@ targets:
       properties:
         com.apple.developer.applesignin:
           - Default
+        com.apple.security.application-groups:
+          - group.app.alza.shared
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.alza
@@ -57,6 +59,37 @@ targets:
         product: GoogleSignIn
       - package: GoogleSignIn
         product: GoogleSignInSwift
+      - target: AlzaWidget
+        embed: true
+  AlzaWidget:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: AlzaWidget
+      - path: Alza/Shared/BudgetWidgetSnapshot.swift
+      - path: Alza/Core/ColorHex.swift
+    info:
+      path: AlzaWidget/Info.plist
+      properties:
+        CFBundleDisplayName: Alza
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: AlzaWidget/AlzaWidget.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.app.alza.shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.alza.widget
+        PRODUCT_NAME: AlzaWidget
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1"
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: "" # TODO(David): mismo Team ID que el target Alza
 schemes:
   Alza:
     build:

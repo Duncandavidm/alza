@@ -1,5 +1,6 @@
 import Foundation
 import Supabase
+import WidgetKit
 
 @MainActor
 final class BudgetsViewModel: ObservableObject {
@@ -27,9 +28,30 @@ final class BudgetsViewModel: ObservableObject {
                 results.append(BudgetProgress(budget: budget, spent: try await spent(for: budget, userId: userId)))
             }
             progresses = results
+            publishWidgetSnapshot()
         } catch {
             errorMessage = "No se pudieron cargar tus presupuestos: \(error.localizedDescription)"
         }
+    }
+
+    /// Le pasa al widget de pantalla de inicio lo que necesita para
+    /// pintarse, via el App Group compartido, y le avisa a WidgetKit que
+    /// hay datos nuevos para que se redibuje ya mismo (sin esto se
+    /// quedaria con el snapshot viejo hasta su proximo refresh por
+    /// timeline, que puede tardar).
+    private func publishWidgetSnapshot() {
+        let items = progresses.enumerated().map { index, progress in
+            BudgetWidgetSnapshot.Item(
+                category: progress.budget.category,
+                emoji: TransactionCategory(rawValue: progress.budget.category)?.emoji ?? "🛍️",
+                colorHex: BudgetColorPalette.color(for: progress.budget, index: index).hexString,
+                spent: NSDecimalNumber(decimal: progress.spent).doubleValue,
+                limitAmount: NSDecimalNumber(decimal: progress.budget.limitAmount).doubleValue,
+                ratio: progress.ratio
+            )
+        }
+        BudgetWidgetSnapshot(items: items, updatedAt: Date()).save()
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     private func spent(for budget: Budget, userId: UUID) async throws -> Decimal {
@@ -59,11 +81,13 @@ final class BudgetsViewModel: ObservableObject {
             .execute()
             .value
         progresses.append(BudgetProgress(budget: created, spent: 0))
+        publishWidgetSnapshot()
     }
 
     func deleteBudget(_ budget: Budget) async throws {
         try await supabase.from("budgets").delete().eq("id", value: budget.id).execute()
         progresses.removeAll { $0.id == budget.id }
+        publishWidgetSnapshot()
     }
 
     /// Edita limite y/o color desde BudgetDetailSheet — category/period no
@@ -81,6 +105,7 @@ final class BudgetsViewModel: ObservableObject {
         if let index = progresses.firstIndex(where: { $0.id == budget.id }) {
             progresses[index] = BudgetProgress(budget: updated, spent: progresses[index].spent)
         }
+        publishWidgetSnapshot()
     }
 
     /// Promedio de gasto de los ultimos 3 meses ya cerrados (sin contar el

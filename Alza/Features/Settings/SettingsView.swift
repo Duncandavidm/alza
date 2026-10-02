@@ -55,6 +55,12 @@ struct SettingsView: View {
                     }
 
                     NavigationLink {
+                        SavingsGoalsView()
+                    } label: {
+                        Label("Metas de ahorro", systemImage: "target")
+                    }
+
+                    NavigationLink {
                         DataPortabilityView()
                     } label: {
                         Label("Exportar / Importar CSV", systemImage: "arrow.up.arrow.down.circle")

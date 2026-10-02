@@ -519,9 +519,21 @@ encabezado de cada funcion:
   por palabras clave — instantaneo, sin IA ni red) y la guarda junto con
   el movimiento; si no reconoce el comercio, lo deja sin categoria en vez
   de forzar "Otro".
+- **Metas de ahorro** (Ajustes > Metas de ahorro): ahorro a corto/largo
+  plazo con nombre, emoji, monto objetivo y fecha limite ("Carro nuevo",
+  $15,000, diciembre 2026). La cuota mensual necesaria para llegar a
+  tiempo (`SavingsGoal.monthlyContributionNeeded`) NO se guarda en la
+  base de datos — se recalcula siempre de monto restante y meses hasta
+  la fecha limite (redondeando cualquier fraccion de mes hacia arriba),
+  para que mover la fecha o registrar un aporte actualice el numero solo,
+  sin desincronizarse. Cada meta puede vincularse a una cuenta de Alza;
+  si la tiene, cada aporte ademas anota un movimiento real
+  (transferencia, categoria Ahorro) para que ese dinero salga de ahi en
+  el resto de la app, igual de simple que el resto de Alza (sin
+  contabilidad de doble entrada).
 
-Conexion bancaria automatica y notificaciones locales no estan en este
-primer corte — quedan para una siguiente iteracion.
+Conexion bancaria automatica no esta en este primer corte — queda para
+una siguiente iteracion.
 
 ### Ideas de MonAi que se dejaron fuera por ahora
 
@@ -570,11 +582,9 @@ disparar el alcance de una sola pasada:
 - **Conexion bancaria (Plaid)** — igual que en el prompt original, quedaria
   como integracion "Coming Soon"; la carga de movimientos sigue siendo
   manual/por voz/por Atajos.
-- **Net worth con grafica de tendencia y Goals con barra de progreso** — se
-  guardan las metas como texto libre en el perfil (se usan para dar mejor
-  consejo con IA), pero no hay todavia una pantalla dedicada de metas con
-  montos objetivo/actual y progreso visual, ni una grafica de patrimonio
-  neto en el tiempo.
+- **Net worth con grafica de tendencia** — todavia no hay una grafica de
+  patrimonio neto en el tiempo (las metas de ahorro con monto
+  objetivo/actual y progreso visual si existen, ver Savings/ mas arriba).
 - **Capital Leak Detector** (marcar suscripciones sin ingresos asociados
   como "fuga de capital") — Recurring/ ya muestra los gastos recurrentes,
   pero no tiene todavia la logica de "sin cliente activo hace 60 dias,

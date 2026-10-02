@@ -436,7 +436,18 @@ encabezado de cada funcion:
 - **Presupuestos** (inspirado en MonAi): limite semanal o mensual por
   categoria, con barra de progreso — visible tanto en su propia pestaña
   como en una franja arriba de "Hoy" ("justo en la pantalla principal"),
-  con semaforo verde/amarillo/rojo segun cuanto te falta.
+  con semaforo verde/amarillo/rojo segun cuanto te falta. Cada presupuesto
+  tiene un color elegible a mano (`BudgetDetailSheet`).
+- **Widget de pantalla de inicio** (target `AlzaWidget`, WidgetKit):
+  tamaño pequeño y mediano, muestra el progreso de tus presupuestos.
+  `BudgetsViewModel` escribe un snapshot al App Group compartido
+  (`group.app.alza.shared`) cada vez que refresca/agrega/edita/borra un
+  presupuesto y le avisa a WidgetKit que se redibuje — el widget mismo
+  nunca toca Supabase ni el Keychain, solo lee ese snapshot.
+- **Presupuesto restante al agregar un gasto**: si eliges una categoria
+  con presupuesto (en el formulario detallado o, opcionalmente, en el
+  ingreso rapido), se muestra en vivo cuanto te quedaria — restando lo ya
+  gastado Y el monto que estas escribiendo — antes de guardar.
 - Insights: boton "Generar" que manda tus cuentas/movimientos a Claude y
   guarda 2-4 insights.
 - **Informes con IA** (inspirado en MonAi 1.10): en Insights, un campo para
@@ -465,17 +476,31 @@ encabezado de cada funcion:
 - **Modo Simple / Avanzado** (Ajustes): en Simple (default), el formulario
   detallado de movimiento solo pide cuenta, tipo, monto y descripcion. En
   Avanzado se agregan categoria y etiquetas.
-- **Anotar gasto por Atajos de Apple** (`AlzaShortcuts.swift`): expone un
-  App Intent ("Anotar un gasto en Alza") que cualquier Atajo puede llamar,
-  pensado para automatizarlo con el disparador "Transaccion de Apple Pay"
-  de la app Atajos. Alza no tiene ni puede tener acceso directo a Apple
-  Pay/Wallet (eso no existe para apps de terceros) — la automatizacion la
-  arma el propio David en Atajos:
+- **Anotar gasto por Atajos de Apple, con categoria automatica**
+  (`AlzaShortcuts.swift` + `MerchantCategoryGuesser.swift`): expone un App
+  Intent ("Anotar un gasto en Alza") que cualquier Atajo puede llamar,
+  pensado para automatizarlo con el disparador real **"Transaccion"**
+  (Atajos lo renombro **"Wallet"** en iOS 26) que Apple agrego en iOS 17
+  para tarjetas/pases de Wallet — ese SI entrega monto y comercio como
+  variables del disparador, confirmado contra como lo usan apps como
+  MonAi. Alza no tiene ni puede tener acceso directo a Apple Pay/Wallet
+  fuera de eso (no existe ese acceso para apps de terceros) — la
+  automatizacion la arma el propio David en Atajos:
   1. Atajos > Automatizacion > Nueva automatizacion personal > Transaccion
-     de Apple Pay.
-  2. Agregar accion > buscar "Anotar un gasto en Alza" > llenar monto y
-     descripcion (o mapearlos desde lo que entregue el disparador).
-  3. Desactivar "Preguntar antes de ejecutar" si quieres que corra solo.
+     (o "Wallet" en iOS 26) > elige la(s) tarjeta(s) a vigilar.
+  2. Agregar accion > buscar "Anotar un gasto en Alza" > en Monto y
+     Comercio, usa las variables que entrega el disparador ("Shortcut
+     Input" > Amount / Merchant) en vez de escribirlas a mano.
+  3. Opcional: en "Cuenta" elige a cual cuenta de Alza (ej. "Tarjeta
+     debito") apuntar esta automatizacion — si no eliges ninguna, cae en
+     la primera cuenta que exista, igual que antes.
+  4. Desactivar "Preguntar antes de ejecutar" si quieres que corra solo.
+
+  El intent adivina la categoria por el nombre del comercio
+  (restaurante, farmacia, gasolinera, etc. via `MerchantCategoryGuesser`,
+  por palabras clave — instantaneo, sin IA ni red) y la guarda junto con
+  el movimiento; si no reconoce el comercio, lo deja sin categoria en vez
+  de forzar "Otro".
 
 Conexion bancaria automatica y notificaciones locales no estan en este
 primer corte — quedan para una siguiente iteracion.
@@ -485,9 +510,6 @@ primer corte — quedan para una siguiente iteracion.
 Tambien exploradas, pero no implementadas en esta pasada (para no meter
 demasiado alcance nuevo de una vez):
 
-- **Widgets de pantalla de inicio** con el progreso de presupuestos — pide
-  un target de Widget Extension nuevo, App Group compartido, y no se pudo
-  armar/probar con confianza sin Xcode en este entorno.
 - **Listas compartidas** (invitar a alguien mas a ver/anotar en el mismo
   negocio) — hoy el modelo de datos es un usuario = sus propios datos
   (RLS por `user_id`); compartir requeriria una tabla de invitaciones y

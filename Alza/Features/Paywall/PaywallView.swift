@@ -321,7 +321,7 @@ struct PaywallView: View {
                 if isSigningOut {
                     ProgressView()
                 } else {
-                    Text("Cerrar sesion")
+                    Label("Cerrar sesion", systemImage: "rectangle.portrait.and.arrow.right")
                 }
             }
             .font(.footnote)

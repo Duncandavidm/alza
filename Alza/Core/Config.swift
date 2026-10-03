@@ -13,6 +13,13 @@ enum Config {
     /// con el Product ID configurado ahi.
     static let subscriptionProductId = "app.alza.sub.pro"
 
+    /// TODO(David): crear este segundo producto en App Store Connect, en el
+    /// MISMO grupo de suscripcion "Alza Pro" que `subscriptionProductId`
+    /// (para que StoreKit los trate como planes intercambiables del mismo
+    /// Pro, no como dos suscripciones separadas) — ver README "App Store
+    /// Connect" para el paso a paso. $5.99/mes ($71.88/año).
+    static let subscriptionProductIdAnnual = "app.alza.sub.pro.annual"
+
     /// Paginas reales en `docs/privacy.html` y `docs/terms.html`, servidas
     /// gratis por GitHub Pages (ver README para activarlo) — asi no
     /// dependen de comprar el dominio alza.app para pasar el review de

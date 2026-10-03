@@ -17,7 +17,7 @@ Alza/                       # codigo de la app
   Core/                     # Supabase client, modelos, StoreKit, config
   Features/
     Auth/                   # Sign in with Apple (nativo) + correo/contraseña
-    Paywall/                # suscripcion unica $29.99/mes, "Suscribirme"
+    Paywall/                # Pro mensual/anual con Family Sharing, "Suscribirme"
     Dashboard/              # "Hoy" (cuaderno del dia, voz), cuentas + busqueda
     Bills/                  # EL DIFERENCIADOR: cuentas por pagar + consejo de pago con IA
     Budgets/                # presupuestos por categoria, semanal o mensual
@@ -90,9 +90,22 @@ Providers):
 ### 4. App Store Connect
 
 - Crear la ficha de app nueva bajo el bundle `app.alza`.
-- Crear el producto de suscripcion: **$29.99/mes**, un solo tier. El Product
-  ID tiene que coincidir exactamente con `Config.subscriptionProductId`
-  (`app.alza.sub.pro` es el valor puesto ahora — cambialo ahi si usas otro).
+- Crear el grupo de suscripcion **"Alza Pro"** con dos productos dentro del
+  MISMO grupo (para que StoreKit los trate como planes intercambiables del
+  mismo Pro, no como dos suscripciones separadas — el usuario puede pasar
+  de uno a otro sin perder el historial):
+  - **Mensual**: `app.alza.sub.pro`, **$7.99/mes**. El Product ID tiene que
+    coincidir exactamente con `Config.subscriptionProductId`.
+  - **Anual**: `app.alza.sub.pro.annual`, **$71.88/año** (equivale a
+    $5.99/mes, ~25% de descuento vs el mensual). El Product ID tiene que
+    coincidir con `Config.subscriptionProductIdAnnual`.
+  - En ambos, activa el toggle **"Family Sharing"** al crearlos — así quien
+    compre comparte Pro gratis con su familia de Apple (hasta 5 personas),
+    cada quien con su propia cuenta y datos de Alza, sin costo extra. No
+    hay forma de cobrar distinto por esto — es una caracteristica nativa
+    del producto, no un plan aparte.
+  - Mismo periodo de prueba gratis (1 semana) en los dos, si quieres
+    ofrecerla tambien en el anual.
 - Categoria, privacy questionnaire, icono 1024x1024 (ponlo en
   `Alza/Resources/Assets.xcassets/AppIcon.appiconset/`), capturas.
 - Banking/Tax: si ya los tienes configurados con maday en la misma cuenta de
@@ -485,8 +498,10 @@ encabezado de cada funcion:
   / Importar): exporta todos tus movimientos y recurrentes a un CSV
   (compartible por cualquier medio), o importa uno de vuelta a una cuenta
   que elijas.
-- Paywall: un solo boton "Suscribirme" a $29.99/mes, mas "Restaurar compras"
-  y "Administrar suscripcion".
+- Paywall: dos planes del mismo Pro, mensual ($7.99) y anual ($5.99/mes,
+  $71.88 facturados una vez al año, ~25% de descuento), ambos con Family
+  Sharing nativo de Apple sin costo extra, mas "Restaurar compras" y
+  "Administrar suscripcion".
 - Cerrar sesion (en Ajustes y en el Paywall) muestra un spinner y se
   deshabilita mientras corre, para que quede claro que esta funcionando.
 - **Recurrentes** (Ajustes > Recurrentes): pagos/ingresos fijos mensuales

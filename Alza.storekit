@@ -67,7 +67,7 @@
           "adHocOffers" : [],
           "codeOffers" : [],
           "displayPrice" : "7.99",
-          "familyShareable" : false,
+          "familyShareable" : true,
           "groupNumber" : 1,
           "internalID" : "0168D85F-4FD1-447F-83BA-5F51DEE57756",
           "introductoryOffer" : {
@@ -80,13 +80,40 @@
           "localizations" : [
             {
               "description" : "Dashboard financiero completo + insights de IA personalizados sobre tus cuentas y gastos.",
-              "displayName" : "Alza Pro",
+              "displayName" : "Alza Pro Mensual",
               "locale" : "es_MX"
             }
           ],
           "productID" : "app.alza.sub.pro",
           "recurringSubscriptionPeriod" : "P1M",
           "referenceName" : "Alza Pro Mensual",
+          "subscriptionGroupID" : "62AFE553-CA8F-4ECB-A21F-9A1F28E0BB7E",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "71.88",
+          "familyShareable" : true,
+          "groupNumber" : 2,
+          "internalID" : "9D3F2C6A-1B4E-4A7D-8E2F-6C5A9D1E4B7F",
+          "introductoryOffer" : {
+            "displayPrice" : "0.00",
+            "internalID" : "4A8B1E2D-7C3F-4D9A-B5E6-2F8C1A9D3E4B",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P1W"
+          },
+          "localizations" : [
+            {
+              "description" : "Dashboard financiero completo + insights de IA personalizados sobre tus cuentas y gastos. Plan anual, equivale a $5.99/mes.",
+              "displayName" : "Alza Pro Anual",
+              "locale" : "es_MX"
+            }
+          ],
+          "productID" : "app.alza.sub.pro.annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Alza Pro Anual",
           "subscriptionGroupID" : "62AFE553-CA8F-4ECB-A21F-9A1F28E0BB7E",
           "type" : "RecurringSubscription"
         }

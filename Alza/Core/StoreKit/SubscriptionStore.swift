@@ -2,16 +2,38 @@ import Foundation
 import StoreKit
 import UIKit
 
-/// Maneja la compra/restauracion de la suscripcion unica de Alza con
-/// StoreKit 2 directo (nada de bridge nativo<->JS: la app es 100% nativa).
+enum SubscriptionPlan: String, CaseIterable, Identifiable {
+    case monthly
+    case annual
+
+    var id: String { rawValue }
+    var productId: String {
+        switch self {
+        case .monthly: return Config.subscriptionProductId
+        case .annual: return Config.subscriptionProductIdAnnual
+        }
+    }
+}
+
+/// Maneja la compra/restauracion de la suscripcion de Alza con StoreKit 2
+/// directo (nada de bridge nativo<->JS: la app es 100% nativa). Dos planes
+/// del mismo Pro (mensual y anual, mismo grupo de suscripcion en App Store
+/// Connect) — el usuario elige cual comprar, pero ambos dan exactamente el
+/// mismo acceso (eso ya lo decide `subscriptions` en el backend por fila,
+/// sin importar el product_id, ver AppState.refreshSubscriptionStatus).
 /// appAccountToken = auth.uid() del usuario logueado en Supabase, para que
 /// la Edge Function verify-apple-receipt pueda amarrar la transaccion al
 /// usuario correcto sin depender de un login adicional.
 @MainActor
 final class SubscriptionStore: ObservableObject {
-    @Published private(set) var product: Product?
+    @Published private(set) var products: [SubscriptionPlan: Product] = [:]
+    @Published var selectedPlan: SubscriptionPlan = .annual
     @Published private(set) var isLoadingProduct = false
     @Published private(set) var purchaseError: String?
+
+    var selectedProduct: Product? { products[selectedPlan] }
+    var monthlyProduct: Product? { products[.monthly] }
+    var annualProduct: Product? { products[.annual] }
 
     /// Si la suscripcion activa se va a renovar sola o no (el usuario la
     /// cancelo desde Ajustes de iOS / el sheet de administrar suscripcion,
@@ -23,13 +45,11 @@ final class SubscriptionStore: ObservableObject {
     /// Apple nunca corta el acceso a mitad del periodo ya pagado).
     @Published private(set) var currentPeriodEndDate: Date?
 
-    /// "Prueba gratis 1 semana, luego $X / mes" cuando el producto tiene una
-    /// oferta introductoria de tipo prueba gratis Y el usuario todavia es
-    /// elegible para ella (nunca la ha usado). nil si no aplica — en ese
-    /// caso el paywall muestra solo el precio normal.
+    /// "Prueba gratis 1 semana, luego $X / mes" para el plan seleccionado,
+    /// solo cuando ese producto tiene una oferta introductoria de tipo
+    /// prueba gratis Y el usuario todavia es elegible (nunca la ha usado).
+    /// nil si no aplica — en ese caso el paywall muestra solo el precio.
     @Published private(set) var freeTrialOfferDescription: String?
-    /// Solo la duracion ("1 semana") — para el badge del boton de compra,
-    /// separado de la oracion completa de `freeTrialOfferDescription`.
     @Published private(set) var freeTrialDurationText: String?
 
     private var updatesTask: Task<Void, Never>?
@@ -57,16 +77,48 @@ final class SubscriptionStore: ObservableObject {
         isLoadingProduct = true
         defer { isLoadingProduct = false }
         do {
-            let products = try await Product.products(for: [Config.subscriptionProductId])
-            product = products.first
-            if product == nil {
-                purchaseError = "No se encontro el producto \"\(Config.subscriptionProductId)\". Revisa que exista en App Store Connect (o en el archivo .storekit local) con ese Product ID exacto."
+            let ids = SubscriptionPlan.allCases.map(\.productId)
+            let loaded = try await Product.products(for: ids)
+
+            var byPlan: [SubscriptionPlan: Product] = [:]
+            for plan in SubscriptionPlan.allCases {
+                if let match = loaded.first(where: { $0.id == plan.productId }) {
+                    byPlan[plan] = match
+                }
             }
+            products = byPlan
+
+            if byPlan.isEmpty {
+                purchaseError = "No se encontraron los productos de suscripcion. Revisa que existan en App Store Connect (o en el archivo .storekit local) con esos Product IDs exactos."
+            } else if byPlan[selectedPlan] == nil {
+                // Si el plan preferido (anual) no cargo pero el otro si,
+                // cae al que si exista en vez de dejar el paywall sin nada
+                // que comprar.
+                selectedPlan = byPlan.keys.first ?? selectedPlan
+            }
+
             await refreshRenewalInfo()
             await refreshFreeTrialEligibility()
         } catch {
             purchaseError = "No se pudo cargar el producto: \(error.localizedDescription)"
         }
+    }
+
+    func selectPlan(_ plan: SubscriptionPlan) {
+        guard products[plan] != nil else { return }
+        selectedPlan = plan
+        Task { await refreshFreeTrialEligibility() }
+    }
+
+    /// Precio mensual equivalente del plan anual (total / 12), para mostrar
+    /// "$X.XX / mes" en la tarjeta de "12 meses" igual que el precio
+    /// mensual, en vez del total del año de una sola vez.
+    func monthlyEquivalentPrice(for product: Product) -> String? {
+        guard let subscriptionInfo = product.subscription, subscriptionInfo.subscriptionPeriod.unit == .year else {
+            return product.displayPrice
+        }
+        let monthly = product.price / 12
+        return monthly.formatted(product.priceFormatStyle)
     }
 
     /// Arma el texto de "prueba gratis" solo si el producto trae una oferta
@@ -76,7 +128,8 @@ final class SubscriptionStore: ObservableObject {
     /// asi StoreKit evita que la misma persona la reclame dos veces.
     private func refreshFreeTrialEligibility() async {
         guard
-            let subscriptionInfo = product?.subscription,
+            let product = selectedProduct,
+            let subscriptionInfo = product.subscription,
             let offer = subscriptionInfo.introductoryOffer,
             offer.paymentMode == .freeTrial
         else {
@@ -92,9 +145,9 @@ final class SubscriptionStore: ObservableObject {
         }
 
         let duration = Self.formattedPeriod(offer.period)
-        let price = product?.displayPrice ?? ""
+        let price = product.displayPrice
         freeTrialDurationText = duration
-        freeTrialOfferDescription = "Prueba gratis \(duration), luego \(price) / mes"
+        freeTrialOfferDescription = "Prueba gratis \(duration), luego \(price)"
     }
 
     private static func formattedPeriod(_ period: Product.SubscriptionPeriod) -> String {
@@ -116,7 +169,10 @@ final class SubscriptionStore: ObservableObject {
     /// suscripcion") sin necesitar un webhook de App Store Server
     /// Notifications en el backend.
     func refreshRenewalInfo() async {
-        guard let subscriptionInfo = product?.subscription else { return }
+        // Cualquiera de los dos productos del grupo sirve para preguntar el
+        // estado — StoreKit devuelve el estado real de lo que el usuario
+        // tenga activo en el grupo, sea cual sea el plan que compro.
+        guard let subscriptionInfo = (selectedProduct ?? monthlyProduct ?? annualProduct)?.subscription else { return }
 
         do {
             let statuses = try await subscriptionInfo.status
@@ -139,7 +195,7 @@ final class SubscriptionStore: ObservableObject {
     }
 
     func purchase(appAccountToken: UUID) async {
-        guard let product else { return }
+        guard let product = selectedProduct else { return }
         purchaseError = nil
 
         do {

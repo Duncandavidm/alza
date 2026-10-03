@@ -1,4 +1,5 @@
 import SwiftUI
+import StoreKit
 
 private enum PaywallAudience: String, CaseIterable, Identifiable, Equatable {
     case personal = "Personal"
@@ -142,52 +143,103 @@ struct PaywallView: View {
 
     @ViewBuilder
     private var pricingCard: some View {
-        if let product = subscriptionStore.product {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Text("Mensual")
-                        .font(.system(.headline, design: AlzaBrand.fontDesign, weight: .bold))
-                    Spacer()
-                    if let duration = subscriptionStore.freeTrialDurationText {
-                        Text("\(duration) gratis")
-                            .font(.caption.weight(.bold))
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
-                            .background(Capsule().fill(AlzaBrand.primary))
-                            .foregroundStyle(.white)
+        if subscriptionStore.monthlyProduct != nil || subscriptionStore.annualProduct != nil {
+            VStack(spacing: 14) {
+                HStack(spacing: 12) {
+                    if let annual = subscriptionStore.annualProduct {
+                        planOption(plan: .annual, product: annual, badge: "Mejor precio")
+                    }
+                    if let monthly = subscriptionStore.monthlyProduct {
+                        planOption(plan: .monthly, product: monthly, badge: nil)
                     }
                 }
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text(product.displayPrice)
-                        .font(.system(size: 36, weight: .bold, design: AlzaBrand.fontDesign))
-                    Text("/ mes")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
+
+                commitmentCaption
+
+                Label("Incluye Apple Family Sharing, sin costo extra", systemImage: "person.2.fill")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(18)
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(Color(.secondarySystemBackground))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(AlzaBrand.primary, lineWidth: 2)
-                    )
-            )
         } else if subscriptionStore.isLoadingProduct {
             RoundedRectangle(cornerRadius: 20)
                 .fill(Color(.secondarySystemBackground))
-                .frame(height: 96)
+                .frame(height: 140)
                 .overlay(ProgressView())
         } else {
             RoundedRectangle(cornerRadius: 20)
                 .fill(Color(.secondarySystemBackground))
-                .frame(height: 96)
+                .frame(height: 140)
                 .overlay(
                     Text("No se pudo cargar el precio")
                         .foregroundStyle(AlzaBrand.alert)
                 )
+        }
+    }
+
+    /// Una de las dos tarjetas de plan ("12 meses" / "Mensual") — tocarla
+    /// selecciona ese plan, el resaltado con borde de marca indica cual
+    /// esta elegido. El precio del anual se muestra como equivalente
+    /// mensual (total / 12) para que se compare directo con el mensual,
+    /// con el total real aparte en `commitmentCaption`.
+    private func planOption(plan: SubscriptionPlan, product: Product, badge: String?) -> some View {
+        let isSelected = subscriptionStore.selectedPlan == plan
+        let priceText = subscriptionStore.monthlyEquivalentPrice(for: product) ?? product.displayPrice
+
+        return Button {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                subscriptionStore.selectPlan(plan)
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(badge ?? " ")
+                    .font(.caption2.weight(.bold))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(Capsule().fill(badge == nil ? .clear : AlzaBrand.primary))
+                    .foregroundStyle(.white)
+                    .opacity(badge == nil ? 0 : 1)
+
+                Text(plan == .annual ? "12 meses" : "Mensual")
+                    .font(.system(.subheadline, design: AlzaBrand.fontDesign, weight: .semibold))
+                    .foregroundStyle(.primary)
+
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text(priceText)
+                        .font(.system(size: 24, weight: .bold, design: AlzaBrand.fontDesign))
+                        .foregroundStyle(.primary)
+                    Text("/ mes")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(Color(.secondarySystemBackground))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18)
+                            .stroke(isSelected ? AlzaBrand.primary : .clear, lineWidth: 2)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+        .pressable()
+    }
+
+    @ViewBuilder
+    private var commitmentCaption: some View {
+        if let product = subscriptionStore.selectedProduct {
+            Group {
+                if subscriptionStore.selectedPlan == .annual {
+                    Text("Cobro anual — compromiso de 12 meses, \(product.displayPrice) en total")
+                } else {
+                    Text("Cobro mensual, cancela cuando quieras")
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
         }
     }
 
@@ -219,18 +271,19 @@ struct PaywallView: View {
             .background(RoundedRectangle(cornerRadius: 18).fill(AlzaBrand.headerGradient))
         }
         .pressable()
-        .disabled(subscriptionStore.product == nil)
+        .disabled(subscriptionStore.selectedProduct == nil)
     }
 
     @ViewBuilder
     private var confirmationNote: some View {
-        if let price = subscriptionStore.product?.displayPrice,
+        if let price = subscriptionStore.selectedProduct?.displayPrice,
            subscriptionStore.freeTrialDurationText != nil {
+            let cadence = subscriptionStore.selectedPlan == .annual ? "al año" : "al mes"
             VStack(spacing: 4) {
                 Label("Hoy no pagas nada.", systemImage: "checkmark.seal.fill")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(AlzaBrand.primary)
-                Text("Se renueva automaticamente a \(price) / mes despues de la prueba. Cancela cuando quieras.")
+                Text("Se renueva automaticamente a \(price) \(cadence) despues de la prueba. Cancela cuando quieras.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

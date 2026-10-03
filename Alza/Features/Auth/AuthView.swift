@@ -71,21 +71,6 @@ struct AuthView: View {
             .frame(height: 54)
             .clipShape(RoundedRectangle(cornerRadius: 16))
 
-            Button {
-                if let root = PresentationHelper.rootViewController {
-                    Task { await viewModel.signInWithGoogle(presenting: root) }
-                }
-            } label: {
-                HStack(spacing: 10) {
-                    GoogleGlyph()
-                    Text("Continuar con Google")
-                        .font(.system(.headline, design: AlzaBrand.fontDesign))
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: 54)
-            }
-            .buttonStyle(SubtleBorderedButtonStyle())
-
             separator
 
             emailForm
@@ -193,44 +178,3 @@ struct AuthView: View {
     }
 }
 
-/// "G" simplificada para no depender de un asset con los colores oficiales
-/// de Google. TODO(David): si quieres el isotipo oficial, reemplaza esto
-/// por un ImageAsset con el logo real de Google.
-private struct GoogleGlyph: View {
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(Color.white)
-                .frame(width: 22, height: 22)
-                .overlay(Circle().stroke(Color(.separator), lineWidth: 0.5))
-            Text("G")
-                .font(.system(size: 14, weight: .bold, design: .rounded))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [
-                            Color(red: 0.26, green: 0.52, blue: 0.96),
-                            Color(red: 0.85, green: 0.27, blue: 0.24)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-        }
-    }
-}
-
-private struct SubtleBorderedButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(.secondarySystemBackground))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color(.separator), lineWidth: 1)
-                    )
-            )
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
-    }
-}

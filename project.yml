@@ -11,9 +11,6 @@ packages:
   Supabase:
     url: https://github.com/supabase/supabase-swift
     from: 2.5.1
-  GoogleSignIn:
-    url: https://github.com/google/GoogleSignIn-iOS
-    from: 7.1.0
 targets:
   Alza:
     type: application
@@ -53,10 +50,6 @@ targets:
     dependencies:
       - package: Supabase
         product: Supabase
-      - package: GoogleSignIn
-        product: GoogleSignIn
-      - package: GoogleSignIn
-        product: GoogleSignInSwift
       - target: AlzaWidget
         embed: true
   AlzaWidget:

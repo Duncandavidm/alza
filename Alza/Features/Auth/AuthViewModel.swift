@@ -2,7 +2,6 @@ import Foundation
 import UIKit
 import AuthenticationServices
 import Supabase
-import GoogleSignIn
 
 enum EmailAuthMode {
     case signIn
@@ -75,28 +74,6 @@ final class AuthViewModel: ObservableObject {
             } catch {
                 errorMessage = "No se pudo iniciar sesion con Apple: \(error.localizedDescription)"
             }
-        }
-    }
-
-    // MARK: - Sign in with Google
-
-    func signInWithGoogle(presenting viewController: UIViewController) async {
-        errorMessage = nil
-        isSigningIn = true
-        defer { isSigningIn = false }
-
-        do {
-            let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: viewController)
-            guard let idToken = result.user.idToken?.tokenString else {
-                errorMessage = "Google no regreso un id token."
-                return
-            }
-
-            try await supabase.auth.signInWithIdToken(
-                credentials: .init(provider: .google, idToken: idToken)
-            )
-        } catch {
-            errorMessage = "No se pudo iniciar sesion con Google: \(error.localizedDescription)"
         }
     }
 

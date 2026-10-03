@@ -16,7 +16,7 @@ Alza/                       # codigo de la app
   App/                      # entry point, AppState (sesion + suscripcion)
   Core/                     # Supabase client, modelos, StoreKit, config
   Features/
-    Auth/                   # Sign in with Apple + Sign in with Google (nativos)
+    Auth/                   # Sign in with Apple (nativo) + correo/contraseña
     Paywall/                # suscripcion unica $29.99/mes, "Suscribirme"
     Dashboard/              # "Hoy" (cuaderno del dia, voz), cuentas + busqueda
     Bills/                  # EL DIFERENCIADOR: cuentas por pagar + consejo de pago con IA
@@ -79,25 +79,15 @@ open Alza.xcodeproj
   entitlement, pero el capability tiene que existir en el portal).
 - En Xcode: Signing & Capabilities > tu Team.
 
-### 3. Google Sign-In
-
-- Crear un proyecto en Google Cloud Console (o usar uno existente) con la
-  API "Sign in with Google" habilitada.
-- Crear un OAuth Client ID tipo **iOS**, con el bundle id `app.alza`.
-- Poner ese Client ID en `Alza/Core/Config.swift` (`googleSignInClientId`).
-- Poner el **REVERSED_CLIENT_ID** correspondiente en
-  `Alza/Resources/Info.plist` (`CFBundleURLTypes`), reemplazando el TODO.
-
-### 4. Supabase Auth providers
+### 3. Supabase Auth providers
 
 En el dashboard del proyecto `jfhevxztsvnlsuwkwtmd` (Authentication >
 Providers):
 
 - **Apple**: agregar `app.alza` a la lista de Client IDs autorizados (login
   nativo via `signInWithIdToken`, no hace falta Services ID ni redirect URL).
-- **Google**: pegar el mismo Client ID de Google Cloud del paso 3.
 
-### 5. App Store Connect
+### 4. App Store Connect
 
 - Crear la ficha de app nueva bajo el bundle `app.alza`.
 - Crear el producto de suscripcion: **$29.99/mes**, un solo tier. El Product
@@ -108,7 +98,7 @@ Providers):
 - Banking/Tax: si ya los tienes configurados con maday en la misma cuenta de
   desarrollador, no hay que tocar nada (es a nivel cuenta, no por app).
 
-### 6. Verificacion de compras (App Store Server API)
+### 5. Verificacion de compras (App Store Server API)
 
 `verify-apple-receipt` necesita estos secrets en el proyecto Supabase:
 
@@ -144,7 +134,7 @@ mismo mensaje en Ajustes > Suscripcion, en vez del "Renueva el [fecha]"
 normal. Se refresca al abrir la app, al entrar a Ajustes, y despues de
 cualquier compra/restauracion.
 
-### 7. Insights de IA (y registro por voz)
+### 6. Insights de IA (y registro por voz)
 
 ```bash
 supabase secrets set --project-ref jfhevxztsvnlsuwkwtmd \
@@ -160,7 +150,7 @@ microfono/reconocimiento de voz — son solo los textos de permiso en
 `Info.plist` (`NSMicrophoneUsageDescription`,
 `NSSpeechRecognitionUsageDescription`), ya incluidos.
 
-### 8. Icono y marca
+### 7. Icono y marca
 
 Ya resuelto con el logo que diste (el mark de la "a" con flecha):
 
@@ -192,7 +182,7 @@ nombre de archivo) y ajusta los valores en `Brand.swift` si el color
 cambio (y el `AccentColor` del asset catalog, que sigue siendo la
 fuente para los controles nativos de iOS).
 
-### 9. Seguridad
+### 8. Seguridad
 
 Repaso punto por punto de lo que se pidio reforzar:
 
@@ -247,10 +237,7 @@ Repaso punto por punto de lo que se pidio reforzar:
    completarlo (necesitaria Universal Links/Associated Domains con un
    dominio tuyo) — hoy el link de recuperacion no tiene donde
    aterrizar en la app.
-6. **Acceso con Google**: ya estaba implementado (Sign in with Google
-   nativo, sin WebView) desde antes en esta misma pantalla de login,
-   con el mismo peso visual que Apple — no hizo falta cambiar nada ahi.
-7. **Bucket de Storage (S3-compatible) para fotos**: ya se hacia asi
+6. **Bucket de Storage (S3-compatible) para fotos**: ya se hacia asi
    para el logo del negocio (bucket `business-logos`, ver seccion de
    Facturacion arriba); se generalizo el patron en
    `Core/StorageUploadService.swift`, reutilizable para cualquier foto
@@ -268,9 +255,9 @@ Repaso punto por punto de lo que se pidio reforzar:
 **Nada de esto se guardo hardcodeado en el repo** ("no guardes nada en
 el backend de la app" — ningun secreto nuevo entro al codigo ni a
 `project.yml`; las claves siguen viviendo solo como Supabase secrets o
-en Apple/Google, igual que antes).
+en Apple, igual que antes).
 
-### 10. Hardening de las Edge Functions (CORS, validacion, rate limiting)
+### 9. Hardening de las Edge Functions (CORS, validacion, rate limiting)
 
 Repaso de la segunda ronda de seguridad pedida — ver el detalle completo
 en `supabase/functions/README_SECURITY.md`, referenciado desde el
@@ -432,7 +419,7 @@ encabezado de cada funcion:
   categorias, y el cambio % de cada categoria contra el periodo anterior
   equivalente (ej. "Comida: +12% vs el mes pasado") para notar categorias
   que van creciendo antes de que se vuelvan un problema.
-- Auth: Sign in with Apple + Google (nativos, sin redirect web).
+- Auth: Sign in with Apple (nativo, sin redirect web) + correo/contraseña.
 - **"Hoy" (Mi cuaderno del dia)**: pantalla principal — feed cronologico de
   todo lo que paso hoy (como una libreta, no una tabla), boton flotante "+"
   para el ingreso ultra-rapido (solo ¿cuanto? + ¿que fue?, tipo de

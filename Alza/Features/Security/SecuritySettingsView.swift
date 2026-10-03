@@ -20,7 +20,7 @@ struct SecuritySettingsView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Verificacion en 2 pasos: desactivada")
                             .font(.subheadline.weight(.medium))
-                        Text("Agrega una capa extra: ademas de tu contraseña (o Apple/Google), te va a pedir un codigo de una app de autenticacion cada vez que inicies sesion.")
+                        Text("Agrega una capa extra: ademas de tu contraseña (o Apple), te va a pedir un codigo de una app de autenticacion cada vez que inicies sesion.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

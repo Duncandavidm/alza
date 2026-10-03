@@ -13,11 +13,6 @@ enum Config {
     /// con el Product ID configurado ahi.
     static let subscriptionProductId = "app.alza.sub.pro"
 
-    /// TODO(David): Client ID (tipo iOS) de un proyecto en Google Cloud
-    /// Console, habilitado para "Sign in with Google". Debe coincidir con
-    /// el REVERSED_CLIENT_ID puesto en Info.plist.
-    static let googleSignInClientId = "TODO-google-oauth-client-id.apps.googleusercontent.com"
-
     /// Paginas reales en `docs/privacy.html` y `docs/terms.html`, servidas
     /// gratis por GitHub Pages (ver README para activarlo) — asi no
     /// dependen de comprar el dominio alza.app para pasar el review de

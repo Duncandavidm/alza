@@ -4,21 +4,6 @@
 <dict>
   <key>CFBundleIconName</key>
   <string>AppIcon</string>
-  <key>CFBundleURLTypes</key>
-  <array>
-    <dict>
-      <key>CFBundleURLSchemes</key>
-      <array>
-        <!--
-          TODO(David): reemplaza por el "REVERSED_CLIENT_ID" de tu
-          GoogleService-Info.plist / cliente OAuth iOS de Google Cloud
-          Console, para que el redirect de Google Sign-In regrese a la app.
-        -->
-        <string>com.googleusercontent.apps.TODO-REVERSED-CLIENT-ID</string>
-      </array>
-    </dict>
-  </array>
-
   <key>NSMicrophoneUsageDescription</key>
   <string>Alza usa el microfono para que anotes un ingreso o gasto diciendolo en voz alta.</string>
   <key>NSSpeechRecognitionUsageDescription</key>

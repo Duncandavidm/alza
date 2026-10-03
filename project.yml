@@ -28,6 +28,8 @@ targets:
         CFBundleIconName: AppIcon
         UILaunchScreen: {}
         ITSAppUsesNonExemptEncryption: false
+        NSMicrophoneUsageDescription: Amadai usa el microfono para que anotes un ingreso o gasto diciendolo en voz alta.
+        NSSpeechRecognitionUsageDescription: Amadai transcribe lo que dices para llenar el monto, la descripcion y la categoria del movimiento por ti.
     entitlements:
       path: Alza/Resources/Alza.entitlements
       properties:

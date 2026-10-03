@@ -1,6 +1,8 @@
 # Generado por `xcodegen generate` a partir de project.yml — no se versiona.
 *.xcodeproj/
 *.xcworkspace/
+Alza/Resources/Info.plist
+AlzaWidget/Info.plist
 
 # Xcode / SPM
 .build/

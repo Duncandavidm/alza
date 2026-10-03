@@ -1,6 +1,6 @@
 // Edge Function: prioritize-payments
 //
-// EL DIFERENCIADOR DE ALZA: cuando el usuario registra un ingreso, esta
+// EL DIFERENCIADOR DE AMADAI: cuando el usuario registra un ingreso, esta
 // funcion mira sus cuentas por pagar pendientes y sus recurrentes vencidas,
 // y le pide a Claude que arme un plan de pago priorizado — que pagar
 // primero, por que, y si el ingreso alcanza para todo. Se llama justo

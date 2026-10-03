@@ -31,6 +31,7 @@ targets:
       path: Alza/Resources/Info.plist
       properties:
         CFBundleDisplayName: Alza
+        CFBundleIconName: AppIcon
         UILaunchScreen: {}
         ITSAppUsesNonExemptEncryption: false
     entitlements:

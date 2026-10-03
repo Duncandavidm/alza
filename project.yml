@@ -22,11 +22,8 @@ targets:
     sources:
       - path: Alza
         excludes:
-          - Resources/Assets.xcassets
           - Resources/Info.plist
           - Resources/Alza.entitlements
-    resources:
-      - path: Alza/Resources/Assets.xcassets
     info:
       path: Alza/Resources/Info.plist
       properties:

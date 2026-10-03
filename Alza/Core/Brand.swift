@@ -1,13 +1,14 @@
 import SwiftUI
 
-/// La paleta y tipografia oficial de la marca Alza — un solo lugar para
+/// La paleta y tipografia oficial de la marca Amadai — un solo lugar para
 /// no repetir valores hex sueltos por toda la app (y para que "cambiar
 /// el color de marca" sea editar un archivo, no buscar en 15).
 ///
 /// `primary` es el verde/teal EXACTO del logo (sampleado del PNG:
 /// #00A585), tambien puesto como AccentColor del proyecto. El resto de
-/// la paleta viene del prompt original de la version web de Alza.
-enum AlzaBrand {
+/// la paleta viene del prompt original de la version web de Amadai (el
+/// nombre del proyecto cambio despues, la paleta no).
+enum AmadaiBrand {
     /// El verde/teal de marca.
     static let primary = Color(hex: "#00A585") ?? .accentColor
 

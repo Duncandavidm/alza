@@ -163,7 +163,7 @@ async function requestInsightsFromClaude(
   bills: Record<string, unknown>[],
   debts: Record<string, unknown>[],
 ): Promise<InsightSuggestion[]> {
-  const prompt = `Eres el asesor financiero personal de la app Alza. Con el \
+  const prompt = `Eres el asesor financiero personal de la app Amadai. Con el \
 panorama financiero completo de este usuario (perfil — incluye edad, \
 estado civil, dependientes, ocupacion, tolerancia al riesgo y metas de \
 corto/largo plazo si las dio —, cuentas, ultimos movimientos, \

@@ -69,7 +69,7 @@ private struct MarqueeChipView: View {
         HStack(spacing: 6) {
             Text(chip.icon)
             Text(chip.text)
-                .font(.system(.subheadline, design: AlzaBrand.fontDesign, weight: .semibold))
+                .font(.system(.subheadline, design: AmadaiBrand.fontDesign, weight: .semibold))
                 .lineLimit(1)
                 .fixedSize(horizontal: true, vertical: false)
         }

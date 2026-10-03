@@ -103,7 +103,7 @@ struct BudgetWidgetView: View {
         VStack(spacing: 6) {
             Image(systemName: "chart.bar.fill")
                 .foregroundStyle(.secondary)
-            Text("Abre Alza y crea un presupuesto")
+            Text("Abre Amadai y crea un presupuesto")
                 .font(.caption2)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)

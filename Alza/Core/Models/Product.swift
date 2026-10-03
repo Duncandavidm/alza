@@ -2,11 +2,11 @@ import Foundation
 
 /// Catalogo de productos/servicios con calculadora de precio: el usuario
 /// pone cuanto le cuesta (precio costo) y el margen que quiere ganar, y
-/// Alza calcula el precio de venta. Reutilizable al armar items de una
+/// Amadai calcula el precio de venta. Reutilizable al armar items de una
 /// factura/remision.
 ///
 /// Se llama "CatalogProduct" y no "Product" a proposito: StoreKit ya
-/// define un tipo `Product` (la suscripcion de Alza Pro, ver
+/// define un tipo `Product` (la suscripcion de Amadai Pro, ver
 /// SubscriptionStore.swift) y, dentro del mismo modulo, un tipo propio
 /// con ese nombre le gana la resolucion al de StoreKit — rompia el
 /// paywall ("Value of type 'Product' has no member 'displayPrice'").

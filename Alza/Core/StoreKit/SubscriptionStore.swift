@@ -15,7 +15,7 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
     }
 }
 
-/// Maneja la compra/restauracion de la suscripcion de Alza con StoreKit 2
+/// Maneja la compra/restauracion de la suscripcion de Amadai con StoreKit 2
 /// directo (nada de bridge nativo<->JS: la app es 100% nativa). Dos planes
 /// del mismo Pro (mensual y anual, mismo grupo de suscripcion en App Store
 /// Connect) — el usuario elige cual comprar, pero ambos dan exactamente el

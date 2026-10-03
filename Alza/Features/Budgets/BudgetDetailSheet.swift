@@ -32,7 +32,7 @@ struct BudgetDetailSheet: View {
                         .background(Circle().fill(selectedColor.opacity(0.18)))
 
                     Text(progress.budget.category)
-                        .font(.system(.title3, design: AlzaBrand.fontDesign, weight: .bold))
+                        .font(.system(.title3, design: AmadaiBrand.fontDesign, weight: .bold))
 
                     if let averageMonthly {
                         Text("prom. \(BudgetCandyBar.compactAmount(averageMonthly)) / mes")
@@ -79,7 +79,7 @@ struct BudgetDetailSheet: View {
                 if let errorMessage {
                     Text(errorMessage)
                         .font(.footnote)
-                        .foregroundStyle(AlzaBrand.alert)
+                        .foregroundStyle(AmadaiBrand.alert)
                 }
 
                 Spacer()
@@ -88,12 +88,12 @@ struct BudgetDetailSheet: View {
                     Task { await delete() }
                 } label: {
                     Text("Eliminar presupuesto")
-                        .font(.system(.headline, design: AlzaBrand.fontDesign))
+                        .font(.system(.headline, design: AmadaiBrand.fontDesign))
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
                 }
                 .buttonStyle(.bordered)
-                .tint(AlzaBrand.alert)
+                .tint(AmadaiBrand.alert)
                 .pressable()
             }
             .padding(24)

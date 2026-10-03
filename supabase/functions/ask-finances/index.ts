@@ -169,7 +169,7 @@ async function askClaude(
   bills: Record<string, unknown>[],
   debts: Record<string, unknown>[],
 ): Promise<string> {
-  const prompt = `Eres el asesor financiero personal de la app Alza. El \
+  const prompt = `Eres el asesor financiero personal de la app Amadai. El \
 usuario te esta preguntando algo sobre sus finanzas. Respondele en espanol,\
  en lenguaje sencillo (nada de jerga contable), con los numeros exactos que \
 respalden tu respuesta. Si la pregunta no se puede responder con estos \

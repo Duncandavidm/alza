@@ -1,7 +1,7 @@
 import Foundation
 import Supabase
 
-/// Punto unico de acceso al SupabaseClient del backend de Alza.
+/// Punto unico de acceso al SupabaseClient del backend de Amadai.
 final class SupabaseManager {
     static let shared = SupabaseManager()
 

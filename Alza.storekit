@@ -61,7 +61,7 @@
     {
       "id" : "62AFE553-CA8F-4ECB-A21F-9A1F28E0BB7E",
       "localizations" : [],
-      "name" : "Alza Pro",
+      "name" : "Amadai Pro",
       "subscriptions" : [
         {
           "adHocOffers" : [],
@@ -80,13 +80,13 @@
           "localizations" : [
             {
               "description" : "Dashboard financiero completo + insights de IA personalizados sobre tus cuentas y gastos.",
-              "displayName" : "Alza Pro Mensual",
+              "displayName" : "Amadai Pro Mensual",
               "locale" : "es_MX"
             }
           ],
           "productID" : "app.alza.sub.pro",
           "recurringSubscriptionPeriod" : "P1M",
-          "referenceName" : "Alza Pro Mensual",
+          "referenceName" : "Amadai Pro Mensual",
           "subscriptionGroupID" : "62AFE553-CA8F-4ECB-A21F-9A1F28E0BB7E",
           "type" : "RecurringSubscription"
         },
@@ -107,13 +107,13 @@
           "localizations" : [
             {
               "description" : "Dashboard financiero completo + insights de IA personalizados sobre tus cuentas y gastos. Plan anual, equivale a $5.99/mes.",
-              "displayName" : "Alza Pro Anual",
+              "displayName" : "Amadai Pro Anual",
               "locale" : "es_MX"
             }
           ],
           "productID" : "app.alza.sub.pro.annual",
           "recurringSubscriptionPeriod" : "P1Y",
-          "referenceName" : "Alza Pro Anual",
+          "referenceName" : "Amadai Pro Anual",
           "subscriptionGroupID" : "62AFE553-CA8F-4ECB-A21F-9A1F28E0BB7E",
           "type" : "RecurringSubscription"
         }

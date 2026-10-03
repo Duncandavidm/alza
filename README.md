@@ -1,10 +1,10 @@
-# Alza (iOS, nativa)
+# Amadai (iOS, nativa)
 
-Alza es una app de iPhone **100% nativa** (SwiftUI + StoreKit 2), sin
+Amadai es una app de iPhone **100% nativa** (SwiftUI + StoreKit 2), sin
 WKWebView y sin ninguna relacion con maday.app: backend propio (Supabase),
 UI propia, suscripcion propia.
 
-**El diferenciador**: Alza no solo registra tus movimientos, te aconseja.
+**El diferenciador**: Amadai no solo registra tus movimientos, te aconseja.
 Cuando registras un ingreso, si tienes cuentas por pagar pendientes o
 recurrentes vencidas, te dice — con IA, viendo tus datos reales — que
 pagar primero y por que. Ver "Cuentas por pagar + consejo de pago" abajo.
@@ -90,7 +90,7 @@ Providers):
 ### 4. App Store Connect
 
 - Crear la ficha de app nueva bajo el bundle `app.alza`.
-- Crear el grupo de suscripcion **"Alza Pro"** con dos productos dentro del
+- Crear el grupo de suscripcion **"Amadai Pro"** con dos productos dentro del
   MISMO grupo (para que StoreKit los trate como planes intercambiables del
   mismo Pro, no como dos suscripciones separadas — el usuario puede pasar
   de uno a otro sin perder el historial):
@@ -101,7 +101,7 @@ Providers):
     coincidir con `Config.subscriptionProductIdAnnual`.
   - En ambos, activa el toggle **"Family Sharing"** al crearlos — así quien
     compre comparte Pro gratis con su familia de Apple (hasta 5 personas),
-    cada quien con su propia cuenta y datos de Alza, sin costo extra. No
+    cada quien con su propia cuenta y datos de Amadai, sin costo extra. No
     hay forma de cobrar distinto por esto — es una caracteristica nativa
     del producto, no un plan aparte.
   - Mismo periodo de prueba gratis (1 semana) en los dos, si quieres
@@ -176,10 +176,10 @@ Ya resuelto con el logo que diste (el mark de la "a" con flecha):
   directo del logo), aplicado automaticamente por iOS a casi todo
   (botones, toggles, graficas) sin tener que tocar cada pantalla.
 - **`Alza/Core/Brand.swift`**: la paleta completa en un solo lugar
-  (`AlzaBrand.primary/.primaryDark/.darkSurface/.onDarkSurface/.alert/
+  (`AmadaiBrand.primary/.primaryDark/.darkSurface/.onDarkSurface/.alert/
   .border/.headerGradient/.fontDesign`), para no repetir valores hex
   sueltos por toda la app. El header del login usaba `Color.black` como
-  placeholder — ya no: ahora es `AlzaBrand.headerGradient` (degradado de
+  placeholder — ya no: ahora es `AmadaiBrand.headerGradient` (degradado de
   teal de marca a un charcoal-teal oscuro, `#0E1614`, tomado del prompt
   original de la version web). La tipografia de marca usa el design
   "rounded" del sistema (SF Pro Rounded) — Inter/Manrope (lo que pedia
@@ -327,11 +327,11 @@ encabezado de cada funcion:
   (verificacion contra HaveIBeenPwned) sigue desactivada — es un toggle
   en Authentication > Policies que no se pudo prender desde aqui.
 - **CSP**: no aplica — es un mecanismo que cumplen los navegadores al
-  renderizar HTML/JS; estas funciones regresan JSON puro y Alza es una
+  renderizar HTML/JS; estas funciones regresan JSON puro y Amadai es una
   app nativa sin WebView, no hay nada que un CSP pudiera restringir.
 - **Microinteracciones nativas**: se pidio "transiciones de pestañas
   fluidas, indicador de pestaña activa, microinteracciones, interfaz
-  moderna, React + CSS + Framer Motion" — como Alza es 100% SwiftUI
+  moderna, React + CSS + Framer Motion" — como Amadai es 100% SwiftUI
   nativo (no hay React ni web de por medio), se tradujo la intencion al
   equivalente nativo: `Core/Microinteractions.swift` (`PressableButtonStyle`
   + `.pressable()`, el boton se encoge con resorte al presionarlo, igual
@@ -365,7 +365,7 @@ encabezado de cada funcion:
   cuenta elegida, asi el "Hoy"/presupuestos/insights quedan consistentes.
 - **Calculadora de precio costo -> precio de venta (Products/)**: Ajustes >
   Catalogo y precios. Para comercios: pones el precio costo y el margen
-  que quieres ganar, Alza calcula el precio de venta en vivo (formula de
+  que quieres ganar, Amadai calcula el precio de venta en vivo (formula de
   margen sobre precio de venta, no sobre costo). Los productos guardados
   se pueden reusar como items al armar una factura.
 - **Cuentas por pagar + consejo de pago con IA (Bills/, el diferenciador)**:
@@ -516,20 +516,20 @@ encabezado de cada funcion:
   Avanzado se agregan categoria y etiquetas.
 - **Anotar gasto por Atajos de Apple, con categoria automatica**
   (`AlzaShortcuts.swift` + `MerchantCategoryGuesser.swift`): expone un App
-  Intent ("Anotar un gasto en Alza") que cualquier Atajo puede llamar,
+  Intent ("Anotar un gasto en Amadai") que cualquier Atajo puede llamar,
   pensado para automatizarlo con el disparador real **"Transaccion"**
   (Atajos lo renombro **"Wallet"** en iOS 26) que Apple agrego en iOS 17
   para tarjetas/pases de Wallet — ese SI entrega monto y comercio como
   variables del disparador, confirmado contra como lo usan apps como
-  MonAi. Alza no tiene ni puede tener acceso directo a Apple Pay/Wallet
+  MonAi. Amadai no tiene ni puede tener acceso directo a Apple Pay/Wallet
   fuera de eso (no existe ese acceso para apps de terceros) — la
   automatizacion la arma el propio David en Atajos:
   1. Atajos > Automatizacion > Nueva automatizacion personal > Transaccion
      (o "Wallet" en iOS 26) > elige la(s) tarjeta(s) a vigilar.
-  2. Agregar accion > buscar "Anotar un gasto en Alza" > en Monto y
+  2. Agregar accion > buscar "Anotar un gasto en Amadai" > en Monto y
      Comercio, usa las variables que entrega el disparador ("Shortcut
      Input" > Amount / Merchant) en vez de escribirlas a mano.
-  3. Opcional: en "Cuenta" elige a cual cuenta de Alza (ej. "Tarjeta
+  3. Opcional: en "Cuenta" elige a cual cuenta de Amadai (ej. "Tarjeta
      debito") apuntar esta automatizacion — si no eliges ninguna, cae en
      la primera cuenta que exista, igual que antes.
   4. Desactivar "Preguntar antes de ejecutar" si quieres que corra solo.
@@ -546,13 +546,13 @@ encabezado de cada funcion:
   base de datos — se recalcula siempre de monto restante y meses hasta
   la fecha limite (redondeando cualquier fraccion de mes hacia arriba),
   para que mover la fecha o registrar un aporte actualice el numero solo,
-  sin desincronizarse. Cada meta puede vincularse a una cuenta de Alza;
+  sin desincronizarse. Cada meta puede vincularse a una cuenta de Amadai;
   si la tiene, cada aporte ademas anota un movimiento real
   (transferencia, categoria Ahorro) para que ese dinero salga de ahi en
-  el resto de la app, igual de simple que el resto de Alza (sin
+  el resto de la app, igual de simple que el resto de Amadai (sin
   contabilidad de doble entrada).
 - **Sugerencias** (Ajustes > Sugerencias): buzon simple donde el cliente
-  escribe que le gustaria ver en Alza — se guarda en la tabla
+  escribe que le gustaria ver en Amadai — se guarda en la tabla
   `feedback_suggestions` (RLS: cada cliente solo ve/borra las suyas) y
   queda ahi mismo como historial de lo ya enviado. No hay pantalla de
   admin dentro de la app: David revisa las sugerencias de todos los
@@ -587,21 +587,21 @@ siguiente pieza natural si se quiere ese nivel de detalle.
 ### Ideas del prompt de la version web (Lovable) que se dejaron fuera por ahora
 
 David compartio el prompt completo que uso para construir una version web
-de Alza en Lovable (React/Supabase) y pidio aplicar mejoras de ahi a esta
+de Amadai en Lovable (React/Supabase) y pidio aplicar mejoras de ahi a esta
 app nativa. Se tomaron las partes de mayor valor y mas faciles de integrar
 de verdad con lo que ya existe (perfil mas completo en el onboarding,
 deudas, gastos por categoria). Lo que se dejo fuera por ahora, para no
 disparar el alcance de una sola pasada:
 
 - **Multi-idioma (ES/EN)**: el prompt pedia i18n completo con
-  react-i18next; Alza es nativa SwiftUI, asi que el equivalente real seria
+  react-i18next; Amadai es nativa SwiftUI, asi que el equivalente real seria
   un String Catalog (.xcstrings) con cada string de cada pantalla
   traducido — son decenas de archivos y requeriria revisar cada uno sin
   poder compilar en este entorno. Queda pendiente como su propia pasada.
 - **Market & Opportunity Radar** (watchlist de acciones + feed de
   noticias via Alpha Vantage/News API): el prompt original lo deja como
   "Coming Soon" con datos de prueba hasta conectar llaves reales; no se
-  construyo aqui porque Alza no tiene esas integraciones y no es el
+  construyo aqui porque Amadai no tiene esas integraciones y no es el
   enfoque actual (asesoria personal/negocio, no trading).
 - **Guia de ejecucion de inversiones** (checklist paso a paso por activo) —
   modulo nuevo grande, no conectado a lo que ya existe.

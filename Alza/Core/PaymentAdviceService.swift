@@ -20,7 +20,7 @@ struct PaymentAdviceResponse: Decodable {
     let items: [PaymentAdviceItem]?
 }
 
-/// El diferenciador de Alza: al registrar un ingreso, pregunta que hacer
+/// El diferenciador de Amadai: al registrar un ingreso, pregunta que hacer
 /// primero con ese dinero (Edge Function prioritize-payments).
 enum PaymentAdviceService {
     private struct Payload: Encodable {

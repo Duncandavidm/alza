@@ -5,8 +5,8 @@
   <key>CFBundleIconName</key>
   <string>AppIcon</string>
   <key>NSMicrophoneUsageDescription</key>
-  <string>Alza usa el microfono para que anotes un ingreso o gasto diciendolo en voz alta.</string>
+  <string>Amadai usa el microfono para que anotes un ingreso o gasto diciendolo en voz alta.</string>
   <key>NSSpeechRecognitionUsageDescription</key>
-  <string>Alza transcribe lo que dices para llenar el monto, la descripcion y la categoria del movimiento por ti.</string>
+  <string>Amadai transcribe lo que dices para llenar el monto, la descripcion y la categoria del movimiento por ti.</string>
 </dict>
 </plist>

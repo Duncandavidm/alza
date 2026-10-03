@@ -16,7 +16,7 @@ struct SavingsGoalsView: View {
                 ContentUnavailableView(
                     "Sin metas de ahorro",
                     systemImage: "target",
-                    description: Text("Crea una meta — un carro, un TV, un viaje — y Alza te dice cuanto ahorrar cada mes para llegar a tiempo.")
+                    description: Text("Crea una meta — un carro, un TV, un viaje — y Amadai te dice cuanto ahorrar cada mes para llegar a tiempo.")
                 )
             }
 
@@ -66,7 +66,7 @@ struct SavingsGoalsView: View {
                     Text(goal.name).font(.body)
                     Text(goal.targetDateValue.formatted(date: .abbreviated, time: .omitted))
                         .font(.caption)
-                        .foregroundStyle(goal.isPastDue ? AlzaBrand.alert : .secondary)
+                        .foregroundStyle(goal.isPastDue ? AmadaiBrand.alert : .secondary)
                 }
 
                 Spacer()
@@ -76,14 +76,14 @@ struct SavingsGoalsView: View {
                 } label: {
                     Image(systemName: "plus.circle.fill")
                         .font(.title2)
-                        .foregroundStyle(AlzaBrand.primary)
+                        .foregroundStyle(AmadaiBrand.primary)
                 }
                 .buttonStyle(.plain)
                 .disabled(goal.isAchieved)
             }
 
             ProgressView(value: goal.progress)
-                .tint(goal.isAchieved ? .green : AlzaBrand.primary)
+                .tint(goal.isAchieved ? .green : AmadaiBrand.primary)
 
             HStack {
                 Text("\(goal.currentAmount, format: .currency(code: "USD")) de \(goal.targetAmount, format: .currency(code: "USD"))")
@@ -99,7 +99,7 @@ struct SavingsGoalsView: View {
                 } else {
                     Text("\(goal.monthlyContributionNeeded, format: .currency(code: "USD"))/mes")
                         .font(.caption.bold())
-                        .foregroundStyle(AlzaBrand.primary)
+                        .foregroundStyle(AmadaiBrand.primary)
                 }
             }
         }
@@ -148,7 +148,7 @@ private struct ContributeToGoalView: View {
                 }
 
                 if let errorMessage {
-                    Text(errorMessage).foregroundStyle(AlzaBrand.alert)
+                    Text(errorMessage).foregroundStyle(AmadaiBrand.alert)
                 }
             }
             .navigationTitle("Agregar aporte")

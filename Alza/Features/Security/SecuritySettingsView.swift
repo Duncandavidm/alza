@@ -49,7 +49,7 @@ struct SecuritySettingsView: View {
 
             if let errorMessage {
                 Section {
-                    Text(errorMessage).foregroundStyle(AlzaBrand.alert).font(.footnote)
+                    Text(errorMessage).foregroundStyle(AmadaiBrand.alert).font(.footnote)
                 }
             }
         }

@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Cuentas por pagar: facturas/recibos pendientes con fecha de vencimiento.
-/// El diferenciador de Alza se apoya en esta lista para aconsejar que pagar
+/// El diferenciador de Amadai se apoya en esta lista para aconsejar que pagar
 /// primero cuando entra un ingreso (ver PaymentAdviceView).
 struct BillsView: View {
     @EnvironmentObject private var appState: AppState
@@ -15,7 +15,7 @@ struct BillsView: View {
                 ContentUnavailableView(
                     "Sin cuentas por pagar",
                     systemImage: "tray.full",
-                    description: Text("Agrega una factura o recibo pendiente para que Alza te ayude a priorizar los pagos.")
+                    description: Text("Agrega una factura o recibo pendiente para que Amadai te ayude a priorizar los pagos.")
                 )
             }
 

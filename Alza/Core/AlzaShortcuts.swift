@@ -4,17 +4,17 @@ import Supabase
 
 /// Permite que un Atajo de Apple (ej. una automatizacion personal disparada
 /// por el disparador "Transaccion"/"Wallet" de la app Atajos, que si existe
-/// desde iOS 17 para tarjetas de Wallet/Apple Pay) anote un gasto en Alza
+/// desde iOS 17 para tarjetas de Wallet/Apple Pay) anote un gasto en Amadai
 /// sin abrir la app.
 ///
-/// Esto NO le da a Alza acceso directo a Apple Pay/Wallet en si — expone un
+/// Esto NO le da a Amadai acceso directo a Apple Pay/Wallet en si — expone un
 /// App Intent que CUALQUIER Atajo puede llamar. Armar la automatizacion
 /// "cuando pague con mi tarjeta, corre este atajo" es algo que David
 /// configura a mano en la app Atajos; ver el README para el paso a paso.
-struct AddAlzaExpenseIntent: AppIntent {
-    static var title: LocalizedStringResource = "Anotar un gasto en Alza"
+struct AddAmadaiExpenseIntent: AppIntent {
+    static var title: LocalizedStringResource = "Anotar un gasto en Amadai"
     static var description = IntentDescription(
-        "Registra un gasto en Alza, adivinando la categoria por el nombre del comercio. Pensado para usarse desde un Atajo, por ejemplo disparado por una transaccion de Apple Pay/Wallet."
+        "Registra un gasto en Amadai, adivinando la categoria por el nombre del comercio. Pensado para usarse desde un Atajo, por ejemplo disparado por una transaccion de Apple Pay/Wallet."
     )
 
     @Parameter(title: "Monto")
@@ -28,10 +28,10 @@ struct AddAlzaExpenseIntent: AppIntent {
     /// tipo "Tarjeta debito" y la selecciona aqui al armar el Atajo, cada
     /// automatizacion puede apuntar a una cuenta distinta.
     @Parameter(title: "Cuenta (opcional)")
-    var account: AlzaAccountEntity?
+    var account: AmadaiAccountEntity?
 
     static var parameterSummary: some ParameterSummary {
-        Summary("Anotar \(\.$amount) de \(\.$merchant) en Alza") {
+        Summary("Anotar \(\.$amount) de \(\.$merchant) en Amadai") {
             \.$account
         }
     }
@@ -41,7 +41,7 @@ struct AddAlzaExpenseIntent: AppIntent {
         let supabase = SupabaseManager.shared.client
 
         guard let session = try? await supabase.auth.session else {
-            return .result(dialog: "Abre Alza e inicia sesion primero.")
+            return .result(dialog: "Abre Amadai e inicia sesion primero.")
         }
 
         let userId = session.user.id
@@ -60,7 +60,7 @@ struct AddAlzaExpenseIntent: AppIntent {
                 .value) ?? []
 
             guard let first = accounts.first?.id else {
-                return .result(dialog: "Crea al menos una cuenta en Alza antes de anotar por Atajos.")
+                return .result(dialog: "Crea al menos una cuenta en Amadai antes de anotar por Atajos.")
             }
             accountId = first
         }
@@ -84,29 +84,29 @@ struct AddAlzaExpenseIntent: AppIntent {
     }
 }
 
-/// Representa una cuenta de Alza para que Atajos la pueda mostrar como una
+/// Representa una cuenta de Amadai para que Atajos la pueda mostrar como una
 /// lista para elegir al armar la automatizacion.
-struct AlzaAccountEntity: AppEntity {
+struct AmadaiAccountEntity: AppEntity {
     let id: UUID
     let name: String
 
-    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Cuenta de Alza"
-    static var defaultQuery = AlzaAccountQuery()
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Cuenta de Amadai"
+    static var defaultQuery = AmadaiAccountQuery()
 
     var displayRepresentation: DisplayRepresentation {
         DisplayRepresentation(title: "\(name)")
     }
 }
 
-struct AlzaAccountQuery: EntityQuery {
-    func entities(for identifiers: [UUID]) async throws -> [AlzaAccountEntity] {
+struct AmadaiAccountQuery: EntityQuery {
+    func entities(for identifiers: [UUID]) async throws -> [AmadaiAccountEntity] {
         try await Self.fetchAccounts().filter { identifiers.contains($0.id) }.map {
-            AlzaAccountEntity(id: $0.id, name: $0.name)
+            AmadaiAccountEntity(id: $0.id, name: $0.name)
         }
     }
 
-    func suggestedEntities() async throws -> [AlzaAccountEntity] {
-        try await Self.fetchAccounts().map { AlzaAccountEntity(id: $0.id, name: $0.name) }
+    func suggestedEntities() async throws -> [AmadaiAccountEntity] {
+        try await Self.fetchAccounts().map { AmadaiAccountEntity(id: $0.id, name: $0.name) }
     }
 
     private static func fetchAccounts() async throws -> [Account] {
@@ -123,10 +123,10 @@ struct AlzaAccountQuery: EntityQuery {
     }
 }
 
-struct AlzaShortcuts: AppShortcutsProvider {
+struct AmadaiShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
-            intent: AddAlzaExpenseIntent(),
+            intent: AddAmadaiExpenseIntent(),
             phrases: [
                 "Anota un gasto en \(.applicationName)",
                 "Registra un gasto en \(.applicationName)"

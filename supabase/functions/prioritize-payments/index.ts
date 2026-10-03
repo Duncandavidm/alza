@@ -213,7 +213,7 @@ async function askClaude(
     movementType: "gasto",
   }));
 
-  const prompt = `Eres el asesor financiero de la app Alza. El dueño de un \
+  const prompt = `Eres el asesor financiero de la app Amadai. El dueño de un \
 negocio acaba de registrar un ingreso de $${incomeAmount.toFixed(2)}. Tiene \
 estas cuentas por pagar pendientes, pagos recurrentes vencidos o por vencer \
 pronto, y deudas activas (tarjetas de credito, prestamos):

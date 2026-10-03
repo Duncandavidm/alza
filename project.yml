@@ -24,7 +24,7 @@ targets:
     info:
       path: Alza/Resources/Info.plist
       properties:
-        CFBundleDisplayName: Alza
+        CFBundleDisplayName: Amadai
         CFBundleIconName: AppIcon
         UILaunchScreen: {}
         ITSAppUsesNonExemptEncryption: false
@@ -42,7 +42,7 @@ targets:
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: "4"
+        CURRENT_PROJECT_VERSION: "5"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: S7ZS3G5284
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -63,7 +63,7 @@ targets:
     info:
       path: AlzaWidget/Info.plist
       properties:
-        CFBundleDisplayName: Alza
+        CFBundleDisplayName: Amadai
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     entitlements:
@@ -78,7 +78,7 @@ targets:
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: "4"
+        CURRENT_PROJECT_VERSION: "5"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: S7ZS3G5284
 schemes:

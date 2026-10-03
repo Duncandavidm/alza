@@ -1,9 +1,16 @@
 import Foundation
 
-/// Configuracion del backend propio de Alza (proyecto Supabase nuevo,
+/// Configuracion del backend propio de Amadai (proyecto Supabase nuevo,
 /// sin relacion con maday). Los valores de Supabase son publicos por diseno
 /// (equivalentes a la publishable key de maday) y estan pensados para vivir
 /// en el binario del cliente.
+///
+/// Nota sobre el nombre: el Bundle ID (`app.alza`) y los Product ID de
+/// abajo siguen diciendo "alza" a proposito — son identificadores tecnicos
+/// ya dados de alta en App Store Connect (la ficha, la suscripcion, el
+/// build ya subido). Cambiarlos ahora equivaldria a empezar una app nueva
+/// de cero ahi. Lo unico que cambia es el nombre visible (ver
+/// CFBundleDisplayName en project.yml) y todo el texto que lee el cliente.
 enum Config {
     static let supabaseURL = URL(string: "https://jfhevxztsvnlsuwkwtmd.supabase.co")!
     static let supabaseAnonKey = "sb_publishable_Sc7czB2BxbUwbUyKCXvmRg_y32J1KQi"
@@ -14,7 +21,7 @@ enum Config {
     static let subscriptionProductId = "app.alza.sub.pro"
 
     /// TODO(David): crear este segundo producto en App Store Connect, en el
-    /// MISMO grupo de suscripcion "Alza Pro" que `subscriptionProductId`
+    /// MISMO grupo de suscripcion "Amadai Pro" que `subscriptionProductId`
     /// (para que StoreKit los trate como planes intercambiables del mismo
     /// Pro, no como dos suscripciones separadas) — ver README "App Store
     /// Connect" para el paso a paso. $5.99/mes ($71.88/año).
@@ -22,11 +29,15 @@ enum Config {
 
     /// Paginas reales en `docs/privacy.html` y `docs/terms.html`, servidas
     /// gratis por GitHub Pages (ver README para activarlo) — asi no
-    /// dependen de comprar el dominio alza.app para pasar el review de
-    /// Apple (App Store Review Guideline 3.1.2, obligatorio por tener
-    /// suscripcion). Si mas adelante compras alza.app, apunta su DNS a
-    /// GitHub Pages como dominio personalizado y cambia estas dos URLs.
+    /// dependen de comprar un dominio propio para pasar el review de Apple
+    /// (App Store Review Guideline 3.1.2, obligatorio por tener
+    /// suscripcion). La URL sigue diciendo "/alza/" porque asi se llama el
+    /// repositorio en GitHub — no afecta el nombre que ve el cliente. Si
+    /// mas adelante compras un dominio propio, apunta su DNS a GitHub
+    /// Pages como dominio personalizado y cambia estas dos URLs.
     static let privacyPolicyURL = URL(string: "https://duncandavidm.github.io/alza/privacy.html")!
     static let termsOfUseURL = URL(string: "https://duncandavidm.github.io/alza/terms.html")!
-    static let supportEmail = "soporte@alza.app"
+    /// TODO(David): este dominio todavia no existe — cuando tengas uno
+    /// propio para Amadai, cambialo aqui.
+    static let supportEmail = "soporte@amadai.app"
 }

@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// La curva negra del header de auth — un "swoosh" diagonal inspirado en
-/// headers curvos de apps fintech/e-commerce, con la marca de Alza encima.
+/// headers curvos de apps fintech/e-commerce, con la marca de Amadai encima.
 struct AuthHeaderShape: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()

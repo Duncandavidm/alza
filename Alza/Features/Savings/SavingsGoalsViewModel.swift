@@ -84,7 +84,7 @@ final class SavingsGoalsViewModel: ObservableObject {
     /// cuenta vinculada, tambien anota un movimiento real (transferencia,
     /// categoria Ahorro) para que ese dinero salga de la cuenta de origen
     /// en el resto de la app — no es contabilidad de doble entrada, solo
-    /// un movimiento de salida, igual de simple que el resto de Alza.
+    /// un movimiento de salida, igual de simple que el resto de Amadai.
     func contribute(to goal: SavingsGoal, amount: Decimal, userId: UUID) async throws {
         struct Update: Encodable {
             let currentAmount: Decimal

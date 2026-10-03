@@ -50,7 +50,7 @@ enum SurplusAdviceService {
         case ..<20:
             return "Pagaste tus cuentas y te quedaron \(amountText). Es poco para invertir, pero es perfecto para empezar tu fondo de emergencia — cada poquito cuenta."
         case 20..<100:
-            return "Pagaste tus cuentas y te quedaron \(amountText). Buen momento para crear una meta de ahorro en Alza — hasta un fondo de emergencia chico te da colchon para el proximo imprevisto."
+            return "Pagaste tus cuentas y te quedaron \(amountText). Buen momento para crear una meta de ahorro en Amadai — hasta un fondo de emergencia chico te da colchon para el proximo imprevisto."
         case 100..<500:
             return "Pagaste tus cuentas y te quedaron \(amountText). Si ya tienes de 3 a 6 meses de gastos ahorrados, es buen monto para empezar a invertir; si no, te conviene completar ese fondo primero."
         default:

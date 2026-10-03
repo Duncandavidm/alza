@@ -93,7 +93,7 @@ struct ReceiptDocumentView: View {
                     .foregroundStyle(.green)
             }
 
-            Text("Generado con Alza")
+            Text("Generado con Amadai")
                 .font(.system(.caption2, design: font))
                 .foregroundStyle(.gray)
         }

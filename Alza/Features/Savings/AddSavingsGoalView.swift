@@ -74,7 +74,7 @@ struct AddSavingsGoalView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(monthlyContributionNeeded, format: .currency(code: "USD"))
                                 .font(.title2.bold())
-                                .foregroundStyle(AlzaBrand.primary)
+                                .foregroundStyle(AmadaiBrand.primary)
                             Text("por mes durante \(monthsRemaining) mes\(monthsRemaining == 1 ? "" : "es") para llegar a tiempo.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -84,7 +84,7 @@ struct AddSavingsGoalView: View {
                 }
 
                 if let errorMessage {
-                    Text(errorMessage).foregroundStyle(AlzaBrand.alert)
+                    Text(errorMessage).foregroundStyle(AmadaiBrand.alert)
                 }
             }
             .navigationTitle(existingGoal == nil ? "Nueva meta de ahorro" : "Editar meta")
@@ -113,11 +113,11 @@ struct AddSavingsGoalView: View {
                             .frame(width: 44, height: 44)
                             .background(
                                 Circle().fill(
-                                    emoji == option ? AlzaBrand.primary.opacity(0.18) : Color(.secondarySystemBackground)
+                                    emoji == option ? AmadaiBrand.primary.opacity(0.18) : Color(.secondarySystemBackground)
                                 )
                             )
                             .overlay(
-                                Circle().stroke(AlzaBrand.primary, lineWidth: emoji == option ? 2 : 0)
+                                Circle().stroke(AmadaiBrand.primary, lineWidth: emoji == option ? 2 : 0)
                             )
                     }
                 }

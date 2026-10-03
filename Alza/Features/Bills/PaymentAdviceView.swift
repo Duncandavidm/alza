@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// El pop-up del diferenciador de Alza: aparece justo despues de registrar
+/// El pop-up del diferenciador de Amadai: aparece justo despues de registrar
 /// un ingreso, si hay cuentas por pagar o recurrentes vencidas, con un
 /// plan de pago priorizado por IA y un boton para pagar cada una ahi mismo.
 struct PaymentAdviceView: View {
@@ -33,7 +33,7 @@ struct PaymentAdviceView: View {
                     Text(errorMessage).foregroundStyle(.red).font(.caption)
                 }
             }
-            .navigationTitle("Consejo de Alza")
+            .navigationTitle("Consejo de Amadai")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Listo") { dismiss() }

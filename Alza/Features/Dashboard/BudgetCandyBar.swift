@@ -33,13 +33,13 @@ struct BudgetCandyBar: View {
                     .font(.caption.weight(.semibold))
                 Text("\(Int(progress.ratio * 100))%")
                     .font(.caption2)
-                    .foregroundStyle(progress.status == .over ? AlzaBrand.alert : .secondary)
+                    .foregroundStyle(progress.status == .over ? AmadaiBrand.alert : .secondary)
             }
         }
     }
 
     private var fillColor: Color {
-        progress.status == .over ? AlzaBrand.alert : color
+        progress.status == .over ? AmadaiBrand.alert : color
     }
 
     private var categoryEmoji: String {

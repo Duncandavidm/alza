@@ -25,7 +25,7 @@ enum MFAService {
     /// que le muestre su app de autenticacion.
     static func enrollTOTP() async throws -> EnrollResult {
         let response = try await supabase.auth.mfa.enroll(
-            params: MFATotpEnrollParams(issuer: "Alza")
+            params: MFATotpEnrollParams(issuer: "Amadai")
         )
         guard let totp = response.totp else {
             throw MFAServiceError.missingTOTPPayload

@@ -139,7 +139,7 @@ struct AddTransactionView: View {
             let remaining = progress.budget.limitAmount - progress.spent - enteredMagnitude
             HStack(spacing: 6) {
                 Image(systemName: remaining >= 0 ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                    .foregroundStyle(remaining >= 0 ? AlzaBrand.primary : AlzaBrand.alert)
+                    .foregroundStyle(remaining >= 0 ? AmadaiBrand.primary : AmadaiBrand.alert)
                 if remaining >= 0 {
                     Text("Te quedarian \(remaining, format: .currency(code: "USD")) de tu presupuesto \(progress.budget.period.displayName.lowercased()) de \(category.rawValue.lowercased()).")
                 } else {

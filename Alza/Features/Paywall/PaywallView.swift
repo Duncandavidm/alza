@@ -53,7 +53,7 @@ struct PaywallView: View {
                     audienceToggle
 
                     Text(audience.description)
-                        .font(.system(.subheadline, design: AlzaBrand.fontDesign))
+                        .font(.system(.subheadline, design: AmadaiBrand.fontDesign))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)
@@ -74,7 +74,7 @@ struct PaywallView: View {
                     if let error = subscriptionStore.purchaseError {
                         Text(error)
                             .font(.footnote)
-                            .foregroundStyle(AlzaBrand.alert)
+                            .foregroundStyle(AmadaiBrand.alert)
                             .multilineTextAlignment(.center)
                     }
                 }
@@ -109,9 +109,9 @@ struct PaywallView: View {
                 Text("Hazte ")
                     .foregroundStyle(.primary)
                 + Text("Pro")
-                    .foregroundStyle(AlzaBrand.primary)
+                    .foregroundStyle(AmadaiBrand.primary)
             )
-            .font(.system(.largeTitle, design: AlzaBrand.fontDesign, weight: .heavy))
+            .font(.system(.largeTitle, design: AmadaiBrand.fontDesign, weight: .heavy))
         }
     }
 
@@ -124,12 +124,12 @@ struct PaywallView: View {
                     }
                 } label: {
                     Text(option.rawValue)
-                        .font(.system(.subheadline, design: AlzaBrand.fontDesign, weight: .semibold))
+                        .font(.system(.subheadline, design: AmadaiBrand.fontDesign, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                         .background {
                             if audience == option {
-                                Capsule().fill(AlzaBrand.primary)
+                                Capsule().fill(AmadaiBrand.primary)
                             }
                         }
                         .foregroundStyle(audience == option ? .white : .primary)
@@ -171,7 +171,7 @@ struct PaywallView: View {
                 .frame(height: 140)
                 .overlay(
                     Text("No se pudo cargar el precio")
-                        .foregroundStyle(AlzaBrand.alert)
+                        .foregroundStyle(AmadaiBrand.alert)
                 )
         }
     }
@@ -195,17 +195,17 @@ struct PaywallView: View {
                     .font(.caption2.weight(.bold))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
-                    .background(Capsule().fill(badge == nil ? .clear : AlzaBrand.primary))
+                    .background(Capsule().fill(badge == nil ? .clear : AmadaiBrand.primary))
                     .foregroundStyle(.white)
                     .opacity(badge == nil ? 0 : 1)
 
                 Text(plan == .annual ? "12 meses" : "Mensual")
-                    .font(.system(.subheadline, design: AlzaBrand.fontDesign, weight: .semibold))
+                    .font(.system(.subheadline, design: AmadaiBrand.fontDesign, weight: .semibold))
                     .foregroundStyle(.primary)
 
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
                     Text(priceText)
-                        .font(.system(size: 24, weight: .bold, design: AlzaBrand.fontDesign))
+                        .font(.system(size: 24, weight: .bold, design: AmadaiBrand.fontDesign))
                         .foregroundStyle(.primary)
                     Text("/ mes")
                         .font(.caption)
@@ -219,7 +219,7 @@ struct PaywallView: View {
                     .fill(Color(.secondarySystemBackground))
                     .overlay(
                         RoundedRectangle(cornerRadius: 18)
-                            .stroke(isSelected ? AlzaBrand.primary : .clear, lineWidth: 2)
+                            .stroke(isSelected ? AmadaiBrand.primary : .clear, lineWidth: 2)
                     )
             )
         }
@@ -251,7 +251,7 @@ struct PaywallView: View {
             HStack {
                 if let duration = subscriptionStore.freeTrialDurationText {
                     Text("Empieza por USD 0.00")
-                        .font(.system(.headline, design: AlzaBrand.fontDesign, weight: .bold))
+                        .font(.system(.headline, design: AmadaiBrand.fontDesign, weight: .bold))
                     Spacer()
                     Text("\(duration) gratis")
                         .font(.caption.weight(.bold))
@@ -260,7 +260,7 @@ struct PaywallView: View {
                         .background(Capsule().fill(.white.opacity(0.22)))
                 } else {
                     Text("Suscribirme")
-                        .font(.system(.headline, design: AlzaBrand.fontDesign, weight: .bold))
+                        .font(.system(.headline, design: AmadaiBrand.fontDesign, weight: .bold))
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -268,7 +268,7 @@ struct PaywallView: View {
             .padding(.horizontal, 20)
             .frame(height: 58)
             .frame(maxWidth: .infinity)
-            .background(RoundedRectangle(cornerRadius: 18).fill(AlzaBrand.headerGradient))
+            .background(RoundedRectangle(cornerRadius: 18).fill(AmadaiBrand.headerGradient))
         }
         .pressable()
         .disabled(subscriptionStore.selectedProduct == nil)
@@ -282,7 +282,7 @@ struct PaywallView: View {
             VStack(spacing: 4) {
                 Label("Hoy no pagas nada.", systemImage: "checkmark.seal.fill")
                     .font(.footnote.weight(.semibold))
-                    .foregroundStyle(AlzaBrand.primary)
+                    .foregroundStyle(AmadaiBrand.primary)
                 Text("Se renueva automaticamente a \(price) \(cadence) despues de la prueba. Cancela cuando quieras.")
                     .font(.caption)
                     .foregroundStyle(.secondary)

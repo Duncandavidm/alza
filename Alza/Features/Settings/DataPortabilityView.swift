@@ -39,7 +39,7 @@ struct DataPortabilityView: View {
             }
 
             Section("Importar") {
-                Text("Elige un CSV exportado de Alza para agregar esos movimientos a una cuenta.")
+                Text("Elige un CSV exportado de Amadai para agregar esos movimientos a una cuenta.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 

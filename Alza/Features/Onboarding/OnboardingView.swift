@@ -3,7 +3,7 @@ import SwiftUI
 /// El estudio financiero inicial: pasos cortos que arman el panorama
 /// completo del usuario (datos personales, ingresos fijos/variables,
 /// cuentas fijas, suscripciones, deudas, ahorros, tolerancia al riesgo y
-/// metas) para que el resto de Alza pueda aconsejar desde el primer dia,
+/// metas) para que el resto de Amadai pueda aconsejar desde el primer dia,
 /// inspirado en el detalle del prompt original de la version web.
 struct OnboardingView: View {
     @EnvironmentObject private var appState: AppState
@@ -77,9 +77,9 @@ struct OnboardingView: View {
     private var welcomeStep: some View {
         Section {
             VStack(alignment: .leading, spacing: 8) {
-                Text("¡Bienvenido a Alza!")
+                Text("¡Bienvenido a Amadai!")
                     .font(.title2.bold())
-                Text("Antes de empezar, hagamos un repaso corto de tus finanzas. Con esto Alza te puede dar consejos de verdad, no genericos.")
+                Text("Antes de empezar, hagamos un repaso corto de tus finanzas. Con esto Amadai te puede dar consejos de verdad, no genericos.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -228,7 +228,7 @@ struct OnboardingView: View {
 
     private var debtsStep: some View {
         Section("¿Tienes deudas activas?") {
-            Text("Tarjetas de credito, prestamos, sobregiros — con esto Alza te puede avisar cual pagar primero segun la tasa de interes y si esta en mora.")
+            Text("Tarjetas de credito, prestamos, sobregiros — con esto Amadai te puede avisar cual pagar primero segun la tasa de interes y si esta en mora.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 

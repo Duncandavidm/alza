@@ -18,7 +18,7 @@ struct DebtsView: View {
                 ContentUnavailableView(
                     "Sin deudas registradas",
                     systemImage: "creditcard.trianglebadge.exclamationmark",
-                    description: Text("Tarjetas de credito, prestamos o sobregiros — registralos para que Alza los tome en cuenta al aconsejarte que pagar primero.")
+                    description: Text("Tarjetas de credito, prestamos o sobregiros — registralos para que Amadai los tome en cuenta al aconsejarte que pagar primero.")
                 )
             }
 

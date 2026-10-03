@@ -74,5 +74,30 @@ final class BillsViewModel: ObservableObject {
             bills[index].status = .pagada
         }
         NotificationManager.scheduleBillReminders(bills)
+
+        if pending.isEmpty {
+            await adviseOnSurplus(userId: userId)
+        }
+    }
+
+    /// Ya no queda ninguna cuenta por pagar — si sobro dinero en las
+    /// cuentas del cliente, le avisamos que hacer con el (ver
+    /// `SurplusAdviceService`: prioriza deuda > meta de ahorro > consejo
+    /// por rango).
+    private func adviseOnSurplus(userId: UUID) async {
+        struct AccountBalance: Decodable { let balance: Decimal }
+
+        guard
+            let balances: [AccountBalance] = try? await supabase
+                .from("accounts")
+                .select("balance")
+                .eq("user_id", value: userId)
+                .execute()
+                .value
+        else { return }
+
+        let surplus = balances.reduce(Decimal(0)) { $0 + $1.balance }
+        guard let message = await SurplusAdviceService.buildAdvice(userId: userId, surplus: surplus) else { return }
+        NotificationManager.sendSurplusAdvice(message)
     }
 }

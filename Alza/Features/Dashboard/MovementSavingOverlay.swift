@@ -13,6 +13,8 @@ struct MovementSavingOverlay: View {
         Color(.systemBackground).opacity(0.85).ignoresSafeArea()
 
         if movementType == .ingreso {
+            FloatingBillsBackground().ignoresSafeArea()
+
             ReceiptStampView(
                 description: description,
                 amount: amount,

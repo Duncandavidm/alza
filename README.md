@@ -380,10 +380,28 @@ encabezado de cada funcion:
   - Al registrar un ingreso con consejo de pago disponible: notificacion
     inmediata con que pagar primero, ademas del pop-up que ya se mostraba
     en pantalla.
+  - **Consejo del sobrante** (`SurplusAdviceService.swift`): cuando
+    `BillsViewModel.markPaid` detecta que ya no queda ninguna cuenta por
+    pagar pendiente, suma el balance de las cuentas del cliente y, si
+    sobro dinero, arma un consejo real con sus propios datos — no un
+    texto generico: si tiene una deuda activa la prioriza (ningun ahorro
+    rinde mas que dejar de pagar esos intereses), si no mira su meta de
+    ahorro mas cercana (cuanto le faltaria o si ya le alcanza para
+    completarla), y si no tiene ninguna de las dos, dando un consejo por
+    rango de monto (fondo de emergencia vs. invertir).
   Cada tipo de recordatorio se reprograma completo (se cancela lo
   pendiente y se vuelve a crear) cada vez que su lista cambia, con un
   identifier estable por registro, para que nunca queden duplicados ni
   avisos de algo ya pagado o borrado.
+- **Celebracion al registrar un ingreso** (`CelebrationFeedback.swift` +
+  `FloatingBillsBackground.swift`): cuando entra dinero, ademas de la
+  animacion del recibo que ya existia, vibra con un
+  `UINotificationFeedbackGenerator` de exito y suena un chime corto de
+  dos notas (sintetizado, `Resources/Sounds/income-chime.wav`, respeta el
+  switch de silencio) justo cuando cae el sello de "PAGADO". Detras del
+  recibo flotan unos billetes muy sutiles (opacidad maxima ~14%) — es
+  pura decoracion de ese momento, no un fondo permanente en el resto de
+  la app.
 - **Estudio financiero inicial (Onboarding/)**: la primera vez que el usuario
   entra (despues de autenticarse, antes del paywall), un wizard de 14 pasos
   cortos — inspirado en el detalle del prompt original de la version

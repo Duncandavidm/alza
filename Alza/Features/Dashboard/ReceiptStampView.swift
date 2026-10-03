@@ -118,6 +118,11 @@ struct ReceiptStampView: View {
             stampOpacity = 1
             stampRotation = -12
         }
+        // Vibracion + sonido justo cuando cae el sello — es el instante
+        // que se "siente" como la celebracion, no cuando empieza a imprimir.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.85) {
+            CelebrationFeedback.playIncome()
+        }
     }
 }
 

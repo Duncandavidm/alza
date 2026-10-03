@@ -163,6 +163,26 @@ enum NotificationManager {
         UNUserNotificationCenter.current().add(request)
     }
 
+    // MARK: - Sobrante al terminar de pagar todas las cuentas
+
+    /// Se dispara una sola vez, cuando `BillsViewModel` detecta que ya no
+    /// queda ninguna cuenta pendiente y sobro dinero en la cuenta — el
+    /// mensaje ya viene armado por `SurplusAdviceService` con datos reales
+    /// del cliente (su deuda, su meta de ahorro, o un consejo por rango).
+    static func sendSurplusAdvice(_ message: String) {
+        let content = UNMutableNotificationContent()
+        content.title = "Te sobro dinero — que hacer con el"
+        content.body = message
+        content.sound = .default
+
+        let request = UNNotificationRequest(
+            identifier: "surplus-advice-\(UUID().uuidString)",
+            content: content,
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        )
+        UNUserNotificationCenter.current().add(request)
+    }
+
     // MARK: - Helpers
 
     /// La proxima fecha en que cae `dayOfMonth` — hoy mismo si todavia no

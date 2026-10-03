@@ -116,6 +116,60 @@
           "referenceName" : "Amadai Pro Anual",
           "subscriptionGroupID" : "62AFE553-CA8F-4ECB-A21F-9A1F28E0BB7E",
           "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "14.99",
+          "familyShareable" : false,
+          "groupNumber" : 3,
+          "internalID" : "2B6C4E1A-9F3D-4A7E-8C1B-5D2E7F9A3C6B",
+          "introductoryOffer" : {
+            "displayPrice" : "0.00",
+            "internalID" : "7A1F3C5E-2B8D-4E9A-B6C3-1D4F8A2E5C9B",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P1W"
+          },
+          "localizations" : [
+            {
+              "description" : "Todo el plan Pro, mas invita hasta 5 personas (cada quien con su propia cuenta y datos) con tu codigo de familia.",
+              "displayName" : "Amadai Pro Familia Mensual",
+              "locale" : "es_MX"
+            }
+          ],
+          "productID" : "app.alza.sub.pro.family",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Amadai Pro Familia Mensual",
+          "subscriptionGroupID" : "62AFE553-CA8F-4ECB-A21F-9A1F28E0BB7E",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "134.88",
+          "familyShareable" : false,
+          "groupNumber" : 4,
+          "internalID" : "9C3E5A7F-1D4B-4F8E-A2C6-3B9D1E7A4F8C",
+          "introductoryOffer" : {
+            "displayPrice" : "0.00",
+            "internalID" : "4D8A2C6E-3F1B-4A9D-B7E5-6C2F8A1D9E3B",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P1W"
+          },
+          "localizations" : [
+            {
+              "description" : "Todo el plan Pro, mas invita hasta 5 personas con tu codigo de familia. Plan anual, equivale a $11.24/mes.",
+              "displayName" : "Amadai Pro Familia Anual",
+              "locale" : "es_MX"
+            }
+          ],
+          "productID" : "app.alza.sub.pro.family.annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Amadai Pro Familia Anual",
+          "subscriptionGroupID" : "62AFE553-CA8F-4ECB-A21F-9A1F28E0BB7E",
+          "type" : "RecurringSubscription"
         }
       ]
     }

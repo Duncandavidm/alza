@@ -71,6 +71,12 @@ struct SettingsView: View {
                     } label: {
                         Label("Sugerencias", systemImage: "lightbulb")
                     }
+
+                    NavigationLink {
+                        FamilyGroupView()
+                    } label: {
+                        Label("Mi familia", systemImage: "person.2.fill")
+                    }
                 }
 
                 Section {

@@ -23,6 +23,15 @@ final class AppState: ObservableObject {
     @Published private(set) var session: Session?
     @Published private(set) var isLoadingSession = true
     @Published private(set) var subscriptionStatus: SubscriptionStatus = .unknown
+    /// product_id de la suscripcion que da el acceso actual — la propia, o
+    /// si isFamilyMember es true, la del dueno del grupo familiar al que
+    /// pertenece. nil si no hay ninguna. Lo usan Settings/Paywall para
+    /// saber que mostrar (ej. "Mi familia" solo si es un product_id de
+    /// familia, propio o heredado).
+    @Published private(set) var entitlementProductId: String?
+    /// true si el acceso viene heredado de un grupo familiar ajeno (no de
+    /// una suscripcion propia) — ver get_entitlement_status.
+    @Published private(set) var isFamilyMember = false
     @Published private(set) var onboardingStatus: OnboardingStatus = .unknown
     @Published private(set) var mfaStatus: MFAChallengeStatus = .unknown
 
@@ -62,20 +71,31 @@ final class AppState: ObservableObject {
         try? await supabase.auth.signOut()
     }
 
+    /// Lee el acceso efectivo del usuario via la RPC get_entitlement_status
+    /// (propia suscripcion, o heredada de un grupo familiar) en vez de leer
+    /// directo la tabla subscriptions — ver
+    /// supabase/migrations/0017_family_groups.sql para el porque.
     func refreshSubscriptionStatus() async {
-        guard let userId = session?.user.id else {
+        guard session?.user.id != nil else {
             subscriptionStatus = .none
+            entitlementProductId = nil
+            isFamilyMember = false
             return
         }
         do {
-            let row: SubscriptionRow? = try await supabase
-                .from("subscriptions")
-                .select()
-                .eq("user_id", value: userId)
-                .maybeSingle()
+            let rows: [EntitlementRow] = try await supabase
+                .rpc("get_entitlement_status")
                 .execute()
                 .value
-            subscriptionStatus = SubscriptionStatus(row: row)
+            if let row = rows.first {
+                subscriptionStatus = SubscriptionStatus(status: row.status, expiresAt: row.expiresAt)
+                entitlementProductId = row.productId
+                isFamilyMember = row.viaFamily
+            } else {
+                subscriptionStatus = .none
+                entitlementProductId = nil
+                isFamilyMember = false
+            }
         } catch {
             subscriptionStatus = .unknown
         }

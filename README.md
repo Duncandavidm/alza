@@ -17,14 +17,15 @@ Alza/                       # codigo de la app
   Core/                     # Supabase client, modelos, StoreKit, config
   Features/
     Auth/                   # Sign in with Apple (nativo) + correo/contraseña
-    Paywall/                # Pro mensual/anual con Family Sharing, "Suscribirme"
+    Paywall/                # Pro individual/familia x mensual/anual, "Suscribirme"
     Dashboard/              # "Hoy" (cuaderno del dia, voz), cuentas + busqueda
     Bills/                  # EL DIFERENCIADOR: cuentas por pagar + consejo de pago con IA
     Budgets/                # presupuestos por categoria, semanal o mensual
     Recurring/              # transacciones recurrentes (gestion en Ajustes)
     Insights/               # insights de IA (Claude) sobre tus finanzas
-    Settings/               # suscripcion, modo avanzado, recurrentes,
-                             # cuentas por pagar, exportar/importar CSV, logout
+    Settings/               # suscripcion, Mi familia (codigo/miembros),
+                             # modo avanzado, recurrentes, cuentas por
+                             # pagar, exportar/importar CSV, logout
   Resources/                # Info.plist, Assets.xcassets (icono/color)
 project.yml                 # spec de XcodeGen -> genera Alza.xcodeproj
 supabase/
@@ -99,13 +100,25 @@ Providers):
   - **Anual**: `app.alza.sub.pro.annual`, **$71.88/año** (equivale a
     $5.99/mes, ~25% de descuento vs el mensual). El Product ID tiene que
     coincidir con `Config.subscriptionProductIdAnnual`.
-  - En ambos, activa el toggle **"Family Sharing"** al crearlos — así quien
-    compre comparte Pro gratis con su familia de Apple (hasta 5 personas),
-    cada quien con su propia cuenta y datos de Amadai, sin costo extra. No
-    hay forma de cobrar distinto por esto — es una caracteristica nativa
-    del producto, no un plan aparte.
-  - Mismo periodo de prueba gratis (1 semana) en los dos, si quieres
-    ofrecerla tambien en el anual.
+  - En estos dos (los individuales), activa el toggle **"Family Sharing"**
+    al crearlos — así quien compre comparte Pro gratis con su familia de
+    Apple (hasta 5 personas), cada quien con su propia cuenta y datos de
+    Amadai, sin costo extra. No hay forma de cobrar distinto por esto — es
+    una caracteristica nativa del producto, no un plan aparte.
+  - **Familia Mensual**: `app.alza.sub.pro.family`, **$14.99/mes**. Debe
+    coincidir con `Config.subscriptionProductIdFamily`.
+  - **Familia Anual**: `app.alza.sub.pro.family.annual`, **$134.88/año**
+    (equivale a $11.24/mes, ~25% de descuento vs el mensual, igual que el
+    individual). Debe coincidir con `Config.subscriptionProductIdFamilyAnnual`.
+  - **NO actives "Family Sharing" en estos dos** (Familia Mensual/Anual) —
+    a diferencia del individual, el cobro extra de este plan viene de ser
+    un producto propio y mas caro, no de Apple Family Sharing (que solo
+    deja compartir gratis). Este plan usa su propio sistema de invitacion
+    por codigo (hasta 5 personas, ver `Alza/Core/FamilyGroupService.swift`
+    y `supabase/migrations/0017_family_groups.sql`), independiente de
+    Apple Family Sharing.
+  - Mismo periodo de prueba gratis (1 semana) en los cuatro, si quieres
+    ofrecerla en todos.
 - Categoria, privacy questionnaire, icono 1024x1024 (ponlo en
   `Alza/Resources/Assets.xcassets/AppIcon.appiconset/`), capturas.
 - Banking/Tax: si ya los tienes configurados con maday en la misma cuenta de

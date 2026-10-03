@@ -2,38 +2,90 @@ import Foundation
 import StoreKit
 import UIKit
 
-enum SubscriptionPlan: String, CaseIterable, Identifiable {
+enum SubscriptionTier: String, CaseIterable, Identifiable {
+    case individual
+    case familia
+
+    var id: String { rawValue }
+}
+
+enum SubscriptionBilling: String, CaseIterable, Identifiable {
     case monthly
     case annual
 
     var id: String { rawValue }
+}
+
+/// 2 tiers (individual / familia) x 2 ciclos (mensual / anual) = 4 planes,
+/// todos en el mismo grupo de suscripcion "Amadai Pro" en App Store
+/// Connect. "Familia" NO es Apple Family Sharing (eso es gratis para la
+/// familia del comprador) — es un producto propio, mas caro, que da
+/// derecho a invitar hasta 5 personas con un codigo (ver
+/// FamilyGroupService). Ver Config.swift para el porque de cada Product ID.
+enum SubscriptionPlan: String, CaseIterable, Identifiable {
+    case individualMonthly
+    case individualAnnual
+    case familyMonthly
+    case familyAnnual
+
+    var id: String { rawValue }
+
+    var tier: SubscriptionTier {
+        switch self {
+        case .individualMonthly, .individualAnnual: return .individual
+        case .familyMonthly, .familyAnnual: return .familia
+        }
+    }
+
+    var billing: SubscriptionBilling {
+        switch self {
+        case .individualMonthly, .familyMonthly: return .monthly
+        case .individualAnnual, .familyAnnual: return .annual
+        }
+    }
+
     var productId: String {
         switch self {
-        case .monthly: return Config.subscriptionProductId
-        case .annual: return Config.subscriptionProductIdAnnual
+        case .individualMonthly: return Config.subscriptionProductId
+        case .individualAnnual: return Config.subscriptionProductIdAnnual
+        case .familyMonthly: return Config.subscriptionProductIdFamily
+        case .familyAnnual: return Config.subscriptionProductIdFamilyAnnual
+        }
+    }
+
+    static func plan(tier: SubscriptionTier, billing: SubscriptionBilling) -> SubscriptionPlan {
+        switch (tier, billing) {
+        case (.individual, .monthly): return .individualMonthly
+        case (.individual, .annual): return .individualAnnual
+        case (.familia, .monthly): return .familyMonthly
+        case (.familia, .annual): return .familyAnnual
         }
     }
 }
 
 /// Maneja la compra/restauracion de la suscripcion de Amadai con StoreKit 2
-/// directo (nada de bridge nativo<->JS: la app es 100% nativa). Dos planes
-/// del mismo Pro (mensual y anual, mismo grupo de suscripcion en App Store
-/// Connect) — el usuario elige cual comprar, pero ambos dan exactamente el
-/// mismo acceso (eso ya lo decide `subscriptions` en el backend por fila,
-/// sin importar el product_id, ver AppState.refreshSubscriptionStatus).
+/// directo (nada de bridge nativo<->JS: la app es 100% nativa). 4 planes
+/// del mismo Pro (individual/familia x mensual/anual, mismo grupo de
+/// suscripcion en App Store Connect) — el usuario elige cual comprar.
+/// Individual y Familia dan acceso Pro igual de completo; la diferencia es
+/// que Familia ademas habilita invitar hasta 5 personas (ver
+/// FamilyGroupService) — eso lo decide el backend por product_id, ver
+/// AppState.refreshSubscriptionStatus / la RPC get_entitlement_status.
 /// appAccountToken = auth.uid() del usuario logueado en Supabase, para que
 /// la Edge Function verify-apple-receipt pueda amarrar la transaccion al
 /// usuario correcto sin depender de un login adicional.
 @MainActor
 final class SubscriptionStore: ObservableObject {
     @Published private(set) var products: [SubscriptionPlan: Product] = [:]
-    @Published var selectedPlan: SubscriptionPlan = .annual
+    @Published var selectedPlan: SubscriptionPlan = .individualAnnual
     @Published private(set) var isLoadingProduct = false
     @Published private(set) var purchaseError: String?
 
     var selectedProduct: Product? { products[selectedPlan] }
-    var monthlyProduct: Product? { products[.monthly] }
-    var annualProduct: Product? { products[.annual] }
+
+    func product(tier: SubscriptionTier, billing: SubscriptionBilling) -> Product? {
+        products[.plan(tier: tier, billing: billing)]
+    }
 
     /// Si la suscripcion activa se va a renovar sola o no (el usuario la
     /// cancelo desde Ajustes de iOS / el sheet de administrar suscripcion,
@@ -91,10 +143,11 @@ final class SubscriptionStore: ObservableObject {
             if byPlan.isEmpty {
                 purchaseError = "No se encontraron los productos de suscripcion. Revisa que existan en App Store Connect (o en el archivo .storekit local) con esos Product IDs exactos."
             } else if byPlan[selectedPlan] == nil {
-                // Si el plan preferido (anual) no cargo pero el otro si,
-                // cae al que si exista en vez de dejar el paywall sin nada
-                // que comprar.
-                selectedPlan = byPlan.keys.first ?? selectedPlan
+                // Si el plan preferido (individual anual) no cargo, prueba
+                // primero otro ciclo del mismo tier antes de saltar a
+                // Familia, para no mostrar el tier equivocado por defecto.
+                let sameTier = byPlan.keys.first { $0.tier == selectedPlan.tier }
+                selectedPlan = sameTier ?? byPlan.keys.first ?? selectedPlan
             }
 
             await refreshRenewalInfo()
@@ -169,10 +222,10 @@ final class SubscriptionStore: ObservableObject {
     /// suscripcion") sin necesitar un webhook de App Store Server
     /// Notifications en el backend.
     func refreshRenewalInfo() async {
-        // Cualquiera de los dos productos del grupo sirve para preguntar el
+        // Cualquiera de los productos del grupo sirve para preguntar el
         // estado — StoreKit devuelve el estado real de lo que el usuario
         // tenga activo en el grupo, sea cual sea el plan que compro.
-        guard let subscriptionInfo = (selectedProduct ?? monthlyProduct ?? annualProduct)?.subscription else { return }
+        guard let subscriptionInfo = (selectedProduct ?? products.values.first)?.subscription else { return }
 
         do {
             let statuses = try await subscriptionInfo.status

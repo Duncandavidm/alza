@@ -61,6 +61,8 @@ struct PaywallView: View {
                         .id(audience)
                         .transition(.opacity)
 
+                    tierToggle
+
                     pricingCard
 
                     Text("Menos de lo que cuesta un ☕ cafe a la semana.")
@@ -141,24 +143,76 @@ struct PaywallView: View {
         .background(Capsule().fill(Color(.secondarySystemBackground)))
     }
 
+    /// Individual / Familia — independiente del audienceToggle de arriba
+    /// (ese es solo texto descriptivo). Familia es un producto propio mas
+    /// caro (no Apple Family Sharing, ver Config.swift), por eso vive aqui
+    /// junto a la eleccion de precio, no junto al toggle de audiencia.
+    private var tierToggle: some View {
+        HStack(spacing: 4) {
+            ForEach(SubscriptionTier.allCases) { tier in
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                        selectTier(tier)
+                    }
+                } label: {
+                    Text(tier == .individual ? "Individual" : "Familia")
+                        .font(.system(.subheadline, design: AmadaiBrand.fontDesign, weight: .semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background {
+                            if subscriptionStore.selectedPlan.tier == tier {
+                                Capsule().fill(AmadaiBrand.primary)
+                            }
+                        }
+                        .foregroundStyle(subscriptionStore.selectedPlan.tier == tier ? .white : .primary)
+                }
+                .pressable()
+            }
+        }
+        .padding(4)
+        .background(Capsule().fill(Color(.secondarySystemBackground)))
+    }
+
+    /// Cambia de tier conservando el ciclo (mensual/anual) elegido si ese
+    /// producto ya cargo; si no, cae al otro ciclo del mismo tier que si
+    /// haya cargado, para no dejar el tier nuevo sin nada que comprar.
+    private func selectTier(_ tier: SubscriptionTier) {
+        let billing = subscriptionStore.selectedPlan.billing
+        if subscriptionStore.product(tier: tier, billing: billing) != nil {
+            subscriptionStore.selectPlan(.plan(tier: tier, billing: billing))
+        } else if let fallback = SubscriptionBilling.allCases.first(where: { subscriptionStore.product(tier: tier, billing: $0) != nil }) {
+            subscriptionStore.selectPlan(.plan(tier: tier, billing: fallback))
+        }
+    }
+
     @ViewBuilder
     private var pricingCard: some View {
-        if subscriptionStore.monthlyProduct != nil || subscriptionStore.annualProduct != nil {
+        let tier = subscriptionStore.selectedPlan.tier
+        let annual = subscriptionStore.product(tier: tier, billing: .annual)
+        let monthly = subscriptionStore.product(tier: tier, billing: .monthly)
+
+        if annual != nil || monthly != nil {
             VStack(spacing: 14) {
                 HStack(spacing: 12) {
-                    if let annual = subscriptionStore.annualProduct {
-                        planOption(plan: .annual, product: annual, badge: "Mejor precio")
+                    if let annual {
+                        planOption(plan: .plan(tier: tier, billing: .annual), product: annual, badge: "Mejor precio")
                     }
-                    if let monthly = subscriptionStore.monthlyProduct {
-                        planOption(plan: .monthly, product: monthly, badge: nil)
+                    if let monthly {
+                        planOption(plan: .plan(tier: tier, billing: .monthly), product: monthly, badge: nil)
                     }
                 }
 
                 commitmentCaption
 
-                Label("Incluye Apple Family Sharing, sin costo extra", systemImage: "person.2.fill")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                if tier == .individual {
+                    Label("Incluye Apple Family Sharing, sin costo extra", systemImage: "person.2.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Label("Invita hasta 5 personas con tu codigo (Ajustes > Mi familia)", systemImage: "person.3.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
         } else if subscriptionStore.isLoadingProduct {
             RoundedRectangle(cornerRadius: 20)
@@ -199,7 +253,7 @@ struct PaywallView: View {
                     .foregroundStyle(.white)
                     .opacity(badge == nil ? 0 : 1)
 
-                Text(plan == .annual ? "12 meses" : "Mensual")
+                Text(plan.billing == .annual ? "12 meses" : "Mensual")
                     .font(.system(.subheadline, design: AmadaiBrand.fontDesign, weight: .semibold))
                     .foregroundStyle(.primary)
 
@@ -231,7 +285,7 @@ struct PaywallView: View {
     private var commitmentCaption: some View {
         if let product = subscriptionStore.selectedProduct {
             Group {
-                if subscriptionStore.selectedPlan == .annual {
+                if subscriptionStore.selectedPlan.billing == .annual {
                     Text("Cobro anual — compromiso de 12 meses, \(product.displayPrice) en total")
                 } else {
                     Text("Cobro mensual, cancela cuando quieras")
@@ -278,7 +332,7 @@ struct PaywallView: View {
     private var confirmationNote: some View {
         if let price = subscriptionStore.selectedProduct?.displayPrice,
            subscriptionStore.freeTrialDurationText != nil {
-            let cadence = subscriptionStore.selectedPlan == .annual ? "al año" : "al mes"
+            let cadence = subscriptionStore.selectedPlan.billing == .annual ? "al año" : "al mes"
             VStack(spacing: 4) {
                 Label("Hoy no pagas nada.", systemImage: "checkmark.seal.fill")
                     .font(.footnote.weight(.semibold))

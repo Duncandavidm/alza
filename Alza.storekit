@@ -93,7 +93,7 @@
         {
           "adHocOffers" : [],
           "codeOffers" : [],
-          "displayPrice" : "71.88",
+          "displayPrice" : "74.99",
           "familyShareable" : true,
           "groupNumber" : 2,
           "internalID" : "9D3F2C6A-1B4E-4A7D-8E2F-6C5A9D1E4B7F",
@@ -106,7 +106,7 @@
           },
           "localizations" : [
             {
-              "description" : "Dashboard financiero completo + insights de IA personalizados sobre tus cuentas y gastos. Plan anual, equivale a $5.99/mes.",
+              "description" : "Dashboard financiero completo + insights de IA personalizados sobre tus cuentas y gastos. Plan anual, equivale a $6.25/mes.",
               "displayName" : "Avi Pro Anual",
               "locale" : "es_MX"
             }

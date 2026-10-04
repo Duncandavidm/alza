@@ -97,8 +97,8 @@ Providers):
   de uno a otro sin perder el historial):
   - **Mensual**: `app.alza.sub.pro`, **$7.99/mes**. El Product ID tiene que
     coincidir exactamente con `Config.subscriptionProductId`.
-  - **Anual**: `app.alza.sub.pro.annual`, **$71.88/año** (equivale a
-    $5.99/mes, ~25% de descuento vs el mensual). El Product ID tiene que
+  - **Anual**: `app.alza.sub.pro.annual`, **$74.99/año** (equivale a
+    ~$6.25/mes, ~22% de descuento vs el mensual). El Product ID tiene que
     coincidir con `Config.subscriptionProductIdAnnual`.
   - En estos dos (los individuales), activa el toggle **"Family Sharing"**
     al crearlos — así quien compre comparte Pro gratis con su familia de
@@ -511,10 +511,12 @@ encabezado de cada funcion:
   / Importar): exporta todos tus movimientos y recurrentes a un CSV
   (compartible por cualquier medio), o importa uno de vuelta a una cuenta
   que elijas.
-- Paywall: dos planes del mismo Pro, mensual ($7.99) y anual ($5.99/mes,
-  $71.88 facturados una vez al año, ~25% de descuento), ambos con Family
-  Sharing nativo de Apple sin costo extra, mas "Restaurar compras" y
-  "Administrar suscripcion".
+- Paywall: 4 planes del mismo Pro — Individual Mensual ($7.99) / Anual
+  (~$6.25/mes, $74.99 facturados una vez al año) con Family Sharing nativo
+  de Apple sin costo extra, y Familia Mensual ($14.99) / Anual (~$11.24/mes,
+  $134.88/año) que en cambio habilita invitar hasta 5 personas con codigo
+  (ver "Mi familia" en Ajustes) — mas "Restaurar compras" y "Administrar
+  suscripcion".
 - Cerrar sesion (en Ajustes y en el Paywall) muestra un spinner y se
   deshabilita mientras corre, para que quede claro que esta funcionando.
 - **Recurrentes** (Ajustes > Recurrentes): pagos/ingresos fijos mensuales

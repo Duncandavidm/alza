@@ -22,7 +22,7 @@ enum Config {
 
     /// MISMO grupo de suscripcion "Avi Pro" que `subscriptionProductId`
     /// (para que StoreKit los trate como planes intercambiables del mismo
-    /// Pro, no como dos suscripciones separadas). $5.99/mes ($71.88/año).
+    /// Pro, no como dos suscripciones separadas). $74.99/año (~$6.25/mes).
     static let subscriptionProductIdAnnual = "app.alza.sub.pro.annual"
 
     /// Plan "Familia": a diferencia de "En familia" (Apple Family Sharing,

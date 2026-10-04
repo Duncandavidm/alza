@@ -69,8 +69,8 @@ enum NotificationManager {
             if dueDate > Date() {
                 schedule(
                     id: overdueId,
-                    title: "Factura vencida",
-                    body: "La factura de \(invoice.customerName) por \(amountText) vencio hoy.",
+                    title: "Factura vence hoy",
+                    body: "La factura de \(invoice.customerName) por \(amountText) vence hoy.",
                     date: atReminderHour(dueDate)
                 )
             }
@@ -106,8 +106,8 @@ enum NotificationManager {
             if dueDate > Date() {
                 schedule(
                     id: overdueId,
-                    title: "Cuenta vencida",
-                    body: "\(bill.name) por \(amountText) vencio hoy.",
+                    title: "Cuenta vence hoy",
+                    body: "\(bill.name) por \(amountText) vence hoy.",
                     date: atReminderHour(dueDate)
                 )
             }

@@ -111,7 +111,7 @@
               "locale" : "es_MX"
             }
           ],
-          "productID" : "app.alza.sub.pro.annual",
+          "productID" : "app.alza.sub.pro.annual.",
           "recurringSubscriptionPeriod" : "P1Y",
           "referenceName" : "Avi Pro Anual",
           "subscriptionGroupID" : "62AFE553-CA8F-4ECB-A21F-9A1F28E0BB7E",
@@ -138,7 +138,7 @@
               "locale" : "es_MX"
             }
           ],
-          "productID" : "app.alza.sub.pro.family",
+          "productID" : "app.alza.sub.pro.family.",
           "recurringSubscriptionPeriod" : "P1M",
           "referenceName" : "Avi Pro Familia Mensual",
           "subscriptionGroupID" : "62AFE553-CA8F-4ECB-A21F-9A1F28E0BB7E",
@@ -165,7 +165,7 @@
               "locale" : "es_MX"
             }
           ],
-          "productID" : "app.alza.sub.pro.family.annual",
+          "productID" : "app.alza.sub.pro.family.anual",
           "recurringSubscriptionPeriod" : "P1Y",
           "referenceName" : "Avi Pro Familia Anual",
           "subscriptionGroupID" : "62AFE553-CA8F-4ECB-A21F-9A1F28E0BB7E",

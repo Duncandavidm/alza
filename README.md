@@ -97,19 +97,24 @@ Providers):
   de uno a otro sin perder el historial):
   - **Mensual**: `app.alza.sub.pro`, **$7.99/mes**. El Product ID tiene que
     coincidir exactamente con `Config.subscriptionProductId`.
-  - **Anual**: `app.alza.sub.pro.annual`, **$74.99/año** (equivale a
-    ~$6.25/mes, ~22% de descuento vs el mensual). El Product ID tiene que
-    coincidir con `Config.subscriptionProductIdAnnual`.
+  - **Anual**: `app.alza.sub.pro.annual.` — **ojo, con un punto al final**,
+    typo de origen que quedo asi para siempre (el Product ID no se puede
+    editar una vez creado) — **$74.99/año** (equivale a ~$6.25/mes, ~22%
+    de descuento vs el mensual). Debe coincidir con
+    `Config.subscriptionProductIdAnnual` (que ya tiene el punto incluido).
   - En estos dos (los individuales), activa el toggle **"Family Sharing"**
     al crearlos — así quien compre comparte Pro gratis con su familia de
     Apple (hasta 5 personas), cada quien con su propia cuenta y datos de
     Avi, sin costo extra. No hay forma de cobrar distinto por esto — es
     una caracteristica nativa del producto, no un plan aparte.
-  - **Familia Mensual**: `app.alza.sub.pro.family`, **$14.99/mes**. Debe
+  - **Familia Mensual**: `app.alza.sub.pro.family.` — **tambien con punto
+    al final**, mismo typo de origen, permanente — **$14.99/mes**. Debe
     coincidir con `Config.subscriptionProductIdFamily`.
-  - **Familia Anual**: `app.alza.sub.pro.family.annual`, **$134.99/año**
-    (equivale a ~$11.25/mes, ~25% de descuento vs el mensual, igual que el
-    individual). Debe coincidir con `Config.subscriptionProductIdFamilyAnnual`.
+  - **Familia Anual**: `app.alza.sub.pro.family.anual` — **ojo, "anual"
+    con una sola "n"**, no "annual" — otro typo de origen permanente —
+    **$134.99/año** (equivale a ~$11.25/mes, ~25% de descuento vs el
+    mensual, igual que el individual). Debe coincidir con
+    `Config.subscriptionProductIdFamilyAnnual`.
   - **NO actives "Family Sharing" en estos dos** (Familia Mensual/Anual) —
     a diferencia del individual, el cobro extra de este plan viene de ser
     un producto propio y mas caro, no de Apple Family Sharing (que solo

@@ -23,7 +23,12 @@ enum Config {
     /// MISMO grupo de suscripcion "Avi Pro" que `subscriptionProductId`
     /// (para que StoreKit los trate como planes intercambiables del mismo
     /// Pro, no como dos suscripciones separadas). $74.99/año (~$6.25/mes).
-    static let subscriptionProductIdAnnual = "app.alza.sub.pro.annual"
+    ///
+    /// OJO: termina en punto ("annual.") a proposito — asi quedo creado en
+    /// App Store Connect (typo de origen) y el Product ID NUNCA se puede
+    /// editar despues de creado. David decidio dejarlo asi en vez de
+    /// borrar y recrear el producto, asi que este punto es permanente.
+    static let subscriptionProductIdAnnual = "app.alza.sub.pro.annual."
 
     /// Plan "Familia": a diferencia de "En familia" (Apple Family Sharing,
     /// que SOLO deja compartir gratis el plan individual), este es un
@@ -32,10 +37,14 @@ enum Config {
     /// propia cuenta, heredando el acceso Pro del dueno del grupo. NO
     /// actives "En familia" en estos dos productos en App Store Connect:
     /// el cobro extra viene de ser un producto distinto, no de ese toggle.
-    /// TODO(David): crear estos 2 productos en App Store Connect, mismo
-    /// grupo "Avi Pro" — $14.99/mes ($134.99/año equivalente ~$11.25/mes).
-    static let subscriptionProductIdFamily = "app.alza.sub.pro.family"
-    static let subscriptionProductIdFamilyAnnual = "app.alza.sub.pro.family.annual"
+    /// $14.99/mes ($134.99/año equivalente ~$11.25/mes).
+    ///
+    /// OJO: subscriptionProductIdFamily termina en punto ("family.") y
+    /// subscriptionProductIdFamilyAnnual dice "anual" (una sola "n", no
+    /// "annual") — ambos typos de origen en App Store Connect, igual de
+    /// permanentes que el de arriba.
+    static let subscriptionProductIdFamily = "app.alza.sub.pro.family."
+    static let subscriptionProductIdFamilyAnnual = "app.alza.sub.pro.family.anual"
 
     /// Paginas reales en `docs/privacy.html` y `docs/terms.html`, servidas
     /// gratis por GitHub Pages (ver README para activarlo) — asi no

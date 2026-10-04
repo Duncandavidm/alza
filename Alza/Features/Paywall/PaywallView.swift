@@ -130,11 +130,6 @@ struct PaywallView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                         .background(
-                            // RoundedRectangle en vez de Capsule a proposito: en
-                            // iOS 26 un Capsule().fill(color solido) aqui dejaba
-                            // el texto del boton invisible (reportado en
-                            // Simulator iOS 26.5) — RoundedRectangle con radio
-                            // grande se ve igual de "pastilla" sin el bug.
                             RoundedRectangle(cornerRadius: 20, style: .continuous)
                                 .fill(audience == option ? AviBrand.primary : .clear)
                         )
@@ -255,10 +250,7 @@ struct PaywallView: View {
                     .padding(.vertical, 4)
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            // DIAGNOSTICO TEMPORAL: Color.green en vez de
-                            // AviBrand.primary, para aislar si el bug es del
-                            // color de marca o de otra cosa. Revertir despues.
-                            .fill(badge == nil ? .clear : Color.green)
+                            .fill(badge == nil ? .clear : AviBrand.primary)
                     )
                     .foregroundStyle(.white)
                     .opacity(badge == nil ? 0 : 1)

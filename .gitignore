@@ -3,6 +3,8 @@
 *.xcworkspace/
 Alza/Resources/Info.plist
 AlzaWidget/Info.plist
+Alza/Resources/Alza.entitlements
+AlzaWidget/AlzaWidget.entitlements
 
 # Xcode / SPM
 .build/

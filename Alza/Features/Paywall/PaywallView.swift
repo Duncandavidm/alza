@@ -263,6 +263,8 @@ struct PaywallView: View {
                     Text(priceText)
                         .font(.system(size: 24, weight: .bold, design: AviBrand.fontDesign))
                         .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                     Text("/ mes")
                         .font(.caption)
                         .foregroundStyle(.secondary)

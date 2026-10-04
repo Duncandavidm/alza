@@ -67,7 +67,7 @@
           "adHocOffers" : [],
           "codeOffers" : [],
           "displayPrice" : "7.99",
-          "familyShareable" : true,
+          "familyShareable" : false,
           "groupNumber" : 1,
           "internalID" : "0168D85F-4FD1-447F-83BA-5F51DEE57756",
           "introductoryOffer" : {
@@ -94,7 +94,7 @@
           "adHocOffers" : [],
           "codeOffers" : [],
           "displayPrice" : "74.99",
-          "familyShareable" : true,
+          "familyShareable" : false,
           "groupNumber" : 2,
           "internalID" : "9D3F2C6A-1B4E-4A7D-8E2F-6C5A9D1E4B7F",
           "introductoryOffer" : {

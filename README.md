@@ -102,11 +102,6 @@ Providers):
     editar una vez creado) — **$74.99/año** (equivale a ~$6.25/mes, ~22%
     de descuento vs el mensual). Debe coincidir con
     `Config.subscriptionProductIdAnnual` (que ya tiene el punto incluido).
-  - En estos dos (los individuales), activa el toggle **"Family Sharing"**
-    al crearlos — así quien compre comparte Pro gratis con su familia de
-    Apple (hasta 5 personas), cada quien con su propia cuenta y datos de
-    Avi, sin costo extra. No hay forma de cobrar distinto por esto — es
-    una caracteristica nativa del producto, no un plan aparte.
   - **Familia Mensual**: `app.alza.sub.pro.family.` — **tambien con punto
     al final**, mismo typo de origen, permanente — **$14.99/mes**. Debe
     coincidir con `Config.subscriptionProductIdFamily`.
@@ -115,13 +110,16 @@ Providers):
     **$134.99/año** (equivale a ~$11.25/mes, ~25% de descuento vs el
     mensual, igual que el individual). Debe coincidir con
     `Config.subscriptionProductIdFamilyAnnual`.
-  - **NO actives "Family Sharing" en estos dos** (Familia Mensual/Anual) —
-    a diferencia del individual, el cobro extra de este plan viene de ser
-    un producto propio y mas caro, no de Apple Family Sharing (que solo
-    deja compartir gratis). Este plan usa su propio sistema de invitacion
-    por codigo (hasta 5 personas, ver `Alza/Core/FamilyGroupService.swift`
-    y `supabase/migrations/0017_family_groups.sql`), independiente de
-    Apple Family Sharing.
+  - **NO actives "Family Sharing" en NINGUNO de los 4** — ni individuales
+    ni Familia. El Individual no lo usa a proposito: si lo activaras,
+    cualquiera podria compartirlo gratis con su familia de Apple (hasta 6
+    personas) y nadie pagaria el plan Familia. Todo el compartir pasa por
+    el sistema propio de invitacion por codigo (hasta 5 personas, ver
+    `Alza/Core/FamilyGroupService.swift` y
+    `supabase/migrations/0017_family_groups.sql`), exclusivo del plan
+    Familia de pago. Ademas, activar "Family Sharing" en App Store Connect
+    es PERMANENTE (Apple no deja desactivarlo despues), asi que nunca lo
+    actives por error.
   - Mismo periodo de prueba gratis (1 semana) en los cuatro, si quieres
     ofrecerla en todos.
 - Categoria, privacy questionnaire, icono 1024x1024 (ponlo en
@@ -517,11 +515,12 @@ encabezado de cada funcion:
   (compartible por cualquier medio), o importa uno de vuelta a una cuenta
   que elijas.
 - Paywall: 4 planes del mismo Pro — Individual Mensual ($7.99) / Anual
-  (~$6.25/mes, $74.99 facturados una vez al año) con Family Sharing nativo
-  de Apple sin costo extra, y Familia Mensual ($14.99) / Anual (~$11.25/mes,
-  $134.99/año) que en cambio habilita invitar hasta 5 personas con codigo
-  (ver "Mi familia" en Ajustes) — mas "Restaurar compras" y "Administrar
-  suscripcion".
+  (~$6.25/mes, $74.99 facturados una vez al año), y Familia Mensual
+  ($14.99) / Anual (~$11.25/mes, $134.99/año) que habilita invitar hasta 5
+  personas con codigo (ver "Mi familia" en Ajustes) — sin Apple Family
+  Sharing nativo en ninguno de los dos tiers, a proposito (competiria
+  gratis con el plan Familia de pago) — mas "Restaurar compras" y
+  "Administrar suscripcion".
 - Cerrar sesion (en Ajustes y en el Paywall) muestra un spinner y se
   deshabilita mientras corre, para que quede claro que esta funcionando.
 - **Recurrentes** (Ajustes > Recurrentes): pagos/ingresos fijos mensuales

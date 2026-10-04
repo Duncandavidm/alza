@@ -209,11 +209,10 @@ struct PaywallView: View {
 
                 commitmentCaption
 
-                if tier == .individual {
-                    Label("Incluye Apple Family Sharing, sin costo extra", systemImage: "person.2.fill")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else {
+                // Solo el tier Familia anuncia compartir — el Individual no
+                // usa Apple Family Sharing nativo a proposito (competiria
+                // gratis con el plan Familia de pago, ver Config.swift).
+                if tier == .familia {
                     Label("Invita hasta 5 personas con tu codigo (Ajustes > Mi familia)", systemImage: "person.3.fill")
                         .font(.caption)
                         .foregroundStyle(.secondary)

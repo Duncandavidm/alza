@@ -15,9 +15,13 @@ enum Config {
     static let supabaseURL = URL(string: "https://jfhevxztsvnlsuwkwtmd.supabase.co")!
     static let supabaseAnonKey = "sb_publishable_Sc7czB2BxbUwbUyKCXvmRg_y32J1KQi"
 
-    /// TODO(David): confirmar en App Store Connect una vez creada la ficha
-    /// de la app y el producto de suscripcion. Debe coincidir exactamente
-    /// con el Product ID configurado ahi.
+    /// Plan Individual. NO tiene Apple Family Sharing activado a proposito
+    /// (aunque el toggle nativo existe en App Store Connect) — si alguien
+    /// quiere compartir acceso con otras personas, tiene que comprar el
+    /// plan Familia (ver subscriptionProductIdFamily) en vez de compartir
+    /// este gratis. Activar "En familia" en este producto en ASC es
+    /// PERMANENTE (Apple no deja desactivarlo despues), asi que nunca lo
+    /// actives aqui ni en el anual.
     static let subscriptionProductId = "app.alza.sub.pro"
 
     /// MISMO grupo de suscripcion "Avi Pro" que `subscriptionProductId`

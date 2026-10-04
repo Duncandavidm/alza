@@ -19,29 +19,47 @@ struct MarqueeRow: View {
     /// Puntos por segundo — mas alto = mas rapido.
     var speed: CGFloat = 28
 
-    @State private var offset: CGFloat = 0
     @State private var contentWidth: CGFloat = 0
 
     var body: some View {
-        HStack(spacing: 12) {
-            chipRow
-            chipRow
-        }
-        .fixedSize(horizontal: true, vertical: false)
-        .background(
-            GeometryReader { geo in
-                Color.clear
-                    .onAppear {
-                        // La fila duplicada mide el doble del contenido real.
-                        contentWidth = geo.size.width / 2
-                        startAnimating()
+        // El contenido que se desliza va como OVERLAY sobre una base flexible
+        // (Color.clear de ancho .infinity). Antes iba directo con
+        // .fixedSize(horizontal: true) + .frame(maxWidth: .infinity): dentro
+        // del ScrollView vertical del paywall ese ancho intrinseco gigante se
+        // propagaba al VStack contenedor, que crecia mas que la pantalla y
+        // empujaba a las vistas hermanas (toggles, tarjetas) fuera del area
+        // visible — su texto parecia "no renderizarse". Como overlay, el ancho
+        // del contenido ya no afecta el tamaño de la fila.
+        //
+        // Se usa TimelineView en vez de withAnimation(.repeatForever): el
+        // offset se calcula por frame a partir del tiempo transcurrido, sin
+        // animacion implicita.
+        Color.clear
+            .frame(maxWidth: .infinity)
+            .frame(height: 40)
+            .overlay(alignment: .leading) {
+                TimelineView(.animation) { timeline in
+                    HStack(spacing: 12) {
+                        chipRow
+                        chipRow
                     }
+                    .fixedSize(horizontal: true, vertical: false)
+                    .background(
+                        GeometryReader { geo in
+                            Color.clear
+                                .onAppear {
+                                    // La fila duplicada mide el doble del contenido real.
+                                    contentWidth = geo.size.width / 2
+                                }
+                                .onChange(of: geo.size.width) { _, newValue in
+                                    contentWidth = newValue / 2
+                                }
+                        }
+                    )
+                    .offset(x: offset(at: timeline.date))
+                }
             }
-        )
-        .offset(x: offset)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: 40)
-        .clipped()
+            .clipped()
     }
 
     private var chipRow: some View {
@@ -52,13 +70,14 @@ struct MarqueeRow: View {
         }
     }
 
-    private func startAnimating() {
-        guard contentWidth > 0 else { return }
-        offset = reversed ? -contentWidth : 0
-        let duration = Double(contentWidth / speed)
-        withAnimation(.linear(duration: duration).repeatForever(autoreverses: false)) {
-            offset = reversed ? 0 : -contentWidth
-        }
+    /// Posicion horizontal de la fila en un instante dado. El contenido se
+    /// duplica, asi que al recorrer exactamente `contentWidth` la segunda
+    /// copia queda donde empezo la primera y el bucle se ve continuo.
+    private func offset(at date: Date) -> CGFloat {
+        guard contentWidth > 0 else { return reversed ? -contentWidth : 0 }
+        let travelled = CGFloat(date.timeIntervalSinceReferenceDate * Double(speed))
+            .truncatingRemainder(dividingBy: contentWidth)
+        return reversed ? -contentWidth + travelled : -travelled
     }
 }
 

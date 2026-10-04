@@ -349,6 +349,8 @@ struct PaywallView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity)
             }
         }
     }
@@ -364,6 +366,9 @@ struct PaywallView: View {
             }
             .font(.caption)
             .foregroundStyle(.secondary)
+            .minimumScaleFactor(0.7)
+            .lineLimit(1)
+            .frame(maxWidth: .infinity)
 
             Button("Restaurar compras") {
                 Task {

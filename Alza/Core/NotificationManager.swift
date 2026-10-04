@@ -20,6 +20,18 @@ enum NotificationManager {
     /// Rango razonable para el picker de Ajustes — de 1 a 7 dias.
     static let leadDaysRange = 1...7
 
+    /// iOS limita a 64 notificaciones locales pendientes por app — pasado
+    /// ese tope, `add()` falla en silencio y el usuario deja de recibir
+    /// avisos sin ningun error visible. Como facturas, cuentas y
+    /// recurrentes se programan por separado (cada ViewModel no sabe
+    /// cuantas tiene el resto), cada categoria se limita a sus items mas
+    /// urgentes (los que vencen antes) para que la suma de las tres nunca
+    /// se acerque al limite, incluso con un usuario de Negocio con decenas
+    /// de facturas o cuentas activas. La ventana avanza sola: cada vez que
+    /// el ViewModel refresca se vuelve a elegir el subconjunto mas urgente
+    /// vigente en ese momento.
+    private static let maxScheduledPerCategory = 12
+
     static var reminderLeadDays: Int {
         get {
             let stored = UserDefaults.standard.integer(forKey: reminderLeadDaysKey)
@@ -45,15 +57,18 @@ enum NotificationManager {
     /// vencimiento, y uno justo el dia que vence.
     static func scheduleInvoiceReminders(_ invoices: [Invoice]) {
         for invoice in invoices {
+            removePending(ids: ["invoice-lead-\(invoice.id)", "invoice-overdue-\(invoice.id)"])
+        }
+
+        let pending = invoices
+            .filter { $0.status != .pagada && $0.status != .anulada && $0.dueDateValue != nil }
+            .sorted { $0.dueDateValue! < $1.dueDateValue! }
+            .prefix(maxScheduledPerCategory)
+
+        for invoice in pending {
             let leadId = "invoice-lead-\(invoice.id)"
             let overdueId = "invoice-overdue-\(invoice.id)"
-            removePending(ids: [leadId, overdueId])
-
-            guard
-                invoice.status != .pagada, invoice.status != .anulada,
-                let dueDate = invoice.dueDateValue
-            else { continue }
-
+            let dueDate = invoice.dueDateValue!
             let amountText = formattedAmount(invoice.total)
 
             if let leadDate = Calendar.current.date(byAdding: .day, value: -reminderLeadDays, to: dueDate),
@@ -81,12 +96,17 @@ enum NotificationManager {
 
     static func scheduleBillReminders(_ bills: [Bill]) {
         for bill in bills {
+            removePending(ids: ["bill-lead-\(bill.id)", "bill-overdue-\(bill.id)"])
+        }
+
+        let pending = bills
+            .filter { $0.status == .pendiente }
+            .sorted { $0.dueDateValue < $1.dueDateValue }
+            .prefix(maxScheduledPerCategory)
+
+        for bill in pending {
             let leadId = "bill-lead-\(bill.id)"
             let overdueId = "bill-overdue-\(bill.id)"
-            removePending(ids: [leadId, overdueId])
-
-            guard bill.status == .pendiente else { continue }
-
             let dueDate = bill.dueDateValue
             let amountText = formattedAmount(bill.amount)
             let urgency = (bill.priority == .critica || bill.priority == .alta)
@@ -118,20 +138,28 @@ enum NotificationManager {
 
     static func scheduleRecurringReminders(_ items: [RecurringTransaction]) {
         for item in items {
-            let id = "recurring-\(item.id)"
-            removePending(ids: [id])
+            removePending(ids: ["recurring-\(item.id)"])
+        }
 
-            guard item.active, item.movementType != .ingreso else { continue }
-            guard let dueDate = nextOccurrence(dayOfMonth: item.dayOfMonth) else { continue }
+        let candidates = items
+            .filter { $0.active && $0.movementType != .ingreso }
+            .compactMap { item -> (item: RecurringTransaction, dueDate: Date)? in
+                guard let dueDate = nextOccurrence(dayOfMonth: item.dayOfMonth) else { return nil }
+                return (item, dueDate)
+            }
+            .sorted { $0.dueDate < $1.dueDate }
+            .prefix(maxScheduledPerCategory)
+
+        for candidate in candidates {
             guard
-                let leadDate = Calendar.current.date(byAdding: .day, value: -reminderLeadDays, to: dueDate),
+                let leadDate = Calendar.current.date(byAdding: .day, value: -reminderLeadDays, to: candidate.dueDate),
                 leadDate > Date()
             else { continue }
 
             schedule(
-                id: id,
+                id: "recurring-\(candidate.item.id)",
                 title: "Pago fijo por vencer",
-                body: "Recuerda tu pago de \(item.name) por \(formattedAmount(item.amount)) — vence en \(reminderLeadDays) dia\(reminderLeadDays == 1 ? "" : "s").",
+                body: "Recuerda tu pago de \(candidate.item.name) por \(formattedAmount(candidate.item.amount)) — vence en \(reminderLeadDays) dia\(reminderLeadDays == 1 ? "" : "s").",
                 date: atReminderHour(leadDate)
             )
         }

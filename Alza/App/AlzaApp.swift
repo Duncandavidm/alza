@@ -8,7 +8,10 @@ struct AviApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(appState)
-                .task { appState.start() }
+                .task {
+                    appState.start()
+                    DiagnosticsReporter.shared.start()
+                }
         }
     }
 }

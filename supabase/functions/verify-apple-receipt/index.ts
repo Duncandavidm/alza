@@ -2,8 +2,9 @@
 //
 // Recibe {userId, originalTransactionId} desde la app (despues de una compra
 // o restauracion via StoreKit 2), consulta el App Store Server API de Apple
-// para confirmar el estado real de la suscripcion, y hace upsert en
-// public.subscriptions con la service role key.
+// (GET /inApps/v1/subscriptions/{originalTransactionId} — no el endpoint de
+// una sola transaccion, que no trae el periodo de gracia de facturacion) y
+// hace upsert en public.subscriptions con la service role key.
 //
 // IMPORTANTE — sin probar: este entorno no tiene Deno ni acceso a un sandbox
 // de Apple, asi que esta funcion no se ha ejecutado ni contra sandbox ni
@@ -112,11 +113,25 @@ Deno.serve(async (req) => {
     }
 
     const jwt = await createAppleServerJWT();
-    const transactionInfo = await fetchTransactionInfo(originalTransactionId, jwt);
-    const decoded = decodeJWSPayload(transactionInfo.signedTransactionInfo);
+    const statusInfo = await fetchSubscriptionStatus(originalTransactionId, jwt);
+    const lastTransaction = findLastTransaction(statusInfo, originalTransactionId);
+    if (!lastTransaction) {
+      return jsonResponse({ error: "No se encontro la suscripcion en Apple." }, 404);
+    }
 
-    const status = mapStatus(decoded);
-    const expiresAt = decoded.expiresDate ? new Date(decoded.expiresDate).toISOString() : null;
+    const decoded = decodeJWSPayload(lastTransaction.signedTransactionInfo);
+    const renewalInfo = lastTransaction.signedRenewalInfo
+      ? decodeJWSPayload(lastTransaction.signedRenewalInfo)
+      : null;
+
+    const status = mapStatus(lastTransaction.status);
+    // En gracia, Apple sigue dando acceso hasta gracePeriodExpiresDate (no
+    // hasta expiresDate, que ya quedo en el pasado — por eso fallo el cobro
+    // en primer lugar). Fuera de gracia, expiresDate es la fecha real.
+    const expiresAtMillis = status === "in_grace_period" && renewalInfo?.gracePeriodExpiresDate
+      ? renewalInfo.gracePeriodExpiresDate
+      : decoded.expiresDate;
+    const expiresAt = expiresAtMillis ? new Date(expiresAtMillis).toISOString() : null;
 
     const { error } = await supabase.from("subscriptions").upsert({
       user_id: userId,
@@ -135,20 +150,43 @@ Deno.serve(async (req) => {
   }
 });
 
-function mapStatus(decoded: { revocationDate?: number; expiresDate?: number }): string {
-  if (decoded.revocationDate) return "revoked";
-  if (decoded.expiresDate && decoded.expiresDate < Date.now()) return "expired";
-  return "active";
+/** Estados del App Store Server API (campo "status" en lastTransactions):
+ * 1 activa, 2 expirada, 3 en reintento de cobro (sin gracia configurada o
+ * ya agotada — sin acceso), 4 en periodo de gracia de facturacion (CON
+ * acceso, ver supabase/functions/README para activarlo en App Store
+ * Connect), 5 revocada (reembolso). */
+function mapStatus(appleStatus: number): string {
+  switch (appleStatus) {
+    case 1: return "active";
+    case 4: return "in_grace_period";
+    case 5: return "revoked";
+    case 2:
+    case 3:
+      return "expired";
+    default:
+      return "unknown";
+  }
 }
 
-async function fetchTransactionInfo(transactionId: string, jwt: string) {
+interface LastTransaction {
+  status: number;
+  signedTransactionInfo: string;
+  signedRenewalInfo?: string;
+}
+
+/** GET /inApps/v1/subscriptions/{originalTransactionId}: a diferencia del
+ * endpoint de una sola transaccion, este trae el estado real de la
+ * suscripcion (activa/gracia/expirada/revocada) en signedRenewalInfo —
+ * sin este, no hay forma de saber que un usuario esta en periodo de
+ * gracia de facturacion. */
+async function fetchSubscriptionStatus(originalTransactionId: string, jwt: string) {
   const environments = FORCED_ENVIRONMENT === "sandbox"
     ? ["https://api.storekit-sandbox.itunes.apple.com"]
     : ["https://api.storekit.itunes.apple.com", "https://api.storekit-sandbox.itunes.apple.com"];
 
   let lastError: unknown;
   for (const base of environments) {
-    const response = await fetch(`${base}/inApps/v1/transactions/${transactionId}`, {
+    const response = await fetch(`${base}/inApps/v1/subscriptions/${originalTransactionId}`, {
       headers: { Authorization: `Bearer ${jwt}` },
     });
     if (response.ok) {
@@ -159,6 +197,23 @@ async function fetchTransactionInfo(transactionId: string, jwt: string) {
   throw lastError;
 }
 
+/** La respuesta trae un grupo por subscriptionGroupIdentifier (hoy solo
+ * tenemos uno, "Avi Pro") con su lastTransactions — busca la que coincide
+ * con el originalTransactionId que mando el cliente, por si en el futuro
+ * hay mas de un grupo. */
+function findLastTransaction(
+  statusInfo: { data?: { lastTransactions?: LastTransaction[] }[] },
+  originalTransactionId: string,
+): LastTransaction | null {
+  for (const group of statusInfo.data ?? []) {
+    for (const tx of group.lastTransactions ?? []) {
+      const decoded = decodeJWSPayload(tx.signedTransactionInfo);
+      if (decoded.originalTransactionId === originalTransactionId) return tx;
+    }
+  }
+  return null;
+}
+
 /** Decodifica (sin verificar firma) el payload base64url de una JWS. */
 function decodeJWSPayload(jws: string): {
   productId: string;
@@ -166,6 +221,7 @@ function decodeJWSPayload(jws: string): {
   originalTransactionId: string;
   expiresDate?: number;
   revocationDate?: number;
+  gracePeriodExpiresDate?: number;
 } {
   const [, payload] = jws.split(".");
   const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));

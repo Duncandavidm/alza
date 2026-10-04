@@ -129,11 +129,15 @@ struct PaywallView: View {
                         .font(.system(.subheadline, design: AviBrand.fontDesign, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
-                        .background {
-                            if audience == option {
-                                Capsule().fill(AviBrand.primary)
-                            }
-                        }
+                        .background(
+                            // RoundedRectangle en vez de Capsule a proposito: en
+                            // iOS 26 un Capsule().fill(color solido) aqui dejaba
+                            // el texto del boton invisible (reportado en
+                            // Simulator iOS 26.5) — RoundedRectangle con radio
+                            // grande se ve igual de "pastilla" sin el bug.
+                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                .fill(audience == option ? AviBrand.primary : .clear)
+                        )
                         .foregroundStyle(audience == option ? .white : .primary)
                 }
                 .buttonStyle(.plain)
@@ -160,11 +164,10 @@ struct PaywallView: View {
                         .font(.system(.subheadline, design: AviBrand.fontDesign, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
-                        .background {
-                            if subscriptionStore.selectedPlan.tier == tier {
-                                Capsule().fill(AviBrand.primary)
-                            }
-                        }
+                        .background(
+                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                .fill(subscriptionStore.selectedPlan.tier == tier ? AviBrand.primary : .clear)
+                        )
                         .foregroundStyle(subscriptionStore.selectedPlan.tier == tier ? .white : .primary)
                 }
                 .buttonStyle(.plain)
@@ -251,7 +254,10 @@ struct PaywallView: View {
                     .font(.caption2.weight(.bold))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
-                    .background(Capsule().fill(badge == nil ? .clear : AviBrand.primary))
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(badge == nil ? .clear : AviBrand.primary)
+                    )
                     .foregroundStyle(.white)
                     .opacity(badge == nil ? 0 : 1)
 

@@ -20,12 +20,10 @@ enum Config {
     /// con el Product ID configurado ahi.
     static let subscriptionProductId = "app.alza.sub.pro"
 
-    /// Nota: se llama ".yearly" y no ".annual" porque el primer intento de
-    /// crear "app.alza.sub.pro.annual" en App Store Connect se borro antes
-    /// de terminarlo, y Apple nunca deja reusar un Product ID una vez
-    /// creado — aunque la suscripcion ya no exista en ningun lado, el
-    /// string queda bloqueado para siempre. $5.99/mes ($71.88/año).
-    static let subscriptionProductIdAnnual = "app.alza.sub.pro.yearly"
+    /// MISMO grupo de suscripcion "Avi Pro" que `subscriptionProductId`
+    /// (para que StoreKit los trate como planes intercambiables del mismo
+    /// Pro, no como dos suscripciones separadas). $5.99/mes ($71.88/año).
+    static let subscriptionProductIdAnnual = "app.alza.sub.pro.annual"
 
     /// Plan "Familia": a diferencia de "En familia" (Apple Family Sharing,
     /// que SOLO deja compartir gratis el plan individual), este es un

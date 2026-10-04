@@ -97,11 +97,9 @@ Providers):
   de uno a otro sin perder el historial):
   - **Mensual**: `app.alza.sub.pro`, **$7.99/mes**. El Product ID tiene que
     coincidir exactamente con `Config.subscriptionProductId`.
-  - **Anual**: `app.alza.sub.pro.yearly`, **$71.88/año** (equivale a
+  - **Anual**: `app.alza.sub.pro.annual`, **$71.88/año** (equivale a
     $5.99/mes, ~25% de descuento vs el mensual). El Product ID tiene que
-    coincidir con `Config.subscriptionProductIdAnnual` (se llama ".yearly"
-    y no ".annual" porque ese string quedo bloqueado por Apple al borrar
-    un intento anterior — un Product ID nunca se puede reusar).
+    coincidir con `Config.subscriptionProductIdAnnual`.
   - En estos dos (los individuales), activa el toggle **"Family Sharing"**
     al crearlos — así quien compre comparte Pro gratis con su familia de
     Apple (hasta 5 personas), cada quien con su propia cuenta y datos de

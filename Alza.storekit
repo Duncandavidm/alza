@@ -111,7 +111,7 @@
               "locale" : "es_MX"
             }
           ],
-          "productID" : "app.alza.sub.pro.yearly",
+          "productID" : "app.alza.sub.pro.annual",
           "recurringSubscriptionPeriod" : "P1Y",
           "referenceName" : "Avi Pro Anual",
           "subscriptionGroupID" : "62AFE553-CA8F-4ECB-A21F-9A1F28E0BB7E",

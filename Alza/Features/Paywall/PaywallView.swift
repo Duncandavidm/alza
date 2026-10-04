@@ -136,6 +136,7 @@ struct PaywallView: View {
                         }
                         .foregroundStyle(audience == option ? .white : .primary)
                 }
+                .buttonStyle(.plain)
                 .pressable()
             }
         }
@@ -166,6 +167,7 @@ struct PaywallView: View {
                         }
                         .foregroundStyle(subscriptionStore.selectedPlan.tier == tier ? .white : .primary)
                 }
+                .buttonStyle(.plain)
                 .pressable()
             }
         }

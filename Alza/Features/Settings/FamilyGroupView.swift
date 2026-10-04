@@ -25,7 +25,7 @@ struct FamilyGroupView: View {
                 Section {
                     Text(errorMessage)
                         .font(.footnote)
-                        .foregroundStyle(AmadaiBrand.alert)
+                        .foregroundStyle(AviBrand.alert)
                 }
             }
         }
@@ -52,7 +52,7 @@ struct FamilyGroupView: View {
             }
             .padding(.vertical, 4)
 
-            ShareLink(item: "Unete a mi familia en Amadai con el codigo \(group.inviteCode) — entra en Ajustes > Mi familia dentro de la app.") {
+            ShareLink(item: "Unete a mi familia en Avi con el codigo \(group.inviteCode) — entra en Ajustes > Mi familia dentro de la app.") {
                 Label("Compartir codigo", systemImage: "square.and.arrow.up")
             }
         } footer: {
@@ -126,7 +126,7 @@ struct FamilyGroupView: View {
         } header: {
             Text("Unirte a una familia")
         } footer: {
-            Text("Si alguien con el plan Familia de Amadai te paso su codigo, entralo aqui para obtener acceso Pro sin pagar nada tu. Si tu compraste el plan Familia, tu codigo aparece aqui apenas se active la suscripcion.")
+            Text("Si alguien con el plan Familia de Avi te paso su codigo, entralo aqui para obtener acceso Pro sin pagar nada tu. Si tu compraste el plan Familia, tu codigo aparece aqui apenas se active la suscripcion.")
         }
     }
 }

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// "Buzon" de sugerencias: el cliente escribe que le gustaria ver en Amadai,
+/// "Buzon" de sugerencias: el cliente escribe que le gustaria ver en Avi,
 /// se guarda en Supabase y queda aqui mismo como historial de lo que ya
 /// mando. David lo revisa directo en el dashboard de Supabase.
 struct FeedbackView: View {
@@ -13,7 +13,7 @@ struct FeedbackView: View {
     var body: some View {
         List {
             Section {
-                TextField("¿Que te gustaria ver en Amadai?", text: $draft, axis: .vertical)
+                TextField("¿Que te gustaria ver en Avi?", text: $draft, axis: .vertical)
                     .lineLimit(3...6)
                     .focused($isDraftFocused)
 

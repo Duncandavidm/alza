@@ -110,7 +110,7 @@ struct SettingsView: View {
                             if let periodEndDate {
                                 Text("Tu suscripcion no se va a renovar. Finaliza el \(periodEndDate.formatted(date: .long, time: .omitted)) — hasta esa fecha sigues con acceso completo.")
                                     .font(.footnote)
-                                    .foregroundStyle(AmadaiBrand.alert)
+                                    .foregroundStyle(AviBrand.alert)
                             }
                         } else if let periodEndDate {
                             LabeledContent("Renueva", value: periodEndDate.formatted(date: .abbreviated, time: .omitted))
@@ -169,7 +169,7 @@ struct SettingsView: View {
         switch notificationStatus {
         case .authorized, .provisional, .ephemeral:
             Label("Notificaciones activadas", systemImage: "checkmark.circle.fill")
-                .foregroundStyle(AmadaiBrand.primary)
+                .foregroundStyle(AviBrand.primary)
         case .denied:
             Button {
                 if let url = URL(string: UIApplication.openSettingsURLString) {

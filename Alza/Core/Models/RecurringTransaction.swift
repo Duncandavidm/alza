@@ -2,7 +2,7 @@ import Foundation
 
 /// Movimiento fijo que se repite cada mes (renta, Netflix, gimnasio...).
 /// Inspirado en "Crea transacciones recurrentes para que nunca olvides
-/// nada" — muy cercano al gastos_fijos_config del plan original de Amadai.
+/// nada" — muy cercano al gastos_fijos_config del plan original de Avi.
 struct RecurringTransaction: Codable, Identifiable, Hashable {
     let id: UUID
     let userId: UUID

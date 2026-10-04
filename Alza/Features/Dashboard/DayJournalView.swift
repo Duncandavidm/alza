@@ -3,7 +3,7 @@ import SwiftUI
 /// El dashboard principal — rediseño inspirado en un paywall/dashboard de
 /// referencia que le gusto al cliente: numero grande, pastillas de
 /// ingreso/gasto, barras "candy" de presupuesto, y accesos rapidos de
-/// agregar/buscar/voz abajo. Con los colores de marca de Amadai.
+/// agregar/buscar/voz abajo. Con los colores de marca de Avi.
 struct DayJournalView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = DayJournalViewModel()
@@ -112,7 +112,7 @@ struct DayJournalView: View {
         HStack(alignment: .center, spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(viewModel.isViewingToday ? "Hoy" : dateLabel)
-                    .font(.system(.title2, design: AmadaiBrand.fontDesign, weight: .bold))
+                    .font(.system(.title2, design: AviBrand.fontDesign, weight: .bold))
                 if !viewModel.isViewingToday {
                     Button("Volver a hoy") {
                         viewModel.selectedDate = Date()
@@ -182,15 +182,15 @@ struct DayJournalView: View {
             if totalOverBudget > 0 {
                 Text("\(totalOverBudget, format: .currency(code: "USD")) sobre presupuesto")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(AmadaiBrand.alert)
+                    .foregroundStyle(AviBrand.alert)
             }
 
             HStack(alignment: .firstTextBaseline, spacing: 2) {
                 Image(systemName: viewModel.todayNet >= 0 ? "plus" : "minus")
                     .font(.title2.weight(.heavy))
-                    .foregroundStyle(viewModel.todayNet >= 0 ? AmadaiBrand.primary : AmadaiBrand.alert)
+                    .foregroundStyle(viewModel.todayNet >= 0 ? AviBrand.primary : AviBrand.alert)
                 Text(abs(viewModel.todayNet), format: .number.precision(.fractionLength(0)))
-                    .font(.system(size: 42, weight: .heavy, design: AmadaiBrand.fontDesign))
+                    .font(.system(size: 42, weight: .heavy, design: AviBrand.fontDesign))
                 Text("$")
                     .font(.title2.weight(.semibold))
                     .foregroundStyle(.secondary)
@@ -199,8 +199,8 @@ struct DayJournalView: View {
             .minimumScaleFactor(0.6)
 
             HStack(spacing: 10) {
-                pill(icon: "arrow.down", amount: viewModel.todayExpense, color: AmadaiBrand.alert)
-                pill(icon: "arrow.up", amount: viewModel.todayIncome, color: AmadaiBrand.primary)
+                pill(icon: "arrow.down", amount: viewModel.todayExpense, color: AviBrand.alert)
+                pill(icon: "arrow.up", amount: viewModel.todayIncome, color: AviBrand.primary)
             }
         }
     }
@@ -256,11 +256,11 @@ struct DayJournalView: View {
             .padding(12)
             .foregroundStyle(.primary)
         }
-        .background(RoundedRectangle(cornerRadius: 14).fill(AmadaiBrand.alert.opacity(0.12)))
+        .background(RoundedRectangle(cornerRadius: 14).fill(AviBrand.alert.opacity(0.12)))
     }
 
     /// Cuentas por pagar pendientes, mas cercanas primero — el diferenciador
-    /// de Amadai necesita ser visible aqui, no escondido en Ajustes.
+    /// de Avi necesita ser visible aqui, no escondido en Ajustes.
     private var billsStrip: some View {
         NavigationLink {
             BillsView()
@@ -273,7 +273,7 @@ struct DayJournalView: View {
                     if let next = billsViewModel.pending.first {
                         Text("\(next.name) — \(next.dueDateValue.formatted(date: .abbreviated, time: .omitted))\(next.isOverdue ? " (vencida)" : "")")
                             .font(.caption)
-                            .foregroundStyle(next.isOverdue ? AmadaiBrand.alert : .secondary)
+                            .foregroundStyle(next.isOverdue ? AviBrand.alert : .secondary)
                     }
                 }
                 Spacer()
@@ -416,8 +416,8 @@ struct DayJournalView: View {
                     .font(.system(size: 24, weight: .semibold))
                     .foregroundStyle(.white)
                     .frame(width: 62, height: 62)
-                    .background(Circle().fill(AmadaiBrand.headerGradient))
-                    .shadow(color: AmadaiBrand.primary.opacity(0.4), radius: 10, y: 4)
+                    .background(Circle().fill(AviBrand.headerGradient))
+                    .shadow(color: AviBrand.primary.opacity(0.4), radius: 10, y: 4)
             }
             .pressable()
         }

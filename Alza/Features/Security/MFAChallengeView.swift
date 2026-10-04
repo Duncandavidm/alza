@@ -19,11 +19,11 @@ struct MFAChallengeView: View {
 
                 Image(systemName: "lock.shield.fill")
                     .font(.system(size: 48))
-                    .foregroundStyle(AmadaiBrand.primary)
+                    .foregroundStyle(AviBrand.primary)
 
                 VStack(spacing: 6) {
                     Text("Verificacion en 2 pasos")
-                        .font(.system(.title3, design: AmadaiBrand.fontDesign, weight: .bold))
+                        .font(.system(.title3, design: AviBrand.fontDesign, weight: .bold))
                     Text("Escribe el codigo de 6 digitos de tu app de autenticacion.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -42,7 +42,7 @@ struct MFAChallengeView: View {
                 if let errorMessage {
                     Text(errorMessage)
                         .font(.footnote)
-                        .foregroundStyle(AmadaiBrand.alert)
+                        .foregroundStyle(AviBrand.alert)
                 }
 
                 Button {
@@ -55,7 +55,7 @@ struct MFAChallengeView: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(AmadaiBrand.primary)
+                .tint(AviBrand.primary)
                 .disabled(code.count != 6 || isVerifying)
                 .padding(.horizontal, 40)
 

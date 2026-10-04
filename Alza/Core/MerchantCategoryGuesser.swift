@@ -2,7 +2,7 @@ import Foundation
 
 /// Adivina la categoria de un gasto a partir del nombre del comercio —
 /// por palabras clave, sin IA ni red: tiene que correr instantaneo dentro
-/// de AddAmadaiExpenseIntent (la automatizacion de Atajos/Apple Pay no tiene
+/// de AddAviExpenseIntent (la automatizacion de Atajos/Apple Pay no tiene
 /// por que esperar una llamada a un modelo para algo tan simple). No es
 /// perfecto, pero cubre los casos mas comunes de un comercio tipico.
 enum MerchantCategoryGuesser {

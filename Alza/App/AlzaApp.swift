@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct AmadaiApp: App {
+struct AviApp: App {
     @StateObject private var appState = AppState()
 
     var body: some Scene {

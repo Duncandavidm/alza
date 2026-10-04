@@ -61,7 +61,7 @@
     {
       "id" : "62AFE553-CA8F-4ECB-A21F-9A1F28E0BB7E",
       "localizations" : [],
-      "name" : "Amadai Pro",
+      "name" : "Avi Pro",
       "subscriptions" : [
         {
           "adHocOffers" : [],
@@ -80,13 +80,13 @@
           "localizations" : [
             {
               "description" : "Dashboard financiero completo + insights de IA personalizados sobre tus cuentas y gastos.",
-              "displayName" : "Amadai Pro Mensual",
+              "displayName" : "Avi Pro Mensual",
               "locale" : "es_MX"
             }
           ],
           "productID" : "app.alza.sub.pro",
           "recurringSubscriptionPeriod" : "P1M",
-          "referenceName" : "Amadai Pro Mensual",
+          "referenceName" : "Avi Pro Mensual",
           "subscriptionGroupID" : "62AFE553-CA8F-4ECB-A21F-9A1F28E0BB7E",
           "type" : "RecurringSubscription"
         },
@@ -107,13 +107,13 @@
           "localizations" : [
             {
               "description" : "Dashboard financiero completo + insights de IA personalizados sobre tus cuentas y gastos. Plan anual, equivale a $5.99/mes.",
-              "displayName" : "Amadai Pro Anual",
+              "displayName" : "Avi Pro Anual",
               "locale" : "es_MX"
             }
           ],
           "productID" : "app.alza.sub.pro.annual",
           "recurringSubscriptionPeriod" : "P1Y",
-          "referenceName" : "Amadai Pro Anual",
+          "referenceName" : "Avi Pro Anual",
           "subscriptionGroupID" : "62AFE553-CA8F-4ECB-A21F-9A1F28E0BB7E",
           "type" : "RecurringSubscription"
         },
@@ -134,13 +134,13 @@
           "localizations" : [
             {
               "description" : "Todo el plan Pro, mas invita hasta 5 personas (cada quien con su propia cuenta y datos) con tu codigo de familia.",
-              "displayName" : "Amadai Pro Familia Mensual",
+              "displayName" : "Avi Pro Familia Mensual",
               "locale" : "es_MX"
             }
           ],
           "productID" : "app.alza.sub.pro.family",
           "recurringSubscriptionPeriod" : "P1M",
-          "referenceName" : "Amadai Pro Familia Mensual",
+          "referenceName" : "Avi Pro Familia Mensual",
           "subscriptionGroupID" : "62AFE553-CA8F-4ECB-A21F-9A1F28E0BB7E",
           "type" : "RecurringSubscription"
         },
@@ -161,13 +161,13 @@
           "localizations" : [
             {
               "description" : "Todo el plan Pro, mas invita hasta 5 personas con tu codigo de familia. Plan anual, equivale a $11.24/mes.",
-              "displayName" : "Amadai Pro Familia Anual",
+              "displayName" : "Avi Pro Familia Anual",
               "locale" : "es_MX"
             }
           ],
           "productID" : "app.alza.sub.pro.family.annual",
           "recurringSubscriptionPeriod" : "P1Y",
-          "referenceName" : "Amadai Pro Familia Anual",
+          "referenceName" : "Avi Pro Familia Anual",
           "subscriptionGroupID" : "62AFE553-CA8F-4ECB-A21F-9A1F28E0BB7E",
           "type" : "RecurringSubscription"
         }

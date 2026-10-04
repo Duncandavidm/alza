@@ -7,7 +7,7 @@ import Foundation
 /// autenticarse y pedir datos el solo, la app ya hizo el trabajo y deja
 /// esto listo para leer.
 ///
-/// Este archivo vive en ambos targets (Amadai y AlzaWidget) — ver
+/// Este archivo vive en ambos targets (Avi y AlzaWidget) — ver
 /// project.yml, donde se lista explicitamente en las fuentes del widget
 /// ademas de quedar incluido normalmente en las del target principal.
 struct BudgetWidgetSnapshot: Codable {
@@ -26,7 +26,7 @@ struct BudgetWidgetSnapshot: Codable {
 
     /// TODO(David): si cambias este identifier, tiene que coincidir EXACTO
     /// con el App Group que actives en Signing & Capabilities para los
-    /// targets Amadai y AlzaWidget en Xcode (y que exista en tu cuenta de
+    /// targets Avi y AlzaWidget en Xcode (y que exista en tu cuenta de
     /// Apple Developer — con "Automatically manage signing" deberia
     /// crearse solo la primera vez que compiles con tu Team seleccionado).
     static let appGroupId = "group.app.alza.shared"

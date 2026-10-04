@@ -1,13 +1,13 @@
 import SwiftUI
 
 /// Paleta pastel de marca para pintar las barras de presupuesto — version
-/// Amadai (teal) del picker de colores del diseño de referencia (que usaba
+/// Avi (teal) del picker de colores del diseño de referencia (que usaba
 /// tonos durazno/rosa genericos). Un presupuesto sin color guardado cae a
 /// uno de estos por su posicion en la lista, asi los existentes (creados
 /// antes de que existiera esta opcion) igual se ven bien sin migrar datos.
 enum BudgetColorPalette {
     static let swatches: [Color] = [
-        Color(hex: "#00A585") ?? AmadaiBrand.primary, // teal de marca
+        Color(hex: "#00A585") ?? AviBrand.primary, // teal de marca
         Color(hex: "#F4A07A") ?? .orange, // durazno
         Color(hex: "#F2B8C6") ?? .pink, // rosa
         Color(hex: "#F6DDA0") ?? .yellow, // crema

@@ -1,6 +1,6 @@
 // Edge Function: prioritize-payments
 //
-// EL DIFERENCIADOR DE AMADAI: cuando el usuario registra un ingreso, esta
+// EL DIFERENCIADOR DE AVI: cuando el usuario registra un ingreso, esta
 // funcion mira sus cuentas por pagar pendientes y sus recurrentes vencidas,
 // y le pide a Claude que arme un plan de pago priorizado — que pagar
 // primero, por que, y si el ingreso alcanza para todo. Se llama justo
@@ -213,7 +213,7 @@ async function askClaude(
     movementType: "gasto",
   }));
 
-  const prompt = `Eres el asesor financiero de la app Amadai. El dueño de un \
+  const prompt = `Eres el asesor financiero de la app Avi. El dueño de un \
 negocio acaba de registrar un ingreso de $${incomeAmount.toFixed(2)}. Tiene \
 estas cuentas por pagar pendientes, pagos recurrentes vencidos o por vencer \
 pronto, y deudas activas (tarjetas de credito, prestamos):

@@ -17,7 +17,7 @@ enum SubscriptionBilling: String, CaseIterable, Identifiable {
 }
 
 /// 2 tiers (individual / familia) x 2 ciclos (mensual / anual) = 4 planes,
-/// todos en el mismo grupo de suscripcion "Amadai Pro" en App Store
+/// todos en el mismo grupo de suscripcion "Avi Pro" en App Store
 /// Connect. "Familia" NO es Apple Family Sharing (eso es gratis para la
 /// familia del comprador) — es un producto propio, mas caro, que da
 /// derecho a invitar hasta 5 personas con un codigo (ver
@@ -63,7 +63,7 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
     }
 }
 
-/// Maneja la compra/restauracion de la suscripcion de Amadai con StoreKit 2
+/// Maneja la compra/restauracion de la suscripcion de Avi con StoreKit 2
 /// directo (nada de bridge nativo<->JS: la app es 100% nativa). 4 planes
 /// del mismo Pro (individual/familia x mensual/anual, mismo grupo de
 /// suscripcion en App Store Connect) — el usuario elige cual comprar.

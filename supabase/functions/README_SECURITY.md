@@ -50,7 +50,7 @@ Cada funcion responde el preflight `OPTIONS` y manda
 bloquea la peticion cross-origin — asi ninguna pagina web (con la anon
 key filtrada o no) puede llamar estas funciones desde el navegador de
 alguien mas. Esto no afecta a la app nativa de iOS: CORS es una regla que
-cumplen los navegadores, no los clientes HTTP nativos, asi que Amadai sigue
+cumplen los navegadores, no los clientes HTTP nativos, asi que Avi sigue
 llamando las funciones sin problema.
 
 Importante: CORS **no es proteccion contra un atacante que le pega
@@ -79,7 +79,7 @@ LLM es inmune del todo a esto), pero reduce bastante la superficie.
 
 - **Content Security Policy (CSP)**: es un mecanismo que cumplen los
   navegadores al renderizar HTML/JS de una pagina web. Estas funciones
-  regresan JSON puro, nunca HTML, y Amadai es una app nativa sin WebView —
+  regresan JSON puro, nunca HTML, y Avi es una app nativa sin WebView —
   no hay nada que un CSP pudiera restringir aqui.
 - **"Que solo mi app pueda llamar al backend"**: no existe una forma de
   lograr esto al 100% solo con headers — cualquiera con una copia valida

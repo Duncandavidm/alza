@@ -24,12 +24,12 @@ targets:
     info:
       path: Alza/Resources/Info.plist
       properties:
-        CFBundleDisplayName: Amadai
+        CFBundleDisplayName: Avi
         CFBundleIconName: AppIcon
         UILaunchScreen: {}
         ITSAppUsesNonExemptEncryption: false
-        NSMicrophoneUsageDescription: Amadai usa el microfono para que anotes un ingreso o gasto diciendolo en voz alta.
-        NSSpeechRecognitionUsageDescription: Amadai transcribe lo que dices para llenar el monto, la descripcion y la categoria del movimiento por ti.
+        NSMicrophoneUsageDescription: Avi usa el microfono para que anotes un ingreso o gasto diciendolo en voz alta.
+        NSSpeechRecognitionUsageDescription: Avi transcribe lo que dices para llenar el monto, la descripcion y la categoria del movimiento por ti.
     entitlements:
       path: Alza/Resources/Alza.entitlements
       properties:
@@ -65,7 +65,7 @@ targets:
     info:
       path: AlzaWidget/Info.plist
       properties:
-        CFBundleDisplayName: Amadai
+        CFBundleDisplayName: Avi
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     entitlements:

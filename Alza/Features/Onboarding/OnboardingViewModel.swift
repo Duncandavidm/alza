@@ -4,7 +4,7 @@ import Supabase
 /// El "estudio financiero" al entrar por primera vez: junta ingresos fijos
 /// y variables, cuentas fijas comunes, suscripciones y otras cuentas fijas,
 /// y al terminar crea todo de una vez (cuenta + recurrentes) para que el
-/// resto de Amadai (consejo de pago, insights) tenga panorama completo desde
+/// resto de Avi (consejo de pago, insights) tenga panorama completo desde
 /// el primer dia, en vez de que el usuario lo vaya descubriendo solo.
 @MainActor
 final class OnboardingViewModel: ObservableObject {

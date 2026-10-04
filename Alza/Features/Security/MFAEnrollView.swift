@@ -62,7 +62,7 @@ struct MFAEnrollView: View {
 
                     if let errorMessage {
                         Section {
-                            Text(errorMessage).foregroundStyle(AmadaiBrand.alert).font(.footnote)
+                            Text(errorMessage).foregroundStyle(AviBrand.alert).font(.footnote)
                         }
                     }
                 }

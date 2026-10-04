@@ -1,6 +1,6 @@
 import Foundation
 
-/// Configuracion del backend propio de Amadai (proyecto Supabase nuevo,
+/// Configuracion del backend propio de Avi (proyecto Supabase nuevo,
 /// sin relacion con maday). Los valores de Supabase son publicos por diseno
 /// (equivalentes a la publishable key de maday) y estan pensados para vivir
 /// en el binario del cliente.
@@ -21,7 +21,7 @@ enum Config {
     static let subscriptionProductId = "app.alza.sub.pro"
 
     /// TODO(David): crear este segundo producto en App Store Connect, en el
-    /// MISMO grupo de suscripcion "Amadai Pro" que `subscriptionProductId`
+    /// MISMO grupo de suscripcion "Avi Pro" que `subscriptionProductId`
     /// (para que StoreKit los trate como planes intercambiables del mismo
     /// Pro, no como dos suscripciones separadas) — ver README "App Store
     /// Connect" para el paso a paso. $5.99/mes ($71.88/año).
@@ -35,7 +35,7 @@ enum Config {
     /// actives "En familia" en estos dos productos en App Store Connect:
     /// el cobro extra viene de ser un producto distinto, no de ese toggle.
     /// TODO(David): crear estos 2 productos en App Store Connect, mismo
-    /// grupo "Amadai Pro" — $14.99/mes ($134.88/año equivalente ~$11.24/mes).
+    /// grupo "Avi Pro" — $14.99/mes ($134.88/año equivalente ~$11.24/mes).
     static let subscriptionProductIdFamily = "app.alza.sub.pro.family"
     static let subscriptionProductIdFamilyAnnual = "app.alza.sub.pro.family.annual"
 
@@ -50,6 +50,6 @@ enum Config {
     static let privacyPolicyURL = URL(string: "https://duncandavidm.github.io/alza/privacy.html")!
     static let termsOfUseURL = URL(string: "https://duncandavidm.github.io/alza/terms.html")!
     /// TODO(David): este dominio todavia no existe — cuando tengas uno
-    /// propio para Amadai, cambialo aqui.
-    static let supportEmail = "soporte@amadai.app"
+    /// propio para Avi, cambialo aqui.
+    static let supportEmail = "soporte@avi.app"
 }

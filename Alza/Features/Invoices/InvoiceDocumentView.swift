@@ -149,7 +149,7 @@ struct InvoiceDocumentView: View {
     private var footer: some View {
         HStack {
             Spacer()
-            Text("Generado con Amadai")
+            Text("Generado con Avi")
                 .font(.system(.caption2, design: font))
                 .foregroundStyle(.gray)
             Spacer()

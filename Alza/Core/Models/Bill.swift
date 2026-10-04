@@ -45,7 +45,7 @@ enum BillDateFormat {
 }
 
 /// "Cuenta por pagar" — una factura o recibo pendiente con fecha de
-/// vencimiento. El diferenciador de Amadai: al registrar un ingreso, la app
+/// vencimiento. El diferenciador de Avi: al registrar un ingreso, la app
 /// mira estas (mas las recurrentes vencidas) y aconseja que pagar primero.
 struct Bill: Codable, Identifiable, Hashable {
     let id: UUID

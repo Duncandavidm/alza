@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// La calculadora "precio costo -> precio de venta" que pidio David para
-/// comercios: pones cuanto te cuesta y que margen quieres ganar, y Amadai
+/// comercios: pones cuanto te cuesta y que margen quieres ganar, y Avi
 /// calcula el precio de venta en vivo.
 struct AddProductView: View {
     @EnvironmentObject private var appState: AppState

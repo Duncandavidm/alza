@@ -17,9 +17,9 @@ struct AuthView: View {
                 VStack(alignment: .leading, spacing: 28) {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Bienvenido")
-                            .font(.system(.largeTitle, design: AmadaiBrand.fontDesign, weight: .bold))
+                            .font(.system(.largeTitle, design: AviBrand.fontDesign, weight: .bold))
                         Text("Inicia sesion para ver como va tu negocio.")
-                            .font(.system(.subheadline, design: AmadaiBrand.fontDesign))
+                            .font(.system(.subheadline, design: AviBrand.fontDesign))
                             .foregroundStyle(.secondary)
                     }
 
@@ -42,7 +42,7 @@ struct AuthView: View {
 
     private var header: some View {
         AuthHeaderShape()
-            .fill(AmadaiBrand.headerGradient)
+            .fill(AviBrand.headerGradient)
             .clipped()
             .overlay(alignment: .topLeading) {
                 VStack(alignment: .leading, spacing: 8) {
@@ -52,8 +52,8 @@ struct AuthView: View {
                         .frame(width: 52, height: 52)
 
                     Text("Tu asesor financiero con IA")
-                        .font(.system(.subheadline, design: AmadaiBrand.fontDesign))
-                        .foregroundStyle(AmadaiBrand.onDarkSurface.opacity(0.75))
+                        .font(.system(.subheadline, design: AviBrand.fontDesign))
+                        .foregroundStyle(AviBrand.onDarkSurface.opacity(0.75))
                 }
                 .padding(.horizontal, 28)
                 .padding(.top, 64)
@@ -90,7 +90,7 @@ struct AuthView: View {
             if let errorMessage = viewModel.errorMessage {
                 Text(errorMessage)
                     .font(.footnote)
-                    .foregroundStyle(AmadaiBrand.alert)
+                    .foregroundStyle(AviBrand.alert)
                     .multilineTextAlignment(.leading)
             }
         }
@@ -144,12 +144,12 @@ struct AuthView: View {
                 Task { await viewModel.submitEmailForm() }
             } label: {
                 Text(viewModel.emailAuthMode == .signIn ? "Iniciar sesion" : "Crear cuenta")
-                    .font(.system(.headline, design: AmadaiBrand.fontDesign))
+                    .font(.system(.headline, design: AviBrand.fontDesign))
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
             }
             .buttonStyle(.borderedProminent)
-            .tint(AmadaiBrand.primary)
+            .tint(AviBrand.primary)
             .pressable()
             .disabled(!viewModel.isEmailFormValid)
 

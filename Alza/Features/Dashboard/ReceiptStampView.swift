@@ -60,7 +60,7 @@ struct ReceiptStampView: View {
 
     private var receipt: some View {
         VStack(spacing: 6) {
-            Text("AMADAI")
+            Text("AVI")
                 .font(.system(size: 15, weight: .black, design: .monospaced))
                 .padding(.top, 16)
             Text("RECIBO DE PAGO")

@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-/// El mark de Amadai (version blanca), embebido directo como datos en vez
+/// El mark de Avi (version blanca), embebido directo como datos en vez
 /// de vivir en el asset catalog. Se hizo asi porque, pese a varias
 /// vueltas (limpiar DerivedData, agregar ASSETCATALOG_COMPILER_*,
 /// verificar el PNG y el Contents.json byte por byte), el catalogo de

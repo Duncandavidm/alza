@@ -255,7 +255,10 @@ struct PaywallView: View {
                     .padding(.vertical, 4)
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(badge == nil ? .clear : AviBrand.primary)
+                            // DIAGNOSTICO TEMPORAL: Color.green en vez de
+                            // AviBrand.primary, para aislar si el bug es del
+                            // color de marca o de otra cosa. Revertir despues.
+                            .fill(badge == nil ? .clear : Color.green)
                     )
                     .foregroundStyle(.white)
                     .opacity(badge == nil ? 0 : 1)

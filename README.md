@@ -107,8 +107,8 @@ Providers):
     una caracteristica nativa del producto, no un plan aparte.
   - **Familia Mensual**: `app.alza.sub.pro.family`, **$14.99/mes**. Debe
     coincidir con `Config.subscriptionProductIdFamily`.
-  - **Familia Anual**: `app.alza.sub.pro.family.annual`, **$134.88/año**
-    (equivale a $11.24/mes, ~25% de descuento vs el mensual, igual que el
+  - **Familia Anual**: `app.alza.sub.pro.family.annual`, **$134.99/año**
+    (equivale a ~$11.25/mes, ~25% de descuento vs el mensual, igual que el
     individual). Debe coincidir con `Config.subscriptionProductIdFamilyAnnual`.
   - **NO actives "Family Sharing" en estos dos** (Familia Mensual/Anual) —
     a diferencia del individual, el cobro extra de este plan viene de ser
@@ -513,8 +513,8 @@ encabezado de cada funcion:
   que elijas.
 - Paywall: 4 planes del mismo Pro — Individual Mensual ($7.99) / Anual
   (~$6.25/mes, $74.99 facturados una vez al año) con Family Sharing nativo
-  de Apple sin costo extra, y Familia Mensual ($14.99) / Anual (~$11.24/mes,
-  $134.88/año) que en cambio habilita invitar hasta 5 personas con codigo
+  de Apple sin costo extra, y Familia Mensual ($14.99) / Anual (~$11.25/mes,
+  $134.99/año) que en cambio habilita invitar hasta 5 personas con codigo
   (ver "Mi familia" en Ajustes) — mas "Restaurar compras" y "Administrar
   suscripcion".
 - Cerrar sesion (en Ajustes y en el Paywall) muestra un spinner y se

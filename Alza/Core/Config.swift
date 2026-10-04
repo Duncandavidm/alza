@@ -33,7 +33,7 @@ enum Config {
     /// actives "En familia" en estos dos productos en App Store Connect:
     /// el cobro extra viene de ser un producto distinto, no de ese toggle.
     /// TODO(David): crear estos 2 productos en App Store Connect, mismo
-    /// grupo "Avi Pro" — $14.99/mes ($134.88/año equivalente ~$11.24/mes).
+    /// grupo "Avi Pro" — $14.99/mes ($134.99/año equivalente ~$11.25/mes).
     static let subscriptionProductIdFamily = "app.alza.sub.pro.family"
     static let subscriptionProductIdFamilyAnnual = "app.alza.sub.pro.family.annual"
 

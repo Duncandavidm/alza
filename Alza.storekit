@@ -147,7 +147,7 @@
         {
           "adHocOffers" : [],
           "codeOffers" : [],
-          "displayPrice" : "134.88",
+          "displayPrice" : "134.99",
           "familyShareable" : false,
           "groupNumber" : 4,
           "internalID" : "9C3E5A7F-1D4B-4F8E-A2C6-3B9D1E7A4F8C",
@@ -160,7 +160,7 @@
           },
           "localizations" : [
             {
-              "description" : "Todo el plan Pro, mas invita hasta 5 personas con tu codigo de familia. Plan anual, equivale a $11.24/mes.",
+              "description" : "Todo el plan Pro, mas invita hasta 5 personas con tu codigo de familia. Plan anual, equivale a $11.25/mes.",
               "displayName" : "Avi Pro Familia Anual",
               "locale" : "es_MX"
             }

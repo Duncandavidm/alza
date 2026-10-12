@@ -407,6 +407,16 @@ encabezado de cada funcion:
     codigo, nunca un error 500 (version anterior: el orden lo decidia
     Claude por completo, no era reproducible, y una respuesta mal formada
     tumbaba la funcion entera).
+  - **Datos faltantes**: si a una deuda le falta la tasa de interes
+    (relevante en avalancha) o la fecha de vencimiento, se marca
+    `hasMissingData` — la razon que ve el cliente dice explicitamente que
+    es una estimacion, nunca se presenta como un hecho verificado.
+  - **Liquidez**: el consejo siempre incluye una frase deterministica
+    (`liquidityNote`, no depende de Claude) diciendo si el ingreso
+    registrado alcanza para todo el plan o no, y si no alcanza, hasta
+    cual item (en el orden ya decidido) si cubre.
+  - Pruebas unitarias en `index.test.ts` (`deno test`) para el ranking,
+    las dos estrategias, datos faltantes y la nota de liquidez.
 - **Notificaciones locales** (`NotificationManager.swift`, Ajustes >
   Notificaciones): avisos programados en el propio dispositivo, sin
   servidor de por medio (no hace falta — todo esto ya lo sabe el telefono

@@ -197,25 +197,31 @@ struct AddTransactionView: View {
         showingSavingAnimation = true
         defer { isSaving = false }
 
+        // Snapshot inmutable: Swift 6 no permite capturar un `var` que ya
+        // termino de mutarse en codigo que corre concurrentemente (async let).
+        let finalAmount = convertedMagnitude
+        let finalOriginalCurrency = originalCurrency
+        let finalOriginalAmount = originalAmount
+
         do {
             async let saved: Void = viewModel.addTransaction(
                 NewTransaction(
                     userId: userId,
                     accountId: accountId,
-                    amount: movementType.signedAmount(from: convertedMagnitude),
+                    amount: movementType.signedAmount(from: finalAmount),
                     movementType: movementType,
                     category: isAdvancedMode ? category.rawValue : nil,
                     description: description.isEmpty ? nil : description,
                     tags: isAdvancedMode ? parsedTags : [],
-                    originalCurrency: originalCurrency,
-                    originalAmount: originalAmount,
+                    originalCurrency: finalOriginalCurrency,
+                    originalAmount: finalOriginalAmount,
                     occurredAt: Date()
                 )
             )
             async let minDelay: Void = Task.sleep(nanoseconds: MovementSavingOverlay.minDisplayNanoseconds(for: movementType))
             _ = try await (saved, minDelay)
 
-            if movementType == .ingreso, let advice = try? await PaymentAdviceService.fetch(userId: userId, incomeAmount: convertedMagnitude),
+            if movementType == .ingreso, let advice = try? await PaymentAdviceService.fetch(userId: userId, incomeAmount: finalAmount),
                advice.hasAdvice {
                 adviceText = advice.advice ?? ""
                 adviceItems = advice.items ?? []

@@ -4,6 +4,7 @@ struct DebtsView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = DebtsViewModel()
     @State private var showingAdd = false
+    @AppStorage(DebtPayoffStrategy.storageKey) private var payoffStrategy: DebtPayoffStrategy = .avalanche
 
     var body: some View {
         List {
@@ -11,6 +12,19 @@ struct DebtsView: View {
                 Section {
                     LabeledContent("Deuda total activa", value: viewModel.totalActiveBalance.formatted(.currency(code: "USD")))
                         .font(.headline)
+                }
+            }
+
+            if viewModel.debts.count > 1 {
+                Section {
+                    Picker("Estrategia", selection: $payoffStrategy) {
+                        ForEach(DebtPayoffStrategy.allCases) { strategy in
+                            Text(strategy.displayName).tag(strategy)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                } footer: {
+                    Text(payoffStrategy.explanation + " Solo afecta el orden entre tus deudas en el plan de \"que pagar primero\" al registrar un ingreso.")
                 }
             }
 

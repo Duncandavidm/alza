@@ -389,12 +389,24 @@ encabezado de cada funcion:
   (Ajustes > Cuentas por pagar; tambien visible como franja arriba de
   "Hoy"). Cada vez que registras un **ingreso** — desde el ingreso
   ultra-rapido o el formulario detallado — si hay cuentas por pagar
-  pendientes o recurrentes vencidas, `prioritize-payments` (Claude) arma un
-  plan priorizado: que pagar primero, por que (vencimiento, riesgo de
-  corte en servicios, prioridad que le pusiste), y si el ingreso alcanza
-  para todo. Aparece como un pop-up justo despues de guardar, con un boton
-  "Pagar" por cada item que registra el gasto real y lo marca resuelto sin
-  salir de la pantalla.
+  pendientes, recurrentes vencidas o deudas activas, `prioritize-payments`
+  arma un plan priorizado: que pagar primero y por que. Aparece como un
+  pop-up justo despues de guardar, con un boton "Pagar" por cada item que
+  registra el gasto real y lo marca resuelto sin salir de la pantalla.
+  - **El orden y los montos son 100% deterministas** (calculados en
+    TypeScript dentro del edge function, probado con casos de prueba bajo
+    Node antes de integrarlo), nunca dependen de lo que responda Claude:
+    vencido antes que todo, despues por la prioridad que le pusiste a la
+    cuenta (critica/alta/normal/baja) o, entre deudas, por la estrategia
+    elegida (avalancha: mayor tasa de interes primero; bola de nieve:
+    menor saldo primero — toggle en Ajustes > Deudas, solo visible con 2+
+    deudas activas), y de ahi por cercania de la fecha. Claude solo
+    redacta el consejo general y la razon de cada item EN ese orden —
+    nunca lo decide. Si Claude falla o responde algo que no es JSON
+    valido, el plan se devuelve igual con razones genericas armadas en
+    codigo, nunca un error 500 (version anterior: el orden lo decidia
+    Claude por completo, no era reproducible, y una respuesta mal formada
+    tumbaba la funcion entera).
 - **Notificaciones locales** (`NotificationManager.swift`, Ajustes >
   Notificaciones): avisos programados en el propio dispositivo, sin
   servidor de por medio (no hace falta — todo esto ya lo sabe el telefono

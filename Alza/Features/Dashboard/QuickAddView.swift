@@ -68,6 +68,12 @@ struct QuickAddView: View {
 
                 voiceButton
 
+                if viewModel.defaultAccountId == nil {
+                    Text("Necesitas una cuenta para guardar movimientos — crea una en la pestaña Cuentas.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
                 if let errorMessage {
                     Text(errorMessage).foregroundStyle(.red).font(.footnote)
                 }

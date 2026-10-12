@@ -22,6 +22,7 @@ struct QuickAddView: View {
     /// categoria sigue sin ser obligatoria. Si la marcas, de una vez ves
     /// cuanto presupuesto te queda en esa categoria.
     @State private var category: TransactionCategory?
+    @State private var sortedCategories: [TransactionCategory] = TransactionCategory.allCases
     @State private var isSaving = false
     @State private var showingSavingAnimation = false
     @State private var errorMessage: String?
@@ -69,7 +70,7 @@ struct QuickAddView: View {
                 voiceButton
 
                 if viewModel.defaultAccountId == nil {
-                    Text("Necesitas una cuenta para guardar movimientos — crea una en la pestaña Cuentas.")
+                    Text("Necesitas una cuenta para guardar movimientos — crea una en Ajustes > Cuentas.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -107,6 +108,7 @@ struct QuickAddView: View {
                 }
             }
             .task { await refreshBudgets() }
+            .task { await refreshSortedCategories() }
             .overlay {
                 if showingSavingAnimation {
                     MovementSavingOverlay(
@@ -172,7 +174,7 @@ struct QuickAddView: View {
     private var categoryChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(TransactionCategory.allCases) { option in
+                ForEach(sortedCategories) { option in
                     Button {
                         category = (category == option) ? nil : option
                     } label: {
@@ -222,6 +224,11 @@ struct QuickAddView: View {
     private func refreshBudgets() async {
         guard let userId = appState.currentUserId else { return }
         await budgetsViewModel.refresh(userId: userId)
+    }
+
+    private func refreshSortedCategories() async {
+        guard let userId = appState.currentUserId else { return }
+        sortedCategories = await CategoryUsageService.sortedCategories(userId: userId)
     }
 
     private var micLabel: String {

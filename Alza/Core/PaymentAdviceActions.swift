@@ -43,6 +43,25 @@ enum PaymentAdviceActions {
         }
     }
 
+    /// Acceso rapido desde el dashboard (fuera del flujo de "que pagar
+    /// primero"): el usuario eligio la deuda y el monto el mismo, asi que
+    /// aqui si hay que anotar el movimiento de salida ademas de bajar el
+    /// saldo de la deuda.
+    static func payDebt(debtId: UUID, amount: Decimal, accountId: UUID, creditor: String, userId: UUID) async throws {
+        try await TransactionsRepository.shared.add(
+            NewTransaction(
+                userId: userId,
+                accountId: accountId,
+                amount: MovementType.gasto.signedAmount(from: amount),
+                movementType: .gasto,
+                category: nil,
+                description: "Pago a \(creditor)",
+                occurredAt: Date()
+            )
+        )
+        try await applyDebtPayment(debtId: debtId, amount: amount)
+    }
+
     private static func applyDebtPayment(debtId: UUID, amount: Decimal) async throws {
         let supabase = SupabaseManager.shared.client
 

@@ -12,6 +12,8 @@ struct DayJournalView: View {
     @StateObject private var billsViewModel = BillsViewModel()
     @State private var isQuickAdding = false
     @State private var isVoiceQuickAdding = false
+    @State private var isRecordingDebtPayment = false
+    @State private var isContributingToSavings = false
     @State private var daySummary: DaySummary?
     @State private var isClosingDay = false
     @State private var isShowingDatePicker = false
@@ -88,6 +90,12 @@ struct DayJournalView: View {
             }
             .sheet(isPresented: $isVoiceQuickAdding) {
                 QuickAddView(viewModel: viewModel, autoStartVoice: true)
+            }
+            .sheet(isPresented: $isRecordingDebtPayment) {
+                QuickDebtPaymentView(accounts: viewModel.accounts)
+            }
+            .sheet(isPresented: $isContributingToSavings) {
+                QuickSavingsContributionView()
             }
             .sheet(item: $daySummary) { summary in
                 DayCloseSummaryView(summary: summary)
@@ -391,6 +399,19 @@ struct DayJournalView: View {
                 .background(Circle().fill(Color(.systemBackground)))
                 .shadow(color: .black.opacity(0.08), radius: 8, y: 3)
                 .pressable()
+                .contextMenu {
+                    Button {
+                        isRecordingDebtPayment = true
+                    } label: {
+                        Label("Pago de deuda", systemImage: "creditcard.trianglebadge.exclamationmark")
+                    }
+
+                    Button {
+                        isContributingToSavings = true
+                    } label: {
+                        Label("Aportar a meta", systemImage: "target")
+                    }
+                }
 
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) {

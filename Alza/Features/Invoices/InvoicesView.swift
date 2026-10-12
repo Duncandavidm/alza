@@ -6,65 +6,63 @@ struct InvoicesView: View {
     @State private var showingAdd = false
 
     var body: some View {
-        NavigationStack {
-            List {
-                if viewModel.invoices.isEmpty && !viewModel.isLoading {
-                    ContentUnavailableView(
-                        "Sin facturas todavia",
-                        systemImage: "doc.text",
-                        description: Text("Crea una factura, remision o cuenta por cobrar para tus clientes.")
-                    )
-                }
+        List {
+            if viewModel.invoices.isEmpty && !viewModel.isLoading {
+                ContentUnavailableView(
+                    "Sin facturas todavia",
+                    systemImage: "doc.text",
+                    description: Text("Crea una factura, remision o cuenta por cobrar para tus clientes.")
+                )
+            }
 
-                ForEach(viewModel.invoices) { invoice in
-                    NavigationLink {
-                        InvoiceDetailView(invoice: invoice, invoicesViewModel: viewModel)
-                    } label: {
-                        InvoiceRow(invoice: invoice)
-                    }
-                }
-                .onDelete { offsets in
-                    for index in offsets {
-                        let invoice = viewModel.invoices[index]
-                        Task { await viewModel.delete(invoice) }
-                    }
+            ForEach(viewModel.invoices) { invoice in
+                NavigationLink {
+                    InvoiceDetailView(invoice: invoice, invoicesViewModel: viewModel)
+                } label: {
+                    InvoiceRow(invoice: invoice)
                 }
             }
-            .navigationTitle("Facturas")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    NavigationLink {
-                        BusinessSettingsView()
-                    } label: {
-                        Image(systemName: "building.2.fill")
-                    }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button {
-                        showingAdd = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
+            .onDelete { offsets in
+                for index in offsets {
+                    let invoice = viewModel.invoices[index]
+                    Task { await viewModel.delete(invoice) }
                 }
             }
-            .sheet(isPresented: $showingAdd) {
-                NavigationStack {
-                    AddInvoiceView(viewModel: viewModel)
+        }
+        .navigationTitle("Facturas")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                NavigationLink {
+                    BusinessSettingsView()
+                } label: {
+                    Image(systemName: "building.2.fill")
                 }
             }
-            .task {
-                guard let userId = appState.currentUserId else { return }
-                await viewModel.refresh(userId: userId)
+            ToolbarItem(placement: .confirmationAction) {
+                Button {
+                    showingAdd = true
+                } label: {
+                    Image(systemName: "plus")
+                }
             }
-            .refreshable {
-                guard let userId = appState.currentUserId else { return }
-                await viewModel.refresh(userId: userId)
+        }
+        .sheet(isPresented: $showingAdd) {
+            NavigationStack {
+                AddInvoiceView(viewModel: viewModel)
             }
-            .alert("Algo salio mal", isPresented: .constant(viewModel.errorMessage != nil)) {
-                Button("OK") { viewModel.errorMessage = nil }
-            } message: {
-                Text(viewModel.errorMessage ?? "")
-            }
+        }
+        .task {
+            guard let userId = appState.currentUserId else { return }
+            await viewModel.refresh(userId: userId)
+        }
+        .refreshable {
+            guard let userId = appState.currentUserId else { return }
+            await viewModel.refresh(userId: userId)
+        }
+        .alert("Algo salio mal", isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("OK") { viewModel.errorMessage = nil }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
         }
     }
 }

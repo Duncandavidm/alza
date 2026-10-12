@@ -8,89 +8,87 @@ struct DashboardView: View {
     @State private var searchText = ""
 
     var body: some View {
-        NavigationStack {
-            List {
-                if let results = viewModel.searchResults {
-                    Section("Resultados") {
-                        if results.isEmpty {
-                            Text("Sin resultados para \"\(searchText)\"")
-                                .foregroundStyle(.secondary)
-                        }
-                        ForEach(results) { transaction in
-                            transactionRow(transaction)
-                        }
+        List {
+            if let results = viewModel.searchResults {
+                Section("Resultados") {
+                    if results.isEmpty {
+                        Text("Sin resultados para \"\(searchText)\"")
+                            .foregroundStyle(.secondary)
                     }
-                } else {
-                    Section {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Balance total")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Text(viewModel.totalBalance, format: .currency(code: "USD"))
-                                .font(.system(size: 34, weight: .bold))
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.vertical, 8)
-                    }
-
-                    Section("Cuentas") {
-                        ForEach(viewModel.accounts) { account in
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text(account.name)
-                                    Text(account.type.displayName)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                Text(account.balance, format: .currency(code: account.currency))
-                                    .fontWeight(.medium)
-                            }
-                        }
-
-                        Button {
-                            isAddingAccount = true
-                        } label: {
-                            Label("Agregar cuenta", systemImage: "plus.circle")
-                        }
-                    }
-
-                    Section("Movimientos recientes") {
-                        if viewModel.recentTransactions.isEmpty {
-                            Text("Sin movimientos todavia")
-                                .foregroundStyle(.secondary)
-                        }
-                        ForEach(viewModel.recentTransactions) { transaction in
-                            transactionRow(transaction)
-                        }
-
-                        Button {
-                            isAddingTransaction = true
-                        } label: {
-                            Label("Agregar movimiento", systemImage: "plus.circle")
-                        }
-                        .disabled(viewModel.accounts.isEmpty)
+                    ForEach(results) { transaction in
+                        transactionRow(transaction)
                     }
                 }
+            } else {
+                Section {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Balance total")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(viewModel.totalBalance, format: .currency(code: "USD"))
+                            .font(.system(size: 34, weight: .bold))
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+                }
+
+                Section("Cuentas") {
+                    ForEach(viewModel.accounts) { account in
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(account.name)
+                                Text(account.type.displayName)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Text(account.balance, format: .currency(code: account.currency))
+                                .fontWeight(.medium)
+                        }
+                    }
+
+                    Button {
+                        isAddingAccount = true
+                    } label: {
+                        Label("Agregar cuenta", systemImage: "plus.circle")
+                    }
+                }
+
+                Section("Movimientos recientes") {
+                    if viewModel.recentTransactions.isEmpty {
+                        Text("Sin movimientos todavia")
+                            .foregroundStyle(.secondary)
+                    }
+                    ForEach(viewModel.recentTransactions) { transaction in
+                        transactionRow(transaction)
+                    }
+
+                    Button {
+                        isAddingTransaction = true
+                    } label: {
+                        Label("Agregar movimiento", systemImage: "plus.circle")
+                    }
+                    .disabled(viewModel.accounts.isEmpty)
+                }
             }
-            .navigationTitle("Cuentas")
-            .searchable(text: $searchText, prompt: "Buscar por texto o #etiqueta")
-            .onChange(of: searchText) { _, newValue in
-                Task { await search(newValue) }
-            }
-            .refreshable { await refresh() }
-            .task { await refresh() }
-            .sheet(isPresented: $isAddingAccount) {
-                AddAccountView(viewModel: viewModel)
-            }
-            .sheet(isPresented: $isAddingTransaction) {
-                AddTransactionView(viewModel: viewModel, accounts: viewModel.accounts)
-            }
-            .alert("Algo salio mal", isPresented: .constant(viewModel.errorMessage != nil)) {
-                Button("OK") { viewModel.clearError() }
-            } message: {
-                Text(viewModel.errorMessage ?? "")
-            }
+        }
+        .navigationTitle("Cuentas")
+        .searchable(text: $searchText, prompt: "Buscar por texto o #etiqueta")
+        .onChange(of: searchText) { _, newValue in
+            Task { await search(newValue) }
+        }
+        .refreshable { await refresh() }
+        .task { await refresh() }
+        .sheet(isPresented: $isAddingAccount) {
+            AddAccountView(viewModel: viewModel)
+        }
+        .sheet(isPresented: $isAddingTransaction) {
+            AddTransactionView(viewModel: viewModel, accounts: viewModel.accounts)
+        }
+        .alert("Algo salio mal", isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("OK") { viewModel.clearError() }
+        } message: {
+            Text(viewModel.errorMessage ?? "")
         }
     }
 

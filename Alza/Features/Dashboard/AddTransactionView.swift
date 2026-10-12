@@ -12,6 +12,7 @@ struct AddTransactionView: View {
     @State private var amountText = ""
     @State private var movementType: MovementType = .gasto
     @State private var category: TransactionCategory = .other
+    @State private var sortedCategories: [TransactionCategory] = TransactionCategory.allCases
     @State private var description = ""
     @State private var tagsText = ""
     @State private var selectedCurrency = "USD"
@@ -66,7 +67,7 @@ struct AddTransactionView: View {
 
                 if isAdvancedMode {
                     Picker("Categoria (opcional)", selection: $category) {
-                        ForEach(TransactionCategory.allCases) { category in
+                        ForEach(sortedCategories) { category in
                             Text("\(category.emoji) \(category.rawValue)").tag(category)
                         }
                     }
@@ -98,6 +99,7 @@ struct AddTransactionView: View {
                 selectedCurrency = selectedAccount?.currency ?? "USD"
             }
             .task { await refreshBudgets() }
+            .task { await refreshSortedCategories() }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") { dismiss() }
@@ -154,6 +156,11 @@ struct AddTransactionView: View {
     private func refreshBudgets() async {
         guard let userId = appState.currentUserId else { return }
         await budgetsViewModel.refresh(userId: userId)
+    }
+
+    private func refreshSortedCategories() async {
+        guard let userId = appState.currentUserId else { return }
+        sortedCategories = await CategoryUsageService.sortedCategories(userId: userId)
     }
 
     private func save() async {

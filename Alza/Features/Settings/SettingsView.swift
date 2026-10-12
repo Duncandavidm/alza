@@ -37,6 +37,12 @@ struct SettingsView: View {
 
                 Section {
                     NavigationLink {
+                        DashboardView()
+                    } label: {
+                        Label("Cuentas", systemImage: "creditcard.fill")
+                    }
+
+                    NavigationLink {
                         BillsView()
                     } label: {
                         Label("Cuentas por pagar", systemImage: "tray.full.fill")
@@ -98,6 +104,12 @@ struct SettingsView: View {
                         ProductsView()
                     } label: {
                         Label("Catalogo y precios", systemImage: "tag.fill")
+                    }
+
+                    NavigationLink {
+                        InvoicesView()
+                    } label: {
+                        Label("Facturas", systemImage: "doc.text.fill")
                     }
                 }
 

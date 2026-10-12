@@ -47,7 +47,7 @@ struct AddInvoiceView: View {
 
             Section("Cuenta donde recibes el pago") {
                 if accountsViewModel.accounts.isEmpty {
-                    Text("Primero crea una cuenta en la pestaña Cuentas.")
+                    Text("Primero crea una cuenta en Ajustes > Cuentas.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {

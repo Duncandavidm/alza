@@ -1,8 +1,8 @@
 # Generado por `xcodegen generate` a partir de project.yml — no se versiona.
 *.xcodeproj/
 *.xcworkspace/
-Alza/Resources/Info.plist
-AlzaWidget/Info.plist
+MonAvi/Resources/Info.plist
+MonAviWidget/Info.plist
 MonAvi/Resources/MonAvi.entitlements
 MonAviWidget/MonAviWidget.entitlements
 

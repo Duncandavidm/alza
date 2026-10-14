@@ -1,4 +1,4 @@
--- Alza — esquema inicial (nuevo proyecto Supabase, independiente de maday)
+-- MonAvi — esquema inicial (nuevo proyecto Supabase, independiente de maday)
 
 create extension if not exists "pgcrypto";
 

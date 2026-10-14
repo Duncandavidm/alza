@@ -1,4 +1,4 @@
--- Cuentas por pagar: el diferenciador de Alza. Facturas/recibos pendientes
+-- Cuentas por pagar: el diferenciador de MonAvi. Facturas/recibos pendientes
 -- con fecha de vencimiento (distinto de recurring_transactions, que son
 -- plantillas fijas mensuales). Cuando el usuario registra un ingreso, la
 -- app mira estas + las recurrentes vencidas y aconseja que pagar primero.

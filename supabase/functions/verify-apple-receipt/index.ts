@@ -26,7 +26,7 @@
 // originalTransactionId. Rate limit: 10 llamadas / 10 minutos.
 //
 // Secrets necesarios (supabase secrets set ...):
-//   APPLE_BUNDLE_ID              -> ej. app.alza
+//   APPLE_BUNDLE_ID              -> ej. app.monavi
 //   APPLE_ISSUER_ID              -> App Store Connect > Users and Access > Integrations > In-App Purchase
 //   APPLE_KEY_ID                 -> id de la "In-App Purchase Key" (.p8)
 //   APPLE_PRIVATE_KEY             -> contenido del .p8 (con -----BEGIN PRIVATE KEY-----)
@@ -198,7 +198,7 @@ async function fetchSubscriptionStatus(originalTransactionId: string, jwt: strin
 }
 
 /** La respuesta trae un grupo por subscriptionGroupIdentifier (hoy solo
- * tenemos uno, "Avi Pro") con su lastTransactions — busca la que coincide
+ * tenemos uno, "MonAvi Pro") con su lastTransactions — busca la que coincide
  * con el originalTransactionId que mando el cliente, por si en el futuro
  * hay mas de un grupo. */
 function findLastTransaction(

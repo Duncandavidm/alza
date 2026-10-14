@@ -1,6 +1,6 @@
-name: Alza
+name: MonAvi
 options:
-  bundleIdPrefix: app.alza
+  bundleIdPrefix: app.monavi
   deploymentTarget:
     iOS: "17.0"
   createIntermediateGroups: true
@@ -12,35 +12,35 @@ packages:
     url: https://github.com/supabase/supabase-swift
     from: 2.5.1
 targets:
-  Alza:
+  MonAvi:
     type: application
     platform: iOS
     deploymentTarget: "17.0"
     sources:
-      - path: Alza
+      - path: MonAvi
         excludes:
           - Resources/Info.plist
-          - Resources/Alza.entitlements
+          - Resources/MonAvi.entitlements
     info:
-      path: Alza/Resources/Info.plist
+      path: MonAvi/Resources/Info.plist
       properties:
-        CFBundleDisplayName: Avi
+        CFBundleDisplayName: MonAvi
         CFBundleIconName: AppIcon
         UILaunchScreen: {}
         ITSAppUsesNonExemptEncryption: false
-        NSMicrophoneUsageDescription: Avi usa el microfono para que anotes un ingreso o gasto diciendolo en voz alta.
-        NSSpeechRecognitionUsageDescription: Avi transcribe lo que dices para llenar el monto, la descripcion y la categoria del movimiento por ti.
+        NSMicrophoneUsageDescription: MonAvi usa el microfono para que anotes un ingreso o gasto diciendolo en voz alta.
+        NSSpeechRecognitionUsageDescription: MonAvi transcribe lo que dices para llenar el monto, la descripcion y la categoria del movimiento por ti.
     entitlements:
-      path: Alza/Resources/Alza.entitlements
+      path: MonAvi/Resources/MonAvi.entitlements
       properties:
         com.apple.developer.applesignin:
           - Default
         com.apple.security.application-groups:
-          - group.app.alza.shared
+          - group.app.monavi.shared
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: app.alza
-        PRODUCT_NAME: Alza
+        PRODUCT_BUNDLE_IDENTIFIER: app.monavi
+        PRODUCT_NAME: MonAvi
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "1.0"
@@ -52,31 +52,31 @@ targets:
     dependencies:
       - package: Supabase
         product: Supabase
-      - target: AlzaWidget
+      - target: MonAviWidget
         embed: true
-  AlzaWidget:
+  MonAviWidget:
     type: app-extension
     platform: iOS
     deploymentTarget: "17.0"
     sources:
-      - path: AlzaWidget
-      - path: Alza/Shared/BudgetWidgetSnapshot.swift
-      - path: Alza/Core/ColorHex.swift
+      - path: MonAviWidget
+      - path: MonAvi/Shared/BudgetWidgetSnapshot.swift
+      - path: MonAvi/Core/ColorHex.swift
     info:
-      path: AlzaWidget/Info.plist
+      path: MonAviWidget/Info.plist
       properties:
-        CFBundleDisplayName: Avi
+        CFBundleDisplayName: MonAvi
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     entitlements:
-      path: AlzaWidget/AlzaWidget.entitlements
+      path: MonAviWidget/MonAviWidget.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.app.alza.shared
+          - group.app.monavi.shared
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: app.alza.widget
-        PRODUCT_NAME: AlzaWidget
+        PRODUCT_BUNDLE_IDENTIFIER: app.monavi.widget
+        PRODUCT_NAME: MonAviWidget
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "1.0"
@@ -84,12 +84,12 @@ targets:
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: S7ZS3G5284
 schemes:
-  Alza:
+  MonAvi:
     build:
       targets:
-        Alza: all
+        MonAvi: all
     run:
       config: Debug
-      storeKitConfiguration: Alza.storekit
+      storeKitConfiguration: MonAvi.storekit
     archive:
       config: Release

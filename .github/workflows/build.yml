@@ -24,7 +24,7 @@ jobs:
       - name: Build (sin firma, solo valida que compile)
         run: |
           xcodebuild build \
-            -project Alza.xcodeproj \
-            -scheme Alza \
+            -project MonAvi.xcodeproj \
+            -scheme MonAvi \
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO

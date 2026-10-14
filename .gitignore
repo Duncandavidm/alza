@@ -3,8 +3,8 @@
 *.xcworkspace/
 Alza/Resources/Info.plist
 AlzaWidget/Info.plist
-Alza/Resources/Alza.entitlements
-AlzaWidget/AlzaWidget.entitlements
+MonAvi/Resources/MonAvi.entitlements
+MonAviWidget/MonAviWidget.entitlements
 
 # Xcode / SPM
 .build/

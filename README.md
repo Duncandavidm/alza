@@ -1,10 +1,10 @@
-# Avi (iOS, nativa)
+# MonAvi (iOS, nativa)
 
-Avi es una app de iPhone **100% nativa** (SwiftUI + StoreKit 2), sin
+MonAvi es una app de iPhone **100% nativa** (SwiftUI + StoreKit 2), sin
 WKWebView y sin ninguna relacion con maday.app: backend propio (Supabase),
 UI propia, suscripcion propia.
 
-**El diferenciador**: Avi no solo registra tus movimientos, te aconseja.
+**El diferenciador**: MonAvi no solo registra tus movimientos, te aconseja.
 Cuando registras un ingreso, si tienes cuentas por pagar pendientes o
 recurrentes vencidas, te dice — con IA, viendo tus datos reales — que
 pagar primero y por que. Ver "Cuentas por pagar + consejo de pago" abajo.
@@ -12,7 +12,7 @@ pagar primero y por que. Ver "Cuentas por pagar + consejo de pago" abajo.
 ## Que hay en este repo
 
 ```
-Alza/                       # codigo de la app
+MonAvi/                       # codigo de la app
   App/                      # entry point, AppState (sesion + suscripcion)
   Core/                     # Supabase client, modelos, StoreKit, config
   Features/
@@ -27,7 +27,7 @@ Alza/                       # codigo de la app
                              # modo avanzado, recurrentes, cuentas por
                              # pagar, exportar/importar CSV, logout
   Resources/                # Info.plist, Assets.xcassets (icono/color)
-project.yml                 # spec de XcodeGen -> genera Alza.xcodeproj
+project.yml                 # spec de XcodeGen -> genera MonAvi.xcodeproj
 supabase/
   migrations/               # 0001 esquema base, 0002 tipos de movimiento,
                              # 0003 RPC de balance, 0004 presupuestos,
@@ -54,7 +54,7 @@ Proyecto Supabase nuevo, independiente del de maday:
 
 - Project ref: `jfhevxztsvnlsuwkwtmd`
 - URL: `https://jfhevxztsvnlsuwkwtmd.supabase.co`
-- Publishable key: ya esta en `Alza/Core/Config.swift` (no es secreta)
+- Publishable key: ya esta en `MonAvi/Core/Config.swift` (no es secreta)
 - Esquema aplicado: `profiles`, `accounts`, `transactions`, `ai_insights`,
   `subscriptions`, todas con RLS por `user_id = auth.uid()`.
 - Edge Functions desplegadas: `generate-insights`, `verify-apple-receipt`
@@ -67,15 +67,15 @@ Proyecto Supabase nuevo, independiente del de maday:
 
 ```bash
 brew install xcodegen   # una sola vez
-cd alza
+cd monavi
 xcodegen generate
-open Alza.xcodeproj
+open MonAvi.xcodeproj
 ```
 
 ### 2. Apple Developer
 
-- Registrar un App ID nuevo. Bundle id sugerido: **`app.alza`** (o el que
-  prefieras — actualiza `project.yml` y `Alza.entitlements` si cambias).
+- Registrar un App ID nuevo. Bundle id sugerido: **`app.monavi`** (o el que
+  prefieras — actualiza `project.yml` y `MonAvi.entitlements` si cambias).
 - Habilitar "Sign In with Apple" en ese App ID (el `project.yml` ya pide el
   entitlement, pero el capability tiene que existir en el portal).
 - En Xcode: Signing & Capabilities > tu Team.
@@ -85,37 +85,40 @@ open Alza.xcodeproj
 En el dashboard del proyecto `jfhevxztsvnlsuwkwtmd` (Authentication >
 Providers):
 
-- **Apple**: agregar `app.alza` a la lista de Client IDs autorizados (login
+- **Apple**: agregar `app.monavi` a la lista de Client IDs autorizados (login
   nativo via `signInWithIdToken`, no hace falta Services ID ni redirect URL).
 
 ### 4. App Store Connect
 
-- Crear la ficha de app nueva bajo el bundle `app.alza`.
-- Crear el grupo de suscripcion **"Avi Pro"** con dos productos dentro del
+- Crear la ficha de app nueva bajo el bundle `app.monavi`.
+- Crear el grupo de suscripcion **"MonAvi Pro"** con dos productos dentro del
   MISMO grupo (para que StoreKit los trate como planes intercambiables del
   mismo Pro, no como dos suscripciones separadas — el usuario puede pasar
   de uno a otro sin perder el historial):
-  - **Mensual**: `app.alza.sub.pro`, **$7.99/mes**. El Product ID tiene que
+  - **Mensual**: `app.monavi.sub.pro`, **$7.99/mes**. El Product ID tiene que
     coincidir exactamente con `Config.subscriptionProductId`.
-  - **Anual**: `app.alza.sub.pro.annual.` — **ojo, con un punto al final**,
-    typo de origen que quedo asi para siempre (el Product ID no se puede
-    editar una vez creado) — **$74.99/año** (equivale a ~$6.25/mes, ~22%
-    de descuento vs el mensual). Debe coincidir con
-    `Config.subscriptionProductIdAnnual` (que ya tiene el punto incluido).
-  - **Familia Mensual**: `app.alza.sub.pro.family.` — **tambien con punto
-    al final**, mismo typo de origen, permanente — **$14.99/mes**. Debe
+  - **Anual**: `app.monavi.sub.pro.annual` — **$74.99/año** (equivale a
+    ~$6.25/mes, ~22% de descuento vs el mensual). Debe coincidir con
+    `Config.subscriptionProductIdAnnual`.
+  - **Familia Mensual**: `app.monavi.sub.pro.family` — **$14.99/mes**. Debe
     coincidir con `Config.subscriptionProductIdFamily`.
-  - **Familia Anual**: `app.alza.sub.pro.family.anual` — **ojo, "anual"
-    con una sola "n"**, no "annual" — otro typo de origen permanente —
-    **$134.99/año** (equivale a ~$11.25/mes, ~25% de descuento vs el
-    mensual, igual que el individual). Debe coincidir con
+  - **Familia Anual**: `app.monavi.sub.pro.family.annual` — **$134.99/año**
+    (equivale a ~$11.25/mes, ~25% de descuento vs el mensual, igual que el
+    individual). Debe coincidir con
     `Config.subscriptionProductIdFamilyAnnual`.
+  - **Importante**: el Product ID de un producto NUNCA se puede editar una
+    vez creado en App Store Connect — revisa bien estos 4 antes de darle
+    "Crear" a cada uno. Si te equivocas, borra el producto (si todavia no
+    tiene ninguna compra real) y vuelve a crearlo con el ID correcto, en
+    vez de dejarlo mal escrito para siempre (asi quedaron los de la marca
+    anterior, "Alza" — ver el historial de git de este archivo si quieres
+    ver esos typos).
   - **NO actives "Family Sharing" en NINGUNO de los 4** — ni individuales
     ni Familia. El Individual no lo usa a proposito: si lo activaras,
     cualquiera podria compartirlo gratis con su familia de Apple (hasta 6
     personas) y nadie pagaria el plan Familia. Todo el compartir pasa por
     el sistema propio de invitacion por codigo (hasta 5 personas, ver
-    `Alza/Core/FamilyGroupService.swift` y
+    `MonAvi/Core/FamilyGroupService.swift` y
     `supabase/migrations/0017_family_groups.sql`), exclusivo del plan
     Familia de pago. Ademas, activar "Family Sharing" en App Store Connect
     es PERMANENTE (Apple no deja desactivarlo despues), asi que nunca lo
@@ -123,7 +126,7 @@ Providers):
   - Mismo periodo de prueba gratis (1 semana) en los cuatro, si quieres
     ofrecerla en todos.
 - Categoria, privacy questionnaire, icono 1024x1024 (ponlo en
-  `Alza/Resources/Assets.xcassets/AppIcon.appiconset/`), capturas.
+  `MonAvi/Resources/Assets.xcassets/AppIcon.appiconset/`), capturas.
 - Banking/Tax: si ya los tienes configurados con maday en la misma cuenta de
   desarrollador, no hay que tocar nada (es a nivel cuenta, no por app).
 
@@ -133,7 +136,7 @@ Providers):
 
 ```bash
 supabase secrets set --project-ref jfhevxztsvnlsuwkwtmd \
-  APPLE_BUNDLE_ID=app.alza \
+  APPLE_BUNDLE_ID=app.monavi \
   APPLE_ISSUER_ID=<Issuer ID de App Store Connect> \
   APPLE_KEY_ID=<Key ID de tu In-App Purchase Key> \
   APPLE_PRIVATE_KEY="$(cat AuthKey_XXXX.p8)"
@@ -184,18 +187,18 @@ microfono/reconocimiento de voz — son solo los textos de permiso en
 Ya resuelto con el logo que diste (el mark de la "a" con flecha):
 
 - `AppIcon.appiconset/AppIcon-1024.png` — icono de App Store, fondo blanco.
-- `AlzaMark.imageset/alza-mark.png` — el mark con fondo transparente
+- `MonAviMark.imageset/monavi-mark.png` — el mark con fondo transparente
   (color), usado en el paywall.
-- `AlzaMarkWhite.imageset/alza-mark-white.png` — version blanca del mark,
+- `MonAviMarkWhite.imageset/monavi-mark-white.png` — version blanca del mark,
   usada sobre fondos oscuros (header de login).
 - `AccentColor` = el verde/teal real de la marca (`#00A585`, sampleado
   directo del logo), aplicado automaticamente por iOS a casi todo
   (botones, toggles, graficas) sin tener que tocar cada pantalla.
-- **`Alza/Core/Brand.swift`**: la paleta completa en un solo lugar
-  (`AviBrand.primary/.primaryDark/.darkSurface/.onDarkSurface/.alert/
+- **`MonAvi/Core/Brand.swift`**: la paleta completa en un solo lugar
+  (`MonAviBrand.primary/.primaryDark/.darkSurface/.onDarkSurface/.alert/
   .border/.headerGradient/.fontDesign`), para no repetir valores hex
   sueltos por toda la app. El header del login usaba `Color.black` como
-  placeholder — ya no: ahora es `AviBrand.headerGradient` (degradado de
+  placeholder — ya no: ahora es `MonAviBrand.headerGradient` (degradado de
   teal de marca a un charcoal-teal oscuro, `#0E1614`, tomado del prompt
   original de la version web). La tipografia de marca usa el design
   "rounded" del sistema (SF Pro Rounded) — Inter/Manrope (lo que pedia
@@ -226,7 +229,7 @@ Repaso punto por punto de lo que se pidio reforzar:
    iCloud Keychain a otros dispositivos.
 2. **Verificacion de admin del lado del servidor**: revisado — hoy la
    app NO tiene ninguna feature de admin ni ningun check de rol hecho en
-   el cliente (`grep -rn "admin"` en todo `Alza/` no devuelve nada). No
+   el cliente (`grep -rn "admin"` en todo `MonAvi/` no devuelve nada). No
    habia nada que corregir. Si en el futuro se agrega un panel de
    admin, la regla es: el cliente nunca decide quien es admin (nunca
    `if user.email == "..."` en Swift) — eso se hace con una columna
@@ -343,11 +346,11 @@ encabezado de cada funcion:
   (verificacion contra HaveIBeenPwned) sigue desactivada — es un toggle
   en Authentication > Policies que no se pudo prender desde aqui.
 - **CSP**: no aplica — es un mecanismo que cumplen los navegadores al
-  renderizar HTML/JS; estas funciones regresan JSON puro y Avi es una
+  renderizar HTML/JS; estas funciones regresan JSON puro y MonAvi es una
   app nativa sin WebView, no hay nada que un CSP pudiera restringir.
 - **Microinteracciones nativas**: se pidio "transiciones de pestañas
   fluidas, indicador de pestaña activa, microinteracciones, interfaz
-  moderna, React + CSS + Framer Motion" — como Avi es 100% SwiftUI
+  moderna, React + CSS + Framer Motion" — como MonAvi es 100% SwiftUI
   nativo (no hay React ni web de por medio), se tradujo la intencion al
   equivalente nativo: `Core/Microinteractions.swift` (`PressableButtonStyle`
   + `.pressable()`, el boton se encoge con resorte al presionarlo, igual
@@ -381,7 +384,7 @@ encabezado de cada funcion:
   cuenta elegida, asi el "Hoy"/presupuestos/insights quedan consistentes.
 - **Calculadora de precio costo -> precio de venta (Products/)**: Ajustes >
   Catalogo y precios. Para comercios: pones el precio costo y el margen
-  que quieres ganar, Avi calcula el precio de venta en vivo (formula de
+  que quieres ganar, MonAvi calcula el precio de venta en vivo (formula de
   margen sobre precio de venta, no sobre costo). Los productos guardados
   se pueden reusar como items al armar una factura.
 - **Cuentas por pagar + consejo de pago con IA (Bills/, el diferenciador)**:
@@ -512,10 +515,10 @@ encabezado de cada funcion:
   como en una franja arriba de "Hoy" ("justo en la pantalla principal"),
   con semaforo verde/amarillo/rojo segun cuanto te falta. Cada presupuesto
   tiene un color elegible a mano (`BudgetDetailSheet`).
-- **Widget de pantalla de inicio** (target `AlzaWidget`, WidgetKit):
+- **Widget de pantalla de inicio** (target `MonAviWidget`, WidgetKit):
   tamaño pequeño y mediano, muestra el progreso de tus presupuestos.
   `BudgetsViewModel` escribe un snapshot al App Group compartido
-  (`group.app.alza.shared`) cada vez que refresca/agrega/edita/borra un
+  (`group.app.monavi.shared`) cada vez que refresca/agrega/edita/borra un
   presupuesto y le avisa a WidgetKit que se redibuje — el widget mismo
   nunca toca Supabase ni el Keychain, solo lee ese snapshot.
 - **Presupuesto restante al agregar un gasto**: si eliges una categoria
@@ -556,21 +559,21 @@ encabezado de cada funcion:
   detallado de movimiento solo pide cuenta, tipo, monto y descripcion. En
   Avanzado se agregan categoria y etiquetas.
 - **Anotar gasto por Atajos de Apple, con categoria automatica**
-  (`AlzaShortcuts.swift` + `MerchantCategoryGuesser.swift`): expone un App
-  Intent ("Anotar un gasto en Avi") que cualquier Atajo puede llamar,
+  (`MonAviShortcuts.swift` + `MerchantCategoryGuesser.swift`): expone un App
+  Intent ("Anotar un gasto en MonAvi") que cualquier Atajo puede llamar,
   pensado para automatizarlo con el disparador real **"Transaccion"**
   (Atajos lo renombro **"Wallet"** en iOS 26) que Apple agrego en iOS 17
   para tarjetas/pases de Wallet — ese SI entrega monto y comercio como
   variables del disparador, confirmado contra como lo usan apps como
-  MonAi. Avi no tiene ni puede tener acceso directo a Apple Pay/Wallet
+  MonAi. MonAvi no tiene ni puede tener acceso directo a Apple Pay/Wallet
   fuera de eso (no existe ese acceso para apps de terceros) — la
   automatizacion la arma el propio David en Atajos:
   1. Atajos > Automatizacion > Nueva automatizacion personal > Transaccion
      (o "Wallet" en iOS 26) > elige la(s) tarjeta(s) a vigilar.
-  2. Agregar accion > buscar "Anotar un gasto en Avi" > en Monto y
+  2. Agregar accion > buscar "Anotar un gasto en MonAvi" > en Monto y
      Comercio, usa las variables que entrega el disparador ("Shortcut
      Input" > Amount / Merchant) en vez de escribirlas a mano.
-  3. Opcional: en "Cuenta" elige a cual cuenta de Avi (ej. "Tarjeta
+  3. Opcional: en "Cuenta" elige a cual cuenta de MonAvi (ej. "Tarjeta
      debito") apuntar esta automatizacion — si no eliges ninguna, cae en
      la primera cuenta que exista, igual que antes.
   4. Desactivar "Preguntar antes de ejecutar" si quieres que corra solo.
@@ -587,13 +590,13 @@ encabezado de cada funcion:
   base de datos — se recalcula siempre de monto restante y meses hasta
   la fecha limite (redondeando cualquier fraccion de mes hacia arriba),
   para que mover la fecha o registrar un aporte actualice el numero solo,
-  sin desincronizarse. Cada meta puede vincularse a una cuenta de Avi;
+  sin desincronizarse. Cada meta puede vincularse a una cuenta de MonAvi;
   si la tiene, cada aporte ademas anota un movimiento real
   (transferencia, categoria Ahorro) para que ese dinero salga de ahi en
-  el resto de la app, igual de simple que el resto de Avi (sin
+  el resto de la app, igual de simple que el resto de MonAvi (sin
   contabilidad de doble entrada).
 - **Sugerencias** (Ajustes > Sugerencias): buzon simple donde el cliente
-  escribe que le gustaria ver en Avi — se guarda en la tabla
+  escribe que le gustaria ver en MonAvi — se guarda en la tabla
   `feedback_suggestions` (RLS: cada cliente solo ve/borra las suyas) y
   queda ahi mismo como historial de lo ya enviado. No hay pantalla de
   admin dentro de la app: David revisa las sugerencias de todos los
@@ -628,21 +631,21 @@ siguiente pieza natural si se quiere ese nivel de detalle.
 ### Ideas del prompt de la version web (Lovable) que se dejaron fuera por ahora
 
 David compartio el prompt completo que uso para construir una version web
-de Avi en Lovable (React/Supabase) y pidio aplicar mejoras de ahi a esta
+de MonAvi en Lovable (React/Supabase) y pidio aplicar mejoras de ahi a esta
 app nativa. Se tomaron las partes de mayor valor y mas faciles de integrar
 de verdad con lo que ya existe (perfil mas completo en el onboarding,
 deudas, gastos por categoria). Lo que se dejo fuera por ahora, para no
 disparar el alcance de una sola pasada:
 
 - **Multi-idioma (ES/EN)**: el prompt pedia i18n completo con
-  react-i18next; Avi es nativa SwiftUI, asi que el equivalente real seria
+  react-i18next; MonAvi es nativa SwiftUI, asi que el equivalente real seria
   un String Catalog (.xcstrings) con cada string de cada pantalla
   traducido — son decenas de archivos y requeriria revisar cada uno sin
   poder compilar en este entorno. Queda pendiente como su propia pasada.
 - **Market & Opportunity Radar** (watchlist de acciones + feed de
   noticias via Alpha Vantage/News API): el prompt original lo deja como
   "Coming Soon" con datos de prueba hasta conectar llaves reales; no se
-  construyo aqui porque Avi no tiene esas integraciones y no es el
+  construyo aqui porque MonAvi no tiene esas integraciones y no es el
   enfoque actual (asesoria personal/negocio, no trading).
 - **Guia de ejecucion de inversiones** (checklist paso a paso por activo) —
   modulo nuevo grande, no conectado a lo que ya existe.

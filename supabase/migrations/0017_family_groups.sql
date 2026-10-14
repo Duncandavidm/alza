@@ -1,7 +1,7 @@
 -- ---------------------------------------------------------------------------
 -- Plan "Familia": a diferencia de Apple Family Sharing (que solo deja
 -- compartir gratis), este es un producto de suscripcion propio y mas caro
--- (app.alza.sub.pro.family / .family.annual) que le da al comprador un
+-- (app.monavi.sub.pro.family / .family.annual) que le da al comprador un
 -- grupo con cupo para hasta 5 invitados — cada quien con su propia cuenta
 -- y datos, pero con acceso Pro heredado del dueno del grupo mientras su
 -- suscripcion este activa.
@@ -85,7 +85,7 @@ set search_path = public
 as $$
 begin
   if new.status in ('active', 'in_grace_period')
-     and new.product_id in ('app.alza.sub.pro.family', 'app.alza.sub.pro.family.annual') then
+     and new.product_id in ('app.monavi.sub.pro.family', 'app.monavi.sub.pro.family.annual') then
     insert into public.family_groups (owner_id, invite_code)
     values (new.user_id, public.generate_family_invite_code())
     on conflict (owner_id) do nothing;
@@ -174,7 +174,7 @@ begin
   join public.family_groups fg on fg.id = fm.group_id
   join public.subscriptions s on s.user_id = fg.owner_id
   where fm.member_id = auth.uid()
-    and s.product_id in ('app.alza.sub.pro.family', 'app.alza.sub.pro.family.annual');
+    and s.product_id in ('app.monavi.sub.pro.family', 'app.monavi.sub.pro.family.annual');
 end;
 $$;
 

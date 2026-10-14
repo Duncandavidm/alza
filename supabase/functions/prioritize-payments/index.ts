@@ -462,7 +462,7 @@ async function explainWithClaude(
 
   const strategyLabel = debtStrategy === "avalanche" ? "avalancha (mayor tasa de interes primero)" : "bola de nieve (saldo mas chico primero)";
 
-  const prompt = `Eres el asesor financiero de la app Avi. El dueño de un \
+  const prompt = `Eres el asesor financiero de la app MonAvi. El dueño de un \
 negocio acaba de registrar un ingreso de $${incomeAmount.toFixed(2)}. Ya se \
 calculo el orden de pago (mas urgente primero) con reglas de codigo — tu \
 trabajo es SOLO explicar, en español, por que cada uno va en ese lugar. No \

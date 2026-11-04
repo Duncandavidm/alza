@@ -30,6 +30,7 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         NSMicrophoneUsageDescription: MonAvi usa el microfono para que anotes un ingreso o gasto diciendolo en voz alta.
         NSSpeechRecognitionUsageDescription: MonAvi transcribe lo que dices para llenar el monto, la descripcion y la categoria del movimiento por ti.
+        NSCameraUsageDescription: MonAvi usa la camara para escanear el codigo QR de tus facturas electronicas y registrar el gasto automaticamente.
     entitlements:
       path: MonAvi/Resources/MonAvi.entitlements
       properties:
@@ -83,13 +84,32 @@ targets:
         CURRENT_PROJECT_VERSION: "5"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: S7ZS3G5284
+  MonAviTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: MonAviTests
+    settings:
+      base:
+        SWIFT_VERSION: "5.9"
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: S7ZS3G5284
+    dependencies:
+      - target: MonAvi
 schemes:
   MonAvi:
     build:
       targets:
         MonAvi: all
+        MonAviTests: [test]
     run:
       config: Debug
       storeKitConfiguration: MonAvi.storekit
+    test:
+      config: Debug
+      targets:
+        - MonAviTests
     archive:
       config: Release

@@ -108,7 +108,7 @@ struct NewTransaction: Encodable {
     }
 }
 
-enum TransactionCategory: String, CaseIterable, Identifiable {
+enum TransactionCategory: String, CaseIterable, Identifiable, Hashable {
     case income = "Ingreso"
     case housing = "Vivienda"
     case food = "Comida"

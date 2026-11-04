@@ -55,6 +55,12 @@ struct SettingsView: View {
                     }
 
                     NavigationLink {
+                        DgiReceiptsListView()
+                    } label: {
+                        Label("Facturas que suman", systemImage: "qrcode.viewfinder")
+                    }
+
+                    NavigationLink {
                         RecurringTransactionsView()
                     } label: {
                         Label("Recurrentes", systemImage: "arrow.trianglehead.2.clockwise")

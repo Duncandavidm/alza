@@ -47,6 +47,8 @@ struct DayJournalView: View {
                             billsStrip
                         }
 
+                        dgiReceiptsStrip
+
                         ForEach(recurringViewModel.dueToday) { item in
                             recurringReminderRow(item)
                         }
@@ -283,6 +285,32 @@ struct DayJournalView: View {
                             .font(.caption)
                             .foregroundStyle(next.isOverdue ? MonAviBrand.alert : .secondary)
                     }
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(12)
+            .foregroundStyle(.primary)
+        }
+        .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemBackground)))
+    }
+
+    /// Entrada a "Facturas que suman" — siempre visible (es la puerta de
+    /// descubrimiento del modulo), no solo cuando ya hay algo escaneado.
+    private var dgiReceiptsStrip: some View {
+        NavigationLink {
+            DgiReceiptsListView()
+        } label: {
+            HStack(spacing: 10) {
+                Text("📠")
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Facturas que suman")
+                        .font(.subheadline.weight(.medium))
+                    Text("Escanea el QR de una factura y gana puntos")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
                 Spacer()
                 Image(systemName: "chevron.right")

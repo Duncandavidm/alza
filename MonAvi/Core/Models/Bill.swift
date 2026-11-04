@@ -1,6 +1,6 @@
 import Foundation
 
-enum BillPriority: String, Codable, CaseIterable, Identifiable {
+enum BillPriority: String, Codable, CaseIterable, Identifiable, Hashable {
     case critica
     case alta
     case normal
@@ -18,7 +18,7 @@ enum BillPriority: String, Codable, CaseIterable, Identifiable {
     }
 }
 
-enum BillStatus: String, Codable {
+enum BillStatus: String, Codable, Hashable {
     case pendiente
     case pagada
 }

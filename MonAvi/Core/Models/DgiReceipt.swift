@@ -1,6 +1,6 @@
 import Foundation
 
-enum DgiReceiptStatus: String, Codable, CaseIterable, Identifiable {
+enum DgiReceiptStatus: String, Codable, CaseIterable, Identifiable, Hashable {
     case pendiente
     case confirmada
     case rechazada

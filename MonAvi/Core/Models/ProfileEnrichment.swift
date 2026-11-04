@@ -4,7 +4,7 @@ import Foundation
 /// 0011_profile_enrichment_and_debts.sql) para que el consejo financiero
 /// tenga mas contexto: con quien vive, cuantos dependen de el, que tan
 /// arriesgado quiere invertir.
-enum MaritalStatus: String, Codable, CaseIterable, Identifiable {
+enum MaritalStatus: String, Codable, CaseIterable, Identifiable, Hashable {
     case soltero
     case casado
     case unionLibre = "union_libre"
@@ -24,7 +24,7 @@ enum MaritalStatus: String, Codable, CaseIterable, Identifiable {
     }
 }
 
-enum RiskTolerance: String, Codable, CaseIterable, Identifiable {
+enum RiskTolerance: String, Codable, CaseIterable, Identifiable, Hashable {
     case bajo
     case medio
     case alto

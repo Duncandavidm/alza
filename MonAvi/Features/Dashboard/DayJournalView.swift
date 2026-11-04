@@ -19,6 +19,7 @@ struct DayJournalView: View {
     @State private var isShowingDatePicker = false
     @State private var isSearching = false
     @State private var selectedBudgetProgress: BudgetProgress?
+    @State private var pointsByTransaction: [UUID: Int] = [:]
 
     var body: some View {
         NavigationStack {
@@ -47,7 +48,7 @@ struct DayJournalView: View {
                             billsStrip
                         }
 
-                        dgiReceiptsStrip
+                        pointsStrip
 
                         ForEach(recurringViewModel.dueToday) { item in
                             recurringReminderRow(item)
@@ -297,18 +298,19 @@ struct DayJournalView: View {
         .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemBackground)))
     }
 
-    /// Entrada a "Facturas que suman" — siempre visible (es la puerta de
-    /// descubrimiento del modulo), no solo cuando ya hay algo escaneado.
-    private var dgiReceiptsStrip: some View {
+    /// Entrada al hub de "Puntos" — siempre visible (es la puerta de
+    /// descubrimiento de todas las formas de ganar: facturas, tarjeta,
+    /// y lo que venga despues), no solo cuando ya hay algo acumulado.
+    private var pointsStrip: some View {
         NavigationLink {
-            DgiReceiptsListView()
+            PointsHubView()
         } label: {
             HStack(spacing: 10) {
-                Text("📠")
+                Text("⭐️")
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Facturas que suman")
+                    Text("Puntos")
                         .font(.subheadline.weight(.medium))
-                    Text("Escanea el QR de una factura y gana puntos")
+                    Text("Escanea facturas o paga en aliados y gana puntos")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -398,9 +400,19 @@ struct DayJournalView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(transaction.description ?? transaction.movementType.displayName)
                     .font(.body)
-                Text(transaction.occurredAt.formatted(date: .omitted, time: .shortened))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 6) {
+                    Text(transaction.occurredAt.formatted(date: .omitted, time: .shortened))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if let points = pointsByTransaction[transaction.id] {
+                        Text("+\(points) puntos")
+                            .font(.caption2.weight(.semibold))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(MonAviBrand.primary.opacity(0.15)))
+                            .foregroundStyle(MonAviBrand.primary)
+                    }
+                }
             }
 
             Spacer()
@@ -508,6 +520,9 @@ struct DayJournalView: View {
     private func refresh() async {
         guard let userId = appState.currentUserId else { return }
         await viewModel.refresh(userId: userId)
+        pointsByTransaction = await CardPointsRepository.shared.pointsByTransaction(
+            userId: userId, day: viewModel.selectedDate
+        )
     }
 
     private func search() async {

@@ -3,7 +3,7 @@ import UIKit
 import AuthenticationServices
 import Supabase
 
-enum EmailAuthMode {
+enum EmailAuthMode: Hashable {
     case signIn
     case signUp
 }

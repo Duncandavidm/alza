@@ -1,6 +1,6 @@
 import Foundation
 
-enum InvoiceDocType: String, Codable, CaseIterable, Identifiable {
+enum InvoiceDocType: String, Codable, CaseIterable, Identifiable, Hashable {
     case factura
     case remision
     case cuentaPorCobrar = "cuenta_por_cobrar"
@@ -16,7 +16,7 @@ enum InvoiceDocType: String, Codable, CaseIterable, Identifiable {
     }
 }
 
-enum InvoiceStatus: String, Codable, CaseIterable, Identifiable {
+enum InvoiceStatus: String, Codable, CaseIterable, Identifiable, Hashable {
     case emitida
     case entregada
     case pagada

@@ -1,6 +1,6 @@
 import Foundation
 
-enum AccountType: String, Codable, CaseIterable, Identifiable {
+enum AccountType: String, Codable, CaseIterable, Identifiable, Hashable {
     case checking
     case savings
     case creditCard = "credit_card"

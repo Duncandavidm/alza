@@ -1,6 +1,6 @@
 import Foundation
 
-enum BudgetPeriod: String, Codable, CaseIterable, Identifiable {
+enum BudgetPeriod: String, Codable, CaseIterable, Identifiable, Hashable {
     case weekly
     case monthly
 
@@ -92,7 +92,7 @@ struct BudgetProgress: Identifiable {
 
     /// Mismas reglas de semaforo que el resto de la app: verde bien,
     /// amarillo atencion, rojo cuidado.
-    enum Status {
+    enum Status: Hashable {
         case onTrack, warning, over
     }
 

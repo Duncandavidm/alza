@@ -4,7 +4,7 @@ import SwiftUI
 /// custom embebidas (eso requeriria empaquetar archivos de fuente); son
 /// los "design" del sistema de SwiftUI, que ya dan variedad visual real
 /// sin depender de assets adicionales.
-enum BrandFont: String, Codable, CaseIterable, Identifiable {
+enum BrandFont: String, Codable, CaseIterable, Identifiable, Hashable {
     case `default`
     case rounded
     case serif

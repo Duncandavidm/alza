@@ -55,9 +55,9 @@ struct SettingsView: View {
                     }
 
                     NavigationLink {
-                        DgiReceiptsListView()
+                        PointsHubView()
                     } label: {
-                        Label("Facturas que suman", systemImage: "qrcode.viewfinder")
+                        Label("Puntos", systemImage: "star.fill")
                     }
 
                     NavigationLink {

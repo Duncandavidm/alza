@@ -1,9 +1,8 @@
 import SwiftUI
 
-/// "Facturas que suman": lista de facturas escaneadas + saldo de puntos.
-/// El saldo real (Fase 3, libro de movimientos) todavia no existe —
-/// mientras tanto se muestra en 0 para no prometer algo que no se puede
-/// cumplir todavia.
+/// "Facturas que suman": lista de facturas escaneadas. El saldo de
+/// puntos (ledger compartido) vive en PointsHubView, no aqui — esta
+/// pantalla se enfoca solo en el estado de cada factura.
 struct DgiReceiptsListView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = DgiReceiptsViewModel()
@@ -13,10 +12,6 @@ struct DgiReceiptsListView: View {
 
     var body: some View {
         List {
-            Section {
-                pointsSummary
-            }
-
             if viewModel.receipts.isEmpty && !viewModel.isLoading {
                 ContentUnavailableView(
                     "Sin facturas escaneadas",
@@ -59,32 +54,6 @@ struct DgiReceiptsListView: View {
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
-    }
-
-    private var pointsSummary: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 24) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Confirmados").font(.caption).foregroundStyle(.secondary)
-                    Text("0 pts").font(.title.weight(.bold))
-                }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Pendientes").font(.caption).foregroundStyle(.secondary)
-                    Text("0 pts").font(.title.weight(.bold))
-                }
-                Spacer()
-            }
-            if pendingCount > 0 {
-                Text("Tienes \(pendingCount) factura\(pendingCount == 1 ? "" : "s") esperando confirmacion de la DGI — los puntos llegan en cuanto se acredite esa parte.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.vertical, 6)
-    }
-
-    private var pendingCount: Int {
-        viewModel.receipts.filter { $0.status == .pendiente }.count
     }
 
     @ViewBuilder

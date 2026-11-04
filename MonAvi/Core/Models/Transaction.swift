@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Tipos de movimiento claramente diferenciados, como pedia la mejora del
 /// "cuaderno del dia": el dueño ya no solo ve +/-, ve QUE TIPO de cosa fue.
-enum MovementType: String, Codable, CaseIterable, Identifiable {
+enum MovementType: String, Codable, CaseIterable, Identifiable, Hashable {
     case ingreso
     case gasto
     case pagoProveedor = "pago_proveedor"

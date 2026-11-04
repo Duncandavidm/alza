@@ -126,4 +126,77 @@ final class CardPointsRepository {
         }
         return result
     }
+
+    // MARK: - Habitos (Fase 2)
+
+    private var utcCalendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        return calendar
+    }
+
+    /// Tope mensual de puntos de habitos configurado en `points_rules`
+    /// (ver migracion 0026) — solo para mostrarlo en la UI; el tope real
+    /// lo aplica `award-habit-points` del lado del servidor.
+    func habitMonthlyCap() async -> Int {
+        struct Row: Decodable { let value: Int }
+        let row: Row? = try? await supabase
+            .from("points_rules")
+            .select("value")
+            .eq("source", value: "habito")
+            .eq("key", value: "monthly_cap_points")
+            .maybeSingle()
+            .execute()
+            .value
+        return row?.value ?? 200
+    }
+
+    func habitPointsThisMonth(userId: UUID) async -> Int {
+        struct Row: Decodable { let points: Int }
+        guard let monthStart = utcCalendar.dateInterval(of: .month, for: Date())?.start else { return 0 }
+
+        let rows: [Row] = (try? await supabase
+            .from("points_ledger")
+            .select("points")
+            .eq("user_id", value: userId)
+            .eq("source", value: "habito")
+            .gte("occurred_at", value: monthStart)
+            .execute()
+            .value) ?? []
+        return rows.reduce(0) { $0 + $1.points }
+    }
+
+    /// Racha actual (dias consecutivos hasta ayer, UTC, con al menos un
+    /// movimiento) — solo para mostrarla en la UI. Mismo criterio
+    /// (ventana de 60 dias, limite UTC) que `award-habit-points` para
+    /// que lo que ve el usuario coincida con lo que el servidor va a
+    /// premiar.
+    func currentStreakDays(userId: UUID) async -> Int {
+        guard let windowStart = utcCalendar.date(byAdding: .day, value: -60, to: Date()) else { return 0 }
+
+        struct Row: Decodable {
+            let occurredAt: Date
+            enum CodingKeys: String, CodingKey { case occurredAt = "occurred_at" }
+        }
+        let rows: [Row] = (try? await supabase
+            .from("transactions")
+            .select("occurred_at")
+            .eq("user_id", value: userId)
+            .gte("occurred_at", value: windowStart)
+            .execute()
+            .value) ?? []
+
+        let days = Set(rows.map { utcCalendar.startOfDay(for: $0.occurredAt) })
+        guard var cursor = utcCalendar.date(byAdding: .day, value: -1, to: utcCalendar.startOfDay(for: Date())) else {
+            return 0
+        }
+
+        var streak = 0
+        while days.contains(cursor) {
+            streak += 1
+            guard let previous = utcCalendar.date(byAdding: .day, value: -1, to: cursor) else { break }
+            cursor = previous
+        }
+        return streak
+    }
 }

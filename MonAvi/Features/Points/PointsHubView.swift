@@ -31,6 +31,12 @@ struct PointsHubView: View {
                 } label: {
                     Label("Ofertas cerca", systemImage: "tag.fill")
                 }
+
+                NavigationLink {
+                    HabitsView()
+                } label: {
+                    Label("Habitos", systemImage: "flame.fill")
+                }
             }
 
             if let errorMessage = viewModel.errorMessage {

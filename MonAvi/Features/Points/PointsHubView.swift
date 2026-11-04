@@ -37,6 +37,12 @@ struct PointsHubView: View {
                 } label: {
                     Label("Habitos", systemImage: "flame.fill")
                 }
+
+                NavigationLink {
+                    MySavingsGoalsView()
+                } label: {
+                    Label("Mis metas", systemImage: "banknote.fill")
+                }
             }
 
             if let errorMessage = viewModel.errorMessage {

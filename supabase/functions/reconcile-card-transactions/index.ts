@@ -332,15 +332,27 @@ async function reconcileRow(supabase: ReturnType<typeof createClient>, row: Reco
   if (reportStatus === "reversed") {
     // Anula lo que se haya otorgado antes para esta transaccion (pendiente
     // o confirmado) con un movimiento negativo nuevo — nunca se edita el
-    // original.
+    // original. IMPORTANTE: la reversa debe llevar el MISMO status que el
+    // original (pendiente o confirmado), no 'anulado' — points_balances
+    // suma por status, asi que una reversa 'anulado' no resta de ningun
+    // lado y deja puntos fantasma. 'anulado' queda para ajustes que no
+    // cancelan una fila existente del ledger.
+    const { data: originalEntry } = await supabase
+      .from("points_ledger")
+      .select("status")
+      .eq("source", "tarjeta")
+      .eq("external_ref", externalRefBase)
+      .maybeSingle();
+    const reversalStatus = (originalEntry?.status as string) ?? "pendiente";
+
     await supabase.rpc("award_points", {
       p_user_id: candidate.user_id,
       p_source: "tarjeta",
       p_external_ref: `${externalRefBase}:reversed`,
       p_points: -points,
-      p_status: "anulado",
+      p_status: reversalStatus,
       p_occurred_at: new Date().toISOString(),
-      p_metadata: { merchant: merchant.name, original_ref: externalRefBase },
+      p_metadata: { merchant: merchant.name, original_ref: externalRefBase, reason: "anulado" },
     });
     await markRow(supabase, rowId, {
       match_status: "matched",

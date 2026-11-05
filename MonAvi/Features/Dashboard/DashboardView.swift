@@ -85,7 +85,7 @@ struct DashboardView: View {
         .sheet(isPresented: $isAddingTransaction) {
             AddTransactionView(viewModel: viewModel, accounts: viewModel.accounts)
         }
-        .alert("Algo salio mal", isPresented: .constant(viewModel.errorMessage != nil)) {
+        .alert("Algo salió mal", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") { viewModel.clearError() }
         } message: {
             Text(viewModel.errorMessage ?? "")

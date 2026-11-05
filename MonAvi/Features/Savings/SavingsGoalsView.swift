@@ -51,7 +51,7 @@ struct SavingsGoalsView: View {
         .sheet(item: $contributingGoal) { goal in
             ContributeToGoalView(viewModel: viewModel, goal: goal)
         }
-        .alert("Algo salio mal", isPresented: .constant(viewModel.errorMessage != nil)) {
+        .alert("Algo salió mal", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") { viewModel.errorMessage = nil }
         } message: {
             Text(viewModel.errorMessage ?? "")

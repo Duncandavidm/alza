@@ -68,7 +68,7 @@ struct InvoiceDetailView: View {
                 }
             }
         }
-        .alert("Algo salio mal", isPresented: .constant(errorMessage != nil)) {
+        .alert("Algo salió mal", isPresented: .constant(errorMessage != nil)) {
             Button("OK") { errorMessage = nil }
         } message: {
             Text(errorMessage ?? "")

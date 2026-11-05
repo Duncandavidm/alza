@@ -48,7 +48,7 @@ final class InsightsViewModel: ObservableObject {
             )
             await refresh(userId: userId)
         } catch {
-            errorMessage = "No se pudieron generar insights nuevos: \(error.localizedDescription)"
+            errorMessage = Self.friendlyAIError(error, action: "generar tus insights")
         }
     }
 
@@ -70,8 +70,26 @@ final class InsightsViewModel: ObservableObject {
             )
             lastAnswer = response.answer
         } catch {
-            errorMessage = "No se pudo responder tu pregunta: \(error.localizedDescription)"
+            errorMessage = Self.friendlyAIError(error, action: "responder tu pregunta")
         }
+    }
+
+    /// El cliente no debe ver "Edge Function returned a non-2xx status
+    /// code: 500": un error del servidor de IA se explica en palabras
+    /// normales; el detalle tecnico queda en los logs de Supabase.
+    static func friendlyAIError(_ error: Error, action: String) -> String {
+        if let functionsError = error as? FunctionsError, case .httpError(let code, _) = functionsError {
+            if code == 429 {
+                return "Hiciste muchas consultas seguidas. Espera un momento e intenta de nuevo."
+            }
+            if code >= 500 {
+                return "El asistente de IA no está disponible en este momento. Intenta de nuevo más tarde."
+            }
+        }
+        if (error as? URLError) != nil {
+            return "No hay conexión a internet. Revisa tu conexión e intenta de nuevo."
+        }
+        return "No se pudo \(action). Intenta de nuevo más tarde."
     }
 
     func clearAnswer() {

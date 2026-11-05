@@ -61,7 +61,7 @@ struct SpendingInsightsView: View {
             guard let userId = appState.currentUserId else { return }
             await viewModel.refresh(userId: userId)
         }
-        .alert("Algo salio mal", isPresented: .constant(viewModel.errorMessage != nil)) {
+        .alert("Algo salió mal", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") { viewModel.errorMessage = nil }
         } message: {
             Text(viewModel.errorMessage ?? "")

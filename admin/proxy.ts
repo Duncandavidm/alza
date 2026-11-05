@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SESSION_COOKIE_NAME, isValidSessionToken } from "./lib/auth";
 
+// Paginas publicas de MonAvi (la app de consumo, no el panel admin) que
+// viven en este mismo proyecto de Vercel a proposito: Apple exige una
+// URL de politica de privacidad y de soporte antes de poder enviar la
+// app a revision. Nunca deben quedar detras de la clave del panel.
+const PUBLIC_PATHS = ["/login", "/privacy", "/support"];
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  if (pathname.startsWith("/login")) {
+  if (PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`))) {
     return NextResponse.next();
   }
 

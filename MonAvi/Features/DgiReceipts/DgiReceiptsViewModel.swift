@@ -135,8 +135,8 @@ final class DgiReceiptsViewModel: ObservableObject {
 
     /// Se llama cuando el usuario ya escribio un monto, para ofrecer
     /// fusionar en vez de duplicar si hay algo parecido ese mismo dia.
-    func checkMergeCandidate(draft: inout ScanDraft, userId: UUID, amount: Decimal) async {
-        draft.mergeCandidate = await repository.duplicateCandidate(
+    func mergeCandidate(for draft: ScanDraft, userId: UUID, amount: Decimal) async -> FinanceTransaction? {
+        await repository.duplicateCandidate(
             userId: userId,
             date: draft.parsed.fields.fechaISODate,
             amount: amount

@@ -65,8 +65,8 @@ struct ScanInvoiceView: View {
                 ScanReviewView(
                     viewModel: viewModel,
                     accounts: accounts,
-                    draft: scanDraft,
-                    onSaved: { dismiss() }
+                    onSaved: { dismiss() },
+                    draft: scanDraft
                 )
             }
         }

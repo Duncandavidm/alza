@@ -95,7 +95,7 @@ struct ScanReviewView: View {
     private func checkMerge() async {
         guard let userId = appState.currentUserId, amount > 0, checkedMergeForAmount != amount else { return }
         checkedMergeForAmount = amount
-        await viewModel.checkMergeCandidate(draft: &draft, userId: userId, amount: amount)
+        draft.mergeCandidate = await viewModel.mergeCandidate(for: draft, userId: userId, amount: amount)
     }
 
     private func save() async {

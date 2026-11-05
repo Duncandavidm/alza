@@ -10,6 +10,12 @@ struct QuickAddView: View {
     /// dashboard — empieza a escuchar de una vez, sin que el usuario tenga
     /// que tocar el boton de voz otra vez adentro.
     var autoStartVoice: Bool = false
+    /// Si no es nil, esta hoja edita este movimiento en vez de crear uno
+    /// nuevo — mismo formulario, precargado (patron ya usado en
+    /// AddSavingsGoalView). La cuenta no se puede cambiar aqui a proposito
+    /// (ver TransactionsRepository.update); para eso hay que borrar y
+    /// anotar de nuevo.
+    var existingTransaction: FinanceTransaction? = nil
     @StateObject private var voiceRecognizer = VoiceTransactionRecognizer()
     @StateObject private var budgetsViewModel = BudgetsViewModel()
     @Environment(\.dismiss) private var dismiss
@@ -67,7 +73,9 @@ struct QuickAddView: View {
 
                 budgetHint
 
-                voiceButton
+                if existingTransaction == nil {
+                    voiceButton
+                }
 
                 if viewModel.defaultAccountId == nil {
                     Text("Necesitas una cuenta para guardar movimientos — crea una en Ajustes > Cuentas.")
@@ -84,7 +92,7 @@ struct QuickAddView: View {
                 Button {
                     Task { await save() }
                 } label: {
-                    Text("Guardar")
+                    Text(existingTransaction == nil ? "Guardar" : "Guardar cambios")
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
@@ -94,14 +102,16 @@ struct QuickAddView: View {
                 .disabled(amountText.isEmpty || isSaving || viewModel.defaultAccountId == nil)
             }
             .padding(20)
-            .navigationTitle("Anotar movimiento")
+            .navigationTitle(existingTransaction == nil ? "Anotar movimiento" : "Editar movimiento")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") { dismiss() }
                 }
             }
             .onAppear {
-                if autoStartVoice {
+                if let existingTransaction {
+                    loadExistingTransaction(existingTransaction)
+                } else if autoStartVoice {
                     Task { await handleMicTap() }
                 } else {
                     amountFieldFocused = true
@@ -246,11 +256,26 @@ struct QuickAddView: View {
         }
     }
 
+    private func loadExistingTransaction(_ transaction: FinanceTransaction) {
+        movementType = transaction.movementType
+        amountText = NSDecimalNumber(decimal: abs(transaction.amount)).stringValue
+        description = transaction.description ?? ""
+        category = transaction.category.flatMap(TransactionCategory.init(rawValue:))
+    }
+
     private func save() async {
         guard
-            let userId = appState.currentUserId,
-            let accountId = viewModel.defaultAccountId,
             let magnitude = Decimal(string: amountText.replacingOccurrences(of: ",", with: "."))
+        else { return }
+
+        if let existingTransaction {
+            await saveEdit(to: existingTransaction, magnitude: magnitude)
+            return
+        }
+
+        guard
+            let userId = appState.currentUserId,
+            let accountId = viewModel.defaultAccountId
         else { return }
 
         isSaving = true
@@ -281,6 +306,24 @@ struct QuickAddView: View {
             dismiss()
         } catch {
             showingSavingAnimation = false
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func saveEdit(to transaction: FinanceTransaction, magnitude: Decimal) async {
+        isSaving = true
+        defer { isSaving = false }
+
+        do {
+            try await viewModel.updateTransaction(
+                transaction,
+                magnitude: magnitude,
+                movementType: movementType,
+                category: category?.rawValue,
+                description: description.isEmpty ? nil : description
+            )
+            dismiss()
+        } catch {
             errorMessage = error.localizedDescription
         }
     }

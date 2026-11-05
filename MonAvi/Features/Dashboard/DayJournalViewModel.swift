@@ -147,6 +147,45 @@ final class DayJournalViewModel: ObservableObject {
         }
     }
 
+    /// Corregir un movimiento ya anotado (monto, tipo, categoria o
+    /// descripcion) — antes de esto, un typo quedaba anotado para siempre.
+    /// La cuenta no cambia aqui (ver TransactionsRepository.update).
+    func updateTransaction(
+        _ transaction: FinanceTransaction,
+        magnitude: Decimal,
+        movementType: MovementType,
+        category: String?,
+        description: String?
+    ) async throws {
+        let oldAmount = transaction.amount
+        let updated = try await repository.update(
+            transaction,
+            magnitude: magnitude,
+            movementType: movementType,
+            category: category,
+            description: description
+        )
+
+        if let index = todayTransactions.firstIndex(where: { $0.id == updated.id }) {
+            todayTransactions[index] = updated
+        }
+        if let index = searchResults?.firstIndex(where: { $0.id == updated.id }) {
+            searchResults?[index] = updated
+        }
+        if let index = accounts.firstIndex(where: { $0.id == updated.accountId }) {
+            accounts[index].balance += updated.amount - oldAmount
+        }
+    }
+
+    func deleteTransaction(_ transaction: FinanceTransaction) async throws {
+        try await repository.delete(transaction)
+        todayTransactions.removeAll { $0.id == transaction.id }
+        searchResults?.removeAll { $0.id == transaction.id }
+        if let index = accounts.firstIndex(where: { $0.id == transaction.accountId }) {
+            accounts[index].balance -= transaction.amount
+        }
+    }
+
     func closeDaySummary(userId: UUID) async -> DaySummary {
         let pastNets = try? await repository.fetchPastDailyNets(userId: userId, days: 7)
         let mood = Self.mood(for: todayNet, comparedTo: pastNets ?? [])

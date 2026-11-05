@@ -116,6 +116,63 @@ final class TransactionsRepository {
         return created
     }
 
+    private struct TransactionEditFields: Encodable {
+        let amount: Decimal
+        let movementType: MovementType
+        let category: String?
+        let description: String?
+
+        enum CodingKeys: String, CodingKey {
+            case amount
+            case movementType = "movement_type"
+            case category
+            case description
+        }
+    }
+
+    /// Editar un movimiento ya guardado — hasta ahora, una vez anotado, no
+    /// habia forma de corregir un typo en el monto o la categoria. Se deja
+    /// la cuenta fija (cambiar de cuenta es borrar y anotar de nuevo) para
+    /// no tener que mover saldo entre dos cuentas a la vez; el tipo si se
+    /// puede cambiar (ej. "era ingreso, no gasto") porque el delta de saldo
+    /// ya lo resuelve solo: se resta el monto viejo (con su signo) y se
+    /// suma el nuevo.
+    @discardableResult
+    func update(
+        _ transaction: FinanceTransaction,
+        magnitude: Decimal,
+        movementType: MovementType,
+        category: String?,
+        description: String?
+    ) async throws -> FinanceTransaction {
+        let newSignedAmount = movementType.signedAmount(from: magnitude)
+        let delta = newSignedAmount - transaction.amount
+
+        let updated: FinanceTransaction = try await supabase
+            .from("transactions")
+            .update(TransactionEditFields(
+                amount: newSignedAmount,
+                movementType: movementType,
+                category: category,
+                description: description
+            ))
+            .eq("id", value: transaction.id)
+            .select()
+            .single()
+            .execute()
+            .value
+
+        if delta != 0 {
+            try await applyToAccountBalance(accountId: transaction.accountId, delta: delta)
+        }
+        return updated
+    }
+
+    func delete(_ transaction: FinanceTransaction) async throws {
+        try await supabase.from("transactions").delete().eq("id", value: transaction.id).execute()
+        try await applyToAccountBalance(accountId: transaction.accountId, delta: -transaction.amount)
+    }
+
     private struct IncrementBalanceParams: Encodable {
         let pAccountId: UUID
         let pDelta: Decimal

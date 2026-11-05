@@ -10,10 +10,14 @@ struct DayJournalView: View {
     @StateObject private var budgetsViewModel = BudgetsViewModel()
     @StateObject private var recurringViewModel = RecurringTransactionsViewModel()
     @StateObject private var billsViewModel = BillsViewModel()
+    @StateObject private var dgiViewModel = DgiReceiptsViewModel()
     @State private var isQuickAdding = false
     @State private var isVoiceQuickAdding = false
     @State private var isRecordingDebtPayment = false
     @State private var isContributingToSavings = false
+    @State private var isShowingDgiConsent = false
+    @State private var isShowingInvoiceScanner = false
+    @State private var editingTransaction: FinanceTransaction?
     @State private var daySummary: DaySummary?
     @State private var isClosingDay = false
     @State private var isShowingDatePicker = false
@@ -87,12 +91,24 @@ struct DayJournalView: View {
             .task { await refreshBudgets() }
             .task { await refreshRecurring() }
             .task { await refreshBills() }
+            .task { await refreshDgiConsent() }
             .task { await appState.subscriptionStore.refreshRenewalInfo() }
             .sheet(isPresented: $isQuickAdding) {
                 QuickAddView(viewModel: viewModel)
             }
             .sheet(isPresented: $isVoiceQuickAdding) {
                 QuickAddView(viewModel: viewModel, autoStartVoice: true)
+            }
+            .sheet(isPresented: $isShowingDgiConsent) {
+                DgiConsentView(viewModel: dgiViewModel) {
+                    isShowingInvoiceScanner = true
+                }
+            }
+            .sheet(isPresented: $isShowingInvoiceScanner) {
+                ScanInvoiceView(viewModel: dgiViewModel, accounts: viewModel.accounts)
+            }
+            .sheet(item: $editingTransaction) { transaction in
+                QuickAddView(viewModel: viewModel, existingTransaction: transaction)
             }
             .sheet(isPresented: $isRecordingDebtPayment) {
                 QuickDebtPaymentView(accounts: viewModel.accounts)
@@ -391,8 +407,32 @@ struct DayJournalView: View {
         }
     }
 
+    /// Toca para editar, mantiene presionado para eliminar — antes de esto
+    /// un movimiento ya anotado no se podia corregir ni borrar de ninguna
+    /// forma. No es un `List`, asi que no hay `.swipeActions` nativo; el
+    /// `contextMenu` sigue el mismo patron que ya usa el boton "+" de abajo
+    /// para sus acciones secundarias.
     @ViewBuilder
     private func journalRow(_ transaction: FinanceTransaction) -> some View {
+        journalRowContent(transaction)
+            .contentShape(Rectangle())
+            .onTapGesture { editingTransaction = transaction }
+            .contextMenu {
+                Button {
+                    editingTransaction = transaction
+                } label: {
+                    Label("Editar", systemImage: "pencil")
+                }
+                Button(role: .destructive) {
+                    Task { await delete(transaction) }
+                } label: {
+                    Label("Eliminar", systemImage: "trash")
+                }
+            }
+    }
+
+    @ViewBuilder
+    private func journalRowContent(_ transaction: FinanceTransaction) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Text(transaction.movementType.emoji)
                 .font(.title2)
@@ -459,6 +499,20 @@ struct DayJournalView: View {
                     }
                 } label: {
                     Image(systemName: "magnifyingglass")
+                        .font(.system(size: 18, weight: .semibold))
+                        .frame(width: 50, height: 50)
+                }
+                .background(Circle().fill(Color(.systemBackground)))
+                .shadow(color: .black.opacity(0.08), radius: 8, y: 3)
+                .pressable()
+
+                /// Acceso directo a escanear una factura DGI y ganar puntos —
+                /// antes solo se llegaba ahi en 3 toques (Hoy > Puntos >
+                /// Facturas que suman > escanear). Aqui mismo, un toque.
+                Button {
+                    startInvoiceScan()
+                } label: {
+                    Image(systemName: "qrcode.viewfinder")
                         .font(.system(size: 18, weight: .semibold))
                         .frame(width: 50, height: 50)
                 }
@@ -543,6 +597,27 @@ struct DayJournalView: View {
     private func refreshBills() async {
         guard let userId = appState.currentUserId else { return }
         await billsViewModel.refresh(userId: userId)
+    }
+
+    private func refreshDgiConsent() async {
+        guard let userId = appState.currentUserId else { return }
+        await dgiViewModel.refresh(userId: userId)
+    }
+
+    private func startInvoiceScan() {
+        if dgiViewModel.hasConsented == true {
+            isShowingInvoiceScanner = true
+        } else {
+            isShowingDgiConsent = true
+        }
+    }
+
+    private func delete(_ transaction: FinanceTransaction) async {
+        do {
+            try await viewModel.deleteTransaction(transaction)
+        } catch {
+            viewModel.errorMessage = error.localizedDescription
+        }
     }
 
     private func confirmRecurring(_ item: RecurringTransaction) async {

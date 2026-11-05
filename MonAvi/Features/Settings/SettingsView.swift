@@ -99,6 +99,27 @@ struct SettingsView: View {
                     }
                 }
 
+                /// Antes solo se veian estos enlaces en el paywall — alguien
+                /// que ya es cliente Pro no vuelve a esa pantalla, asi que
+                /// se quedaba sin forma de encontrarlos despues de suscribirse.
+                Section("Legal y ayuda") {
+                    Link(destination: Config.supportURL) {
+                        Label("Ayuda y preguntas frecuentes", systemImage: "questionmark.circle.fill")
+                    }
+                    Link(destination: Config.privacyPolicyURL) {
+                        Label("Politica de privacidad", systemImage: "hand.raised.fill")
+                    }
+                    Link(destination: Config.termsOfUseURL) {
+                        Label("Terminos de uso", systemImage: "doc.text.fill")
+                    }
+                    if let mailURL = URL(string: "mailto:\(Config.supportEmail)") {
+                        Link(destination: mailURL) {
+                            Label("Escribenos", systemImage: "envelope.fill")
+                        }
+                    }
+                }
+                .foregroundStyle(.primary)
+
                 Section("Mi negocio") {
                     NavigationLink {
                         BusinessSettingsView()

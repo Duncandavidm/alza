@@ -34,6 +34,7 @@ struct BillsView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("Agregar cuenta por pagar")
             }
         }
         .refreshable { await refresh() }
@@ -83,6 +84,7 @@ struct BillsView: View {
                     .foregroundStyle(.green)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Marcar como pagada")
         }
         .padding(.vertical, 2)
     }

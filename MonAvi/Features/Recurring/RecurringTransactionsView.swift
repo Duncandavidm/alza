@@ -60,6 +60,7 @@ struct RecurringTransactionsView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("Agregar movimiento recurrente")
             }
         }
         .task {

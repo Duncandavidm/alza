@@ -37,6 +37,7 @@ struct DgiReceiptsListView: View {
                 } label: {
                     Image(systemName: "qrcode.viewfinder")
                 }
+                .accessibilityLabel("Escanear factura")
             }
         }
         .refreshable { await refresh() }

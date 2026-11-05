@@ -106,6 +106,7 @@ struct BudgetDetailSheet: View {
                     } label: {
                         Image(systemName: "xmark")
                     }
+                    .accessibilityLabel("Cerrar")
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
@@ -117,6 +118,7 @@ struct BudgetDetailSheet: View {
                             Image(systemName: "checkmark")
                         }
                     }
+                    .accessibilityLabel("Guardar")
                     .disabled(limitText.isEmpty || isSaving)
                 }
             }

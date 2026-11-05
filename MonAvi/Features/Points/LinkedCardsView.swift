@@ -30,6 +30,7 @@ struct LinkedCardsView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("Agregar tarjeta")
             }
         }
         .sheet(isPresented: $isAdding) {

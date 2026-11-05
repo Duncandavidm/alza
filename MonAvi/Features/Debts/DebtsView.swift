@@ -79,6 +79,7 @@ struct DebtsView: View {
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button { showingAdd = true } label: { Image(systemName: "plus") }
+                    .accessibilityLabel("Agregar deuda")
             }
         }
         .sheet(isPresented: $showingAdd) {

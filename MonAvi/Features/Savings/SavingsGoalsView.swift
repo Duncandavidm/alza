@@ -37,6 +37,7 @@ struct SavingsGoalsView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("Agregar meta de ahorro")
             }
         }
         .refreshable { await refresh() }
@@ -79,6 +80,7 @@ struct SavingsGoalsView: View {
                         .foregroundStyle(MonAviBrand.primary)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Abonar a la meta")
                 .disabled(goal.isAchieved)
             }
 

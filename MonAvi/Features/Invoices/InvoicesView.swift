@@ -37,6 +37,7 @@ struct InvoicesView: View {
                 } label: {
                     Image(systemName: "building.2.fill")
                 }
+                .accessibilityLabel("Datos de la empresa")
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button {
@@ -44,6 +45,7 @@ struct InvoicesView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("Crear factura")
             }
         }
         .sheet(isPresented: $showingAdd) {

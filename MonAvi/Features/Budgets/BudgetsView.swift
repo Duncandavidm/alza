@@ -34,6 +34,7 @@ struct BudgetsView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
+                    .accessibilityLabel("Agregar presupuesto")
                 }
             }
             .refreshable { await refresh() }

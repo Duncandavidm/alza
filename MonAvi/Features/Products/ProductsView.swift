@@ -45,6 +45,7 @@ struct ProductsView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("Agregar producto")
             }
         }
         .sheet(isPresented: $showingAdd) {

@@ -96,6 +96,7 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: S7ZS3G5284
+        GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: MonAvi
 schemes:

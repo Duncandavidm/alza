@@ -33,6 +33,7 @@ struct InsightsView: View {
                                     .font(.title2)
                             }
                         }
+                        .accessibilityLabel("Enviar pregunta")
                         .disabled(question.trimmingCharacters(in: .whitespaces).isEmpty || viewModel.isAsking)
                     }
 

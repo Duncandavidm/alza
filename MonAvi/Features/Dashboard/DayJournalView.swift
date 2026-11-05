@@ -158,6 +158,7 @@ struct DayJournalView: View {
                     .frame(width: 38, height: 38)
             }
             .background(Circle().fill(Color(.secondarySystemBackground)))
+            .accessibilityLabel("Ver otro dia")
 
             NavigationLink {
                 SettingsView()
@@ -166,6 +167,7 @@ struct DayJournalView: View {
                     .frame(width: 38, height: 38)
             }
             .background(Circle().fill(Color(.secondarySystemBackground)))
+            .accessibilityLabel("Ajustes")
         }
         .buttonStyle(.plain)
         .foregroundStyle(.primary)
@@ -479,6 +481,7 @@ struct DayJournalView: View {
                 .background(Circle().fill(Color(.systemBackground)))
                 .shadow(color: .black.opacity(0.08), radius: 8, y: 3)
                 .pressable()
+                .accessibilityLabel("Anotar movimiento")
                 .contextMenu {
                     Button {
                         isRecordingDebtPayment = true
@@ -505,6 +508,7 @@ struct DayJournalView: View {
                 .background(Circle().fill(Color(.systemBackground)))
                 .shadow(color: .black.opacity(0.08), radius: 8, y: 3)
                 .pressable()
+                .accessibilityLabel("Buscar")
 
                 /// Acceso directo a escanear una factura DGI y ganar puntos —
                 /// antes solo se llegaba ahi en 3 toques (Hoy > Puntos >
@@ -519,6 +523,7 @@ struct DayJournalView: View {
                 .background(Circle().fill(Color(.systemBackground)))
                 .shadow(color: .black.opacity(0.08), radius: 8, y: 3)
                 .pressable()
+                .accessibilityLabel("Escanear factura")
             }
             .foregroundStyle(.primary)
 
@@ -535,6 +540,7 @@ struct DayJournalView: View {
                     .shadow(color: MonAviBrand.primary.opacity(0.4), radius: 10, y: 4)
             }
             .pressable()
+            .accessibilityLabel("Anotar movimiento por voz")
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 20)

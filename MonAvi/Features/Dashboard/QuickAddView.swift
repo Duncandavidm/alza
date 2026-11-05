@@ -42,53 +42,57 @@ struct QuickAddView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
-                MovementTypePicker(selection: $movementType)
-                    .padding(.top, 8)
+            ScrollView {
+                VStack(spacing: 20) {
+                    MovementTypePicker(selection: $movementType)
+                        .padding(.top, 8)
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("¿Cuanto?")
-                        .font(.headline)
-                    HStack {
-                        Text("$")
-                            .font(.system(size: 32, weight: .semibold))
-                            .foregroundStyle(.secondary)
-                        TextField("0", text: $amountText)
-                            .font(.system(size: 40, weight: .bold))
-                            .keyboardType(.decimalPad)
-                            .focused($amountFieldFocused)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("¿Cuánto?")
+                            .font(.headline)
+                        HStack {
+                            Text("$")
+                                .font(.system(size: 32, weight: .semibold))
+                                .foregroundStyle(.secondary)
+                            TextField("0", text: $amountText)
+                                .font(.system(size: 40, weight: .bold))
+                                .keyboardType(.decimalPad)
+                                .focused($amountFieldFocused)
+                        }
+                        Divider()
                     }
-                    Divider()
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("¿Qué fue?")
+                            .font(.headline)
+                        TextField("ej. Compra de harina", text: $description)
+                            .textFieldStyle(.roundedBorder)
+                            .font(.title3)
+                    }
+
+                    categoryChips
+
+                    budgetHint
+
+                    if existingTransaction == nil {
+                        voiceButton
+                    }
+
+                    if viewModel.defaultAccountId == nil {
+                        Text("Necesitas una cuenta para guardar movimientos — crea una en Ajustes > Cuentas.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if let errorMessage {
+                        Text(errorMessage).foregroundStyle(.red).font(.footnote)
+                    }
                 }
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("¿Que fue?")
-                        .font(.headline)
-                    TextField("ej. Compra de harina", text: $description)
-                        .textFieldStyle(.roundedBorder)
-                        .font(.title3)
-                }
-
-                categoryChips
-
-                budgetHint
-
-                if existingTransaction == nil {
-                    voiceButton
-                }
-
-                if viewModel.defaultAccountId == nil {
-                    Text("Necesitas una cuenta para guardar movimientos — crea una en Ajustes > Cuentas.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-
-                if let errorMessage {
-                    Text(errorMessage).foregroundStyle(.red).font(.footnote)
-                }
-
-                Spacer()
-
+                .padding(20)
+            }
+            .navigationTitle(existingTransaction == nil ? "Anotar movimiento" : "Editar movimiento")
+            .navigationBarTitleDisplayMode(.inline)
+            .safeAreaInset(edge: .bottom) {
                 Button {
                     Task { await save() }
                 } label: {
@@ -100,9 +104,11 @@ struct QuickAddView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(movementType.tintColor)
                 .disabled(amountText.isEmpty || isSaving || viewModel.defaultAccountId == nil)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity)
+                .background(.bar)
             }
-            .padding(20)
-            .navigationTitle(existingTransaction == nil ? "Anotar movimiento" : "Editar movimiento")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") { dismiss() }

@@ -19,7 +19,8 @@ struct QuickAddView: View {
     @StateObject private var voiceRecognizer = VoiceTransactionRecognizer()
     @StateObject private var budgetsViewModel = BudgetsViewModel()
     @Environment(\.dismiss) private var dismiss
-    @FocusState private var amountFieldFocused: Bool
+    @FocusState private var descriptionFocused: Bool
+    @State private var showingCategoryPicker = false
 
     @State private var movementType: MovementType = .gasto
     @State private var amountText = ""
@@ -47,20 +48,7 @@ struct QuickAddView: View {
                     MovementTypePicker(selection: $movementType)
                         .padding(.top, 8)
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("¿Cuánto?")
-                            .font(.headline)
-                        HStack {
-                            Text("$")
-                                .font(.system(size: 32, weight: .semibold))
-                                .foregroundStyle(.secondary)
-                            TextField("0", text: $amountText)
-                                .font(.system(size: 40, weight: .bold))
-                                .keyboardType(.decimalPad)
-                                .focused($amountFieldFocused)
-                        }
-                        Divider()
-                    }
+                    amountDisplay
 
                     VStack(alignment: .leading, spacing: 6) {
                         Text("¿Qué fue?")
@@ -68,9 +56,16 @@ struct QuickAddView: View {
                         TextField("ej. Compra de harina", text: $description)
                             .textFieldStyle(.roundedBorder)
                             .font(.title3)
+                            .focused($descriptionFocused)
+                            .submitLabel(.done)
+                            .onSubmit { descriptionFocused = false }
                     }
 
-                    categoryChips
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Categoría")
+                            .font(.headline)
+                        categoryChips
+                    }
 
                     budgetHint
 
@@ -90,22 +85,25 @@ struct QuickAddView: View {
                 }
                 .padding(20)
             }
+            .scrollDismissesKeyboard(.interactively)
             .navigationTitle(existingTransaction == nil ? "Anotar movimiento" : "Editar movimiento")
             .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .bottom) {
-                Button {
-                    Task { await save() }
-                } label: {
-                    Text(existingTransaction == nil ? "Guardar" : "Guardar cambios")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
+                VStack(spacing: 10) {
+                    // El teclado propio se esconde mientras se escribe la
+                    // descripcion, para no apilarlo con el del sistema.
+                    if !descriptionFocused {
+                        AmountKeypad(
+                            text: $amountText,
+                            isInflow: movementType.isInflow,
+                            onToggleSign: toggleSign
+                        )
+                    }
+                    saveButton
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(movementType.tintColor)
-                .disabled(amountText.isEmpty || isSaving || viewModel.defaultAccountId == nil)
                 .padding(.horizontal, 20)
-                .padding(.vertical, 8)
+                .padding(.top, 10)
+                .padding(.bottom, 8)
                 .frame(maxWidth: .infinity)
                 .background(.bar)
             }
@@ -114,13 +112,14 @@ struct QuickAddView: View {
                     Button("Cancelar") { dismiss() }
                 }
             }
+            .sheet(isPresented: $showingCategoryPicker) {
+                CategoryPickerSheet(selection: $category, categories: sortedCategories)
+            }
             .onAppear {
                 if let existingTransaction {
                     loadExistingTransaction(existingTransaction)
                 } else if autoStartVoice {
                     Task { await handleMicTap() }
-                } else {
-                    amountFieldFocused = true
                 }
             }
             .task { await refreshBudgets() }
@@ -141,7 +140,54 @@ struct QuickAddView: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private var saveButton: some View {
+        Button {
+            Task { await save() }
+        } label: {
+            Text(existingTransaction == nil ? "Guardar" : "Guardar cambios")
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(movementType.tintColor)
+        .disabled(enteredMagnitude <= 0 || isSaving || viewModel.defaultAccountId == nil)
+    }
+
+    /// El monto en grande, con el signo del tipo de movimiento — se llena
+    /// con el teclado propio de abajo.
+    private var amountDisplay: some View {
+        VStack(spacing: 4) {
+            Text("¿Cuánto?")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.secondary)
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(movementType.isInflow ? "+" : "−")
+                    .foregroundStyle(movementType.tintColor)
+                Text("$")
+                    .foregroundStyle(.secondary)
+                Text(amountText.isEmpty ? "0" : amountText)
+                    .foregroundStyle(amountText.isEmpty ? Color.secondary : Color.primary)
+                    .contentTransition(.numericText())
+            }
+            .font(.system(size: 52, weight: .bold, design: MonAviBrand.fontDesign))
+            .lineLimit(1)
+            .minimumScaleFactor(0.5)
+            .animation(.snappy, value: amountText)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Monto: \(amountText.isEmpty ? "0" : amountText) dólares")
+    }
+
+    /// +/− del teclado: cambia entre gasto e ingreso.
+    private func toggleSign() {
+        movementType = movementType.isInflow ? .gasto : .ingreso
     }
 
     /// Alternativa al llenado manual: dictar el movimiento en voz alta y
@@ -190,7 +236,7 @@ struct QuickAddView: View {
     private var categoryChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(sortedCategories) { option in
+                ForEach(chipCategories) { option in
                     Button {
                         category = (category == option) ? nil : option
                     } label: {
@@ -208,8 +254,32 @@ struct QuickAddView: View {
                             .foregroundStyle(category == option ? .white : .primary)
                     }
                 }
+
+                Button {
+                    showingCategoryPicker = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Text("Todas")
+                        Image(systemName: "chevron.right")
+                    }
+                    .font(.caption.weight(.semibold))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(Capsule().strokeBorder(MonAviBrand.primary, lineWidth: 1.5))
+                    .foregroundStyle(MonAviBrand.primary)
+                }
+                .accessibilityLabel("Ver todas las categorías")
             }
         }
+    }
+
+    /// Las 6 que mas usa el usuario, y la elegida si no esta entre ellas.
+    private var chipCategories: [TransactionCategory] {
+        var chips = Array(sortedCategories.prefix(6))
+        if let category, !chips.contains(category) {
+            chips.insert(category, at: 0)
+        }
+        return chips
     }
 
     /// "Ve el presupuesto restante al agregar gastos" tambien en el camino
@@ -258,7 +328,6 @@ struct QuickAddView: View {
             movementType = parsed.movementType
             amountText = parsed.amount == 0 ? "" : String(format: "%.2f", parsed.amount)
             description = parsed.description
-            amountFieldFocused = false
         }
     }
 

@@ -6,14 +6,18 @@ struct DashboardTabView: View {
             DayJournalView()
                 .tabItem { Label("Hoy", systemImage: "book.fill") }
 
+            SummaryView()
+                .tabItem { Label("Resumen", systemImage: "chart.pie.fill") }
+
             BudgetsView()
-                .tabItem { Label("Presupuestos", systemImage: "chart.bar.fill") }
+                .tabItem { Label("Presupuestos", systemImage: "wallet.pass.fill") }
 
             InsightsView()
-                .tabItem { Label("Insights", systemImage: "sparkles") }
+                .tabItem { Label("Análisis", systemImage: "sparkles") }
 
             SettingsView()
                 .tabItem { Label("Ajustes", systemImage: "gearshape.fill") }
         }
+        .tint(MonAviBrand.primary)
     }
 }

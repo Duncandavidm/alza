@@ -1,0 +1,180 @@
+:root {
+  --bg: #0f1115;
+  --surface: #1a1d24;
+  --surface-alt: #22262f;
+  --border: #2c313c;
+  --text: #e8eaed;
+  --text-dim: #9aa1ac;
+  --primary: #4f7cff;
+  --danger: #ef5a5a;
+  --success: #3ecf8e;
+  --warning: #e3b341;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+h1, h2, h3 {
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 24px 20px 60px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+th, td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+th {
+  color: var(--text-dim);
+  font-weight: 500;
+  font-size: 13px;
+}
+
+input, select, textarea, button {
+  font-family: inherit;
+  font-size: 14px;
+}
+
+input[type="text"], input[type="password"], input[type="number"], input[type="date"], select, textarea {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: var(--text);
+}
+
+input::placeholder {
+  color: var(--text-dim);
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
+.field {
+  margin-bottom: 14px;
+}
+
+button, .button {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 9px 16px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+button.secondary {
+  background: var(--surface-alt);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+button.danger {
+  background: var(--danger);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+}
+
+.badge.active, .badge.matched, .badge.met, .badge.confirmado { color: var(--success); border-color: var(--success); }
+.badge.paused, .badge.pending_match, .badge.active-goal { color: var(--warning); border-color: var(--warning); }
+.badge.ambiguous, .badge.unmatched, .badge.missed, .badge.budget_exhausted { color: var(--danger); border-color: var(--danger); }
+
+.error {
+  color: var(--danger);
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.success-text {
+  color: var(--success);
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+nav.top {
+  border-bottom: 1px solid var(--border);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+nav.top .brand {
+  font-weight: 700;
+  margin-right: 10px;
+}
+
+nav.top a {
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+nav.top a:hover {
+  color: var(--text);
+}
+
+nav.top form {
+  margin-left: auto;
+}
+
+.text-dim {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.grid-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}

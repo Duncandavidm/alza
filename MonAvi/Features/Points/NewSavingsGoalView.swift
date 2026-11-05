@@ -21,8 +21,10 @@ struct NewSavingsGoalView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Meta de este mes") {
+                Section {
                     AmountField(placeholder: "Saldo promedio objetivo", text: $targetAmountText)
+                } header: {
+                    Text("Meta de este mes")
                 } footer: {
                     Text("El banco reporta tu saldo PROMEDIO del mes al terminar el periodo — no cuenta un deposito de un solo dia.")
                 }

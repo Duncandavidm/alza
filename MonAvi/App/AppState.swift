@@ -71,6 +71,22 @@ final class AppState: ObservableObject {
         try? await supabase.auth.signOut()
     }
 
+    /// Apple exige (Guideline 5.1.1(v)) poder eliminar la cuenta desde
+    /// dentro de la app. Llama a la Edge Function delete-account (borra
+    /// auth.users del lado del servidor con la service role key — todas
+    /// las tablas con datos del usuario tienen
+    /// `on delete cascade`, ver el comentario de esa funcion) y, si sale
+    /// bien, limpia la sesion local igual que signOut().
+    func deleteAccount() async throws {
+        guard let userId = currentUserId else { return }
+        struct Payload: Encodable { let userId: String }
+        _ = try await supabase.functions.invoke(
+            "delete-account",
+            options: FunctionInvokeOptions(body: Payload(userId: userId.uuidString))
+        )
+        await signOut()
+    }
+
     /// Lee el acceso efectivo del usuario via la RPC get_entitlement_status
     /// (propia suscripcion, o heredada de un grupo familiar) en vez de leer
     /// directo la tabla subscriptions — ver

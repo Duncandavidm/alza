@@ -171,6 +171,15 @@ struct SettingsView: View {
                     }
                     .disabled(isSigningOut)
                 }
+
+                Section {
+                    NavigationLink {
+                        DeleteAccountView()
+                    } label: {
+                        Label("Eliminar cuenta", systemImage: "trash.fill")
+                            .foregroundStyle(.red)
+                    }
+                }
             }
             .navigationTitle("Ajustes")
             .task {

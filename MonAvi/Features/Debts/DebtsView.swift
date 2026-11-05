@@ -24,7 +24,7 @@ struct DebtsView: View {
                     }
                     .pickerStyle(.segmented)
                 } footer: {
-                    Text(payoffStrategy.explanation + " Solo afecta el orden entre tus deudas en el plan de \"que pagar primero\" al registrar un ingreso.")
+                    Text(payoffStrategy.explanation + " Solo afecta el orden entre tus deudas en el plan de \"qué pagar primero\" al registrar un ingreso.")
                 }
             }
 
@@ -32,7 +32,7 @@ struct DebtsView: View {
                 ContentUnavailableView(
                     "Sin deudas registradas",
                     systemImage: "creditcard.trianglebadge.exclamationmark",
-                    description: Text("Tarjetas de credito, prestamos o sobregiros — registralos para que MonAvi los tome en cuenta al aconsejarte que pagar primero.")
+                    description: Text("Tarjetas de crédito, préstamos o sobregiros — regístralos para que MonAvi los tome en cuenta al aconsejarte qué pagar primero.")
                 )
             }
 
@@ -46,10 +46,10 @@ struct DebtsView: View {
 
                     HStack(spacing: 10) {
                         if let rate = debt.interestRateMonthly {
-                            Text("Interes: \(rate, format: .number.precision(.fractionLength(1)))%/mes")
+                            Text("Interés: \(rate, format: .number.precision(.fractionLength(1)))%/mes")
                         }
                         if let min = debt.minimumPayment {
-                            Text("Minimo: \(min, format: .currency(code: "USD"))")
+                            Text("Mínimo: \(min, format: .currency(code: "USD"))")
                         }
                     }
                     .font(.caption)

@@ -13,13 +13,13 @@ struct InsightsView: View {
                     NavigationLink {
                         SpendingInsightsView()
                     } label: {
-                        Label("Gastos por categoria", systemImage: "chart.pie.fill")
+                        Label("Gastos por categoría", systemImage: "chart.pie.fill")
                     }
                 }
 
                 Section("Pregunta lo que sea") {
                     HStack(spacing: 8) {
-                        TextField("ej. ¿Cuanto gaste en comida este mes?", text: $question)
+                        TextField("ej. ¿Cuánto gasté en comida este mes?", text: $question)
                             .focused($questionFocused)
                             .onSubmit { Task { await ask() } }
 

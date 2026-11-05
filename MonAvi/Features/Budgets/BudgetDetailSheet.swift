@@ -69,9 +69,9 @@ struct BudgetDetailSheet: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Limite \(progress.budget.period.displayName.lowercased())")
+                    Text("Límite \(progress.budget.period.displayName.lowercased())")
                         .font(.subheadline.weight(.semibold))
-                    AmountField(placeholder: "Limite", text: $limitText)
+                    AmountField(placeholder: "Límite", text: $limitText)
                         .font(.title2)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -137,7 +137,7 @@ struct BudgetDetailSheet: View {
 
     private func save() async {
         guard let limit = Decimal(string: limitText.replacingOccurrences(of: ",", with: ".")), limit > 0 else {
-            errorMessage = "Pon un limite valido."
+            errorMessage = "Pon un límite válido."
             return
         }
         isSaving = true

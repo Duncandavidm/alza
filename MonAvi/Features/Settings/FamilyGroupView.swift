@@ -43,7 +43,7 @@ struct FamilyGroupView: View {
     private func ownerSection(_ group: FamilyGroup) -> some View {
         Section {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Codigo de invitacion")
+                Text("Código de invitación")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Text(group.inviteCode)
@@ -52,16 +52,16 @@ struct FamilyGroupView: View {
             }
             .padding(.vertical, 4)
 
-            ShareLink(item: "Unete a mi familia en MonAvi con el codigo \(group.inviteCode) — entra en Ajustes > Mi familia dentro de la app.") {
-                Label("Compartir codigo", systemImage: "square.and.arrow.up")
+            ShareLink(item: "Únete a mi familia en MonAvi con el código \(group.inviteCode) — entra en Ajustes > Mi familia dentro de la app.") {
+                Label("Compartir código", systemImage: "square.and.arrow.up")
             }
         } footer: {
-            Text("Quien use este codigo (hasta 5 personas) obtiene acceso Pro completo, con su propia cuenta y datos — sin pagar nada por su cuenta.")
+            Text("Quien use este código (hasta 5 personas) obtiene acceso Pro completo, con su propia cuenta y datos — sin pagar nada por su cuenta.")
         }
 
         Section("Miembros (\(group.members.count)/5)") {
             if group.members.isEmpty {
-                Text("Todavia no se ha unido nadie.")
+                Text("Todavía no se ha unido nadie.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             } else {
@@ -89,7 +89,7 @@ struct FamilyGroupView: View {
         Section {
             Label("Formas parte de la familia de \(group.ownerDisplayName)", systemImage: "person.2.fill")
         } footer: {
-            Text("Tienes acceso Pro completo mientras sigas en este grupo y la suscripcion de quien te invito este activa.")
+            Text("Tienes acceso Pro completo mientras sigas en este grupo y la suscripción de quien te invitó esté activa.")
         }
 
         Section {
@@ -109,7 +109,7 @@ struct FamilyGroupView: View {
 
     private var joinSection: some View {
         Section {
-            TextField("Codigo de invitacion", text: $viewModel.inviteCodeInput)
+            TextField("Código de invitación", text: $viewModel.inviteCodeInput)
                 .textInputAutocapitalization(.characters)
                 .autocorrectionDisabled()
 
@@ -126,7 +126,7 @@ struct FamilyGroupView: View {
         } header: {
             Text("Unirte a una familia")
         } footer: {
-            Text("Si alguien con el plan Familia de MonAvi te paso su codigo, entralo aqui para obtener acceso Pro sin pagar nada tu. Si tu compraste el plan Familia, tu codigo aparece aqui apenas se active la suscripcion.")
+            Text("Si alguien con el plan Familia de MonAvi te pasó su código, éntralo aquí para obtener acceso Pro sin pagar nada tú. Si tú compraste el plan Familia, tu código aparece aquí apenas se active la suscripción.")
         }
     }
 }

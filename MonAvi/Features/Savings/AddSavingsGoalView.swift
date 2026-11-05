@@ -48,14 +48,14 @@ struct AddSavingsGoalView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("¿Que estas ahorrando?") {
+                Section("¿Qué estás ahorrando?") {
                     emojiPicker
                     TextField("Nombre (ej. Carro nuevo)", text: $name)
                 }
 
                 Section("Meta") {
                     AmountField(placeholder: "Monto objetivo", text: $targetAmountText)
-                    DatePicker("Fecha limite", selection: $targetDate, in: Date()..., displayedComponents: .date)
+                    DatePicker("Fecha límite", selection: $targetDate, in: Date()..., displayedComponents: .date)
                 }
 
                 Section {
@@ -66,7 +66,7 @@ struct AddSavingsGoalView: View {
                         }
                     }
                 } footer: {
-                    Text("Si eliges una cuenta, cada aporte que registres tambien se anota como movimiento ahi.")
+                    Text("Si eliges una cuenta, cada aporte que registres también se anota como movimiento ahí.")
                 }
 
                 if targetAmount > 0 {

@@ -18,7 +18,7 @@ struct AuthView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Bienvenido")
                             .font(.system(.largeTitle, design: MonAviBrand.fontDesign, weight: .bold))
-                        Text("Inicia sesion para ver como va tu negocio.")
+                        Text("Inicia sesión para ver cómo va tu negocio.")
                             .font(.system(.subheadline, design: MonAviBrand.fontDesign))
                             .foregroundStyle(.secondary)
                     }
@@ -143,7 +143,7 @@ struct AuthView: View {
             Button {
                 Task { await viewModel.submitEmailForm() }
             } label: {
-                Text(viewModel.emailAuthMode == .signIn ? "Iniciar sesion" : "Crear cuenta")
+                Text(viewModel.emailAuthMode == .signIn ? "Iniciar sesión" : "Crear cuenta")
                     .font(.system(.headline, design: MonAviBrand.fontDesign))
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
@@ -159,7 +159,7 @@ struct AuthView: View {
                     viewModel.errorMessage = nil
                     viewModel.infoMessage = nil
                 } label: {
-                    Text(viewModel.emailAuthMode == .signIn ? "¿No tienes cuenta? Creala" : "¿Ya tienes cuenta? Inicia sesion")
+                    Text(viewModel.emailAuthMode == .signIn ? "¿No tienes cuenta? Créala" : "¿Ya tienes cuenta? Inicia sesión")
                         .font(.footnote)
                 }
 

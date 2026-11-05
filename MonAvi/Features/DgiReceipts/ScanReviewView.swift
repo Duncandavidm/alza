@@ -36,8 +36,8 @@ struct ScanReviewView: View {
                             Task { await checkMerge() }
                         }
 
-                    Picker("Categoria", selection: $draft.category) {
-                        Text("Sin categoria").tag(TransactionCategory?.none)
+                    Picker("Categoría", selection: $draft.category) {
+                        Text("Sin categoría").tag(TransactionCategory?.none)
                         ForEach(TransactionCategory.allCases) { category in
                             Text("\(category.emoji) \(category.rawValue)").tag(Optional(category))
                         }
@@ -49,7 +49,7 @@ struct ScanReviewView: View {
                         }
                     }
                 } header: {
-                    Text("Monto y categoria")
+                    Text("Monto y categoría")
                 } footer: {
                     Text("El monto se registra de una vez; los puntos se acreditan cuando la DGI confirme la factura (24-72 h).")
                 }
@@ -59,7 +59,7 @@ struct ScanReviewView: View {
                         Toggle(isOn: $draft.mergeWithCandidate) {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Unir con un gasto que ya tienes")
-                                Text("\(candidate.description ?? candidate.movementType.displayName) — \(candidate.amount, format: .currency(code: "USD")), mismo dia")
+                                Text("\(candidate.description ?? candidate.movementType.displayName) — \(candidate.amount, format: .currency(code: "USD")), mismo día")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }

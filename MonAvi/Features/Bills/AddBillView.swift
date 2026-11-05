@@ -37,7 +37,7 @@ struct AddBillView: View {
                     Text("Pago a proveedor").tag(MovementType.pagoProveedor)
                 }
 
-                Picker("Categoria", selection: $category) {
+                Picker("Categoría", selection: $category) {
                     ForEach(TransactionCategory.allCases) { category in
                         Text("\(category.emoji) \(category.rawValue)").tag(category)
                     }

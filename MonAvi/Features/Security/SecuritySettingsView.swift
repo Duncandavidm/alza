@@ -18,19 +18,19 @@ struct SecuritySettingsView: View {
                     ProgressView()
                 } else if factors.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Verificacion en 2 pasos: desactivada")
+                        Text("Verificación en 2 pasos: desactivada")
                             .font(.subheadline.weight(.medium))
-                        Text("Agrega una capa extra: ademas de tu contraseña (o Apple), te va a pedir un codigo de una app de autenticacion cada vez que inicies sesion.")
+                        Text("Agrega una capa extra: además de tu contraseña (o Apple), te va a pedir un código de una app de autenticación cada vez que inicies sesión.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                     .padding(.vertical, 4)
 
-                    Button("Activar verificacion en 2 pasos") {
+                    Button("Activar verificación en 2 pasos") {
                         showingEnroll = true
                     }
                 } else {
-                    Label("Verificacion en 2 pasos: activada", systemImage: "checkmark.shield.fill")
+                    Label("Verificación en 2 pasos: activada", systemImage: "checkmark.shield.fill")
                         .foregroundStyle(.green)
 
                     ForEach(factors, id: \.id) { factor in
@@ -42,9 +42,9 @@ struct SecuritySettingsView: View {
                     }
                 }
             } header: {
-                Text("Verificacion en 2 pasos")
+                Text("Verificación en 2 pasos")
             } footer: {
-                Text("Si pierdes acceso a tu app de autenticacion y no puedes iniciar sesion, contactanos para verificar tu identidad y desactivarla.")
+                Text("Si pierdes acceso a tu app de autenticación y no puedes iniciar sesión, contáctanos para verificar tu identidad y desactivarla.")
             }
 
             if let errorMessage {
@@ -68,7 +68,7 @@ struct SecuritySettingsView: View {
         do {
             factors = try await MFAService.listVerifiedFactors()
         } catch {
-            errorMessage = "No se pudo cargar el estado de verificacion: \(error.localizedDescription)"
+            errorMessage = "No se pudo cargar el estado de verificación: \(error.localizedDescription)"
         }
     }
 

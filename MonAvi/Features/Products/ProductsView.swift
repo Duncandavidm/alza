@@ -9,7 +9,7 @@ struct ProductsView: View {
         List {
             if viewModel.products.isEmpty && !viewModel.isLoading {
                 ContentUnavailableView(
-                    "Sin productos todavia",
+                    "Sin productos todavía",
                     systemImage: "tag",
                     description: Text("Agrega tus productos o servicios con su precio costo y calcula el precio de venta.")
                 )

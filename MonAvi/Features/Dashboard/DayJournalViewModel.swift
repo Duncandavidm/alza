@@ -9,17 +9,17 @@ struct DaySummary {
 
         var title: String {
             switch self {
-            case .good: return "¡Buen dia!"
-            case .normal: return "Dia normal"
-            case .slow: return "Dia flojo"
+            case .good: return "¡Buen día!"
+            case .normal: return "Día normal"
+            case .slow: return "Día flojo"
             }
         }
 
         var message: String {
             switch self {
-            case .good: return "Te fue mejor que en un dia normal. ¡Sigue asi!"
-            case .normal: return "Un dia como cualquier otro. Todo en orden."
-            case .slow: return "Estuvo mas flojo de lo normal, pero ya quedo anotado."
+            case .good: return "Te fue mejor que en un día normal. ¡Sigue así!"
+            case .normal: return "Un día como cualquier otro. Todo en orden."
+            case .slow: return "Estuvo más flojo de lo normal, pero ya quedó anotado."
             }
         }
 
@@ -97,7 +97,7 @@ final class DayJournalViewModel: ObservableObject {
             todayTransactions = try await txTask
             accounts = try await accountsTask
         } catch {
-            errorMessage = "No se pudo cargar tu dia: \(error.localizedDescription)"
+            errorMessage = "No se pudo cargar tu día: \(error.localizedDescription)"
         }
     }
 

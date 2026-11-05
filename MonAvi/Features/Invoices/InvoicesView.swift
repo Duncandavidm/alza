@@ -9,7 +9,7 @@ struct InvoicesView: View {
         List {
             if viewModel.invoices.isEmpty && !viewModel.isLoading {
                 ContentUnavailableView(
-                    "Sin facturas todavia",
+                    "Sin facturas todavía",
                     systemImage: "doc.text",
                     description: Text("Crea una factura, remision o cuenta por cobrar para tus clientes.")
                 )

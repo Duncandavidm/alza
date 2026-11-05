@@ -48,7 +48,7 @@ struct DayCloseSummaryView: View {
                     .padding(.horizontal, 24)
             }
             .padding(.bottom, 20)
-            .navigationTitle("Tu dia")
+            .navigationTitle("Tu día")
         }
     }
 

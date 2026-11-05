@@ -11,7 +11,7 @@ struct PartnerOffersView: View {
                 ContentUnavailableView(
                     "Sin ofertas por ahora",
                     systemImage: "tag",
-                    description: Text("Cuando haya comercios aliados con una oferta activa, apareceran aqui.")
+                    description: Text("Cuando haya comercios aliados con una oferta activa, aparecerán aquí.")
                 )
             } else {
                 ForEach(viewModel.offers) { partnerOffer in

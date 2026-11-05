@@ -56,7 +56,7 @@ struct DashboardView: View {
 
                 Section("Movimientos recientes") {
                     if viewModel.recentTransactions.isEmpty {
-                        Text("Sin movimientos todavia")
+                        Text("Sin movimientos todavía")
                             .foregroundStyle(.secondary)
                     }
                     ForEach(viewModel.recentTransactions) { transaction in

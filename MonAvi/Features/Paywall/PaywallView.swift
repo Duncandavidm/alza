@@ -27,7 +27,7 @@ struct PaywallView: View {
     private static let topChips = [
         MarqueeChip(icon: "💬", text: "Pregunta lo que sea sobre tu dinero"),
         MarqueeChip(icon: "🔔", text: "Alertas antes de que venza una cuenta"),
-        MarqueeChip(icon: "📈", text: "Prioriza que deuda pagar primero"),
+        MarqueeChip(icon: "📈", text: "Prioriza qué deuda pagar primero"),
         MarqueeChip(icon: "🧾", text: "Factura a tus clientes desde la app"),
     ]
 
@@ -35,7 +35,7 @@ struct PaywallView: View {
         MarqueeChip(icon: "♾️", text: "Transacciones y cuentas ilimitadas"),
         MarqueeChip(icon: "🤖", text: "Insights de IA sobre tus gastos"),
         MarqueeChip(icon: "🎙️", text: "Anota gastos con tu voz"),
-        MarqueeChip(icon: "📊", text: "Reportes de tu negocio al dia"),
+        MarqueeChip(icon: "📊", text: "Reportes de tu negocio al día"),
     ]
 
     var body: some View {
@@ -65,7 +65,7 @@ struct PaywallView: View {
 
                     pricingCard
 
-                    Text("Menos de lo que cuesta un ☕ cafe a la semana.")
+                    Text("Menos de lo que cuesta un ☕ café a la semana.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
 
@@ -208,7 +208,7 @@ struct PaywallView: View {
                 // usa Apple Family Sharing nativo a proposito (competiria
                 // gratis con el plan Familia de pago, ver Config.swift).
                 if tier == .familia {
-                    Label("Invita hasta 5 personas con tu codigo (Ajustes > Mi familia)", systemImage: "person.3.fill")
+                    Label("Invita hasta 5 personas con tu código (Ajustes > Mi familia)", systemImage: "person.3.fill")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -341,7 +341,7 @@ struct PaywallView: View {
                 Label("Hoy no pagas nada.", systemImage: "checkmark.seal.fill")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(MonAviBrand.primary)
-                Text("Se renueva automaticamente a \(price) \(cadence) despues de la prueba. Cancela cuando quieras.")
+                Text("Se renueva automáticamente a \(price) \(cadence) después de la prueba. Cancela cuando quieras.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -355,7 +355,7 @@ struct PaywallView: View {
         VStack(spacing: 14) {
             HStack(spacing: 16) {
                 Link("Privacidad", destination: Config.privacyPolicyURL)
-                Link("Terminos", destination: Config.termsOfUseURL)
+                Link("Términos", destination: Config.termsOfUseURL)
                 if let url = URL(string: "mailto:\(Config.supportEmail)") {
                     Link("Contacto", destination: url)
                 }
@@ -384,7 +384,7 @@ struct PaywallView: View {
                 if isSigningOut {
                     ProgressView()
                 } else {
-                    Label("Cerrar sesion", systemImage: "rectangle.portrait.and.arrow.right")
+                    Label("Cerrar sesión", systemImage: "rectangle.portrait.and.arrow.right")
                 }
             }
             .font(.footnote)

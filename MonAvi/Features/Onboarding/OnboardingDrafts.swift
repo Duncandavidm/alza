@@ -15,7 +15,7 @@ struct CommonBillDraft: Identifiable {
             CommonBillDraft(name: "Luz", category: .housing),
             CommonBillDraft(name: "Alquiler / Renta", category: .housing),
             CommonBillDraft(name: "Agua", category: .housing),
-            CommonBillDraft(name: "Telefono", category: .other),
+            CommonBillDraft(name: "Teléfono", category: .other),
             CommonBillDraft(name: "Internet", category: .other),
         ]
     }

@@ -72,7 +72,7 @@ final class AuthViewModel: ObservableObject {
                     credentials: .init(provider: .apple, idToken: idToken, nonce: nonce)
                 )
             } catch {
-                errorMessage = "No se pudo iniciar sesion con Apple: \(error.localizedDescription)"
+                errorMessage = "No se pudo iniciar sesión con Apple: \(error.localizedDescription)"
             }
         }
     }
@@ -105,7 +105,7 @@ final class AuthViewModel: ObservableObject {
             case .signUp:
                 let response = try await supabase.auth.signUp(email: trimmedEmail, password: password)
                 if response.session == nil {
-                    infoMessage = "Te mandamos un correo a \(trimmedEmail) para confirmar tu cuenta. Confirma y vuelve a iniciar sesion."
+                    infoMessage = "Te mandamos un correo a \(trimmedEmail) para confirmar tu cuenta. Confirma y vuelve a iniciar sesión."
                     emailAuthMode = .signIn
                     password = ""
                     confirmPassword = ""

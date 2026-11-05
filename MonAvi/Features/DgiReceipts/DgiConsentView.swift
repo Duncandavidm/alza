@@ -19,9 +19,9 @@ struct DgiConsentView: View {
                     Text("Antes de escanear tu primera factura")
                         .font(.title2.weight(.bold))
 
-                    bullet("Guardamos el CUFE (codigo unico), el RUC, la sucursal y la fecha de la factura — no guardamos la foto del recibo.")
-                    bullet("El monto lo escribes tu. Revisamos tu factura contra la DGI varias veces al dia (no es al instante) y, en cuanto la confirma, acreditamos los puntos.")
-                    bullet("Verificamos cada factura contra la pagina publica de la DGI (dgi-fep.mef.gob.pa) — nunca contra otra fuente.")
+                    bullet("Guardamos el CUFE (código único), el RUC, la sucursal y la fecha de la factura — no guardamos la foto del recibo.")
+                    bullet("El monto lo escribes tu. Revisamos tu factura contra la DGI varias veces al día (no es al instante) y, en cuanto la confirma, acreditamos los puntos.")
+                    bullet("Verificamos cada factura contra la página pública de la DGI (dgi-fep.mef.gob.pa) — nunca contra otra fuente.")
                     bullet("Cada factura solo se puede registrar una vez en toda la app, aunque la escanee otra persona.")
 
                     if let errorMessage = viewModel.errorMessage {

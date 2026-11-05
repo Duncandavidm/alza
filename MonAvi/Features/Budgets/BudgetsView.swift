@@ -11,9 +11,9 @@ struct BudgetsView: View {
             List {
                 if viewModel.progresses.isEmpty && !viewModel.isLoading {
                     ContentUnavailableView(
-                        "Sin presupuestos todavia",
+                        "Sin presupuestos todavía",
                         systemImage: "chart.bar.fill",
-                        description: Text("Ponle un limite semanal o mensual a una categoria para no pasarte.")
+                        description: Text("Ponle un límite semanal o mensual a una categoría para no pasarte.")
                     )
                 }
 

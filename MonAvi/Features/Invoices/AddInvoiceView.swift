@@ -42,7 +42,7 @@ struct AddInvoiceView: View {
 
             Section("Cliente") {
                 TextField("Nombre del cliente", text: $customerName)
-                TextField("Telefono o correo (opcional)", text: $customerContact)
+                TextField("Teléfono o correo (opcional)", text: $customerContact)
             }
 
             Section("Cuenta donde recibes el pago") {
@@ -71,7 +71,7 @@ struct AddInvoiceView: View {
             Section("Items") {
                 ForEach($items) { $item in
                     VStack(alignment: .leading, spacing: 6) {
-                        TextField("Descripcion", text: $item.description)
+                        TextField("Descripción", text: $item.description)
                         HStack {
                             TextField("Cantidad", text: $item.quantityText)
                                 .keyboardType(.decimalPad)

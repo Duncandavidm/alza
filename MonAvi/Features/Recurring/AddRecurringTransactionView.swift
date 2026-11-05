@@ -35,13 +35,13 @@ struct AddRecurringTransactionView: View {
                 TextField("Monto", text: $amountText)
                     .keyboardType(.decimalPad)
 
-                Picker("Categoria (opcional)", selection: $category) {
+                Picker("Categoría (opcional)", selection: $category) {
                     ForEach(TransactionCategory.allCases) { category in
                         Text("\(category.emoji) \(category.rawValue)").tag(category)
                     }
                 }
 
-                Stepper("Dia del mes: \(dayOfMonth)", value: $dayOfMonth, in: 1...28)
+                Stepper("Día del mes: \(dayOfMonth)", value: $dayOfMonth, in: 1...28)
 
                 if let errorMessage {
                     Text(errorMessage).foregroundStyle(.red)

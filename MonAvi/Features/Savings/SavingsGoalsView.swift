@@ -16,7 +16,7 @@ struct SavingsGoalsView: View {
                 ContentUnavailableView(
                     "Sin metas de ahorro",
                     systemImage: "target",
-                    description: Text("Crea una meta — un carro, un TV, un viaje — y MonAvi te dice cuanto ahorrar cada mes para llegar a tiempo.")
+                    description: Text("Crea una meta — un carro, un TV, un viaje — y MonAvi te dice cuánto ahorrar cada mes para llegar a tiempo.")
                 )
             }
 
@@ -145,7 +145,7 @@ private struct ContributeToGoalView: View {
                     Text("Aporte a \"\(goal.name)\"")
                 } footer: {
                     if goal.accountId != nil {
-                        Text("Se registrara tambien como movimiento en la cuenta vinculada.")
+                        Text("Se registrará también como movimiento en la cuenta vinculada.")
                     }
                 }
 

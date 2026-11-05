@@ -7,17 +7,17 @@ extension DgiUrlParseError {
     var userMessage: String {
         switch self {
         case .notDgiHost:
-            return "Ese codigo no es de una factura electronica de la DGI."
+            return "Ese código no es de una factura electrónica de la DGI."
         case .missingParams:
-            return "El codigo QR esta incompleto."
+            return "El código QR está incompleto."
         case .notProduction:
-            return "Ese codigo es de ambiente de pruebas, no de una factura real."
+            return "Ese código es de ambiente de pruebas, no de una factura real."
         case .cufeWrongLength, .cufeBadPrefix, .cufeMalformed:
-            return "El codigo de la factura (CUFE) no tiene el formato esperado."
+            return "El código de la factura (CUFE) no tiene el formato esperado."
         case .ambienteMismatch, .jwtFieldMismatch:
-            return "Los datos del codigo QR no coinciden entre si — podria estar alterado."
+            return "Los datos del código QR no coinciden entre sí — podría estar alterado."
         case .jwtMalformed:
-            return "No se pudo leer la firma del codigo QR."
+            return "No se pudo leer la firma del código QR."
         }
     }
 }
@@ -88,7 +88,7 @@ final class DgiReceiptsViewModel: ObservableObject {
                 .execute()
             hasConsented = true
         } catch {
-            errorMessage = "No se pudo guardar tu confirmacion: \(error.localizedDescription)"
+            errorMessage = "No se pudo guardar tu confirmación: \(error.localizedDescription)"
         }
     }
 
@@ -112,9 +112,9 @@ final class DgiReceiptsViewModel: ObservableObject {
 
         switch DgiReceiptValidation.checkFreshness(fechaISO: parsed.fields.fechaISO) {
         case .future:
-            return .invalid("Esta factura tiene fecha futura — revisa que sea el codigo correcto.")
+            return .invalid("Esta factura tiene fecha futura — revisa que sea el código correcto.")
         case .tooOld:
-            return .invalid("Esta factura tiene mas de \(DgiReceiptValidation.maxDaysInPast) dias — ya no se puede registrar por este medio.")
+            return .invalid("Esta factura tiene más de \(DgiReceiptValidation.maxDaysInPast) días — ya no se puede registrar por este medio.")
         case .invalidDate:
             return .invalid("No se pudo leer la fecha de la factura.")
         case .ok:

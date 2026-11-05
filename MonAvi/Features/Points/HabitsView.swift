@@ -23,7 +23,7 @@ struct HabitsView: View {
                     HStack(spacing: 10) {
                         Text("🔥").font(.largeTitle)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("\(streakDays) dia\(streakDays == 1 ? "" : "s") seguidos")
+                            Text("\(streakDays) día\(streakDays == 1 ? "" : "s") seguidos")
                                 .font(.title3.weight(.bold))
                             Text("Anotando al menos un movimiento")
                                 .font(.caption)

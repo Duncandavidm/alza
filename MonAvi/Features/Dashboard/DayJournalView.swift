@@ -80,7 +80,7 @@ struct DayJournalView: View {
                             if isClosingDay {
                                 ProgressView()
                             } else {
-                                Text("Cerrar el dia")
+                                Text("Cerrar el día")
                             }
                         }
                         .disabled(isClosingDay || viewModel.todayTransactions.isEmpty)
@@ -158,7 +158,7 @@ struct DayJournalView: View {
                     .frame(width: 38, height: 38)
             }
             .background(Circle().fill(Color(.secondarySystemBackground)))
-            .accessibilityLabel("Ver otro dia")
+            .accessibilityLabel("Ver otro día")
 
             NavigationLink {
                 SettingsView()
@@ -269,10 +269,10 @@ struct DayJournalView: View {
             HStack(spacing: 10) {
                 Text("⏳")
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Tu suscripcion no se va a renovar")
+                    Text("Tu suscripción no se va a renovar")
                         .font(.subheadline.weight(.medium))
                     if let endDate = appState.subscriptionStore.currentPeriodEndDate {
-                        Text("Finaliza el \(endDate.formatted(date: .long, time: .omitted)) — hasta ahi tienes acceso completo.")
+                        Text("Finaliza el \(endDate.formatted(date: .long, time: .omitted)) — hasta ahí tienes acceso completo.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -361,7 +361,7 @@ struct DayJournalView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(.orange)
 
-                Button("Recordarme despues") {
+                Button("Recordarme después") {
                     recurringViewModel.dismissReminder(for: item)
                 }
                 .buttonStyle(.bordered)
@@ -383,7 +383,7 @@ struct DayJournalView: View {
                     .foregroundStyle(.secondary)
 
                 if results.isEmpty && !viewModel.isSearching {
-                    Text("Nada por ahi.")
+                    Text("Nada por ahí.")
                         .foregroundStyle(.secondary)
                         .padding(.vertical, 8)
                 } else {
@@ -396,7 +396,7 @@ struct DayJournalView: View {
         } else {
             VStack(alignment: .leading, spacing: 4) {
                 if viewModel.todayTransactions.isEmpty && !viewModel.isLoading {
-                    Text(viewModel.isViewingToday ? "Todavia no has anotado nada hoy. Toca el + para empezar." : "No hay movimientos ese dia.")
+                    Text(viewModel.isViewingToday ? "Todavía no has anotado nada hoy. Toca el + para empezar." : "No hay movimientos ese día.")
                         .foregroundStyle(.secondary)
                         .padding(.vertical, 8)
                 } else {
@@ -550,7 +550,7 @@ struct DayJournalView: View {
     private var datePickerSheet: some View {
         NavigationStack {
             DatePicker(
-                "Elige un dia",
+                "Elige un día",
                 selection: Binding(
                     get: { viewModel.selectedDate },
                     set: { newValue in
@@ -564,7 +564,7 @@ struct DayJournalView: View {
             )
             .datePickerStyle(.graphical)
             .padding()
-            .navigationTitle("Ver otro dia")
+            .navigationTitle("Ver otro día")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

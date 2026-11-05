@@ -224,7 +224,7 @@ final class OnboardingViewModel: ObservableObject {
 
             return true
         } catch {
-            errorMessage = "No se pudo guardar tu informacion: \(error.localizedDescription)"
+            errorMessage = "No se pudo guardar tu información: \(error.localizedDescription)"
             return false
         }
     }

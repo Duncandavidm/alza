@@ -104,7 +104,7 @@ struct InvoiceDocumentView: View {
     private var itemsTable: some View {
         VStack(spacing: 6) {
             HStack {
-                Text("Descripcion").font(.system(.caption, design: font, weight: .bold))
+                Text("Descripción").font(.system(.caption, design: font, weight: .bold))
                 Spacer()
                 Text("Cant.").font(.system(.caption, design: font, weight: .bold)).frame(width: 36)
                 Text("Total").font(.system(.caption, design: font, weight: .bold)).frame(width: 64, alignment: .trailing)

@@ -15,7 +15,7 @@ struct SettingsView: View {
                 Section("Preferencias") {
                     Toggle("Modo avanzado", isOn: $isAdvancedMode)
                     Text(isAdvancedMode
-                        ? "Ves categoria y etiquetas al anotar un movimiento detallado."
+                        ? "Ves categoría y etiquetas al anotar un movimiento detallado."
                         : "Solo lo esencial al anotar: cuenta, tipo y monto.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -25,14 +25,14 @@ struct SettingsView: View {
                     notificationStatusRow
 
                     Stepper(
-                        "Avisar \(reminderLeadDays) dia\(reminderLeadDays == 1 ? "" : "s") antes",
+                        "Avisar \(reminderLeadDays) día\(reminderLeadDays == 1 ? "" : "s") antes",
                         value: $reminderLeadDays,
                         in: NotificationManager.leadDaysRange
                     )
                 } header: {
                     Text("Notificaciones")
                 } footer: {
-                    Text("Te avisamos cuando una cuenta por pagar o una factura esta por vencer (y el dia que vence), cuando te toca un pago fijo del mes, y que pagar primero cada vez que anotas un ingreso.")
+                    Text("Te avisamos cuando una cuenta por pagar o una factura está por vencer (y el día que vence), cuando te toca un pago fijo del mes, y qué pagar primero cada vez que anotas un ingreso.")
                 }
 
                 Section {
@@ -107,10 +107,10 @@ struct SettingsView: View {
                         Label("Ayuda y preguntas frecuentes", systemImage: "questionmark.circle.fill")
                     }
                     Link(destination: Config.privacyPolicyURL) {
-                        Label("Politica de privacidad", systemImage: "hand.raised.fill")
+                        Label("Política de privacidad", systemImage: "hand.raised.fill")
                     }
                     Link(destination: Config.termsOfUseURL) {
-                        Label("Terminos de uso", systemImage: "doc.text.fill")
+                        Label("Términos de uso", systemImage: "doc.text.fill")
                     }
                     if let mailURL = URL(string: "mailto:\(Config.supportEmail)") {
                         Link(destination: mailURL) {
@@ -140,14 +140,14 @@ struct SettingsView: View {
                     }
                 }
 
-                Section("Suscripcion") {
+                Section("Suscripción") {
                     switch appState.subscriptionStatus {
                     case .active(let expiresAt):
                         LabeledContent("Estado", value: "Activa")
                         let periodEndDate = appState.subscriptionStore.currentPeriodEndDate ?? expiresAt
                         if appState.subscriptionStore.willAutoRenew == false {
                             if let periodEndDate {
-                                Text("Tu suscripcion no se va a renovar. Finaliza el \(periodEndDate.formatted(date: .long, time: .omitted)) — hasta esa fecha sigues con acceso completo.")
+                                Text("Tu suscripción no se va a renovar. Finaliza el \(periodEndDate.formatted(date: .long, time: .omitted)) — hasta esa fecha sigues con acceso completo.")
                                     .font(.footnote)
                                     .foregroundStyle(MonAviBrand.alert)
                             }
@@ -161,10 +161,10 @@ struct SettingsView: View {
                     case .revoked:
                         LabeledContent("Estado", value: "Revocada")
                     case .none, .unknown:
-                        LabeledContent("Estado", value: "Sin suscripcion")
+                        LabeledContent("Estado", value: "Sin suscripción")
                     }
 
-                    Button("Administrar suscripcion") {
+                    Button("Administrar suscripción") {
                         Task { await appState.subscriptionStore.openManageSubscriptions() }
                     }
 
@@ -187,7 +187,7 @@ struct SettingsView: View {
                         if isSigningOut {
                             ProgressView()
                         } else {
-                            Label("Cerrar sesion", systemImage: "rectangle.portrait.and.arrow.right")
+                            Label("Cerrar sesión", systemImage: "rectangle.portrait.and.arrow.right")
                         }
                     }
                     .disabled(isSigningOut)

@@ -22,15 +22,15 @@ struct MFAChallengeView: View {
                     .foregroundStyle(MonAviBrand.primary)
 
                 VStack(spacing: 6) {
-                    Text("Verificacion en 2 pasos")
+                    Text("Verificación en 2 pasos")
                         .font(.system(.title3, design: MonAviBrand.fontDesign, weight: .bold))
-                    Text("Escribe el codigo de 6 digitos de tu app de autenticacion.")
+                    Text("Escribe el código de 6 dígitos de tu app de autenticación.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
 
-                TextField("Codigo de 6 digitos", text: $code)
+                TextField("Código de 6 dígitos", text: $code)
                     .keyboardType(.numberPad)
                     .textContentType(.oneTimeCode)
                     .multilineTextAlignment(.center)
@@ -66,7 +66,7 @@ struct MFAChallengeView: View {
                         isSigningOut = false
                     }
                 } label: {
-                    if isSigningOut { ProgressView() } else { Text("Cerrar sesion") }
+                    if isSigningOut { ProgressView() } else { Text("Cerrar sesión") }
                 }
                 .font(.footnote)
                 .disabled(isSigningOut)
@@ -85,13 +85,13 @@ struct MFAChallengeView: View {
 
         do {
             guard let factor = try await MFAService.listVerifiedFactors().first else {
-                errorMessage = "No se encontro tu factor de verificacion."
+                errorMessage = "No se encontró tu factor de verificación."
                 return
             }
             try await MFAService.verify(factorId: factor.id, code: code)
             await appState.refreshMFAStatus()
         } catch {
-            errorMessage = "Codigo incorrecto o expirado. Intenta de nuevo."
+            errorMessage = "Código incorrecto o expirado. Intenta de nuevo."
         }
     }
 }

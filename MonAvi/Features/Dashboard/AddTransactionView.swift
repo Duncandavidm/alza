@@ -63,10 +63,10 @@ struct AddTransactionView: View {
                 TextField("Monto", text: $amountText)
                     .keyboardType(.decimalPad)
 
-                TextField("Descripcion (opcional)", text: $description)
+                TextField("Descripción (opcional)", text: $description)
 
                 if isAdvancedMode {
-                    Picker("Categoria (opcional)", selection: $category) {
+                    Picker("Categoría (opcional)", selection: $category) {
                         ForEach(sortedCategories) { category in
                             Text("\(category.emoji) \(category.rawValue)").tag(category)
                         }

@@ -39,7 +39,7 @@ struct BusinessSettingsView: View {
                 TextField("Nombre del negocio", text: $viewModel.businessName)
                 TextField("NIT / identificacion fiscal", text: $viewModel.taxId)
                 TextField("Direccion", text: $viewModel.address)
-                TextField("Telefono", text: $viewModel.phone)
+                TextField("Teléfono", text: $viewModel.phone)
                     .keyboardType(.phonePad)
             }
 
@@ -58,7 +58,7 @@ struct BusinessSettingsView: View {
             Section {
                 brandPreview
             } header: {
-                Text("Asi se va a ver en tus facturas")
+                Text("Así se va a ver en tus facturas")
             }
 
             if let errorMessage = viewModel.errorMessage {

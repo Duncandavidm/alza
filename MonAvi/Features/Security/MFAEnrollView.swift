@@ -34,7 +34,7 @@ struct MFAEnrollView: View {
                                     .resizable()
                                     .frame(width: 200, height: 200)
                             }
-                            Text("Escanea este codigo con Google Authenticator, Authy, 1Password o la app de autenticacion que prefieras.")
+                            Text("Escanea este código con Google Authenticator, Authy, 1Password o la app de autenticación que prefieras.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                                 .multilineTextAlignment(.center)
@@ -45,7 +45,7 @@ struct MFAEnrollView: View {
 
                     Section("¿No puedes escanear?") {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Escribe este codigo a mano en tu app:")
+                            Text("Escribe este código a mano en tu app:")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                             Text(enrollment.secret)
@@ -54,8 +54,8 @@ struct MFAEnrollView: View {
                         }
                     }
 
-                    Section("Confirma el codigo") {
-                        TextField("Codigo de 6 digitos", text: $code)
+                    Section("Confirma el código") {
+                        TextField("Código de 6 dígitos", text: $code)
                             .keyboardType(.numberPad)
                             .textContentType(.oneTimeCode)
                     }
@@ -67,7 +67,7 @@ struct MFAEnrollView: View {
                     }
                 }
             }
-            .navigationTitle("Verificacion en 2 pasos")
+            .navigationTitle("Verificación en 2 pasos")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -105,7 +105,7 @@ struct MFAEnrollView: View {
             onEnrolled()
             dismiss()
         } catch {
-            errorMessage = "Codigo incorrecto o expirado. Intenta de nuevo."
+            errorMessage = "Código incorrecto o expirado. Intenta de nuevo."
         }
     }
 }

@@ -12,7 +12,7 @@ struct RecurringTransactionsView: View {
         List {
             if viewModel.items.isEmpty && !viewModel.isLoading {
                 ContentUnavailableView(
-                    "Sin recurrentes todavia",
+                    "Sin recurrentes todavía",
                     systemImage: "arrow.trianglehead.2.clockwise",
                     description: Text("Agrega tus pagos fijos (renta, suscripciones) y te los recordamos cada mes.")
                 )
@@ -36,7 +36,7 @@ struct RecurringTransactionsView: View {
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(item.name).font(.body)
-                        Text("\(item.category ?? item.movementType.displayName) · dia \(item.dayOfMonth)")
+                        Text("\(item.category ?? item.movementType.displayName) · día \(item.dayOfMonth)")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

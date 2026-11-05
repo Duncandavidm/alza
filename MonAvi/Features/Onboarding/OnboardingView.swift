@@ -86,14 +86,14 @@ struct OnboardingView: View {
             .padding(.vertical, 8)
         }
 
-        Section("¿Como te llamas?") {
+        Section("¿Cómo te llamas?") {
             TextField("Tu nombre", text: $viewModel.fullName)
         }
     }
 
     private var accountStep: some View {
         Section("Tu cuenta principal") {
-            Text("¿De donde sale y entra la mayoria de tu dinero? (banco, efectivo...)")
+            Text("¿De dónde sale y entra la mayoría de tu dinero? (banco, efectivo...)")
                 .font(.caption)
                 .foregroundStyle(.secondary)
             TextField("ej. Cuenta de banco, Efectivo", text: $viewModel.accountName)
@@ -104,14 +104,14 @@ struct OnboardingView: View {
         Section("¿Tienes un salario u otro ingreso fijo?") {
             Toggle("Si, tengo un ingreso fijo", isOn: $viewModel.hasFixedIncome)
             if viewModel.hasFixedIncome {
-                AmountField(placeholder: "¿Cuanto? (por mes)", text: $viewModel.fixedIncomeAmountText)
-                DayOfMonthField(label: "Dia de pago", day: $viewModel.fixedIncomeDay)
+                AmountField(placeholder: "¿Cuánto? (por mes)", text: $viewModel.fixedIncomeAmountText)
+                DayOfMonthField(label: "Día de pago", day: $viewModel.fixedIncomeDay)
             }
         }
     }
 
     private var variableIncomeStep: some View {
-        Section("¿Tienes otros ingresos que varian?") {
+        Section("¿Tienes otros ingresos que varían?") {
             Text("Ventas, trabajos independientes, comisiones — cosas que no son siempre el mismo monto.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -125,7 +125,7 @@ struct OnboardingView: View {
 
     private var commonBillsStep: some View {
         Section("¿Cuales de estas pagas cada mes?") {
-            Text("Marca las que apliquen, cambia el nombre si no coincide, y pon cuanto pagas. Si te falta alguna, agregala abajo.")
+            Text("Marca las que apliquen, cambia el nombre si no coincide, y pon cuánto pagas. Si te falta alguna, agrégala abajo.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
@@ -139,7 +139,7 @@ struct OnboardingView: View {
                     }
                     if bill.isEnabled {
                         AmountField(placeholder: "Monto mensual", text: $bill.amountText)
-                        DayOfMonthField(label: "Dia aproximado", day: $bill.dayOfMonth)
+                        DayOfMonthField(label: "Día aproximado", day: $bill.dayOfMonth)
                     }
                 }
                 .padding(.vertical, 2)
@@ -157,7 +157,7 @@ struct OnboardingView: View {
     }
 
     private var subscriptionsStep: some View {
-        Section("¿Que suscripciones tienes?") {
+        Section("¿Qué suscripciones tienes?") {
             Text("Netflix, Spotify, gimnasio, software — lo que pagues seguido.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -174,14 +174,14 @@ struct OnboardingView: View {
             Button {
                 viewModel.subscriptions.append(CustomFixedItemDraft())
             } label: {
-                Label("Agregar suscripcion", systemImage: "plus.circle")
+                Label("Agregar suscripción", systemImage: "plus.circle")
             }
         }
     }
 
     private var otherFixedItemsStep: some View {
         Section("¿Otras cuentas fijas cada mes?") {
-            Text("Colegio o matricula de tus hijos, mesada que das, prestamos — lo que se repita mes a mes.")
+            Text("Colegio o matricula de tus hijos, mesada que das, préstamos — lo que se repita mes a mes.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
@@ -218,27 +218,27 @@ struct OnboardingView: View {
                 }
             }
 
-            TextField("Cuantos dependen de ti (hijos, etc.)", text: $viewModel.dependentsCountText)
+            TextField("Cuántos dependen de ti (hijos, etc.)", text: $viewModel.dependentsCountText)
                 .keyboardType(.numberPad)
 
-            TextField("A que te dedicas (ej. dueño de un negocio, empleado...)", text: $viewModel.occupation, axis: .vertical)
+            TextField("A qué te dedicas (ej. dueño de un negocio, empleado...)", text: $viewModel.occupation, axis: .vertical)
                 .lineLimit(2...4)
         }
     }
 
     private var debtsStep: some View {
         Section("¿Tienes deudas activas?") {
-            Text("Tarjetas de credito, prestamos, sobregiros — con esto MonAvi te puede avisar cual pagar primero segun la tasa de interes y si esta en mora.")
+            Text("Tarjetas de crédito, préstamos, sobregiros — con esto MonAvi te puede avisar cuál pagar primero según la tasa de interés y si está en mora.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
             ForEach($viewModel.debts) { $debt in
                 VStack(alignment: .leading, spacing: 6) {
-                    TextField("Acreedor (ej. Tarjeta de credito)", text: $debt.creditor)
+                    TextField("Acreedor (ej. Tarjeta de crédito)", text: $debt.creditor)
                     AmountField(placeholder: "Saldo actual", text: $debt.balanceText)
                     HStack {
-                        PercentField(placeholder: "Interes /mes (opcional)", text: $debt.interestRateText)
-                        AmountField(placeholder: "Pago minimo (opcional)", text: $debt.minimumPaymentText)
+                        PercentField(placeholder: "Interés /mes (opcional)", text: $debt.interestRateText)
+                        AmountField(placeholder: "Pago mínimo (opcional)", text: $debt.minimumPaymentText)
                     }
                     Toggle("Esta en mora / atrasada", isOn: $debt.isOverdue)
                 }
@@ -258,7 +258,7 @@ struct OnboardingView: View {
         Section("¿Tienes ahorros o inversiones actuales?") {
             Toggle("Si, tengo algo ahorrado", isOn: $viewModel.hasSavings)
             if viewModel.hasSavings {
-                AmountField(placeholder: "¿Cuanto tienes ahorrado/invertido?", text: $viewModel.savingsAmountText)
+                AmountField(placeholder: "¿Cuánto tienes ahorrado/invertido?", text: $viewModel.savingsAmountText)
                 TextField("Nota (ej. meta banco, disponible en diciembre)", text: $viewModel.savingsNote, axis: .vertical)
                     .lineLimit(2...4)
             }
@@ -266,7 +266,7 @@ struct OnboardingView: View {
     }
 
     private var riskToleranceStep: some View {
-        Section("¿Que tanto riesgo te sientes comodo tomando al invertir?") {
+        Section("¿Qué tanto riesgo te sientes cómodo tomando al invertir?") {
             Picker("Tolerancia al riesgo", selection: $viewModel.riskTolerance) {
                 Text("Prefiero no decir").tag(RiskTolerance?.none)
                 ForEach(RiskTolerance.allCases) { tolerance in

@@ -31,7 +31,7 @@ struct SponsoredSavingsConsentView: View {
             Form {
                 if bankPartners.isEmpty && !isLoading {
                     Section {
-                        Text("Todavia no hay ningun banco patrocinador disponible.")
+                        Text("Todavía no hay ningún banco patrocinador disponible.")
                             .foregroundStyle(.secondary)
                     }
                 } else {
@@ -45,7 +45,7 @@ struct SponsoredSavingsConsentView: View {
                         TextField("Identificador que te dio el banco", text: $externalAccountRef)
                             .autocorrectionDisabled()
                     } footer: {
-                        Text("Nunca pidas ni escribas tu numero de cuenta real aqui — usa solo el identificador o token que tu banco te entrego para este programa.")
+                        Text("Nunca pidas ni escribas tu número de cuenta real aquí — usa solo el identificador o token que tu banco te entregó para este programa.")
                     }
 
                     Section {

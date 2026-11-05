@@ -12,7 +12,7 @@ struct ScanInvoiceView: View {
 
     private enum Mode: String, CaseIterable, Identifiable {
         case camera = "Camara"
-        case manual = "Pegar codigo"
+        case manual = "Pegar código"
         var id: String { rawValue }
     }
 
@@ -83,7 +83,7 @@ struct ScanInvoiceView: View {
 
     private var manualSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Pega el link completo del codigo QR, o solo el CUFE de 66 caracteres.")
+            Text("Pega el link completo del código QR, o solo el CUFE de 66 caracteres.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
 
@@ -138,7 +138,7 @@ struct ScanInvoiceView: View {
     private func handleGalleryPick(_ item: PhotosPickerItem?) async {
         guard let item, let data = try? await item.loadTransferable(type: Data.self) else { return }
         guard let payload = GalleryQRScanner.scan(imageData: data) else {
-            invalidMessage = "No se encontro un codigo QR en esa foto."
+            invalidMessage = "No se encontró un código QR en esa foto."
             return
         }
         handleScan(payload)

@@ -13,7 +13,7 @@ struct FeedbackView: View {
     var body: some View {
         List {
             Section {
-                TextField("¿Que te gustaria ver en MonAvi?", text: $draft, axis: .vertical)
+                TextField("¿Qué te gustaría ver en MonAvi?", text: $draft, axis: .vertical)
                     .lineLimit(3...6)
                     .focused($isDraftFocused)
 
@@ -28,7 +28,7 @@ struct FeedbackView: View {
                 }
                 .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSending)
             } footer: {
-                Text("Leemos cada sugerencia — nos ayuda a decidir que construir despues.")
+                Text("Leemos cada sugerencia — nos ayuda a decidir qué construir después.")
             }
 
             if !viewModel.suggestions.isEmpty {

@@ -20,7 +20,7 @@ struct SpendingInsightsView: View {
                 ContentUnavailableView(
                     "Sin gastos en este periodo",
                     systemImage: "chart.pie",
-                    description: Text("Cuando registres gastos, aqui veras en que se te va el dinero.")
+                    description: Text("Cuando registres gastos, aquí verás en qué se te va el dinero.")
                 )
             } else {
                 Section {
@@ -30,7 +30,7 @@ struct SpendingInsightsView: View {
                             innerRadius: .ratio(0.6),
                             angularInset: 1.5
                         )
-                        .foregroundStyle(by: .value("Categoria", item.category))
+                        .foregroundStyle(by: .value("Categoría", item.category))
                         .cornerRadius(4)
                     }
                     .frame(height: 220)
@@ -39,20 +39,20 @@ struct SpendingInsightsView: View {
                     Text("Total gastado: \(viewModel.totalSpend, format: .currency(code: "USD"))")
                 }
 
-                Section("Top 3 categorias") {
+                Section("Top 3 categorías") {
                     ForEach(viewModel.topCategories) { item in
                         categoryRow(item)
                     }
                 }
 
-                Section("Todas las categorias") {
+                Section("Todas las categorías") {
                     ForEach(viewModel.categorySpends) { item in
                         categoryRow(item)
                     }
                 }
             }
         }
-        .navigationTitle("Gastos por categoria")
+        .navigationTitle("Gastos por categoría")
         .task {
             guard let userId = appState.currentUserId else { return }
             await viewModel.refresh(userId: userId)

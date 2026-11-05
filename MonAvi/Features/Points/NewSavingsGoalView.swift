@@ -26,7 +26,7 @@ struct NewSavingsGoalView: View {
                 } header: {
                     Text("Meta de este mes")
                 } footer: {
-                    Text("El banco reporta tu saldo PROMEDIO del mes al terminar el periodo — no cuenta un deposito de un solo dia.")
+                    Text("El banco reporta tu saldo PROMEDIO del mes al terminar el periodo — no cuenta un depósito de un solo día.")
                 }
 
                 if let errorMessage {

@@ -48,6 +48,17 @@ compilar ni correr nada de esto. Todo el codigo se escribio a mano sin poder
 compilarlo — la primera vez que abras el proyecto en Xcode van a aparecer
 errores que resolver.
 
+## Actualizar el proyecto en tu Mac (un solo comando)
+
+```bash
+cd ~/alza && ./actualizar.sh
+```
+
+Baja los cambios de GitHub, sube los commits locales que falten (por
+ejemplo los de Claude en Xcode), regenera `MonAvi.xcodeproj` con
+XcodeGen y abre Xcode. Con `./actualizar.sh --probar` ademas compila y
+corre los tests en el simulador antes de abrir.
+
 ## Backend (ya aprovisionado)
 
 Proyecto Supabase nuevo, independiente del de maday:

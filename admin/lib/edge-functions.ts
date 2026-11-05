@@ -1,6 +1,6 @@
 import "server-only";
 
-type ReconcileFunctionName = "reconcile-card-transactions" | "reconcile-savings-reports";
+type ReconcileFunctionName = "reconcile-card-transactions" | "reconcile-savings-reports" | "verify-dgi-receipt";
 
 /// Llama a una de las Edge Functions operativas (ver supabase/functions)
 /// con el mismo header `x-admin-secret` que ellas exigen — este panel es

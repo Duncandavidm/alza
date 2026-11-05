@@ -12,13 +12,14 @@ async function countRows(table: string, filters: Record<string, string>): Promis
 }
 
 export default async function DashboardPage() {
-  const [pendingCard, ambiguousCard, pendingBank, budgetExhausted, activeMerchants, activeBanks] = await Promise.all([
+  const [pendingCard, ambiguousCard, pendingBank, budgetExhausted, activeMerchants, activeBanks, pendingDgi] = await Promise.all([
     countRows("card_transactions", { match_status: "pending_match" }),
     countRows("card_transactions", { match_status: "ambiguous" }),
     countRows("savings_bank_reports", { match_status: "pending_match" }),
     countRows("partner_merchant_offers", { status: "budget_exhausted" }),
     countRows("partner_merchants", { status: "active" }),
     countRows("bank_partners", { status: "active" }),
+    countRows("dgi_receipts", { status: "pendiente" }),
   ]);
 
   return (
@@ -31,6 +32,7 @@ export default async function DashboardPage() {
         <StatCard label="Compras ambiguas (revisar)" value={ambiguousCard} href="/alerts" warn={ambiguousCard > 0} />
         <StatCard label="Reportes de banco sin procesar" value={pendingBank} href="/bank-reports" />
         <StatCard label="Ofertas con presupuesto agotado" value={budgetExhausted} href="/alerts" warn={budgetExhausted > 0} />
+        <StatCard label="Facturas DGI pendientes" value={pendingDgi} href="/dgi-verification" />
       </div>
     </>
   );

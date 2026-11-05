@@ -11,6 +11,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
         <Link href="/card-reports">Reportes de tarjeta</Link>
         <Link href="/bank-partners">Bancos patrocinadores</Link>
         <Link href="/bank-reports">Reportes de banco</Link>
+        <Link href="/dgi-verification">Facturas DGI</Link>
         <Link href="/alerts">Alertas</Link>
         <form action={logout}>
           <button type="submit" className="secondary">

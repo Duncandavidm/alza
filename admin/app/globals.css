@@ -126,9 +126,10 @@ button:disabled {
   border: 1px solid var(--border);
 }
 
-.badge.active, .badge.matched, .badge.met, .badge.confirmado { color: var(--success); border-color: var(--success); }
-.badge.paused, .badge.pending_match, .badge.active-goal { color: var(--warning); border-color: var(--warning); }
-.badge.ambiguous, .badge.unmatched, .badge.missed, .badge.budget_exhausted { color: var(--danger); border-color: var(--danger); }
+.badge.active, .badge.matched, .badge.met, .badge.confirmado, .badge.confirmada { color: var(--success); border-color: var(--success); }
+.badge.paused, .badge.pending_match, .badge.active-goal, .badge.pendiente { color: var(--warning); border-color: var(--warning); }
+.badge.ambiguous, .badge.unmatched, .badge.missed, .badge.budget_exhausted, .badge.rechazada { color: var(--danger); border-color: var(--danger); }
+.badge.expirada { color: var(--text-dim); }
 
 .error {
   color: var(--danger);

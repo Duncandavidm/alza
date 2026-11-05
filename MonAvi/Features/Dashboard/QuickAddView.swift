@@ -54,11 +54,16 @@ struct QuickAddView: View {
                         Text("¿Qué fue?")
                             .font(.headline)
                         TextField("ej. Compra de harina", text: $description)
-                            .textFieldStyle(.roundedBorder)
                             .font(.title3)
                             .focused($descriptionFocused)
                             .submitLabel(.done)
                             .onSubmit { descriptionFocused = false }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color(.secondarySystemBackground))
+                            )
                     }
 
                     VStack(alignment: .leading, spacing: 8) {

@@ -3,12 +3,13 @@ import SwiftUI
 /// Entrada unica a todo lo de puntos: el saldo real (ledger compartido
 /// entre todas las fuentes) y accesos a cada una.
 ///
-/// "Tarjeta en comercios aliados" (LinkedCardsView/PartnerOffersView) se
-/// quito de aqui a proposito — depender de que cada comercio suba su
-/// reporte de ventas resulto poco practico para lanzar. El codigo y el
-/// backend (migracion 0024, reconcile-card-transactions) se quedan tal
-/// cual, sin usarse, por si se retoma mas adelante con un comercio que
-/// si quiera participar.
+/// "Tarjeta en comercios aliados" ya no tiene entrada propia aqui ni
+/// requiere vincular tarjeta: verify-dgi-receipt revisa la "Forma de
+/// Pago" que reporta la propia factura DGI escaneada en "Facturas que
+/// suman" y, si dice tarjeta y el RUC es un comercio aliado con oferta
+/// activa, acredita el bono ahi mismo (entra al mismo saldo de abajo).
+/// LinkedCardsView/PartnerOffersView (vincular tarjeta a mano, navegar
+/// ofertas) quedan sin usarse — ese flujo manual ya no hace falta.
 struct PointsHubView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = PointsViewModel()

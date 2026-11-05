@@ -70,6 +70,11 @@ struct DgiReceiptsListView: View {
             Text(receipt.status.statusExplanation)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            if let paymentMethod = receipt.paymentMethod, !paymentMethod.isEmpty {
+                Text("Forma de pago (DGI): \(paymentMethod)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(.vertical, 4)
     }

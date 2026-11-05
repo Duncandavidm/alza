@@ -81,6 +81,10 @@ struct DgiReceipt: Codable, Identifiable, Hashable {
 
     var status: DgiReceiptStatus
     var confirmedAmount: Decimal?
+    /// Forma de pago que reporto la propia factura DGI (ej. "Tarjeta
+    /// Crédito") — nil hasta que se confirma. Si incluye "tarjeta", ya
+    /// se evaluo el bono de comercio aliado (ver verify-dgi-receipt).
+    var paymentMethod: String?
 
     let scannedAt: Date
     var dgiCheckedAt: Date?
@@ -111,6 +115,7 @@ struct DgiReceipt: Codable, Identifiable, Hashable {
         case digitoVerificador = "digito_verificador"
         case status
         case confirmedAmount = "confirmed_amount"
+        case paymentMethod = "payment_method"
         case scannedAt = "scanned_at"
         case dgiCheckedAt = "dgi_checked_at"
         case dgiCheckCount = "dgi_check_count"

@@ -1,0 +1,362 @@
+// Edge Function: verify-dgi-receipt
+//
+// "Facturas que suman" Fase 2 (verificacion real) + Fase 3 (puntos).
+// Job operativo llamado por pg_cron (ver migracion 0029_dgi_verification,
+// cada 6 horas) — igual que reconcile-card-transactions/
+// reconcile-savings-reports, exige x-admin-secret, verify_jwt: false.
+//
+// Confirmado en vivo contra dgi-fep.mef.gob.pa (ver reporte de la
+// sesion, no es una suposicion): el link directo por CUFE
+// (/Consultas/FacturasPorCUFE/<CUFE> — exactamente el que trae el QR
+// corto y el CAFE impreso) responde 200 con la factura completa
+// server-rendered en un <div id="facturaHTML">, SIN pedir reCAPTCHA (a
+// diferencia del formulario de busqueda manual del sitio, que si lo
+// exige via AJAX). Si el CUFE no existe, ese div llega vacio — nunca
+// aparece el texto "CÓDIGO ÚNICO DE FACTURA ELECTRÓNICA" en la
+// respuesta. Esa presencia/ausencia es la señal de confirmada/no
+// encontrada que usa este archivo.
+//
+// Bonus confirmado en la misma respuesta: la factura trae "Forma de
+// Pago" (ej. "Tarjeta Crédito: 84.25"). Con esto, "tarjeta en comercios
+// aliados" ya NO necesita vincular tarjeta ni depender de que el
+// comercio suba un reporte de ventas: si el RUC de la factura es un
+// comercio aliado con oferta activa y la DGI dice que se pago con
+// tarjeta, se acreditan puntos de tarjeta directo — verificado por la
+// DGI, no por Visa/Mastercard ni por el comercio.
+
+import { createClient } from "jsr:@supabase/supabase-js@2";
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const ADMIN_JOB_SECRET = Deno.env.get("ADMIN_JOB_SECRET")!;
+
+const DGI_BASE = "https://dgi-fep.mef.gob.pa";
+const BATCH_SIZE = 20;
+// Pausa entre cada consulta — no hay razon para martillar un servidor
+// del gobierno mas rapido de lo que un usuario haria a mano.
+const DELAY_BETWEEN_REQUESTS_MS = 300;
+const CONFIRMATION_MARKER = "CÓDIGO ÚNICO DE FACTURA ELECTRÓNICA";
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Headers": "x-admin-secret, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+function jsonResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+  });
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// ---------------------------------------------------------------------
+// Parseo del HTML de la DGI — sin libreria de DOM (no hace falta: el
+// patron "ETIQUETA: <div ...>VALOR</div>" es consistente y suficiente
+// para lo que necesitamos).
+// ---------------------------------------------------------------------
+
+function isConfirmed(html: string): boolean {
+  return html.includes(CONFIRMATION_MARKER);
+}
+
+function extractLabeledAmount(html: string, label: string): number | null {
+  const pattern = new RegExp(`${label}:\\s*<div[^>]*>\\s*([0-9]+(?:\\.[0-9]+)?)\\s*</div>`, "i");
+  const match = html.match(pattern);
+  return match ? Number(match[1]) : null;
+}
+
+/// "Valor Total" es el monto antes de impuestos; "TOTAL PAGADO" (dentro
+/// de la seccion "Forma de Pago") es lo que de verdad se pago. Se usa
+/// TOTAL PAGADO cuando existe (factura al contado con forma de pago
+/// declarada) y Valor Total como respaldo (documentos sin esa seccion,
+/// ej. facturas de credito/al cobro).
+function extractConfirmedAmount(html: string): number | null {
+  return extractLabeledAmount(html, "TOTAL PAGADO") ?? extractLabeledAmount(html, "Valor Total");
+}
+
+/// Extrae las etiquetas de forma de pago (puede haber mas de una si el
+/// cliente pago mixto, ej. efectivo + tarjeta) — el texto entre el
+/// marcador <kbd>Forma de Pago</kbd> y la fila TOTAL PAGADO.
+function extractPaymentMethods(html: string): string[] {
+  const startMarker = "<kbd>Forma de Pago</kbd>";
+  const startIndex = html.indexOf(startMarker);
+  if (startIndex === -1) return [];
+  const endIndex = html.indexOf("TOTAL PAGADO", startIndex);
+  const section = endIndex === -1 ? html.slice(startIndex) : html.slice(startIndex, endIndex);
+
+  const methods: string[] = [];
+  const rowPattern = /([A-Za-zÁÉÍÓÚáéíóúÑñ .]+?):\s*<div[^>]*>\s*[0-9]+(?:\.[0-9]+)?\s*<\/div>/g;
+  let match: RegExpExecArray | null;
+  while ((match = rowPattern.exec(section)) !== null) {
+    methods.push(match[1].trim());
+  }
+  return methods;
+}
+
+function isCardPayment(paymentMethods: string[]): boolean {
+  return paymentMethods.some((method) => method.toLowerCase().includes("tarjeta"));
+}
+
+// ---------------------------------------------------------------------
+// Reglas / topes (points_rules + app_config, ver migraciones 0023 y
+// 0029 — configurable sin desplegar nada).
+// ---------------------------------------------------------------------
+
+async function getRule(
+  supabase: ReturnType<typeof createClient>,
+  source: string,
+  key: string,
+  fallback: number,
+): Promise<number> {
+  const { data } = await supabase
+    .from("points_rules")
+    .select("value")
+    .eq("source", source)
+    .eq("key", key)
+    .maybeSingle();
+  const value = data?.value;
+  return typeof value === "number" ? value : fallback;
+}
+
+async function getConfig(
+  supabase: ReturnType<typeof createClient>,
+  key: string,
+): Promise<unknown> {
+  const { data } = await supabase.from("app_config").select("value").eq("key", key).maybeSingle();
+  return data?.value;
+}
+
+async function pointsAlreadyToday(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  source: string,
+  occurredAt: string,
+): Promise<number> {
+  const dayStart = new Date(occurredAt);
+  dayStart.setUTCHours(0, 0, 0, 0);
+  const dayEnd = new Date(dayStart);
+  dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
+
+  const { data } = await supabase
+    .from("points_ledger")
+    .select("points")
+    .eq("user_id", userId)
+    .eq("source", source)
+    .gte("occurred_at", dayStart.toISOString())
+    .lt("occurred_at", dayEnd.toISOString());
+  return (data ?? []).reduce((sum: number, row: { points: number }) => sum + row.points, 0);
+}
+
+// ---------------------------------------------------------------------
+// Bono de "tarjeta en comercios aliados" — reusa partner_merchants/
+// partner_merchant_offers (migracion 0024), pero ya NO linked_cards: el
+// pago con tarjeta lo confirma la propia DGI en la factura, no hace
+// falta vincular ninguna tarjeta.
+// ---------------------------------------------------------------------
+
+async function awardCardBonusIfApplicable(
+  supabase: ReturnType<typeof createClient>,
+  receipt: { id: string; user_id: string; ruc: string; cufe: string },
+  amount: number,
+  paymentMethods: string[],
+  occurredAt: string,
+) {
+  if (!isCardPayment(paymentMethods)) return;
+
+  const { data: merchant } = await supabase
+    .from("partner_merchants")
+    .select("id, name, status")
+    .eq("ruc", receipt.ruc)
+    .eq("status", "active")
+    .maybeSingle();
+  if (!merchant) return;
+
+  const { data: offer } = await supabase
+    .from("partner_merchant_offers")
+    .select("*")
+    .eq("merchant_id", merchant.id)
+    .eq("status", "active")
+    .lte("starts_at", occurredAt)
+    .or(`ends_at.is.null,ends_at.gte.${occurredAt}`)
+    .order("starts_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!offer) return;
+
+  if (offer.min_amount && amount < Number(offer.min_amount)) return;
+
+  const rawPoints = offer.offer_type === "percent" ? amount * Number(offer.value) : Number(offer.value);
+  const points = Math.max(0, Math.floor(rawPoints));
+  if (points === 0) return;
+
+  if (offer.budget_total_points !== null && offer.budget_spent_points + points > offer.budget_total_points) {
+    await supabase.from("partner_merchant_offers").update({ status: "budget_exhausted" }).eq("id", offer.id);
+    return;
+  }
+
+  const dailyCap = await getRule(supabase, "tarjeta", "daily_cap_points_per_user", Number.POSITIVE_INFINITY);
+  const alreadyToday = await pointsAlreadyToday(supabase, receipt.user_id, "tarjeta", occurredAt);
+  if (alreadyToday + points > dailyCap) return;
+
+  await supabase.rpc("award_points", {
+    p_user_id: receipt.user_id,
+    p_source: "tarjeta",
+    p_external_ref: `factura:${receipt.cufe}:tarjeta`,
+    p_points: points,
+    p_status: "confirmado",
+    p_occurred_at: occurredAt,
+    p_metadata: { cufe: receipt.cufe, merchant: merchant.name, offerId: offer.id, viaFactura: true },
+  });
+
+  await supabase
+    .from("partner_merchant_offers")
+    .update({ budget_spent_points: offer.budget_spent_points + points })
+    .eq("id", offer.id);
+}
+
+// ---------------------------------------------------------------------
+// Reconciliacion de una factura pendiente.
+// ---------------------------------------------------------------------
+
+interface PendingReceipt {
+  id: string;
+  user_id: string;
+  cufe: string;
+  ruc: string;
+  scanned_at: string;
+  dgi_check_count: number;
+}
+
+async function processReceipt(
+  supabase: ReturnType<typeof createClient>,
+  receipt: PendingReceipt,
+  pointsPerDollar: number,
+  dailyCapFactura: number,
+  expireAfterDays: number,
+) {
+  const now = new Date();
+  const response = await fetch(`${DGI_BASE}/Consultas/FacturasPorCUFE/${receipt.cufe}`);
+  if (!response.ok) {
+    // Fallo transitorio (servidor caido, etc.) — no se cuenta como un
+    // intento real, se reintenta en la proxima corrida.
+    return;
+  }
+  const html = await response.text();
+
+  if (!isConfirmed(html)) {
+    const scannedAt = new Date(receipt.scanned_at);
+    const daysSinceScanned = (now.getTime() - scannedAt.getTime()) / (1000 * 60 * 60 * 24);
+    const newStatus = daysSinceScanned >= expireAfterDays ? "expirada" : "pendiente";
+    await supabase
+      .from("dgi_receipts")
+      .update({
+        status: newStatus,
+        dgi_checked_at: now.toISOString(),
+        dgi_check_count: receipt.dgi_check_count + 1,
+      })
+      .eq("id", receipt.id);
+    return;
+  }
+
+  const amount = extractConfirmedAmount(html);
+  const paymentMethods = extractPaymentMethods(html);
+
+  await supabase
+    .from("dgi_receipts")
+    .update({
+      status: "confirmada",
+      confirmed_amount: amount,
+      payment_method: paymentMethods.length > 0 ? paymentMethods.join(", ") : null,
+      dgi_checked_at: now.toISOString(),
+      dgi_check_count: receipt.dgi_check_count + 1,
+    })
+    .eq("id", receipt.id);
+
+  if (amount === null || amount <= 0) return;
+
+  const points = Math.max(0, Math.floor(amount * pointsPerDollar));
+  if (points > 0) {
+    const alreadyToday = await pointsAlreadyToday(supabase, receipt.user_id, "factura", receipt.scanned_at);
+    if (alreadyToday + points <= dailyCapFactura) {
+      await supabase.rpc("award_points", {
+        p_user_id: receipt.user_id,
+        p_source: "factura",
+        p_external_ref: `factura:${receipt.cufe}`,
+        p_points: points,
+        p_status: "confirmado",
+        p_occurred_at: receipt.scanned_at,
+        p_metadata: { cufe: receipt.cufe, confirmedAmount: amount, paymentMethod: paymentMethods },
+      });
+    }
+  }
+
+  await awardCardBonusIfApplicable(
+    supabase,
+    { id: receipt.id, user_id: receipt.user_id, ruc: receipt.ruc, cufe: receipt.cufe },
+    amount,
+    paymentMethods,
+    receipt.scanned_at,
+  );
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: CORS_HEADERS });
+  }
+
+  if (req.headers.get("x-admin-secret") !== ADMIN_JOB_SECRET) {
+    return jsonResponse({ error: "No autorizado" }, 401);
+  }
+
+  try {
+    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+
+    const verificationEnabled = await getConfig(supabase, "dgi_verification_enabled");
+    if (verificationEnabled !== true) {
+      return jsonResponse({ skipped: true, reason: "dgi_verification_enabled esta en false" });
+    }
+
+    const pointsPerDollar = await getRule(supabase, "factura", "points_per_dollar", 1);
+    const dailyCapFactura = await getRule(supabase, "factura", "daily_cap_points_per_user", 300);
+    const expireAfterDays = Number((await getConfig(supabase, "dgi_verification_expire_after_days")) ?? 7);
+
+    const { data, error } = await supabase
+      .from("dgi_receipts")
+      .select("id, user_id, cufe, ruc, scanned_at, dgi_check_count")
+      .eq("status", "pendiente")
+      .order("dgi_checked_at", { ascending: true, nullsFirst: true })
+      .limit(BATCH_SIZE);
+    if (error) throw error;
+
+    const pending: PendingReceipt[] = (data ?? []).map((row: Record<string, unknown>) => ({
+      id: row.id as string,
+      user_id: row.user_id as string,
+      cufe: row.cufe as string,
+      ruc: row.ruc as string,
+      scanned_at: row.scanned_at as string,
+      dgi_check_count: row.dgi_check_count as number,
+    }));
+
+    let processed = 0;
+    const errors: string[] = [];
+
+    for (const receipt of pending) {
+      try {
+        await processReceipt(supabase, receipt, pointsPerDollar, dailyCapFactura, expireAfterDays);
+        processed++;
+      } catch (recordError) {
+        errors.push(`${receipt.cufe}: ${String(recordError)}`);
+      }
+      await sleep(DELAY_BETWEEN_REQUESTS_MS);
+    }
+
+    return jsonResponse({ fetched: pending.length, processed, errors });
+  } catch (error) {
+    console.error(error);
+    return jsonResponse({ error: String(error) }, 500);
+  }
+});

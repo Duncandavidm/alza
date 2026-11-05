@@ -1,8 +1,14 @@
 import SwiftUI
 
 /// Entrada unica a todo lo de puntos: el saldo real (ledger compartido
-/// entre "Facturas que suman", tarjeta en comercios aliados, y mas
-/// adelante ahorro/habitos) y accesos a cada fuente.
+/// entre todas las fuentes) y accesos a cada una.
+///
+/// "Tarjeta en comercios aliados" (LinkedCardsView/PartnerOffersView) se
+/// quito de aqui a proposito — depender de que cada comercio suba su
+/// reporte de ventas resulto poco practico para lanzar. El codigo y el
+/// backend (migracion 0024, reconcile-card-transactions) se quedan tal
+/// cual, sin usarse, por si se retoma mas adelante con un comercio que
+/// si quiera participar.
 struct PointsHubView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = PointsViewModel()
@@ -18,18 +24,6 @@ struct PointsHubView: View {
                     DgiReceiptsListView()
                 } label: {
                     Label("Facturas que suman", systemImage: "qrcode.viewfinder")
-                }
-
-                NavigationLink {
-                    LinkedCardsView(viewModel: viewModel)
-                } label: {
-                    Label("Mis tarjetas", systemImage: "creditcard.fill")
-                }
-
-                NavigationLink {
-                    PartnerOffersView(viewModel: viewModel)
-                } label: {
-                    Label("Ofertas cerca", systemImage: "tag.fill")
                 }
 
                 NavigationLink {

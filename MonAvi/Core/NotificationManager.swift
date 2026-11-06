@@ -36,10 +36,28 @@ enum NotificationManager {
     /// - pagos fijos: 8 x 2 avisos (antes, el dia) = 16
     /// - facturas por cobrar: 6 x 2 avisos = 12
     /// - recordatorio diario de anotar: 7
-    private static let maxBills = 8
-    private static let maxRecurring = 8
-    private static let maxInvoices = 6
-    private static let dailyLogDays = 7
+    static let maxBills = 8
+    static let maxRecurring = 8
+    static let maxInvoices = 6
+    static let dailyLogDays = 7
+
+    /// Avisos que puede programar cada categoria por item (ver el desglose
+    /// de arriba): cuentas por pagar 3 (antes, el dia, al dia siguiente),
+    /// pagos fijos 2, facturas 2, y el diario 1 por dia. Se exponen para
+    /// poder fijar en un test que la suma nunca pase el tope de iOS (64).
+    static let remindersPerBill = 3
+    static let remindersPerRecurring = 2
+    static let remindersPerInvoice = 2
+
+    /// Peor caso de avisos pendientes programados a la vez — debe quedar
+    /// holgadamente por debajo de 64 (iOS descarta en silencio los que
+    /// pasen de ese tope).
+    static var worstCaseScheduledCount: Int {
+        maxBills * remindersPerBill
+            + maxRecurring * remindersPerRecurring
+            + maxInvoices * remindersPerInvoice
+            + dailyLogDays
+    }
 
     static let dailyLogReminderKey = "dailyLogReminderEnabled"
     /// Hora del recordatorio diario "¿Anotaste tus gastos de hoy?".

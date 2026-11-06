@@ -36,4 +36,15 @@ final class NotificationManagerTests: XCTestCase {
         let february = NotificationManager.nextOccurrence(dayOfMonth: 31, now: date(2027, 2, 1), calendar: calendar)
         XCTAssertEqual(february, date(2027, 2, 28, hour: 0))
     }
+
+    /// iOS descarta en silencio los avisos locales que pasen de 64. El peor
+    /// caso de lo que programamos a la vez debe quedar por debajo, con
+    /// holgura para los avisos inmediatos (consejo de pago, sobrante). Este
+    /// test evita que subir un tope (ej. maxBills) rompa el limite sin que
+    /// nadie se de cuenta.
+    func testWorstCaseStaysUnderSystemLimit() {
+        XCTAssertEqual(NotificationManager.worstCaseScheduledCount, 59)
+        XCTAssertLessThanOrEqual(NotificationManager.worstCaseScheduledCount, 60)
+        XCTAssertLessThan(NotificationManager.worstCaseScheduledCount, 64)
+    }
 }

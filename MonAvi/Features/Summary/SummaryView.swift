@@ -282,7 +282,14 @@ struct SummaryView: View {
             headline
                 .padding(.horizontal, 64)
                 .onTapGesture {
-                    withAnimation(.snappy) { selectedCategoryKey = nil }
+                    // Tambien se limpia selectedAngle: si no, tocar el centro
+                    // dejaba el angulo viejo y volver a tocar la MISMA rebanada
+                    // no la re-seleccionaba (el valor no cambiaba, onChange no
+                    // se disparaba).
+                    withAnimation(.snappy) {
+                        selectedCategoryKey = nil
+                        selectedAngle = nil
+                    }
                 }
         }
         .frame(height: 270)

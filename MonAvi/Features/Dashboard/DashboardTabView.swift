@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct DashboardTabView: View {
+    @EnvironmentObject private var appState: AppState
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some View {
         TabView {
             DayJournalView()
@@ -19,5 +22,19 @@ struct DashboardTabView: View {
                 .tabItem { Label("Ajustes", systemImage: "gearshape.fill") }
         }
         .tint(MonAviBrand.primary)
+        .task {
+            await ReminderScheduler.requestPermissionIfNeeded()
+            await refreshReminders()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                Task { await refreshReminders() }
+            }
+        }
+    }
+
+    private func refreshReminders() async {
+        guard let userId = appState.currentUserId else { return }
+        await ReminderScheduler.refreshAll(userId: userId)
     }
 }

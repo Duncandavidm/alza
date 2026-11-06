@@ -1,0 +1,39 @@
+import XCTest
+@testable import MonAvi
+
+final class NotificationManagerTests: XCTestCase {
+    private let calendar: Calendar = {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/Panama")!
+        return calendar
+    }()
+
+    private func date(_ year: Int, _ month: Int, _ day: Int, hour: Int = 12) -> Date {
+        calendar.date(from: DateComponents(year: year, month: month, day: day, hour: hour))!
+    }
+
+    func testOccurrenceLaterThisMonth() {
+        let next = NotificationManager.nextOccurrence(dayOfMonth: 20, now: date(2026, 11, 6), calendar: calendar)
+        XCTAssertEqual(next, date(2026, 11, 20, hour: 0))
+    }
+
+    func testOccurrenceTodayCountsAsThisMonth() {
+        let next = NotificationManager.nextOccurrence(dayOfMonth: 6, now: date(2026, 11, 6), calendar: calendar)
+        XCTAssertEqual(next, date(2026, 11, 6, hour: 0))
+    }
+
+    func testPassedDayMovesToNextMonth() {
+        let next = NotificationManager.nextOccurrence(dayOfMonth: 2, now: date(2026, 11, 6), calendar: calendar)
+        XCTAssertEqual(next, date(2026, 12, 2, hour: 0))
+    }
+
+    func testDay31InShortMonthFallsOnLastDay() {
+        // Noviembre tiene 30 dias: "el 31" cae el 30, no el 1 de diciembre.
+        let next = NotificationManager.nextOccurrence(dayOfMonth: 31, now: date(2026, 11, 6), calendar: calendar)
+        XCTAssertEqual(next, date(2026, 11, 30, hour: 0))
+
+        // Febrero 2027 (28 dias), pedido despues del 31 de enero.
+        let february = NotificationManager.nextOccurrence(dayOfMonth: 31, now: date(2027, 2, 1), calendar: calendar)
+        XCTAssertEqual(february, date(2027, 2, 28, hour: 0))
+    }
+}

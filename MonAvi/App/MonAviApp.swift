@@ -4,6 +4,10 @@ import SwiftUI
 struct MonAviApp: App {
     @StateObject private var appState = AppState()
 
+    init() {
+        NotificationPresenter.shared.install()
+    }
+
     var body: some Scene {
         WindowGroup {
             RootView()

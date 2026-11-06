@@ -113,6 +113,9 @@ final class TransactionsRepository {
             .value
 
         try await applyToAccountBalance(accountId: new.accountId, delta: new.amount)
+        // Ya anoto algo hoy: el "¿Anotaste tus gastos de hoy?" de esta
+        // noche ya no hace falta.
+        NotificationManager.scheduleDailyLogReminders(loggedToday: true)
         return created
     }
 

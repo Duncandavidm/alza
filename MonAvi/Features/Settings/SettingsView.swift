@@ -7,6 +7,7 @@ struct SettingsView: View {
     @State private var isSigningOut = false
     @AppStorage("isAdvancedMode") private var isAdvancedMode = false
     @AppStorage(NotificationManager.reminderLeadDaysKey) private var reminderLeadDays = NotificationManager.defaultLeadDays
+    @AppStorage(NotificationManager.dailyLogReminderKey) private var dailyLogReminder = true
     @State private var notificationStatus: UNAuthorizationStatus = .notDetermined
 
     var body: some View {
@@ -29,10 +30,18 @@ struct SettingsView: View {
                         value: $reminderLeadDays,
                         in: NotificationManager.leadDaysRange
                     )
+                    .onChange(of: reminderLeadDays) { _, _ in
+                        Task { await refreshReminders() }
+                    }
+
+                    Toggle("Recordarme anotar mis gastos (8 p. m.)", isOn: $dailyLogReminder)
+                        .onChange(of: dailyLogReminder) { _, _ in
+                            Task { await refreshReminders() }
+                        }
                 } header: {
                     Text("Notificaciones")
                 } footer: {
-                    Text("Te avisamos cuando una cuenta por pagar o una factura está por vencer (y el día que vence), cuando te toca un pago fijo del mes, y qué pagar primero cada vez que anotas un ingreso.")
+                    Text("Te avisamos antes de que venza una cuenta por pagar o una factura, el día que vence y si se pasó. Para tus pagos fijos, unos días antes y el mismo día, para que no olvides registrarlos. También te decimos qué pagar primero cuando anotas un ingreso y, si quieres, te recordamos anotar tus gastos en la noche (solo si ese día no anotaste nada).")
                 }
 
                 Section {
@@ -231,6 +240,7 @@ struct SettingsView: View {
                 Task {
                     await NotificationManager.requestAuthorization()
                     notificationStatus = await NotificationManager.authorizationStatus()
+                    await refreshReminders()
                 }
             } label: {
                 Label("Activar notificaciones", systemImage: "bell.fill")
@@ -238,5 +248,10 @@ struct SettingsView: View {
         @unknown default:
             EmptyView()
         }
+    }
+
+    private func refreshReminders() async {
+        guard let userId = appState.currentUserId else { return }
+        await ReminderScheduler.refreshAll(userId: userId)
     }
 }

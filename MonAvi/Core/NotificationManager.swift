@@ -30,7 +30,20 @@ enum NotificationManager {
     /// de facturas o cuentas activas. La ventana avanza sola: cada vez que
     /// el ViewModel refresca se vuelve a elegir el subconjunto mas urgente
     /// vigente en ese momento.
-    private static let maxScheduledPerCategory = 12
+    ///
+    /// Presupuesto (todo junto queda en 59 de 64):
+    /// - cuentas por pagar: 8 x 3 avisos (antes, el dia, al dia siguiente) = 24
+    /// - pagos fijos: 8 x 2 avisos (antes, el dia) = 16
+    /// - facturas por cobrar: 6 x 2 avisos = 12
+    /// - recordatorio diario de anotar: 7
+    private static let maxBills = 8
+    private static let maxRecurring = 8
+    private static let maxInvoices = 6
+    private static let dailyLogDays = 7
+
+    static let dailyLogReminderKey = "dailyLogReminderEnabled"
+    /// Hora del recordatorio diario "¿Anotaste tus gastos de hoy?".
+    static let dailyLogHour = 20
 
     static var reminderLeadDays: Int {
         get {
@@ -63,7 +76,7 @@ enum NotificationManager {
         let pending = invoices
             .filter { $0.status != .pagada && $0.status != .anulada && $0.dueDateValue != nil }
             .sorted { $0.dueDateValue! < $1.dueDateValue! }
-            .prefix(maxScheduledPerCategory)
+            .prefix(maxInvoices)
 
         for invoice in pending {
             let leadId = "invoice-lead-\(invoice.id)"
@@ -76,7 +89,7 @@ enum NotificationManager {
                 schedule(
                     id: leadId,
                     title: "Factura por vencer",
-                    body: "La factura de \(invoice.customerName) por \(amountText) vence en \(reminderLeadDays) dia\(reminderLeadDays == 1 ? "" : "s").",
+                    body: "La factura de \(invoice.customerName) por \(amountText) vence en \(reminderLeadDays) día\(reminderLeadDays == 1 ? "" : "s").",
                     date: atReminderHour(leadDate)
                 )
             }
@@ -96,13 +109,16 @@ enum NotificationManager {
 
     static func scheduleBillReminders(_ bills: [Bill]) {
         for bill in bills {
-            removePending(ids: ["bill-lead-\(bill.id)", "bill-overdue-\(bill.id)"])
+            removePending(ids: ["bill-lead-\(bill.id)", "bill-overdue-\(bill.id)", "bill-late-\(bill.id)"])
         }
 
+        // Incluye las que vencieron ayer: todavia les toca el aviso de
+        // "vencio ayer" si siguen pendientes.
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Calendar.current.startOfDay(for: Date())) ?? Date()
         let pending = bills
-            .filter { $0.status == .pendiente }
+            .filter { $0.status == .pendiente && $0.dueDateValue >= yesterday }
             .sorted { $0.dueDateValue < $1.dueDateValue }
-            .prefix(maxScheduledPerCategory)
+            .prefix(maxBills)
 
         for bill in pending {
             let leadId = "bill-lead-\(bill.id)"
@@ -118,17 +134,28 @@ enum NotificationManager {
                 schedule(
                     id: leadId,
                     title: "Cuenta por vencer",
-                    body: "Recuerda tu pago de \(bill.name) por \(amountText) — vence en \(reminderLeadDays) dia\(reminderLeadDays == 1 ? "" : "s")\(urgency).",
+                    body: "Recuerda tu pago de \(bill.name) por \(amountText) — vence en \(reminderLeadDays) día\(reminderLeadDays == 1 ? "" : "s")\(urgency).",
                     date: atReminderHour(leadDate)
                 )
             }
 
-            if dueDate > Date() {
+            if atReminderHour(dueDate) > Date() {
                 schedule(
                     id: overdueId,
                     title: "Cuenta vence hoy",
-                    body: "\(bill.name) por \(amountText) vence hoy.",
+                    body: "\(bill.name) por \(amountText) vence hoy. Cuando la pagues, márcala como pagada en MonAvi.",
                     date: atReminderHour(dueDate)
+                )
+            }
+
+            // Si se marca como pagada antes, el siguiente refresh lo cancela.
+            if let lateDate = Calendar.current.date(byAdding: .day, value: 1, to: dueDate),
+               atReminderHour(lateDate) > Date() {
+                schedule(
+                    id: "bill-late-\(bill.id)",
+                    title: "Cuenta vencida",
+                    body: "\(bill.name) por \(amountText) venció ayer y sigue pendiente. ¿Ya la pagaste? Regístralo en MonAvi.",
+                    date: atReminderHour(lateDate)
                 )
             }
         }
@@ -136,31 +163,94 @@ enum NotificationManager {
 
     // MARK: - Recurrentes (dia fijo del mes: luz el 20, tarjeta el 15...)
 
+    /// Por cada pago fijo: un aviso `reminderLeadDays` antes (solo gastos)
+    /// y otro el mismo dia para que no se olvide registrarlo ("Hoy toca
+    /// pagar la luz" / "¿Ya recibiste tu salario?"). Si ese mes ya se
+    /// registro, no se avisa.
     static func scheduleRecurringReminders(_ items: [RecurringTransaction]) {
         for item in items {
-            removePending(ids: ["recurring-\(item.id)"])
+            removePending(ids: ["recurring-\(item.id)", "recurring-due-\(item.id)"])
         }
 
+        let calendar = Calendar.current
         let candidates = items
-            .filter { $0.active && $0.movementType != .ingreso }
+            .filter(\.active)
             .compactMap { item -> (item: RecurringTransaction, dueDate: Date)? in
                 guard let dueDate = nextOccurrence(dayOfMonth: item.dayOfMonth) else { return nil }
+                if let lastLoggedOn = item.lastLoggedOn,
+                   calendar.isDate(lastLoggedOn, equalTo: dueDate, toGranularity: .month) {
+                    return nil // ya registrado este mes
+                }
                 return (item, dueDate)
             }
             .sorted { $0.dueDate < $1.dueDate }
-            .prefix(maxScheduledPerCategory)
+            .prefix(maxRecurring)
 
         for candidate in candidates {
+            let item = candidate.item
+            let amountText = formattedAmount(item.amount)
+
+            if !item.movementType.isInflow,
+               let leadDate = calendar.date(byAdding: .day, value: -reminderLeadDays, to: candidate.dueDate),
+               atReminderHour(leadDate) > Date() {
+                schedule(
+                    id: "recurring-\(item.id)",
+                    title: "Pago fijo por vencer",
+                    body: "Recuerda tu pago de \(item.name) por \(amountText) — vence en \(reminderLeadDays) día\(reminderLeadDays == 1 ? "" : "s").",
+                    date: atReminderHour(leadDate)
+                )
+            }
+
+            if atReminderHour(candidate.dueDate) > Date() {
+                let isIncome = item.movementType.isInflow
+                schedule(
+                    id: "recurring-due-\(item.id)",
+                    title: isIncome ? "¿Ya recibiste \(item.name)?" : "Hoy toca pagar \(item.name)",
+                    body: isIncome
+                        ? "Hoy es el día de \(item.name) (\(amountText)). Cuando lo recibas, regístralo en MonAvi."
+                        : "\(item.name) por \(amountText). Cuando lo pagues, regístralo en MonAvi para llevar tus cuentas al día.",
+                    date: atReminderHour(candidate.dueDate)
+                )
+            }
+        }
+    }
+
+    // MARK: - Recordatorio diario de anotar
+
+    static var isDailyLogReminderEnabled: Bool {
+        get { UserDefaults.standard.object(forKey: dailyLogReminderKey) as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: dailyLogReminderKey) }
+    }
+
+    /// "¿Anotaste tus gastos de hoy?" a las 8 p. m. los proximos 7 dias.
+    /// Si hoy ya anoto algo, empieza mañana. Se reprograma al abrir la app
+    /// y cada vez que se anota un movimiento, asi que no avisa un dia en
+    /// que ya anoto.
+    static func scheduleDailyLogReminders(loggedToday: Bool) {
+        removePending(ids: (0..<dailyLogDays).map { "daily-log-\($0)" })
+        guard isDailyLogReminderEnabled else { return }
+
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let messages = [
+            "¿Anotaste tus gastos de hoy? Toma 10 segundos y mantienes tu racha 🔥",
+            "Un minuto para tus finanzas: anota lo que gastaste hoy.",
+            "¿Qué gastaste hoy? Anótalo antes de que se te olvide.",
+        ]
+
+        for offset in 0..<dailyLogDays {
+            if offset == 0 && loggedToday { continue }
             guard
-                let leadDate = Calendar.current.date(byAdding: .day, value: -reminderLeadDays, to: candidate.dueDate),
-                leadDate > Date()
+                let day = calendar.date(byAdding: .day, value: offset, to: today),
+                let fireDate = calendar.date(bySettingHour: dailyLogHour, minute: 0, second: 0, of: day),
+                fireDate > Date()
             else { continue }
 
             schedule(
-                id: "recurring-\(candidate.item.id)",
-                title: "Pago fijo por vencer",
-                body: "Recuerda tu pago de \(candidate.item.name) por \(formattedAmount(candidate.item.amount)) — vence en \(reminderLeadDays) dia\(reminderLeadDays == 1 ? "" : "s").",
-                date: atReminderHour(leadDate)
+                id: "daily-log-\(offset)",
+                title: "MonAvi",
+                body: messages[offset % messages.count],
+                date: fireDate
             )
         }
     }
@@ -175,7 +265,7 @@ enum NotificationManager {
         guard let first = items.first else { return }
 
         let content = UNMutableNotificationContent()
-        content.title = "Que pagar primero"
+        content.title = "Qué pagar primero"
         content.sound = .default
         if items.count == 1 {
             content.body = "\(first.name) — \(formattedAmount(Decimal(first.amount))) (\(first.dueInfo))"
@@ -199,7 +289,7 @@ enum NotificationManager {
     /// del cliente (su deuda, su meta de ahorro, o un consejo por rango).
     static func sendSurplusAdvice(_ message: String) {
         let content = UNMutableNotificationContent()
-        content.title = "Te sobro dinero — que hacer con el"
+        content.title = "Te sobró dinero: qué hacer con él"
         content.body = message
         content.sound = .default
 
@@ -219,17 +309,23 @@ enum NotificationManager {
     /// bien restar dias cerca del limite de un mes (28/29/30/31) — en vez
     /// de eso, se reprograma la proxima ocurrencia cada vez que el
     /// ViewModel refresca.
-    private static func nextOccurrence(dayOfMonth: Int) -> Date? {
-        let calendar = Calendar.current
-        let now = Date()
-        var components = calendar.dateComponents([.year, .month], from: now)
-        components.day = dayOfMonth
-        guard let thisMonth = calendar.date(from: components) else { return nil }
+    static func nextOccurrence(dayOfMonth: Int, now: Date = Date(), calendar: Calendar = .current) -> Date? {
+        guard let monthStart = calendar.dateInterval(of: .month, for: now)?.start else { return nil }
 
-        if thisMonth >= calendar.startOfDay(for: now) {
+        // Un pago "el 31" cae el ultimo dia en meses mas cortos (28/29/30),
+        // en vez de saltar al mes siguiente.
+        func occurrence(inMonthStarting start: Date) -> Date? {
+            let daysInMonth = calendar.range(of: .day, in: .month, for: start)?.count ?? 28
+            let day = min(max(dayOfMonth, 1), daysInMonth)
+            return calendar.date(byAdding: .day, value: day - 1, to: start)
+        }
+
+        if let thisMonth = occurrence(inMonthStarting: monthStart),
+           thisMonth >= calendar.startOfDay(for: now) {
             return thisMonth
         }
-        return calendar.date(byAdding: .month, value: 1, to: thisMonth)
+        guard let nextMonthStart = calendar.date(byAdding: .month, value: 1, to: monthStart) else { return nil }
+        return occurrence(inMonthStarting: nextMonthStart)
     }
 
     private static func atReminderHour(_ date: Date) -> Date {
@@ -254,5 +350,23 @@ enum NotificationManager {
 
     private static func removePending(ids: [String]) {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
+    }
+}
+
+/// Sin esto, iOS no muestra ninguna notificacion mientras la app esta
+/// abierta (por ejemplo, el "Qué pagar primero" justo despues de anotar un
+/// ingreso). Se instala una vez al arrancar la app (MonAviApp).
+final class NotificationPresenter: NSObject, UNUserNotificationCenterDelegate {
+    static let shared = NotificationPresenter()
+
+    func install() {
+        UNUserNotificationCenter.current().delegate = self
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification
+    ) async -> UNNotificationPresentationOptions {
+        [.banner, .list, .sound]
     }
 }

@@ -80,12 +80,18 @@ final class SavingsGoalsViewModel: ObservableObject {
         replace(updated)
     }
 
-    /// Registra un aporte: sube `currentAmount` y, si la meta tiene una
-    /// cuenta vinculada, tambien anota un movimiento real (transferencia,
-    /// categoria Ahorro) para que ese dinero salga de la cuenta de origen
-    /// en el resto de la app — no es contabilidad de doble entrada, solo
-    /// un movimiento de salida, igual de simple que el resto de MonAvi.
+    /// Registra un aporte (amount > 0) o un retiro (amount < 0): ajusta
+    /// `currentAmount`, deja el movimiento en el historial inmutable
+    /// `savings_contributions` (base de los niveles e insignias: un aporte
+    /// solo "madura" si pasan 30 dias sin retiros) y, si la meta tiene una
+    /// cuenta vinculada, anota la transferencia real en esa cuenta (sale
+    /// dinero al aportar, vuelve al retirar).
     func contribute(to goal: SavingsGoal, amount: Decimal, userId: UUID) async throws {
+        guard amount != 0 else { return }
+        if amount < 0 && -amount > goal.currentAmount {
+            throw SavingsGoalError.withdrawalExceedsBalance
+        }
+
         struct Update: Encodable {
             let currentAmount: Decimal
             enum CodingKeys: String, CodingKey { case currentAmount = "current_amount" }
@@ -102,15 +108,21 @@ final class SavingsGoalsViewModel: ObservableObject {
             .execute()
             .value
 
+        try await supabase
+            .from("savings_contributions")
+            .insert(NewSavingsContribution(userId: userId, goalId: goal.id, amount: amount))
+            .execute()
+
         if let accountId = goal.accountId {
-            try await TransactionsRepository.shared.add(
+            _ = try await TransactionsRepository.shared.add(
                 NewTransaction(
                     userId: userId,
                     accountId: accountId,
-                    amount: MovementType.transferencia.signedAmount(from: amount),
+                    // Aporte: sale de la cuenta (negativo). Retiro: vuelve (positivo).
+                    amount: -amount,
                     movementType: .transferencia,
                     category: TransactionCategory.savings.rawValue,
-                    description: "Aporte a meta: \(goal.name)",
+                    description: amount > 0 ? "Aporte a meta: \(goal.name)" : "Retiro de meta: \(goal.name)",
                     occurredAt: Date()
                 )
             )
@@ -122,6 +134,17 @@ final class SavingsGoalsViewModel: ObservableObject {
     private func replace(_ goal: SavingsGoal) {
         if let index = goals.firstIndex(where: { $0.id == goal.id }) {
             goals[index] = goal
+        }
+    }
+}
+
+enum SavingsGoalError: LocalizedError {
+    case withdrawalExceedsBalance
+
+    var errorDescription: String? {
+        switch self {
+        case .withdrawalExceedsBalance:
+            return "No puedes retirar más de lo que tienes ahorrado en esta meta."
         }
     }
 }

@@ -1,7 +1,13 @@
 import SwiftUI
 
-/// Entrada unica a todo lo de puntos: el saldo real (ledger compartido
-/// entre todas las fuentes) y accesos a cada una.
+/// Entrada unica a todo lo de puntos: el saldo canjeable (solo fuentes
+/// verificadas por un tercero, hoy facturas DGI) y, aparte, los habitos
+/// (nivel e insignias, que no se canjean).
+///
+/// "Ahorro verificado" con bancos (MySavingsGoalsView,
+/// SponsoredSavingsConsentView) ya no tiene entrada: depender de reportes
+/// de bancos no era viable para lanzar. El codigo y las tablas se quedan
+/// por si algun banco quiere participar mas adelante.
 ///
 /// "Tarjeta en comercios aliados" ya no tiene entrada propia aqui ni
 /// requiere vincular tarjeta: verify-dgi-receipt revisa la "Forma de
@@ -20,24 +26,34 @@ struct PointsHubView: View {
                 balanceSummary
             }
 
-            Section("Gana puntos") {
+            Section {
                 NavigationLink {
                     DgiReceiptsListView()
                 } label: {
                     Label("Facturas que suman", systemImage: "qrcode.viewfinder")
                 }
+            } header: {
+                Text("Gana puntos canjeables")
+            } footer: {
+                Text("Solo las facturas confirmadas por la DGI dan puntos canjeables.")
+            }
 
+            Section {
                 NavigationLink {
-                    HabitsView()
+                    LevelsView()
                 } label: {
-                    Label("Habitos", systemImage: "flame.fill")
+                    Label("Nivel e insignias", systemImage: "rosette")
                 }
 
                 NavigationLink {
-                    MySavingsGoalsView()
+                    SavingsGoalsView()
                 } label: {
-                    Label("Mis metas", systemImage: "banknote.fill")
+                    Label("Metas de ahorro", systemImage: "banknote.fill")
                 }
+            } header: {
+                Text("Hábitos")
+            } footer: {
+                Text("Anotar tus movimientos, ahorrar con constancia y cumplir presupuestos te sube de nivel. Los niveles no se canjean.")
             }
 
             if let errorMessage = viewModel.errorMessage {
@@ -54,7 +70,7 @@ struct PointsHubView: View {
     private var balanceSummary: some View {
         HStack(spacing: 24) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Confirmados").font(.caption).foregroundStyle(.secondary)
+                Text("Canjeables").font(.caption).foregroundStyle(.secondary)
                 Text("\(viewModel.balance.confirmedPoints) pts").font(.title.weight(.bold))
             }
             VStack(alignment: .leading, spacing: 2) {

@@ -22,13 +22,13 @@ enum VoiceRecognitionError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .permissionDenied:
-            return "Necesitamos permiso de microfono para anotar por voz. Actívalo en Ajustes."
+            return "Necesitamos permiso de micrófono y reconocimiento de voz. Actívalos en Ajustes > MonAvi."
         case .recognizerUnavailable:
-            return "El reconocimiento de voz no esta disponible ahora mismo."
+            return "El reconocimiento de voz no está disponible ahora mismo. Revisa tu conexión a internet e intenta de nuevo."
         case .emptyTranscript:
-            return "No se escucho nada. Intenta de nuevo."
+            return "No se escuchó nada. Intenta de nuevo."
         case .parseFailed:
-            return "No se pudo entender el movimiento. Intenta describirlo distinto."
+            return "No se pudo entender el movimiento. Intenta decirlo de otra forma, con el monto."
         }
     }
 }
@@ -44,7 +44,28 @@ final class VoiceTransactionRecognizer: NSObject, ObservableObject {
     @Published var errorMessage: String?
 
     private let audioEngine = AVAudioEngine()
-    private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "es-419"))
+    private let speechRecognizer = VoiceTransactionRecognizer.makeSpanishRecognizer()
+
+    /// "es-419" no siempre existe como reconocedor (en el simulador casi
+    /// nunca): se usa el español del dispositivo si esta soportado, y si
+    /// no, el primero disponible de una lista de variantes cercanas.
+    private nonisolated static func makeSpanishRecognizer() -> SFSpeechRecognizer? {
+        let normalize = { (id: String) in id.replacingOccurrences(of: "_", with: "-").lowercased() }
+        let supported = Set(SFSpeechRecognizer.supportedLocales().map { normalize($0.identifier) })
+
+        var candidates: [String] = []
+        if Locale.current.language.languageCode?.identifier == "es" {
+            candidates.append(Locale.current.identifier)
+        }
+        candidates += ["es-PA", "es-419", "es-MX", "es-US", "es-CO", "es-ES"]
+
+        for identifier in candidates where supported.contains(normalize(identifier)) {
+            if let recognizer = SFSpeechRecognizer(locale: Locale(identifier: identifier)) {
+                return recognizer
+            }
+        }
+        return SFSpeechRecognizer(locale: Locale(identifier: "es-MX"))
+    }
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
 
@@ -100,15 +121,20 @@ final class VoiceTransactionRecognizer: NSObject, ObservableObject {
             try session.setCategory(.record, mode: .measurement, options: .duckOthers)
             try session.setActive(true, options: .notifyOthersOnDeactivation)
         } catch {
-            errorMessage = "No se pudo activar el microfono."
+            errorMessage = "No se pudo activar el micrófono."
             return
         }
 
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
+        // En un iPhone real se prefiere transcribir en el dispositivo
+        // (privacidad). En el simulador no hay modelo local, asi que se usa
+        // el servidor de Apple.
+        #if !targetEnvironment(simulator)
         if speechRecognizer.supportsOnDeviceRecognition {
             request.requiresOnDeviceRecognition = true
         }
+        #endif
         recognitionRequest = request
 
         let inputNode = audioEngine.inputNode

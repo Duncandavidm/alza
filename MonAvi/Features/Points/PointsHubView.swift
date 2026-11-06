@@ -4,10 +4,10 @@ import SwiftUI
 /// verificadas por un tercero, hoy facturas DGI) y, aparte, los habitos
 /// (nivel e insignias, que no se canjean).
 ///
-/// "Ahorro verificado" con bancos (MySavingsGoalsView,
-/// SponsoredSavingsConsentView) ya no tiene entrada: depender de reportes
-/// de bancos no era viable para lanzar. El codigo y las tablas se quedan
-/// por si algun banco quiere participar mas adelante.
+/// "Ahorro verificado" con bancos se quito por completo del app (vistas,
+/// modelos y llamadas): depender de reportes de bancos no era viable para
+/// lanzar. Las tablas siguen en Supabase, intactas, por si algun banco
+/// quiere participar mas adelante.
 ///
 /// "Tarjeta en comercios aliados" ya no tiene entrada propia aqui ni
 /// requiere vincular tarjeta: verify-dgi-receipt revisa la "Forma de

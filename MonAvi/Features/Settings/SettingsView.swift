@@ -8,6 +8,11 @@ struct SettingsView: View {
     @AppStorage("isAdvancedMode") private var isAdvancedMode = false
     @AppStorage(NotificationManager.reminderLeadDaysKey) private var reminderLeadDays = NotificationManager.defaultLeadDays
     @AppStorage(NotificationManager.dailyLogReminderKey) private var dailyLogReminder = true
+    @State private var testNotificationSent = false
+
+    private var isNotificationAuthorized: Bool {
+        notificationStatus == .authorized || notificationStatus == .provisional || notificationStatus == .ephemeral
+    }
     @State private var notificationStatus: UNAuthorizationStatus = .notDetermined
 
     var body: some View {
@@ -38,6 +43,21 @@ struct SettingsView: View {
                         .onChange(of: dailyLogReminder) { _, _ in
                             Task { await refreshReminders() }
                         }
+
+                    Button {
+                        NotificationManager.sendTestNotification()
+                        testNotificationSent = true
+                        Task {
+                            try? await Task.sleep(nanoseconds: 6_000_000_000)
+                            testNotificationSent = false
+                        }
+                    } label: {
+                        Label(
+                            testNotificationSent ? "Llega en 5 segundos…" : "Probar sonido y vibración",
+                            systemImage: "speaker.wave.2.fill"
+                        )
+                    }
+                    .disabled(!isNotificationAuthorized)
                 } header: {
                     Text("Notificaciones")
                 } footer: {

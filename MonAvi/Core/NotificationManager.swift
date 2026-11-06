@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import UserNotifications
 
 /// Notificaciones locales (no remotas/push de servidor) — todo lo que
@@ -58,6 +59,11 @@ enum NotificationManager {
             + maxInvoices * remindersPerInvoice
             + dailyLogDays
     }
+
+    /// Sonido propio de MonAvi para todos los avisos (tres notas que
+    /// suben, 1.3 s, en Resources/Sounds). iOS vibra junto con el sonido
+    /// segun los ajustes de Sonidos y vibracion del usuario.
+    static let brandSound = UNNotificationSound(named: UNNotificationSoundName("monavi-alert.wav"))
 
     static let dailyLogReminderKey = "dailyLogReminderEnabled"
     /// Hora del recordatorio diario "¿Anotaste tus gastos de hoy?".
@@ -162,7 +168,8 @@ enum NotificationManager {
                     id: overdueId,
                     title: "Cuenta vence hoy",
                     body: "\(bill.name) por \(amountText) vence hoy. Cuando la pagues, márcala como pagada en MonAvi.",
-                    date: atReminderHour(dueDate)
+                    date: atReminderHour(dueDate),
+                    timeSensitive: true
                 )
             }
 
@@ -173,7 +180,8 @@ enum NotificationManager {
                     id: "bill-late-\(bill.id)",
                     title: "Cuenta vencida",
                     body: "\(bill.name) por \(amountText) venció ayer y sigue pendiente. ¿Ya la pagaste? Regístralo en MonAvi.",
-                    date: atReminderHour(lateDate)
+                    date: atReminderHour(lateDate),
+                    timeSensitive: true
                 )
             }
         }
@@ -227,7 +235,8 @@ enum NotificationManager {
                     body: isIncome
                         ? "Hoy es el día de \(item.name) (\(amountText)). Cuando lo recibas, regístralo en MonAvi."
                         : "\(item.name) por \(amountText). Cuando lo pagues, regístralo en MonAvi para llevar tus cuentas al día.",
-                    date: atReminderHour(candidate.dueDate)
+                    date: atReminderHour(candidate.dueDate),
+                    timeSensitive: !isIncome
                 )
             }
         }
@@ -284,7 +293,7 @@ enum NotificationManager {
 
         let content = UNMutableNotificationContent()
         content.title = "Qué pagar primero"
-        content.sound = .default
+        content.sound = brandSound
         if items.count == 1 {
             content.body = "\(first.name) — \(formattedAmount(Decimal(first.amount))) (\(first.dueInfo))"
         } else {
@@ -309,12 +318,32 @@ enum NotificationManager {
         let content = UNMutableNotificationContent()
         content.title = "Te sobró dinero: qué hacer con él"
         content.body = message
-        content.sound = .default
+        content.sound = brandSound
 
         let request = UNNotificationRequest(
             identifier: "surplus-advice-\(UUID().uuidString)",
             content: content,
             trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        )
+        UNUserNotificationCenter.current().add(request)
+    }
+
+    // MARK: - Prueba
+
+    /// Desde Ajustes: un aviso de prueba a los 5 segundos para escuchar el
+    /// sonido de MonAvi y sentir la vibracion (sirve tambien en el
+    /// simulador). Da tiempo de salir de la app para verlo como llega.
+    static func sendTestNotification() {
+        let content = UNMutableNotificationContent()
+        content.title = "Hoy toca pagar la luz"
+        content.body = "Así te van a llegar los recordatorios de MonAvi: con este sonido y vibración."
+        content.sound = brandSound
+        content.threadIdentifier = "monavi-recordatorios"
+
+        let request = UNNotificationRequest(
+            identifier: "test-\(UUID().uuidString)",
+            content: content,
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
         )
         UNUserNotificationCenter.current().add(request)
     }
@@ -354,11 +383,16 @@ enum NotificationManager {
         amount.formatted(.currency(code: "USD"))
     }
 
-    private static func schedule(id: String, title: String, body: String, date: Date) {
+    /// `timeSensitive`: para los avisos del dia de pago (o de un pago
+    /// vencido) — iOS los deja sonar y vibrar aunque el usuario tenga
+    /// activado un modo de concentracion. El resto son avisos normales.
+    private static func schedule(id: String, title: String, body: String, date: Date, timeSensitive: Bool = false) {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
-        content.sound = .default
+        content.sound = brandSound
+        content.interruptionLevel = timeSensitive ? .timeSensitive : .active
+        content.threadIdentifier = "monavi-recordatorios"
 
         let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: date)
         let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
@@ -385,6 +419,11 @@ final class NotificationPresenter: NSObject, UNUserNotificationCenterDelegate {
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
-        [.banner, .list, .sound]
+        // Con la app abierta iOS reproduce el sonido pero no siempre vibra:
+        // se agrega la vibracion a mano para que se sienta igual.
+        await MainActor.run {
+            UINotificationFeedbackGenerator().notificationOccurred(.warning)
+        }
+        return [.banner, .list, .sound]
     }
 }

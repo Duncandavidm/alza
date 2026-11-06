@@ -38,6 +38,8 @@ targets:
           - Default
         com.apple.security.application-groups:
           - group.app.monavi.shared
+        # Avisos del dia de pago que suenan aun con un modo de concentracion.
+        com.apple.developer.usernotifications.time-sensitive: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.monavi

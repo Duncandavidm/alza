@@ -54,7 +54,7 @@ export default async function DgiVerificationPage() {
     <>
       <h1>Facturas que suman — verificacion DGI</h1>
       <p className="text-dim">
-        El job verify-dgi-receipt corre cada 6 horas (pg_cron) y consulta cada factura pendiente directo contra
+        El job verify-dgi-receipt corre todos los días a las 8:00 a. m. (hora de Panamá, pg_cron) y consulta cada factura pendiente directo contra
         dgi-fep.mef.gob.pa. Confirmada, acredita puntos de "factura" y, si la DGI reporta pago con tarjeta en un
         comercio aliado con oferta activa, tambien el bono de "tarjeta" — sin vincular ninguna tarjeta.
       </p>

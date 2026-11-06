@@ -1,8 +1,23 @@
 # MonAvi Admin
 
-Panel interno minimo (Fase 4 del modulo de puntos): comercios aliados y
-sus ofertas, subir reportes de comercio/banco, ver resultados del
-cruce, y alertas (compras ambiguas, campañas con presupuesto agotado).
+Panel interno minimo (Fase 4 del modulo de puntos): comercios aliados,
+sus ofertas y productos canjeables, solicitudes de nuevos comercios,
+canjes de puntos, estudio de mercado, subir reportes de comercio/banco,
+ver resultados del cruce, y alertas (compras ambiguas, campañas con
+presupuesto agotado).
+
+## Paginas publicas (sin clave)
+
+Viven en este mismo proyecto y estan en `PUBLIC_PATHS` de `proxy.ts`:
+
+- `/aliados` — **landing para comercios** de Panama que quieren ser
+  aliados de MonAvi (como funciona, beneficios y formulario). El
+  formulario es una server action que inserta en
+  `merchant_applications` (validacion en el servidor, limites de largo,
+  campo honeypot oculto y tiempo minimo de llenado contra bots). URL
+  para compartir: `https://<dominio-del-panel>/aliados` (el Resumen y
+  Solicitudes la muestran con boton para copiar).
+- `/privacy` y `/support` — exigidas por Apple para la app.
 
 No hay usuarios individuales — es una sola clave compartida
 (`ADMIN_PANEL_PASSWORD`) para todo el equipo que administra esto.
@@ -33,10 +48,39 @@ npm run dev
 
 ## Que hace cada pantalla
 
-- **Comercios y ofertas** (`/merchants`): crear/pausar comercios
-  aliados (`partner_merchants`) y sus ofertas de puntos
-  (`partner_merchant_offers`) — porcentaje por dolar o puntos fijos,
-  compra minima, presupuesto total de la campaña.
+- **Comercios y ofertas** (`/merchants`, `/merchants/[id]`): crear,
+  editar y pausar comercios aliados (`partner_merchants`) con su ficha
+  (nombre, RUC, categoria, direccion, enlace de Google Maps para "Cómo
+  llegar", logo); sus **productos canjeables** (`reward_items`: foto,
+  nombre, costo en puntos, estado, orden) con vista previa de como se
+  ven en la app; y sus ofertas de puntos (`partner_merchant_offers`) —
+  porcentaje por dolar o puntos fijos, compra minima, presupuesto total.
+  Logos y fotos se suben al bucket publico `rewards`
+  (`logos/<merchantId>-<ts>.<ext>`, `products/<id>-<ts>.<ext>`; JPG,
+  PNG o WebP, max 5 MB, validado en el servidor). Un producto con canjes
+  no se puede borrar: se pausa.
+- **Solicitudes** (`/applications`, `/applications/[id]`): lo que llega
+  desde `/aliados`, con filtro y conteo por estado (nueva, contactada,
+  aprobada, rechazada; la nav muestra cuantas hay nuevas). En el detalle
+  se anotan notas internas, se cambia el estado y "Crear comercio
+  aliado" crea el `partner_merchants` con los datos de la solicitud
+  (pide el RUC si no vino), la marca `aprobada` con su `merchant_id` y
+  lleva al comercio para subir logo y productos.
+- **Canjes** (`/redemptions`): `reward_redemptions` mas recientes
+  primero, con producto y comercio; busqueda por codigo y filtros por
+  estado y comercio. En los `emitido` vigentes: "Marcar entregado" y
+  "Cancelar y devolver puntos" (`release_redemption(..., 'cancelado')`).
+  Los vencidos que siguen `emitido` se marcan "vencido (por liberar)":
+  el cron nocturno los libera y devuelve los puntos.
+- **Estudio de mercado** (`/insights?days=30|90|365&ruc=`): llama a la
+  RPC `market_insights` (agregada y anonima, k=5) y muestra KPIs, formas
+  de pago, genero, edades, categorias, rangos de ticket, productos y
+  comercios top (marca aliados), canjes top, compras por hora y por dia,
+  mapa de calor dia × hora, tendencia mensual y clientes que vuelven.
+  "Reporte para un aliado" limita el estudio a los clientes de ese RUC.
+  Cada seccion tiene "Descargar CSV" (`/insights/export?days=&ruc=&section=`,
+  protegido por la sesion) y la pagina tiene una version para imprimir /
+  guardar como PDF para compartir con el aliado.
 - **Reportes de tarjeta** (`/card-reports`): subir un CSV de ventas con
   tarjeta de un comercio aliado (columnas: `provider_transaction_id,
   occurred_at, amount, card_last4, card_brand[, branch]`) e insertarlas
@@ -50,6 +94,8 @@ npm run dev
   (columnas: `external_account_ref, period_month, avg_balance`) e
   insertarlas en `savings_bank_reports`. El boton "Procesar reportes
   pendientes" llama a `reconcile-savings-reports`.
+- **Facturas DGI** (`/dgi-verification`): la verificacion corre todos
+  los dias a las 8:00 a. m. (hora de Panama).
 - **Alertas** (`/alerts`): compras con 2+ tarjetas posibles (sin
   puntos, por diseño), reportes de banco sin inscripcion que los
   reclame, y campañas con presupuesto agotado.

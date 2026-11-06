@@ -59,6 +59,21 @@ final class VoiceTransactionRecognizer: NSObject, ObservableObject {
         }
     }
 
+    /// Deja de grabar sin interpretar nada (el usuario prefirio escribir
+    /// o cerro la hoja).
+    func cancel() {
+        guard isRecording else { return }
+        audioEngine.stop()
+        audioEngine.inputNode.removeTap(onBus: 0)
+        recognitionRequest?.endAudio()
+        recognitionTask?.cancel()
+        recognitionTask = nil
+        recognitionRequest = nil
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        isRecording = false
+        liveTranscript = ""
+    }
+
     private func start() async {
         errorMessage = nil
         liveTranscript = ""

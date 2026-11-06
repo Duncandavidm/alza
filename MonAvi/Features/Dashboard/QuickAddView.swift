@@ -21,6 +21,11 @@ struct QuickAddView: View {
     @Environment(\.dismiss) private var dismiss
     @FocusState private var descriptionFocused: Bool
     @State private var showingCategoryPicker = false
+    /// Pantalla de escucha a pantalla completa (al tocar el microfono):
+    /// tapa el formulario y el teclado hasta que hay un resultado.
+    @State private var isVoiceMode = false
+    /// Corta la grabacion sola tras un silencio, sin tener que tocar nada.
+    @State private var silenceTask: Task<Void, Never>?
 
     @State private var movementType: MovementType = .gasto
     @State private var amountText = ""
@@ -124,9 +129,25 @@ struct QuickAddView: View {
                 if let existingTransaction {
                     loadExistingTransaction(existingTransaction)
                 } else if autoStartVoice {
-                    Task { await handleMicTap() }
+                    Task { await startVoice() }
                 }
             }
+            .onDisappear { cancelVoice() }
+            .onChange(of: voiceRecognizer.liveTranscript) { _, transcript in
+                scheduleAutoStop(after: transcript)
+            }
+            .overlay {
+                if isVoiceMode {
+                    VoiceListeningView(
+                        recognizer: voiceRecognizer,
+                        onFinish: { Task { await finishVoice() } },
+                        onRetry: { Task { await startVoice() } },
+                        onType: cancelVoice
+                    )
+                    .transition(.opacity)
+                }
+            }
+            .animation(.easeInOut(duration: 0.2), value: isVoiceMode)
             .task { await refreshBudgets() }
             .task { await refreshSortedCategories() }
             .overlay {
@@ -199,43 +220,24 @@ struct QuickAddView: View {
     /// que Claude lo interprete (monto, descripcion, tipo). Inspirado en el
     /// reconocimiento de voz de MonAi.
     private var voiceButton: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Button {
-                Task { await handleMicTap() }
-            } label: {
-                HStack(spacing: 10) {
-                    Image(systemName: voiceRecognizer.isRecording ? "waveform" : "mic.fill")
-                        .foregroundStyle(voiceRecognizer.isRecording ? .red : .accentColor)
-                    Text(micLabel)
-                        .font(.subheadline.weight(.medium))
-                    Spacer()
-                    if voiceRecognizer.isProcessing {
-                        ProgressView()
-                    }
-                }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(voiceRecognizer.isRecording ? Color.red.opacity(0.12) : Color(.secondarySystemBackground))
-                )
+        Button {
+            Task { await startVoice() }
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "mic.fill")
+                    .foregroundStyle(MonAviBrand.primary)
+                Text("O dilo en voz alta")
+                    .font(.subheadline.weight(.medium))
+                Spacer()
             }
-            .buttonStyle(.plain)
-            .disabled(voiceRecognizer.isProcessing)
-
-            if voiceRecognizer.isRecording && !voiceRecognizer.liveTranscript.isEmpty {
-                Text(voiceRecognizer.liveTranscript)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-            }
-
-            if let voiceError = voiceRecognizer.errorMessage {
-                Text(voiceError)
-                    .font(.footnote)
-                    .foregroundStyle(.red)
-            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color(.secondarySystemBackground))
+            )
         }
+        .buttonStyle(.plain)
     }
 
     private var categoryChips: some View {
@@ -322,17 +324,54 @@ struct QuickAddView: View {
         sortedCategories = await CategoryUsageService.sortedCategories(userId: userId)
     }
 
-    private var micLabel: String {
-        if voiceRecognizer.isProcessing { return "Entendiendo lo que dijiste..." }
-        if voiceRecognizer.isRecording { return "Escuchando... toca para terminar" }
-        return "O dilo en voz alta"
+    // MARK: - Voz
+
+    private func startVoice() async {
+        descriptionFocused = false
+        isVoiceMode = true
+        guard !voiceRecognizer.isRecording else { return }
+        _ = await voiceRecognizer.toggleRecording()
     }
 
-    private func handleMicTap() async {
-        if let parsed = await voiceRecognizer.toggleRecording() {
-            movementType = parsed.movementType
-            amountText = parsed.amount == 0 ? "" : String(format: "%.2f", parsed.amount)
-            description = parsed.description
+    /// Termina de escuchar y pre-llena el formulario con lo que entendio
+    /// Claude. Si falla, la pantalla de escucha muestra el error y deja
+    /// reintentar o escribir.
+    private func finishVoice() async {
+        silenceTask?.cancel()
+        silenceTask = nil
+        guard voiceRecognizer.isRecording else { return }
+        guard let parsed = await voiceRecognizer.toggleRecording() else { return }
+
+        movementType = parsed.movementType
+        if parsed.amount > 0 {
+            let isWhole = parsed.amount.rounded() == parsed.amount
+            amountText = String(format: isWhole ? "%.0f" : "%.2f", parsed.amount)
+        } else {
+            amountText = ""
+        }
+        description = parsed.description
+        if let parsedCategory = parsed.category.flatMap(TransactionCategory.init(rawValue:)) {
+            category = parsedCategory
+        }
+        isVoiceMode = false
+    }
+
+    private func cancelVoice() {
+        silenceTask?.cancel()
+        silenceTask = nil
+        voiceRecognizer.cancel()
+        isVoiceMode = false
+    }
+
+    /// Cada palabra nueva reinicia la cuenta: tras 1.8 s sin hablar, se
+    /// corta y se interpreta solo.
+    private func scheduleAutoStop(after transcript: String) {
+        guard isVoiceMode, voiceRecognizer.isRecording, !transcript.isEmpty else { return }
+        silenceTask?.cancel()
+        silenceTask = Task {
+            try? await Task.sleep(nanoseconds: 1_800_000_000)
+            guard !Task.isCancelled else { return }
+            await finishVoice()
         }
     }
 

@@ -192,7 +192,7 @@ final class DayJournalViewModel: ObservableObject {
         return DaySummary(income: todayIncome, expense: todayExpense, mood: mood)
     }
 
-    private static func mood(for todayNet: Decimal, comparedTo pastNets: [Decimal]) -> DaySummary.Mood {
+    static func mood(for todayNet: Decimal, comparedTo pastNets: [Decimal]) -> DaySummary.Mood {
         guard !pastNets.isEmpty else {
             return todayNet > 0 ? .normal : .slow
         }

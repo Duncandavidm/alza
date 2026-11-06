@@ -47,7 +47,7 @@ final class ProfileSettingsViewModel: ObservableObject {
 
     /// Edad valida (1 a 120) o nil si el campo esta vacio. Devuelve
     /// `.failure` si escribio algo que no es una edad razonable.
-    static func parseAge(_ text: String) -> Result<Int?, ProfileAgeError> {
+    nonisolated static func parseAge(_ text: String) -> Result<Int?, ProfileAgeError> {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty { return .success(nil) }
         guard let age = Int(trimmed), (1...120).contains(age) else {

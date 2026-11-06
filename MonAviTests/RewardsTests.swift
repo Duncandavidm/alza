@@ -162,19 +162,20 @@ final class RewardsTests: XCTestCase {
     }
 
     private func redemptionJSON(status: String, expiresAt: String, withItem: Bool) -> String {
-        let itemPart = withItem ? """
-          ,"reward_items": {
-            "id": "6F9619FF-8B86-D011-B42D-00C04FC964FF",
-            "merchant_id": "7F9619FF-8B86-D011-B42D-00C04FC964FF",
-            "name": "Café latte",
-            "description": null,
-            "photo_url": null,
-            "points_cost": 150,
-            "status": "active",
-            "sort_order": 0,
-            "partner_merchants": null
-          }
-        """ : ",\"reward_items\": null"
+        let itemJSON = """
+        {
+          "id": "6F9619FF-8B86-D011-B42D-00C04FC964FF",
+          "merchant_id": "7F9619FF-8B86-D011-B42D-00C04FC964FF",
+          "name": "Café latte",
+          "description": null,
+          "photo_url": null,
+          "points_cost": 150,
+          "status": "active",
+          "sort_order": 0,
+          "partner_merchants": null
+        }
+        """
+        let itemValue = withItem ? itemJSON : "null"
         return """
         {
           "id": "1F9619FF-8B86-D011-B42D-00C04FC964FF",
@@ -186,8 +187,8 @@ final class RewardsTests: XCTestCase {
           "status": "\(status)",
           "expires_at": "\(expiresAt)",
           "delivered_at": null,
-          "created_at": "2026-11-01T10:00:00Z"
-          \(itemPart)
+          "created_at": "2026-11-01T10:00:00Z",
+          "reward_items": \(itemValue)
         }
         """
     }

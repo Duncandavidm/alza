@@ -4,7 +4,7 @@ export const metadata: Metadata = {
   title: "Política de Privacidad — MonAvi",
 };
 
-const UPDATED_AT = "5 de noviembre de 2026";
+const UPDATED_AT = "6 de noviembre de 2026";
 
 export default function PrivacyPage() {
   return (
@@ -41,12 +41,25 @@ export default function PrivacyPage() {
             audio.
           </li>
           <li>
-            <strong>Datos para puntos verificados (opcionales):</strong> si usas &quot;Facturas que suman&quot;,
-            el código único (CUFE) de tus facturas electrónicas verificadas por la DGI de Panamá. Si vinculas una
-            tarjeta para ganar puntos en comercios aliados, solo guardamos la marca, los últimos 4 dígitos y un
-            alias que tú eliges — nunca el número completo, el CVV ni la fecha de vencimiento. Si te inscribes en
-            &quot;Ahorro verificado&quot; con un banco patrocinador, solo guardamos un identificador que el banco
-            te entrega — nunca tu número de cuenta real.
+            <strong>Facturas que escaneas (opcional):</strong> si usas &quot;Facturas que suman&quot;, el código
+            único (CUFE) de tus facturas electrónicas y, una vez que la DGI de Panamá las confirma, los datos
+            públicos de esa factura: el comercio que la emitió, la fecha y hora de la compra, el monto, la forma de
+            pago (por ejemplo, &quot;tarjeta de crédito&quot; o &quot;efectivo&quot;, nunca el número de tu
+            tarjeta) y el detalle de productos comprados.
+          </li>
+          <li>
+            <strong>Puntos y canjes:</strong> los puntos que ganas y los productos que canjeas en comercios
+            aliados (qué producto, en qué comercio, el código de canje y si ya se entregó).
+          </li>
+          <li>
+            <strong>Perfil (opcional):</strong> tu edad, género y otros datos que decidas darnos en el estudio
+            inicial (estado civil, dependientes, ocupación, metas). Puedes dejarlos en blanco o cambiarlos en
+            Ajustes &gt; Mi perfil.
+          </li>
+          <li>
+            <strong>Notificaciones:</strong> si las permites, un identificador de tu dispositivo que Apple nos
+            entrega para poder enviarte avisos (por ejemplo, &quot;sumaste puntos&quot;). Se borra al cerrar
+            sesión.
           </li>
           <li>
             <strong>Soporte y sugerencias:</strong> lo que nos escribes directamente (correo de soporte, buzón de
@@ -68,10 +81,17 @@ export default function PrivacyPage() {
             Para generar los insights y respuestas de IA que pides dentro de la app (por ejemplo,
             &quot;¿cuánto gasté en comida este mes?&quot; o el consejo de qué pagar primero).
           </li>
-          <li>Para verificar y acreditar los puntos de los programas en los que participes.</li>
+          <li>Para verificar y acreditar tus puntos, y para gestionar tus canjes en comercios aliados.</li>
+          <li>Para enviarte recordatorios y avisos que tú activas (pagos, puntos sumados).</li>
+          <li>
+            Para elaborar estudios de mercado con datos <strong>anónimos y agregados</strong>, como se explica en
+            la sección 5.
+          </li>
           <li>Para darte soporte cuando nos escribes.</li>
         </ul>
-        <p>Nunca usamos tus datos para publicidad ni los vendemos a terceros.</p>
+        <p>
+          Nunca vendemos tus datos personales ni los usamos para mostrarte publicidad de terceros.
+        </p>
       </div>
 
       <div className="card">
@@ -93,15 +113,43 @@ export default function PrivacyPage() {
             las compras dentro de la app.
           </li>
           <li>
-            <strong>El banco patrocinador o comercio aliado</strong> correspondiente, únicamente si tú decides
-            inscribirte voluntariamente en &quot;Ahorro verificado&quot; o vincular una tarjeta — y solo el
-            identificador opaco o los últimos 4 dígitos, nunca más.
+            <strong>Apple (notificaciones)</strong> — entrega los avisos a tu dispositivo. Solo recibe el texto del
+            aviso y el identificador del dispositivo.
+          </li>
+          <li>
+            <strong>El comercio aliado donde canjeas</strong> — cuando muestras tu código de canje en caja, el
+            comercio ve solo el código y el producto canjeado. No ve tu nombre, tu correo ni tus movimientos.
           </li>
         </ul>
       </div>
 
       <div className="card">
-        <h3>5. Seguridad</h3>
+        <h3>5. Estudios de mercado con datos anónimos</h3>
+        <p>
+          Con la información de las facturas verificadas y de los movimientos registrados en MonAvi elaboramos
+          estadísticas agregadas sobre hábitos de consumo: por ejemplo, los medios de pago más usados, las
+          categorías y productos más comprados, los horarios y días de mayor compra, el ticket promedio, o cómo
+          se distribuyen estas cifras por rango de edad y género. Podemos compartir estos informes con los
+          comercios aliados y usarlos para mejorar MonAvi.
+        </p>
+        <ul>
+          <li>
+            Los informes <strong>nunca incluyen datos que te identifiquen</strong>: ni tu nombre, ni tu correo, ni
+            tus movimientos individuales. Solo muestran totales, promedios y porcentajes de grupos de personas.
+          </li>
+          <li>
+            Ningún grupo de <strong>menos de 5 personas</strong> aparece en un informe, para que no se pueda
+            deducir la compra de una persona en particular.
+          </li>
+          <li>
+            Si prefieres que tus datos no se incluyan en estas estadísticas, escríbenos a{" "}
+            <a href="mailto:soporte@monavi.app">soporte@monavi.app</a> y los excluiremos.
+          </li>
+        </ul>
+      </div>
+
+      <div className="card">
+        <h3>6. Seguridad</h3>
         <p>
           Tu sesión se guarda cifrada en el Keychain de tu dispositivo (nunca en texto plano). Cada usuario solo
           puede leer y modificar sus propios datos — está impuesto a nivel de base de datos (Row Level Security),
@@ -110,7 +158,7 @@ export default function PrivacyPage() {
       </div>
 
       <div className="card">
-        <h3>6. Tus derechos</h3>
+        <h3>7. Tus derechos</h3>
         <p>
           Puedes pedirnos en cualquier momento, escribiendo a{" "}
           <a href="mailto:soporte@monavi.app">soporte@monavi.app</a>:
@@ -118,18 +166,22 @@ export default function PrivacyPage() {
         <ul>
           <li>Una copia de los datos que tenemos sobre ti.</li>
           <li>La corrección de datos incorrectos.</li>
-          <li>La eliminación completa de tu cuenta y tus datos.</li>
+          <li>La eliminación completa de tu cuenta y tus datos (también puedes hacerlo tú en Ajustes &gt; Eliminar cuenta).</li>
+          <li>Que tus datos no se incluyan en los estudios de mercado anónimos.</li>
         </ul>
-        <p>Respondemos estas solicitudes en un plazo razonable, generalmente dentro de 30 días.</p>
+        <p>
+          Respondemos estas solicitudes en un plazo razonable, generalmente dentro de 30 días, conforme a la Ley
+          81 de 2019 de Protección de Datos Personales de Panamá.
+        </p>
       </div>
 
       <div className="card">
-        <h3>7. Menores de edad</h3>
+        <h3>8. Menores de edad</h3>
         <p>MonAvi no está dirigida a menores de 13 años y no recopilamos a sabiendas datos de menores de esa edad.</p>
       </div>
 
       <div className="card">
-        <h3>8. Cambios a esta política</h3>
+        <h3>9. Cambios a esta política</h3>
         <p>
           Si hacemos cambios importantes, lo indicaremos actualizando la fecha al inicio de esta página y, cuando
           corresponda, avisando dentro de la app.

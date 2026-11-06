@@ -434,4 +434,16 @@ final class NotificationPresenter: NSObject, UNUserNotificationCenterDelegate {
         }
         return [.banner, .list, .sound]
     }
+
+    /// El usuario toco la notificacion: si trae un destino ("screen"),
+    /// la app abre esa pantalla (ej. Puntos al sumar puntos).
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse
+    ) async {
+        let screen = response.notification.request.content.userInfo["screen"] as? String
+        await MainActor.run {
+            NotificationRouter.shared.open(screen: screen)
+        }
+    }
 }

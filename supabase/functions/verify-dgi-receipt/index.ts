@@ -1,8 +1,8 @@
 // Edge Function: verify-dgi-receipt
 //
 // "Facturas que suman" Fase 2 (verificacion real) + Fase 3 (puntos).
-// Job operativo llamado por pg_cron (ver migracion 0029_dgi_verification,
-// cada 6 horas) — igual que reconcile-card-transactions/
+// Job operativo llamado por pg_cron (migracion 0031: todos los dias a las
+// 8:00 a. m. de Panama) — igual que reconcile-card-transactions/
 // reconcile-savings-reports, exige x-admin-secret, verify_jwt: false.
 //
 // Confirmado en vivo contra dgi-fep.mef.gob.pa (ver reporte de la
@@ -25,6 +25,7 @@
 // DGI, no por Visa/Mastercard ni por el comercio.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { sendPushToUser } from "./apns.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -32,6 +33,10 @@ const ADMIN_JOB_SECRET = Deno.env.get("ADMIN_JOB_SECRET")!;
 
 const DGI_BASE = "https://dgi-fep.mef.gob.pa";
 const BATCH_SIZE = 20;
+// La corrida es una vez al dia, asi que procesa lote tras lote hasta
+// vaciar los pendientes, sin pasar de este tiempo (el limite de una Edge
+// Function es mayor; esto deja margen para los avisos push del final).
+const TIME_BUDGET_MS = 110_000;
 // Pausa entre cada consulta — no hay razon para martillar un servidor
 // del gobierno mas rapido de lo que un usuario haria a mano.
 const DELAY_BETWEEN_REQUESTS_MS = 300;
@@ -47,6 +52,14 @@ function jsonResponse(body: unknown, status = 200): Response {
     status,
     headers: { "Content-Type": "application/json", ...CORS_HEADERS },
   });
+}
+
+/// "ALDAROVA LOGISTICS, S.A." -> "Aldarova Logistics, S.A."
+function titleCase(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/(^|[\s(/-])([a-záéíóúñ])/g, (_, prefix, letter) => prefix + letter.toUpperCase())
+    .replace(/\bS\.a\./g, "S.A.");
 }
 
 function sleep(ms: number): Promise<void> {
@@ -99,6 +112,93 @@ function extractPaymentMethods(html: string): string[] {
 
 function isCardPayment(paymentMethods: string[]): boolean {
   return paymentMethods.some((method) => method.toLowerCase().includes("tarjeta"));
+}
+
+function decodeEntities(text: string): string {
+  return text
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)));
+}
+
+function cleanText(html: string): string {
+  return decodeEntities(html.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
+}
+
+/// Campos "<dt>ETIQUETA</dt><dd>VALOR</dd>" en orden de aparicion. El
+/// primer NOMBRE es el del EMISOR (el comercio); el segundo, el receptor.
+function extractDefinitions(html: string): { label: string; value: string }[] {
+  const result: { label: string; value: string }[] = [];
+  const pattern = /<dt[^>]*>([\s\S]*?)<\/dt>\s*<dd[^>]*>([\s\S]*?)<\/dd>/g;
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(html)) !== null) {
+    result.push({ label: cleanText(match[1]).toUpperCase(), value: cleanText(match[2]) });
+  }
+  return result;
+}
+
+function extractMerchantName(html: string): string | null {
+  const emisorIndex = html.indexOf("EMISOR");
+  const section = emisorIndex === -1 ? html : html.slice(emisorIndex);
+  const name = extractDefinitions(section).find((field) => field.label === "NOMBRE")?.value;
+  return name && name.length > 0 ? name.slice(0, 200) : null;
+}
+
+/// "FECHA AUTORIZACIÓN" viene como "04/11/2026 13:55:04", hora de Panama
+/// (UTC-5 todo el año, sin horario de verano).
+function extractAuthorizedAt(html: string): string | null {
+  const raw = extractDefinitions(html).find((field) => field.label.startsWith("FECHA AUTORIZ"))?.value;
+  const match = raw?.match(/(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (!match) return null;
+  const [, day, month, year, hour, minute, second] = match;
+  return `${year}-${month}-${day}T${hour}:${minute}:${second ?? "00"}-05:00`;
+}
+
+export interface ReceiptLine {
+  line_no: number;
+  code: string | null;
+  description: string;
+  quantity: number | null;
+  unit_price: number | null;
+  total: number | null;
+}
+
+function toNumber(value: string | undefined): number | null {
+  if (!value) return null;
+  const parsed = Number(value.replace(/,/g, ""));
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+/// Detalle de productos: cada <tr> de la tabla "Detalle" trae celdas con
+/// data-title (Linea, Código, Descripción, Cantidad, Precio, Total...).
+export function extractLines(html: string): ReceiptLine[] {
+  const lines: ReceiptLine[] = [];
+  const rowPattern = /<tr>([\s\S]*?)<\/tr>/g;
+  let row: RegExpExecArray | null;
+  while ((row = rowPattern.exec(html)) !== null) {
+    if (!row[1].includes('data-title="Descripción"')) continue;
+    const cells: Record<string, string> = {};
+    const cellPattern = /<td[^>]*data-title="([^"]+)"[^>]*>([\s\S]*?)<\/td>/g;
+    let cell: RegExpExecArray | null;
+    while ((cell = cellPattern.exec(row[1])) !== null) {
+      cells[cell[1]] = cleanText(cell[2]);
+    }
+    const description = cells["Descripción"];
+    if (!description) continue;
+    lines.push({
+      line_no: toNumber(cells["Linea"]) ?? lines.length + 1,
+      code: cells["Código"] || null,
+      description: description.slice(0, 300),
+      quantity: toNumber(cells["Cantidad"]),
+      unit_price: toNumber(cells["Precio"]),
+      total: toNumber(cells["Total"]),
+    });
+    if (lines.length >= 200) break;
+  }
+  return lines;
 }
 
 // ---------------------------------------------------------------------
@@ -164,8 +264,8 @@ async function awardCardBonusIfApplicable(
   amount: number,
   paymentMethods: string[],
   occurredAt: string,
-) {
-  if (!isCardPayment(paymentMethods)) return;
+): Promise<number> {
+  if (!isCardPayment(paymentMethods)) return 0;
 
   const { data: merchant } = await supabase
     .from("partner_merchants")
@@ -173,7 +273,7 @@ async function awardCardBonusIfApplicable(
     .eq("ruc", receipt.ruc)
     .eq("status", "active")
     .maybeSingle();
-  if (!merchant) return;
+  if (!merchant) return 0;
 
   const { data: offer } = await supabase
     .from("partner_merchant_offers")
@@ -185,22 +285,22 @@ async function awardCardBonusIfApplicable(
     .order("starts_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (!offer) return;
+  if (!offer) return 0;
 
-  if (offer.min_amount && amount < Number(offer.min_amount)) return;
+  if (offer.min_amount && amount < Number(offer.min_amount)) return 0;
 
   const rawPoints = offer.offer_type === "percent" ? amount * Number(offer.value) : Number(offer.value);
   const points = Math.max(0, Math.floor(rawPoints));
-  if (points === 0) return;
+  if (points === 0) return 0;
 
   if (offer.budget_total_points !== null && offer.budget_spent_points + points > offer.budget_total_points) {
     await supabase.from("partner_merchant_offers").update({ status: "budget_exhausted" }).eq("id", offer.id);
-    return;
+    return 0;
   }
 
   const dailyCap = await getRule(supabase, "tarjeta", "daily_cap_points_per_user", Number.POSITIVE_INFINITY);
   const alreadyToday = await pointsAlreadyToday(supabase, receipt.user_id, "tarjeta", occurredAt);
-  if (alreadyToday + points > dailyCap) return;
+  if (alreadyToday + points > dailyCap) return 0;
 
   await supabase.rpc("award_points", {
     p_user_id: receipt.user_id,
@@ -216,6 +316,8 @@ async function awardCardBonusIfApplicable(
     .from("partner_merchant_offers")
     .update({ budget_spent_points: offer.budget_spent_points + points })
     .eq("id", offer.id);
+
+  return points;
 }
 
 // ---------------------------------------------------------------------
@@ -231,19 +333,25 @@ interface PendingReceipt {
   dgi_check_count: number;
 }
 
+interface ReceiptResult {
+  /// Puntos sumados en esta corrida por esta factura (factura + bono).
+  points: number;
+  merchantName: string | null;
+}
+
 async function processReceipt(
   supabase: ReturnType<typeof createClient>,
   receipt: PendingReceipt,
   pointsPerDollar: number,
   dailyCapFactura: number,
   expireAfterDays: number,
-) {
+): Promise<ReceiptResult | null> {
   const now = new Date();
   const response = await fetch(`${DGI_BASE}/Consultas/FacturasPorCUFE/${receipt.cufe}`);
   if (!response.ok) {
     // Fallo transitorio (servidor caido, etc.) — no se cuenta como un
     // intento real, se reintenta en la proxima corrida.
-    return;
+    return null;
   }
   const html = await response.text();
 
@@ -259,11 +367,14 @@ async function processReceipt(
         dgi_check_count: receipt.dgi_check_count + 1,
       })
       .eq("id", receipt.id);
-    return;
+    return null;
   }
 
   const amount = extractConfirmedAmount(html);
   const paymentMethods = extractPaymentMethods(html);
+  const merchantName = extractMerchantName(html);
+  const authorizedAt = extractAuthorizedAt(html);
+  const lines = extractLines(html);
 
   await supabase
     .from("dgi_receipts")
@@ -271,13 +382,33 @@ async function processReceipt(
       status: "confirmada",
       confirmed_amount: amount,
       payment_method: paymentMethods.length > 0 ? paymentMethods.join(", ") : null,
+      merchant_name: merchantName,
+      authorized_at: authorizedAt,
       dgi_checked_at: now.toISOString(),
       dgi_check_count: receipt.dgi_check_count + 1,
     })
     .eq("id", receipt.id);
 
-  if (amount === null || amount <= 0) return;
+  // Detalle de productos (estudio de mercado) y comercio para el catalogo
+  // RUC -> nombre que autocompleta futuros escaneos. Si falla, no frena
+  // los puntos.
+  if (lines.length > 0) {
+    const { error: linesError } = await supabase.from("dgi_receipt_items").upsert(
+      lines.map((line) => ({ ...line, receipt_id: receipt.id, user_id: receipt.user_id })),
+      { onConflict: "receipt_id,line_no" },
+    );
+    if (linesError) console.error("dgi_receipt_items", linesError.message);
+  }
+  if (merchantName) {
+    await supabase.from("merchants").upsert(
+      { ruc: receipt.ruc, name: merchantName },
+      { onConflict: "ruc", ignoreDuplicates: true },
+    );
+  }
 
+  if (amount === null || amount <= 0) return { points: 0, merchantName };
+
+  let awarded = 0;
   const points = Math.max(0, Math.floor(amount * pointsPerDollar));
   if (points > 0) {
     const alreadyToday = await pointsAlreadyToday(supabase, receipt.user_id, "factura", receipt.scanned_at);
@@ -291,16 +422,19 @@ async function processReceipt(
         p_occurred_at: receipt.scanned_at,
         p_metadata: { cufe: receipt.cufe, confirmedAmount: amount, paymentMethod: paymentMethods },
       });
+      awarded += points;
     }
   }
 
-  await awardCardBonusIfApplicable(
+  awarded += await awardCardBonusIfApplicable(
     supabase,
     { id: receipt.id, user_id: receipt.user_id, ruc: receipt.ruc, cufe: receipt.cufe },
     amount,
     paymentMethods,
     receipt.scanned_at,
   );
+
+  return { points: awarded, merchantName };
 }
 
 Deno.serve(async (req) => {
@@ -324,37 +458,76 @@ Deno.serve(async (req) => {
     const dailyCapFactura = await getRule(supabase, "factura", "daily_cap_points_per_user", 300);
     const expireAfterDays = Number((await getConfig(supabase, "dgi_verification_expire_after_days")) ?? 7);
 
-    const { data, error } = await supabase
-      .from("dgi_receipts")
-      .select("id, user_id, cufe, ruc, scanned_at, dgi_check_count")
-      .eq("status", "pendiente")
-      .order("dgi_checked_at", { ascending: true, nullsFirst: true })
-      .limit(BATCH_SIZE);
-    if (error) throw error;
-
-    const pending: PendingReceipt[] = (data ?? []).map((row: Record<string, unknown>) => ({
-      id: row.id as string,
-      user_id: row.user_id as string,
-      cufe: row.cufe as string,
-      ruc: row.ruc as string,
-      scanned_at: row.scanned_at as string,
-      dgi_check_count: row.dgi_check_count as number,
-    }));
-
+    const startedAt = Date.now();
+    const seen = new Set<string>();
+    let fetched = 0;
     let processed = 0;
+    let confirmed = 0;
     const errors: string[] = [];
+    // Por usuario: puntos sumados y facturas confirmadas en esta corrida,
+    // para mandar UN solo aviso push por persona al final.
+    const perUser = new Map<string, { points: number; receipts: number; merchants: Set<string> }>();
 
-    for (const receipt of pending) {
-      try {
-        await processReceipt(supabase, receipt, pointsPerDollar, dailyCapFactura, expireAfterDays);
-        processed++;
-      } catch (recordError) {
-        errors.push(`${receipt.cufe}: ${String(recordError)}`);
+    while (Date.now() - startedAt < TIME_BUDGET_MS) {
+      const { data, error } = await supabase
+        .from("dgi_receipts")
+        .select("id, user_id, cufe, ruc, scanned_at, dgi_check_count")
+        .eq("status", "pendiente")
+        .order("dgi_checked_at", { ascending: true, nullsFirst: true })
+        .limit(Math.min(BATCH_SIZE + seen.size, 1000));
+      if (error) throw error;
+
+      // Las que siguen pendientes tras revisarlas en esta corrida vuelven a
+      // salir en la consulta: se saltan para no revisarlas dos veces.
+      const pending: PendingReceipt[] = (data ?? [])
+        .filter((row: Record<string, unknown>) => !seen.has(row.id as string))
+        .map((row: Record<string, unknown>) => ({
+          id: row.id as string,
+          user_id: row.user_id as string,
+          cufe: row.cufe as string,
+          ruc: row.ruc as string,
+          scanned_at: row.scanned_at as string,
+          dgi_check_count: row.dgi_check_count as number,
+        }));
+      if (pending.length === 0) break;
+      fetched += pending.length;
+
+      for (const receipt of pending) {
+        if (Date.now() - startedAt >= TIME_BUDGET_MS) break;
+        seen.add(receipt.id);
+        try {
+          const result = await processReceipt(supabase, receipt, pointsPerDollar, dailyCapFactura, expireAfterDays);
+          processed++;
+          if (result) {
+            confirmed++;
+            const entry = perUser.get(receipt.user_id) ?? { points: 0, receipts: 0, merchants: new Set<string>() };
+            entry.points += result.points;
+            entry.receipts += 1;
+            if (result.merchantName) entry.merchants.add(result.merchantName);
+            perUser.set(receipt.user_id, entry);
+          }
+        } catch (recordError) {
+          errors.push(`${receipt.cufe}: ${String(recordError)}`);
+        }
+        await sleep(DELAY_BETWEEN_REQUESTS_MS);
       }
-      await sleep(DELAY_BETWEEN_REQUESTS_MS);
     }
 
-    return jsonResponse({ fetched: pending.length, processed, errors });
+    let pushesSent = 0;
+    for (const [userId, entry] of perUser) {
+      if (entry.points <= 0) continue;
+      const merchantText = entry.receipts === 1 && entry.merchants.size === 1
+        ? `Tu factura de ${titleCase([...entry.merchants][0])} fue verificada por la DGI.`
+        : `${entry.receipts} facturas fueron verificadas por la DGI.`;
+      const result = await sendPushToUser(supabase, userId, {
+        title: `¡Sumaste ${entry.points} puntos! ⭐️`,
+        body: `${merchantText} Ya puedes usarlos para canjear en comercios aliados.`,
+        data: { screen: "points" },
+      });
+      pushesSent += result.sent;
+    }
+
+    return jsonResponse({ fetched, processed, confirmed, pushesSent, errors });
   } catch (error) {
     console.error(error);
     return jsonResponse({ error: String(error) }, 500);

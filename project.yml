@@ -40,6 +40,9 @@ targets:
           - group.app.monavi.shared
         # Avisos del dia de pago que suenan aun con un modo de concentracion.
         com.apple.developer.usernotifications.time-sensitive: true
+        # Notificaciones push del servidor (ej. "sumaste puntos"). Xcode lo
+        # cambia solo a "production" al archivar para TestFlight/App Store.
+        aps-environment: development
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.monavi

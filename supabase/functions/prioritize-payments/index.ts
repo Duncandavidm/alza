@@ -441,6 +441,27 @@ async function buildPaymentPlan(
   return { advice, items };
 }
 
+/** Claude a veces envuelve el JSON en un bloque ```json ... ``` o agrega
+ * una frase antes o despues, aunque se le pida que no. Junta los bloques
+ * de texto de la respuesta y toma desde el primer `open` hasta el ultimo
+ * cierre correspondiente. Lanza si no hay JSON valido. */
+function extractJson(data: unknown, open: "[" | "{"): unknown {
+  const blocks = Array.isArray((data as { content?: unknown })?.content)
+    ? (data as { content: { type?: string; text?: string }[] }).content
+    : [];
+  const text = blocks
+    .filter((block) => block?.type === "text" && typeof block.text === "string")
+    .map((block) => block.text)
+    .join("\n");
+  const close = open === "[" ? "]" : "}";
+  const start = text.indexOf(open);
+  const end = text.lastIndexOf(close);
+  if (start === -1 || end <= start) {
+    throw new Error(`La respuesta de Claude no trae JSON (stop_reason: ${(data as { stop_reason?: string })?.stop_reason})`);
+  }
+  return JSON.parse(text.slice(start, end + 1));
+}
+
 /// Le pide a Claude SOLO que redacte el consejo general y la razon de cada
 /// item, en el orden que `computeRanking` ya decidio — nunca que reordene.
 /// Si Claude no responde, responde mal, o la respuesta no es JSON valido,
@@ -509,8 +530,8 @@ Responde UNICAMENTE con este JSON (sin texto extra, sin markdown):
     }
 
     const data = await response.json();
-    const text = data.content?.[0]?.text ?? "{}";
-    const parsed = JSON.parse(text);
+    // deno-lint-ignore no-explicit-any
+    const parsed = extractJson(data, "{") as any;
 
     const result = new Map<string, string>();
     if (typeof parsed.advice === "string") result.set("__advice__", parsed.advice);

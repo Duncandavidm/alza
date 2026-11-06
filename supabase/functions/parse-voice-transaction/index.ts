@@ -76,8 +76,34 @@ async function checkRateLimit(
 }
 
 const MOVEMENT_TYPES = ["ingreso", "gasto", "pago_proveedor", "inversion", "transferencia"] as const;
-const CATEGORIES = ["Ingreso", "Vivienda", "Comida", "Transporte", "Entretenimiento", "Salud", "Ahorro", "Otro"];
+// Mismos rawValue que TransactionCategory en la app (Transaction.swift).
+const CATEGORIES = [
+  "Ingreso", "Vivienda", "Comida", "Supermercado", "Servicios", "Transporte",
+  "Compras", "Ropa", "Salir", "Entretenimiento", "Suscripciones", "Salud",
+  "Educación", "Mascotas", "Regalos", "Viajes", "Ahorro", "Otro",
+];
 const MAX_TRANSCRIPT_LENGTH = 500;
+
+/** Claude a veces envuelve el JSON en un bloque ```json ... ``` o agrega
+ * una frase antes o despues, aunque se le pida que no. Junta los bloques
+ * de texto de la respuesta y toma desde el primer `open` hasta el ultimo
+ * cierre correspondiente. Lanza si no hay JSON valido. */
+function extractJson(data: unknown, open: "[" | "{"): unknown {
+  const blocks = Array.isArray((data as { content?: unknown })?.content)
+    ? (data as { content: { type?: string; text?: string }[] }).content
+    : [];
+  const text = blocks
+    .filter((block) => block?.type === "text" && typeof block.text === "string")
+    .map((block) => block.text)
+    .join("\n");
+  const close = open === "[" ? "]" : "}";
+  const start = text.indexOf(open);
+  const end = text.lastIndexOf(close);
+  if (start === -1 || end <= start) {
+    throw new Error(`La respuesta de Claude no trae JSON (stop_reason: ${(data as { stop_reason?: string })?.stop_reason})`);
+  }
+  return JSON.parse(text.slice(start, end + 1));
+}
 
 interface ParsedTransaction {
   amount: number;
@@ -158,7 +184,7 @@ Reglas:
     },
     body: JSON.stringify({
       model: "claude-sonnet-5-5",
-      max_tokens: 300,
+      max_tokens: 500,
       messages: [{ role: "user", content: prompt }],
     }),
   });
@@ -168,10 +194,10 @@ Reglas:
   }
 
   const data = await response.json();
-  const text = data.content?.[0]?.text ?? "";
 
   try {
-    const parsed = JSON.parse(text);
+    // deno-lint-ignore no-explicit-any
+    const parsed = extractJson(data, "{") as any;
     if (
       typeof parsed.amount !== "number" ||
       !Number.isFinite(parsed.amount) ||
@@ -186,7 +212,8 @@ Reglas:
       movementType: parsed.movementType,
       category: CATEGORIES.includes(parsed.category) ? parsed.category : null,
     };
-  } catch {
+  } catch (error) {
+    console.error("parse-voice-transaction: no se pudo interpretar la respuesta", String(error));
     return null;
   }
 }

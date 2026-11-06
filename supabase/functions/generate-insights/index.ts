@@ -75,6 +75,27 @@ async function checkRateLimit(
   return data === true;
 }
 
+/** Claude a veces envuelve el JSON en un bloque ```json ... ``` o agrega
+ * una frase antes o despues, aunque se le pida que no. Junta los bloques
+ * de texto de la respuesta y toma desde el primer `open` hasta el ultimo
+ * cierre correspondiente. Lanza si no hay JSON valido. */
+function extractJson(data: unknown, open: "[" | "{"): unknown {
+  const blocks = Array.isArray((data as { content?: unknown })?.content)
+    ? (data as { content: { type?: string; text?: string }[] }).content
+    : [];
+  const text = blocks
+    .filter((block) => block?.type === "text" && typeof block.text === "string")
+    .map((block) => block.text)
+    .join("\n");
+  const close = open === "[" ? "]" : "}";
+  const start = text.indexOf(open);
+  const end = text.lastIndexOf(close);
+  if (start === -1 || end <= start) {
+    throw new Error(`La respuesta de Claude no trae JSON (stop_reason: ${(data as { stop_reason?: string })?.stop_reason})`);
+  }
+  return JSON.parse(text.slice(start, end + 1));
+}
+
 interface InsightSuggestion {
   kind: "general" | "spending" | "saving" | "alert";
   title: string;
@@ -212,7 +233,7 @@ ${JSON.stringify(debts)}`;
     },
     body: JSON.stringify({
       model: "claude-sonnet-5-5",
-      max_tokens: 1024,
+      max_tokens: 2048,
       messages: [{ role: "user", content: prompt }],
     }),
   });
@@ -222,22 +243,21 @@ ${JSON.stringify(debts)}`;
   }
 
   const data = await response.json();
-  const text = data.content?.[0]?.text ?? "[]";
 
-  try {
-    const parsed = JSON.parse(text);
-    if (!Array.isArray(parsed)) return [];
-    return parsed
-      .filter(
-        (item): item is InsightSuggestion =>
-          typeof item?.title === "string" && typeof item?.body === "string",
-      )
-      .map((item) => ({
-        ...item,
-        title: item.title.slice(0, 200),
-        body: item.body.slice(0, 2000),
-      }));
-  } catch {
-    return [];
+  // Si no se puede interpretar, se lanza (500) en vez de responder 200 con
+  // 0 insights: asi la app avisa y el error queda en los logs.
+  const parsed = extractJson(data, "[");
+  if (!Array.isArray(parsed)) {
+    throw new Error("La respuesta de Claude no es una lista de insights");
   }
+  return parsed
+    .filter(
+      (item): item is InsightSuggestion =>
+        typeof item?.title === "string" && typeof item?.body === "string",
+    )
+    .map((item) => ({
+      kind: ["general", "spending", "saving", "alert"].includes(item.kind) ? item.kind : "general",
+      title: item.title.slice(0, 200),
+      body: item.body.slice(0, 2000),
+    }));
 }

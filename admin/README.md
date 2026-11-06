@@ -1,5 +1,10 @@
 # MonAvi Admin
 
+Publicado en **https://monavi.maday.app** (Vercel, proyecto "monavi"):
+se despliega solo con cada push a `claude/clever-planck-lf32rw`, con
+Root Directory = `admin`. Landing publica de aliados:
+https://monavi.maday.app/aliados
+
 Panel interno minimo (Fase 4 del modulo de puntos): comercios aliados,
 sus ofertas y productos canjeables, solicitudes de nuevos comercios,
 canjes de puntos, estudio de mercado, subir reportes de comercio/banco,

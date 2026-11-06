@@ -61,11 +61,18 @@ struct DgiReceiptsListView: View {
     private func receiptRow(_ receipt: DgiReceipt) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text("RUC \(receipt.ruc)").font(.body)
+                Text(receipt.displayTitle)
+                    .font(.body.weight(receipt.hasMerchantName ? .semibold : .regular))
+                    .lineLimit(1)
                 Spacer()
                 statusBadge(receipt.status)
             }
-            Text(receipt.fechaFacturaValue.formatted(date: .abbreviated, time: .omitted))
+            if receipt.hasMerchantName {
+                Text("RUC \(receipt.ruc)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Text(receiptDateText(receipt))
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Text(receipt.status.statusExplanation)
@@ -78,6 +85,15 @@ struct DgiReceiptsListView: View {
             }
         }
         .padding(.vertical, 4)
+    }
+
+    /// Con la hora real de la compra (DGI) si ya la tenemos; si no, solo
+    /// la fecha del QR.
+    private func receiptDateText(_ receipt: DgiReceipt) -> String {
+        if let authorizedAt = receipt.authorizedAt {
+            return authorizedAt.formatted(date: .abbreviated, time: .shortened)
+        }
+        return receipt.fechaFacturaValue.formatted(date: .abbreviated, time: .omitted)
     }
 
     private func statusBadge(_ status: DgiReceiptStatus) -> some View {

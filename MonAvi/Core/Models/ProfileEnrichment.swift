@@ -39,3 +39,24 @@ enum RiskTolerance: String, Codable, CaseIterable, Identifiable, Hashable {
         }
     }
 }
+
+/// Genero (opcional) del perfil — columna `profiles.gender` (migracion
+/// 0031), solo para el estudio de mercado agregado y anonimo. nil = no
+/// respondio.
+enum ProfileGender: String, Codable, CaseIterable, Identifiable, Hashable {
+    case femenino
+    case masculino
+    case otro
+    case prefieroNoDecir = "prefiero_no_decir"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .femenino: return "Femenino"
+        case .masculino: return "Masculino"
+        case .otro: return "Otro"
+        case .prefieroNoDecir: return "Prefiero no decir"
+        }
+    }
+}

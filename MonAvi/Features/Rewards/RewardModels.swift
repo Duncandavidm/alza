@@ -1,0 +1,201 @@
+import Foundation
+
+/// Producto canjeable de un comercio aliado (tabla `reward_items`,
+/// migracion 0031). La RLS solo devuelve productos activos de comercios
+/// activos. Se lee con el comercio embebido:
+/// `select("*, partner_merchants(*)")` -> clave JSON `partner_merchants`.
+struct RewardItem: Codable, Identifiable, Hashable {
+    let id: UUID
+    let merchantId: UUID
+    var name: String
+    /// Columna `description` — se renombra para no confundirla con
+    /// `CustomStringConvertible.description`.
+    var itemDescription: String?
+    var photoUrl: String?
+    var pointsCost: Int
+    var status: String
+    var sortOrder: Int
+    /// Comercio embebido. Opcional por si algun select no lo trae.
+    var merchant: PartnerMerchant?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case merchantId = "merchant_id"
+        case name
+        case itemDescription = "description"
+        case photoUrl = "photo_url"
+        case pointsCost = "points_cost"
+        case status
+        case sortOrder = "sort_order"
+        case merchant = "partner_merchants"
+    }
+
+    var merchantName: String { merchant?.name ?? "Comercio aliado" }
+}
+
+enum RewardRedemptionStatus: String, Codable, CaseIterable, Identifiable, Hashable {
+    case emitido
+    case entregado
+    case cancelado
+    case vencido
+
+    var id: String { rawValue }
+
+    /// Texto del badge en "Mis canjes".
+    var displayName: String {
+        switch self {
+        case .emitido: return "Listo para usar"
+        case .entregado: return "Entregado"
+        case .cancelado: return "Cancelado"
+        case .vencido: return "Vencido"
+        }
+    }
+}
+
+/// Un canje: el codigo de 6 caracteres que el usuario muestra en caja
+/// (tabla `reward_redemptions`). Para "Mis canjes" se lee con
+/// `select("*, reward_items(*, partner_merchants(*)), partner_merchants(*)")`
+/// — el comercio va directo (por `merchant_id`) ademas de dentro del
+/// producto, porque si el producto se pausa despues, la RLS de
+/// `reward_items` lo esconde y el embed llega en null.
+/// La RPC `redeem_reward` devuelve la fila sola (sin embeds); el
+/// repositorio le pega el producto y el comercio que ya tenia la app.
+struct RewardRedemption: Codable, Identifiable, Hashable {
+    let id: UUID
+    let userId: UUID
+    let rewardItemId: UUID
+    let merchantId: UUID
+    let pointsCost: Int
+    let code: String
+    var status: RewardRedemptionStatus
+    let expiresAt: Date
+    var deliveredAt: Date?
+    let createdAt: Date
+    var item: RewardItem?
+    var merchant: PartnerMerchant?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case userId = "user_id"
+        case rewardItemId = "reward_item_id"
+        case merchantId = "merchant_id"
+        case pointsCost = "points_cost"
+        case code
+        case status
+        case expiresAt = "expires_at"
+        case deliveredAt = "delivered_at"
+        case createdAt = "created_at"
+        case item = "reward_items"
+        case merchant = "partner_merchants"
+    }
+
+    /// Comercio a mostrar: el directo, o el que viene dentro del producto.
+    var displayMerchant: PartnerMerchant? { merchant ?? item?.merchant }
+
+    var merchantName: String { displayMerchant?.name ?? "Comercio aliado" }
+
+    var itemName: String { item?.name ?? "tu producto" }
+
+    /// El vencimiento real lo aplica un cron una vez al dia; mientras
+    /// tanto, un codigo "emitido" que ya paso su fecha se muestra como
+    /// vencido para no mandar a nadie a caja con un codigo muerto.
+    func effectiveStatus(now: Date = Date()) -> RewardRedemptionStatus {
+        if status == .emitido && expiresAt < now {
+            return .vencido
+        }
+        return status
+    }
+
+    func isUsable(now: Date = Date()) -> Bool {
+        effectiveStatus(now: now) == .emitido
+    }
+}
+
+/// Logica pura del catalogo (sin red, sin UI) — separada para poder
+/// probarla en MonAviTests.
+enum RewardsMath {
+    /// Cuantos puntos le faltan al usuario para poder canjear (0 si ya
+    /// le alcanza).
+    static func pointsMissing(cost: Int, balance: Int) -> Int {
+        max(0, cost - max(0, balance))
+    }
+
+    static func canAfford(cost: Int, balance: Int) -> Bool {
+        pointsMissing(cost: cost, balance: balance) == 0
+    }
+
+    /// Orden del catalogo: por nombre del comercio y, dentro de cada
+    /// comercio, por `sort_order` (y nombre del producto para desempatar).
+    static func sorted(_ items: [RewardItem]) -> [RewardItem] {
+        items.sorted { lhs, rhs in
+            let lhsMerchant = lhs.merchantName.localizedLowercase
+            let rhsMerchant = rhs.merchantName.localizedLowercase
+            if lhsMerchant != rhsMerchant {
+                return lhsMerchant < rhsMerchant
+            }
+            if lhs.sortOrder != rhs.sortOrder {
+                return lhs.sortOrder < rhs.sortOrder
+            }
+            return lhs.name.localizedLowercase < rhs.name.localizedLowercase
+        }
+    }
+
+    /// Categorias distintas (sin vacias), en orden alfabetico, para los
+    /// chips de filtro.
+    static func categories(of items: [RewardItem]) -> [String] {
+        var seen = Set<String>()
+        var result: [String] = []
+        for item in items {
+            guard let raw = item.merchant?.category else { continue }
+            let category = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !category.isEmpty, !seen.contains(category) else { continue }
+            seen.insert(category)
+            result.append(category)
+        }
+        return result.sorted { $0.localizedLowercase < $1.localizedLowercase }
+    }
+
+    static func filter(_ items: [RewardItem], category: String?) -> [RewardItem] {
+        guard let category else { return items }
+        return items.filter { item in
+            let itemCategory = item.merchant?.category?.trimmingCharacters(in: .whitespacesAndNewlines)
+            return itemCategory == category
+        }
+    }
+
+    /// URL valida (http/https) a partir de un string opcional del panel.
+    static func webURL(from string: String?) -> URL? {
+        guard let trimmed = string?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmed.isEmpty,
+              let url = URL(string: trimmed),
+              let scheme = url.scheme?.lowercased(),
+              scheme == "http" || scheme == "https" else {
+            return nil
+        }
+        return url
+    }
+
+    /// "Como llegar": el enlace de mapas que puso el comercio o, si no
+    /// hay, una busqueda en Apple Maps por nombre + direccion.
+    static func directionsURL(name: String, address: String?, mapsUrl: String?) -> URL? {
+        if let url = webURL(from: mapsUrl) {
+            return url
+        }
+        var query = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let address = address?.trimmingCharacters(in: .whitespacesAndNewlines), !address.isEmpty {
+            query += query.isEmpty ? address : ", \(address)"
+        }
+        guard !query.isEmpty else { return nil }
+        var components = URLComponents()
+        components.scheme = "http"
+        components.host = "maps.apple.com"
+        components.path = "/"
+        components.queryItems = [URLQueryItem(name: "q", value: query)]
+        return components.url
+    }
+
+    static func directionsURL(for merchant: PartnerMerchant?) -> URL? {
+        guard let merchant else { return nil }
+        return directionsURL(name: merchant.name, address: merchant.address, mapsUrl: merchant.mapsUrl)
+    }
+}

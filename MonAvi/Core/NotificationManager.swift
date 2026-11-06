@@ -83,9 +83,17 @@ enum NotificationManager {
         await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
     }
 
+    /// Si el usuario da permiso, de una vez se registra para push
+    /// (APNs) — el token llega al AppDelegate y lo sube PushTokenService.
     @discardableResult
     static func requestAuthorization() async -> Bool {
-        (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])) ?? false
+        let granted = (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])) ?? false
+        if granted {
+            await MainActor.run {
+                UIApplication.shared.registerForRemoteNotifications()
+            }
+        }
+        return granted
     }
 
     // MARK: - Facturas (cuentas por cobrar)

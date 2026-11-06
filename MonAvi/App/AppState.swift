@@ -68,6 +68,9 @@ final class AppState: ObservableObject {
     }
 
     func signOut() async {
+        // Antes de cerrar la sesion (la RLS pide al dueno): que este
+        // dispositivo deje de recibir push de esta cuenta.
+        await PushTokenService.shared.removeCurrentToken()
         try? await supabase.auth.signOut()
     }
 

@@ -14,6 +14,7 @@ final class OnboardingViewModel: ObservableObject {
     // Paso 1b: panorama personal (edad, estado civil, dependientes, ocupacion)
     @Published var ageText = ""
     @Published var maritalStatus: MaritalStatus?
+    @Published var gender: ProfileGender?
     @Published var dependentsCountText = ""
     @Published var occupation = ""
 
@@ -180,6 +181,7 @@ final class OnboardingViewModel: ObservableObject {
                 let variableIncomeNotes: String?
                 let age: Int?
                 let maritalStatus: String?
+                let gender: String?
                 let dependentsCount: Int?
                 let occupation: String?
                 let riskTolerance: String?
@@ -193,6 +195,7 @@ final class OnboardingViewModel: ObservableObject {
                     case variableIncomeNotes = "variable_income_notes"
                     case age
                     case maritalStatus = "marital_status"
+                    case gender
                     case dependentsCount = "dependents_count"
                     case occupation
                     case riskTolerance = "risk_tolerance"
@@ -211,6 +214,7 @@ final class OnboardingViewModel: ObservableObject {
                         variableIncomeNotes: hasVariableIncome && !variableIncomeNotes.isEmpty ? variableIncomeNotes : nil,
                         age: Int(ageText),
                         maritalStatus: maritalStatus?.rawValue,
+                        gender: gender?.rawValue,
                         dependentsCount: Int(dependentsCountText),
                         occupation: occupation.isEmpty ? nil : occupation,
                         riskTolerance: riskTolerance?.rawValue,

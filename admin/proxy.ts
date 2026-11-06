@@ -5,7 +5,11 @@ import { SESSION_COOKIE_NAME, isValidSessionToken } from "./lib/auth";
 // viven en este mismo proyecto de Vercel a proposito: Apple exige una
 // URL de politica de privacidad y de soporte antes de poder enviar la
 // app a revision. Nunca deben quedar detras de la clave del panel.
-const PUBLIC_PATHS = ["/login", "/privacy", "/support"];
+// /aliados es la landing donde los comercios piden ser aliados; su
+// formulario es una server action que hace POST a la misma ruta, asi que
+// tambien queda publica (la accion valida todo y solo inserta en
+// merchant_applications).
+const PUBLIC_PATHS = ["/login", "/privacy", "/support", "/aliados"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

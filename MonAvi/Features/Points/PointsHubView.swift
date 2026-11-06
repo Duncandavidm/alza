@@ -23,6 +23,22 @@ struct PointsHubView: View {
     var body: some View {
         List {
             Section {
+                NavigationLink {
+                    RewardsView()
+                } label: {
+                    rewardsCard
+                }
+
+                NavigationLink {
+                    MyRedemptionsView()
+                } label: {
+                    Label("Mis canjes", systemImage: "ticket.fill")
+                }
+            } footer: {
+                Text("Cambia tus puntos canjeables por productos en comercios aliados.")
+            }
+
+            Section {
                 balanceSummary
             }
 
@@ -65,6 +81,29 @@ struct PointsHubView: View {
         .navigationTitle("Puntos")
         .refreshable { await refresh() }
         .task { await refresh() }
+    }
+
+    /// Entrada destacada al catalogo de canje — lo primero que se ve.
+    private var rewardsCard: some View {
+        HStack(spacing: 14) {
+            ZStack {
+                Circle()
+                    .fill(MonAviBrand.headerGradient)
+                Image(systemName: "gift.fill")
+                    .font(.title3)
+                    .foregroundStyle(MonAviBrand.accentOnDark)
+            }
+            .frame(width: 48, height: 48)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Canjea tus puntos")
+                    .font(.system(.headline, design: MonAviBrand.fontDesign, weight: .bold))
+                Text("Tienes \(viewModel.balance.confirmedPoints) pts para usar en comercios aliados")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 8)
     }
 
     private var balanceSummary: some View {

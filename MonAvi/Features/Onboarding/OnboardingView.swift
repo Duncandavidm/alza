@@ -218,6 +218,13 @@ struct OnboardingView: View {
                 }
             }
 
+            Picker("Género", selection: $viewModel.gender) {
+                Text("Sin especificar").tag(ProfileGender?.none)
+                ForEach(ProfileGender.allCases) { gender in
+                    Text(gender.displayName).tag(Optional(gender))
+                }
+            }
+
             TextField("Cuántos dependen de ti (hijos, etc.)", text: $viewModel.dependentsCountText)
                 .keyboardType(.numberPad)
 

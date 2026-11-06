@@ -85,6 +85,11 @@ struct DgiReceipt: Codable, Identifiable, Hashable {
     /// Crédito") — nil hasta que se confirma. Si incluye "tarjeta", ya
     /// se evaluo el bono de comercio aliado (ver verify-dgi-receipt).
     var paymentMethod: String?
+    /// Nombre del comercio segun la DGI (migracion 0031) — nil hasta que
+    /// el verificador lo llena.
+    var merchantName: String?
+    /// Fecha y hora real de la compra (autorizacion DGI), si se conoce.
+    var authorizedAt: Date?
 
     let scannedAt: Date
     var dgiCheckedAt: Date?
@@ -116,6 +121,8 @@ struct DgiReceipt: Codable, Identifiable, Hashable {
         case status
         case confirmedAmount = "confirmed_amount"
         case paymentMethod = "payment_method"
+        case merchantName = "merchant_name"
+        case authorizedAt = "authorized_at"
         case scannedAt = "scanned_at"
         case dgiCheckedAt = "dgi_checked_at"
         case dgiCheckCount = "dgi_check_count"
@@ -124,6 +131,20 @@ struct DgiReceipt: Codable, Identifiable, Hashable {
     }
 
     var fechaFacturaValue: Date { DgiReceiptDateFormat.date(from: fechaFactura) }
+
+    /// Titulo para la lista: el nombre del comercio si ya lo tenemos;
+    /// si no, el RUC.
+    var displayTitle: String {
+        if let name = merchantName?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty {
+            return name
+        }
+        return "RUC \(ruc)"
+    }
+
+    var hasMerchantName: Bool {
+        guard let name = merchantName?.trimmingCharacters(in: .whitespacesAndNewlines) else { return false }
+        return !name.isEmpty
+    }
 }
 
 struct NewDgiReceipt: Encodable {

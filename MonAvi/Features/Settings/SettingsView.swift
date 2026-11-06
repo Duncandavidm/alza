@@ -18,6 +18,14 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    NavigationLink {
+                        ProfileSettingsView()
+                    } label: {
+                        Label("Mi perfil", systemImage: "person.crop.circle.fill")
+                    }
+                }
+
                 Section("Preferencias") {
                     Toggle("Modo avanzado", isOn: $isAdvancedMode)
                     Text(isAdvancedMode

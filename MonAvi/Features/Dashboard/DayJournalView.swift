@@ -328,7 +328,7 @@ struct DayJournalView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Puntos")
                         .font(.subheadline.weight(.medium))
-                    Text("Puntos por facturas, nivel e insignias")
+                    Text("Canjea tus puntos en comercios aliados")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

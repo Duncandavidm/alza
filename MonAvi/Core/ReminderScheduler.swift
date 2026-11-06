@@ -1,5 +1,6 @@
 import Foundation
 import Supabase
+import UIKit
 
 /// Reprograma TODOS los recordatorios locales con datos frescos del
 /// servidor. Antes solo se programaban al abrir la pantalla de Cuentas por
@@ -11,6 +12,12 @@ enum ReminderScheduler {
     static func refreshAll(userId: UUID) async {
         let status = await NotificationManager.authorizationStatus()
         guard status == .authorized || status == .provisional || status == .ephemeral else { return }
+
+        // Con permiso de notificaciones: pedir (o refrescar) el token de
+        // APNs y subirlo para este usuario. El token llega despues al
+        // AppDelegate; PushTokenService lo sube en cuanto lo tenga.
+        UIApplication.shared.registerForRemoteNotifications()
+        await PushTokenService.shared.sync(userId: userId)
 
         let supabase = SupabaseManager.shared.client
 

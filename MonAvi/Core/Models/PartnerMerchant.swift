@@ -8,6 +8,13 @@ struct PartnerMerchant: Codable, Identifiable, Hashable {
     var name: String
     var ruc: String
     var status: String
+    /// Ficha publica del comercio (migracion 0031): logo, enlace de
+    /// mapas, categoria y direccion. Opcionales — el panel las llena
+    /// cuando el comercio entra al catalogo de canje.
+    var logoUrl: String?
+    var mapsUrl: String?
+    var category: String?
+    var address: String?
     let createdAt: Date
     let updatedAt: Date
 
@@ -16,6 +23,10 @@ struct PartnerMerchant: Codable, Identifiable, Hashable {
         case name
         case ruc
         case status
+        case logoUrl = "logo_url"
+        case mapsUrl = "maps_url"
+        case category
+        case address
         case createdAt = "created_at"
         case updatedAt = "updated_at"
     }

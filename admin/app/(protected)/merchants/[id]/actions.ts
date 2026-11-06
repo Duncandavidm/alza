@@ -2,6 +2,48 @@
 
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { friendlyDbError, parseMerchantFields } from "@/lib/merchant-form";
+import { fileFromForm, uploadRewardImage } from "@/lib/uploads";
+import { optionalText, text } from "@/lib/validation";
+import type { ActionState } from "@/components/ActionForm";
+
+function revalidateMerchant(merchantId: string) {
+  revalidatePath("/merchants");
+  revalidatePath(`/merchants/${merchantId}`);
+}
+
+// ---------------------------------------------------------------------------
+// Ficha del comercio
+// ---------------------------------------------------------------------------
+
+export async function updateMerchant(merchantId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
+  const parsed = parseMerchantFields(formData);
+  if (!parsed.fields) return { error: parsed.error };
+
+  const status = text(formData, "status", 10);
+  const update: Record<string, unknown> = { ...parsed.fields };
+  if (status === "active" || status === "paused") update.status = status;
+
+  const logo = fileFromForm(formData, "logo");
+  if (logo) {
+    const upload = await uploadRewardImage(logo, "logos", merchantId);
+    if (upload.error) return { error: upload.error };
+    update.logo_url = upload.url;
+  } else if (formData.get("remove_logo")) {
+    update.logo_url = null;
+  }
+
+  const supabase = supabaseAdmin();
+  const { error } = await supabase.from("partner_merchants").update(update).eq("id", merchantId);
+  if (error) return { error: friendlyDbError(error) };
+
+  revalidateMerchant(merchantId);
+  return { message: "Ficha guardada." };
+}
+
+// ---------------------------------------------------------------------------
+// Ofertas de puntos (sin cambios de comportamiento)
+// ---------------------------------------------------------------------------
 
 export async function createOffer(merchantId: string, formData: FormData) {
   const offerType = String(formData.get("offer_type") ?? "percent");
@@ -32,4 +74,114 @@ export async function updateOfferStatus(merchantId: string, offerId: string, sta
   if (error) throw new Error(error.message);
 
   revalidatePath(`/merchants/${merchantId}`);
+}
+
+// ---------------------------------------------------------------------------
+// Productos canjeables (reward_items)
+// ---------------------------------------------------------------------------
+
+type RewardItemFields = {
+  name: string;
+  description: string | null;
+  points_cost: number;
+  sort_order: number;
+  status: "active" | "paused";
+};
+
+function parseRewardItemFields(formData: FormData): { fields?: RewardItemFields; error?: string } {
+  const name = text(formData, "name", 120);
+  if (!name) return { error: "El nombre del producto es obligatorio." };
+
+  const pointsCost = Number(text(formData, "points_cost", 12));
+  if (!Number.isInteger(pointsCost) || pointsCost <= 0 || pointsCost > 10_000_000) {
+    return { error: "El costo en puntos debe ser un número entero mayor que 0." };
+  }
+
+  const sortRaw = text(formData, "sort_order", 12);
+  const sortOrder = sortRaw ? Number(sortRaw) : 0;
+  if (!Number.isInteger(sortOrder)) return { error: "El orden debe ser un número entero." };
+
+  const status = text(formData, "status", 10) === "paused" ? "paused" : "active";
+
+  return {
+    fields: {
+      name,
+      description: optionalText(formData, "description", 500),
+      points_cost: pointsCost,
+      sort_order: sortOrder,
+      status,
+    },
+  };
+}
+
+export async function createRewardItem(merchantId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
+  const parsed = parseRewardItemFields(formData);
+  if (!parsed.fields) return { error: parsed.error };
+
+  const insert: Record<string, unknown> = { ...parsed.fields, merchant_id: merchantId };
+  const photo = fileFromForm(formData, "photo");
+  if (photo) {
+    const upload = await uploadRewardImage(photo, "products", merchantId);
+    if (upload.error) return { error: upload.error };
+    insert.photo_url = upload.url;
+  }
+
+  const supabase = supabaseAdmin();
+  const { error } = await supabase.from("reward_items").insert(insert);
+  if (error) return { error: friendlyDbError(error) };
+
+  revalidateMerchant(merchantId);
+  return { message: `Producto “${parsed.fields.name}” agregado.` };
+}
+
+export async function updateRewardItem(
+  merchantId: string,
+  itemId: string,
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const parsed = parseRewardItemFields(formData);
+  if (!parsed.fields) return { error: parsed.error };
+
+  const update: Record<string, unknown> = { ...parsed.fields };
+  const photo = fileFromForm(formData, "photo");
+  if (photo) {
+    const upload = await uploadRewardImage(photo, "products", itemId);
+    if (upload.error) return { error: upload.error };
+    update.photo_url = upload.url;
+  } else if (formData.get("remove_photo")) {
+    update.photo_url = null;
+  }
+
+  const supabase = supabaseAdmin();
+  const { error } = await supabase.from("reward_items").update(update).eq("id", itemId).eq("merchant_id", merchantId);
+  if (error) return { error: friendlyDbError(error) };
+
+  revalidateMerchant(merchantId);
+  return { message: "Producto guardado." };
+}
+
+export async function setRewardItemStatus(merchantId: string, itemId: string, status: "active" | "paused") {
+  const supabase = supabaseAdmin();
+  const { error } = await supabase.from("reward_items").update({ status }).eq("id", itemId).eq("merchant_id", merchantId);
+  if (error) throw new Error(error.message);
+
+  revalidateMerchant(merchantId);
+}
+
+export async function deleteRewardItem(merchantId: string, itemId: string): Promise<ActionState> {
+  const supabase = supabaseAdmin();
+  const { count } = await supabase
+    .from("reward_redemptions")
+    .select("id", { count: "exact", head: true })
+    .eq("reward_item_id", itemId);
+  if ((count ?? 0) > 0) {
+    return { error: "No se puede borrar: este producto ya tiene canjes. Páusalo para ocultarlo de la app." };
+  }
+
+  const { error } = await supabase.from("reward_items").delete().eq("id", itemId).eq("merchant_id", merchantId);
+  if (error) return { error: friendlyDbError(error) };
+
+  revalidateMerchant(merchantId);
+  return { message: "Producto eliminado." };
 }

@@ -15,10 +15,19 @@ import SwiftUI
 /// suman" y, si dice tarjeta y el RUC es un comercio aliado con oferta
 /// activa, acredita el bono ahi mismo (entra al mismo saldo de abajo).
 /// LinkedCardsView/PartnerOffersView (vincular tarjeta a mano, navegar
-/// ofertas) quedan sin usarse — ese flujo manual ya no hace falta.
+/// ofertas) quedan sin usarse — ese flujo manual ya no hace falta. En su
+/// lugar, "Conecta tus pagos con Wallet" (WalletAutomationGuideView)
+/// explica como anotar cada pago con tarjeta solo, via Atajos.
+///
+/// "Ofertas de marcas" (brand_campaigns) solo aparece si hay campañas
+/// activas; cualquier error la esconde en silencio. Al abrir el hub por
+/// primera vez sin decision, se pide el consentimiento del estudio de
+/// mercado anonimo (MarketStudyConsentView, una sola vez).
 struct PointsHubView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = PointsViewModel()
+    @State private var brandCampaigns: [BrandCampaign] = []
+    @State private var isShowingMarketStudyConsent = false
 
     var body: some View {
         List {
@@ -56,6 +65,28 @@ struct PointsHubView: View {
                 Text("Ganas 1% de cashback de cada factura confirmada por la DGI.")
             }
 
+            if !brandCampaigns.isEmpty {
+                Section {
+                    ForEach(brandCampaigns) { campaign in
+                        BrandCampaignCard(campaign: campaign)
+                    }
+                } header: {
+                    Text("Ofertas de marcas")
+                }
+            }
+
+            Section {
+                NavigationLink {
+                    WalletAutomationGuideView()
+                } label: {
+                    Label("Conecta tus pagos con Wallet", systemImage: "wallet.pass.fill")
+                }
+            } header: {
+                Text("Paga con tarjeta en comercios aliados")
+            } footer: {
+                Text("Cada pago con tarjeta se anota solo. Si pagas con tarjeta en un comercio aliado y escaneas la factura, ganas un bono extra.")
+            }
+
             Section {
                 NavigationLink {
                     LevelsView()
@@ -83,6 +114,10 @@ struct PointsHubView: View {
         .navigationTitle("Puntos y cashback")
         .refreshable { await refresh() }
         .task { await refresh() }
+        .task { await promptMarketStudyConsentIfNeeded() }
+        .sheet(isPresented: $isShowingMarketStudyConsent) {
+            MarketStudyConsentView()
+        }
     }
 
     /// Entrada destacada al catalogo de canje.
@@ -111,5 +146,15 @@ struct PointsHubView: View {
     private func refresh() async {
         guard let userId = appState.currentUserId else { return }
         await viewModel.refresh(userId: userId)
+        brandCampaigns = await BrandCampaignsRepository.shared.fetchActiveOrEmpty()
+    }
+
+    /// Una sola vez: si el usuario aun no decidio sobre el estudio de
+    /// mercado anonimo, se le pregunta al abrir el hub.
+    private func promptMarketStudyConsentIfNeeded() async {
+        guard let userId = appState.currentUserId else { return }
+        guard await MarketStudyConsentPrompt.shouldShow(userId: userId) else { return }
+        MarketStudyConsentPrompt.markShown(userId: userId)
+        isShowingMarketStudyConsent = true
     }
 }

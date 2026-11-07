@@ -357,6 +357,42 @@ enum NotificationManager {
         UNUserNotificationCenter.current().add(request)
     }
 
+    // MARK: - Pago con tarjeta en un comercio aliado (Atajos/Wallet)
+
+    static let partnerCardHintSentKey = "partnerCardHintSent"
+
+    /// Identificador por comercio + dia: "partner-card-super 99-2026-11-07".
+    static func partnerCardHintId(merchant: String, date: Date = Date(), calendar: Calendar = .current) -> String {
+        let components = calendar.dateComponents([.year, .month, .day], from: date)
+        let day = String(format: "%04ld-%02ld-%02ld", components.year ?? 0, components.month ?? 0, components.day ?? 0)
+        return "partner-card-\(PartnerMerchantMatcher.normalized(merchant))-\(day)"
+    }
+
+    /// Despues de que un Atajo anota un pago con tarjeta en un comercio
+    /// aliado: recuerda escanear la factura (la factura DGI es la prueba
+    /// del pago con tarjeta y del bono). Maximo uno por comercio por dia.
+    static func sendPartnerCardPaymentHint(merchantName: String, date: Date = Date()) {
+        let id = partnerCardHintId(merchant: merchantName, date: date)
+        let defaults = UserDefaults.standard
+        var sent = defaults.stringArray(forKey: partnerCardHintSentKey) ?? []
+        guard !sent.contains(id) else { return }
+        sent.append(id)
+        defaults.set(Array(sent.suffix(30)), forKey: partnerCardHintSentKey)
+
+        let content = UNMutableNotificationContent()
+        content.title = "Pagaste en \(merchantName) 💳"
+        content.body = "Escanea tu factura para ganar tu cashback y el bono por pagar con tarjeta."
+        content.sound = brandSound
+        content.userInfo = ["screen": NotificationDestination.points.rawValue]
+
+        let request = UNNotificationRequest(
+            identifier: id,
+            content: content,
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        )
+        UNUserNotificationCenter.current().add(request)
+    }
+
     // MARK: - Prueba
 
     /// Desde Ajustes: un aviso de prueba a los 5 segundos para escuchar el

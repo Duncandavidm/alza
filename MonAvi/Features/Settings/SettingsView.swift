@@ -148,6 +148,8 @@ struct SettingsView: View {
                     }
                 }
 
+                PrivacySettingsSection()
+
                 /// Antes solo se veian estos enlaces en el paywall — alguien
                 /// que ya es cliente Pro no vuelve a esa pantalla, asi que
                 /// se quedaba sin forma de encontrarlos despues de suscribirse.

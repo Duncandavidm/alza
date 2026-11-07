@@ -25,6 +25,7 @@ struct DayJournalView: View {
     @State private var selectedBudgetProgress: BudgetProgress?
     @State private var pointsByTransaction: [UUID: Int] = [:]
     @State private var featuredRewards = FeaturedRewards.empty
+    @State private var brandCampaigns: [BrandCampaign] = []
 
     var body: some View {
         NavigationStack {
@@ -57,6 +58,10 @@ struct DayJournalView: View {
 
                         if !featuredRewards.items.isEmpty {
                             RewardsForYouCard(items: featuredRewards.items, balance: featuredRewards.balance)
+                        }
+
+                        if !brandCampaigns.isEmpty {
+                            BrandCampaignsTodayRow(campaigns: brandCampaigns)
                         }
 
                         ForEach(recurringViewModel.dueToday) { item in
@@ -616,6 +621,7 @@ struct DayJournalView: View {
     private func refreshFeaturedRewards() async {
         guard let userId = appState.currentUserId else { return }
         featuredRewards = await FeaturedRewards.load(userId: userId)
+        brandCampaigns = await BrandCampaignsRepository.shared.fetchActiveOrEmpty()
     }
 
     private func refreshDgiConsent() async {

@@ -10,7 +10,12 @@ import Supabase
 /// Esto NO le da a MonAvi acceso directo a Apple Pay/Wallet en si — expone un
 /// App Intent que CUALQUIER Atajo puede llamar. Armar la automatizacion
 /// "cuando pague con mi tarjeta, corre este atajo" es algo que David
-/// configura a mano en la app Atajos; ver el README para el paso a paso.
+/// configura a mano en la app Atajos; ver el README y, dentro de la app,
+/// "Conecta tus pagos con Wallet" (WalletAutomationGuideView).
+///
+/// Si el comercio coincide con un comercio aliado activo, ademas avisa
+/// (notificacion local, una por comercio por dia) que escanee la factura:
+/// la factura DGI es la prueba del pago con tarjeta para el bono.
 struct AddMonAviExpenseIntent: AppIntent {
     static var title: LocalizedStringResource = "Anotar un gasto en MonAvi"
     static var description = IntentDescription(
@@ -80,7 +85,29 @@ struct AddMonAviExpenseIntent: AppIntent {
         )
 
         let categoryNote = category.map { " (\($0.emoji) \($0.rawValue))" } ?? ""
-        return .result(dialog: "Anotado: \(merchant) por \(amount.formatted(.currency(code: "USD")))\(categoryNote).")
+        var dialog = "Anotado: \(merchant) por \(amount.formatted(.currency(code: "USD")))\(categoryNote)."
+
+        // Si se pago en un comercio aliado, recordar escanear la factura:
+        // la factura DGI (que dice "tarjeta") es la prueba para el bono.
+        if let partnerName = await Self.matchingPartnerMerchant(for: merchant) {
+            NotificationManager.sendPartnerCardPaymentHint(merchantName: partnerName)
+            dialog += " \(partnerName) es comercio aliado: escanea tu factura para ganar tu cashback y el bono por pagar con tarjeta."
+        }
+
+        return .result(dialog: "\(dialog)")
+    }
+
+    /// Best-effort: cualquier error (red, RLS) simplemente no avisa nada.
+    @MainActor
+    private static func matchingPartnerMerchant(for merchant: String) async -> String? {
+        struct Row: Decodable { let name: String }
+        let rows: [Row] = (try? await SupabaseManager.shared.client
+            .from("partner_merchants")
+            .select("name")
+            .eq("status", value: "active")
+            .execute()
+            .value) ?? []
+        return PartnerMerchantMatcher.match(merchant: merchant, partnerNames: rows.map(\.name))
     }
 }
 

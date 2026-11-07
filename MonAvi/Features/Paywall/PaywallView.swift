@@ -21,6 +21,7 @@ struct PaywallView: View {
     @EnvironmentObject private var appState: AppState
     @ObservedObject var subscriptionStore: SubscriptionStore
     @State private var isSigningOut = false
+    @State private var isShowingFamilyCode = false
     @State private var audience: PaywallAudience = .personal
     @State private var appeared = false
 
@@ -374,6 +375,20 @@ struct PaywallView: View {
             }
             .font(.footnote)
 
+            // Los invitados al plan Familia no pagan: entran con el codigo
+            // que les comparte el dueno (Ajustes > Mi familia queda detras
+            // de este paywall, por eso el codigo se pide aqui).
+            Button {
+                isShowingFamilyCode = true
+            } label: {
+                Label("Tengo un código familiar", systemImage: "person.3.fill")
+            }
+            .font(.footnote.weight(.semibold))
+            .tint(MonAviBrand.primary)
+            .sheet(isPresented: $isShowingFamilyCode) {
+                FamilyCodeEntrySheet()
+            }
+
             Button {
                 Task {
                     isSigningOut = true
@@ -391,5 +406,85 @@ struct PaywallView: View {
             .foregroundStyle(.secondary)
             .disabled(isSigningOut)
         }
+    }
+}
+
+
+/// Unirse a un plan Familia desde el paywall con el codigo que compartio
+/// el dueno. Al unirse, el acceso Pro llega por el grupo y el paywall se
+/// cierra solo al refrescar el estado de la suscripcion.
+private struct FamilyCodeEntrySheet: View {
+    @EnvironmentObject private var appState: AppState
+    @Environment(\.dismiss) private var dismiss
+    @State private var code = ""
+    @State private var isJoining = false
+    @State private var errorMessage: String?
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Código de invitación", text: $code)
+                        .textInputAutocapitalization(.characters)
+                        .autocorrectionDisabled()
+                        .font(.title3.monospaced())
+                } footer: {
+                    Text("Pídele el código a quien tiene el plan Familia (lo ve en Ajustes > Mi familia). Tendrás acceso completo con tu propia cuenta y tus propios datos.")
+                }
+
+                if let errorMessage {
+                    Section {
+                        Text(errorMessage)
+                            .foregroundStyle(MonAviBrand.alert)
+                    }
+                }
+
+                Section {
+                    Button {
+                        Task { await join() }
+                    } label: {
+                        if isJoining {
+                            ProgressView().frame(maxWidth: .infinity)
+                        } else {
+                            Text("Unirme a la familia").frame(maxWidth: .infinity)
+                        }
+                    }
+                    .disabled(code.trimmingCharacters(in: .whitespaces).count < 4 || isJoining)
+                }
+            }
+            .navigationTitle("Código familiar")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancelar") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private func join() async {
+        isJoining = true
+        errorMessage = nil
+        do {
+            try await FamilyGroupService.shared.join(inviteCode: code)
+            await appState.refreshSubscriptionStatus()
+            isJoining = false
+            if appState.subscriptionStatus.isEntitled {
+                dismiss()
+            } else {
+                errorMessage = "Te uniste al grupo, pero el plan Familia de quien te invitó no está activo. Pídele que lo revise."
+            }
+        } catch {
+            isJoining = false
+            errorMessage = FamilyCodeEntrySheet.message(for: error)
+        }
+    }
+
+    private static func message(for error: Error) -> String {
+        let text = String(describing: error)
+        if text.contains("invalido") { return "Ese código no existe. Revísalo con quien te invitó." }
+        if text.contains("maximo") { return "Ese grupo familiar ya tiene 5 personas." }
+        if text.contains("propio grupo") { return "Ese es tu propio código familiar." }
+        return "No se pudo unir al grupo. Revisa tu conexión e intenta de nuevo."
     }
 }

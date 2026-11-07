@@ -1,6 +1,7 @@
 name: MonAvi
 options:
   bundleIdPrefix: app.monavi
+  developmentLanguage: es
   deploymentTarget:
     iOS: "17.0"
   createIntermediateGroups: true
@@ -26,6 +27,11 @@ targets:
       properties:
         CFBundleDisplayName: MonAvi
         CFBundleIconName: AppIcon
+        # La app esta en espanol: fechas, meses y numeros en espanol aunque
+        # el iPhone este en otro idioma.
+        CFBundleDevelopmentRegion: es
+        CFBundleLocalizations:
+          - es
         UILaunchScreen: {}
         ITSAppUsesNonExemptEncryption: false
         NSMicrophoneUsageDescription: MonAvi usa el microfono para que anotes un ingreso o gasto diciendolo en voz alta.
@@ -72,6 +78,9 @@ targets:
       path: MonAviWidget/Info.plist
       properties:
         CFBundleDisplayName: MonAvi
+        CFBundleDevelopmentRegion: es
+        CFBundleLocalizations:
+          - es
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     entitlements:

@@ -326,9 +326,9 @@ struct DayJournalView: View {
             HStack(spacing: 10) {
                 Text("⭐️")
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Puntos")
+                    Text("Cashback")
                         .font(.subheadline.weight(.medium))
-                    Text("Canjea tus puntos en comercios aliados")
+                    Text("Canjea tu cashback en comercios aliados")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -447,7 +447,7 @@ struct DayJournalView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     if let points = pointsByTransaction[transaction.id] {
-                        Text("+\(points) puntos")
+                        Text("+\(Cashback.format(cents: points)) de cashback")
                             .font(.caption2.weight(.semibold))
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)

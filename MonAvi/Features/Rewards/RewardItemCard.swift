@@ -84,8 +84,8 @@ struct RewardItemCard: View {
             }
             .controlSize(.large)
 
-            if missingPoints > 0 {
-                Text("Te faltan \(missingPoints) pts")
+            if let missingText = RewardsMath.missingText(cost: item.pointsCost, balance: balance) {
+                Text(missingText)
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .trailing)

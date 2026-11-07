@@ -94,12 +94,12 @@ struct MerchantLogoView: View {
     }
 }
 
-/// Pastilla con el costo en puntos ("150 pts").
+/// Pastilla con el costo en cashback ("$1.50"). `points` son centavos.
 struct RewardPointsPill: View {
     let points: Int
 
     var body: some View {
-        Text("\(points) pts")
+        Text(Cashback.format(cents: points))
             .font(.system(.subheadline, design: MonAviBrand.fontDesign, weight: .bold))
             .padding(.horizontal, 10)
             .padding(.vertical, 5)

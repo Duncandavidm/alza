@@ -51,7 +51,7 @@ struct ScanReviewView: View {
                 } header: {
                     Text("Monto y categoría")
                 } footer: {
-                    Text("El monto se registra de una vez; los puntos se acreditan cuando la DGI confirme la factura (24-72 h).")
+                    Text("El monto se registra de una vez; el cashback (1% de la factura) se acredita cuando la DGI la confirme (24-72 h).")
                 }
 
                 if let candidate = draft.mergeCandidate {

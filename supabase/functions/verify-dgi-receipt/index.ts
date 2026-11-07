@@ -519,9 +519,11 @@ Deno.serve(async (req) => {
       const merchantText = entry.receipts === 1 && entry.merchants.size === 1
         ? `Tu factura de ${titleCase([...entry.merchants][0])} fue verificada por la DGI.`
         : `${entry.receipts} facturas fueron verificadas por la DGI.`;
+      // 1 punto = US$0.01 de cashback.
+      const cashback = "$" + (entry.points / 100).toFixed(2);
       const result = await sendPushToUser(supabase, userId, {
-        title: `¡Sumaste ${entry.points} puntos! ⭐️`,
-        body: `${merchantText} Ya puedes usarlos para canjear en comercios aliados.`,
+        title: `¡Ganaste ${cashback} de cashback! 💸`,
+        body: `${merchantText} Úsalo en los comercios aliados de MonAvi.`,
         data: { screen: "points" },
       });
       pushesSent += result.sent;

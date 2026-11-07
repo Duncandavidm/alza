@@ -94,7 +94,7 @@ struct SettingsView: View {
                     NavigationLink {
                         PointsHubView()
                     } label: {
-                        Label("Puntos", systemImage: "star.fill")
+                        Label("Cashback", systemImage: "star.fill")
                     }
 
                     NavigationLink {

@@ -16,7 +16,7 @@ struct DgiReceiptsListView: View {
                 ContentUnavailableView(
                     "Sin facturas escaneadas",
                     systemImage: "qrcode.viewfinder",
-                    description: Text("Escanea el QR de una factura electrónica y la registramos como gasto de una vez.")
+                    description: Text("Escanea el QR de una factura electrónica y la registramos como gasto de una vez. Ganas 1% de cashback de cada factura verificada.")
                 )
             } else {
                 Section("Tus facturas") {

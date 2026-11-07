@@ -50,4 +50,9 @@ enum Config {
     /// sin tener que escribir.
     static let supportURL = URL(string: "https://maday.app/monavi/soporte")!
     static let supportEmail = "hola@maday.app"
+
+    /// Pagina de validacion de canjes para el comercio: el QR del canje
+    /// abre `?code=<CODIGO>` con la camara de cualquier telefono y el
+    /// cajero lo confirma con su PIN.
+    static let redeemBaseURL = URL(string: "https://monavi.maday.app/canjear")!
 }

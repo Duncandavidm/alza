@@ -1,9 +1,9 @@
 import SwiftUI
 import UIKit
 
-/// "Canjea tus puntos": catalogo de productos de comercios aliados. El
+/// "Canjea tu cashback": catalogo de productos de comercios aliados. El
 /// usuario toca "Canjear", confirma, y la RPC `redeem_reward` descuenta
-/// los puntos y genera el codigo que muestra en caja.
+/// el cashback (puntos en centavos) y genera el codigo que muestra en caja.
 struct RewardsView: View {
     @EnvironmentObject private var appState: AppState
     @Environment(\.openURL) private var openURL
@@ -28,7 +28,7 @@ struct RewardsView: View {
             .padding(.vertical, 12)
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle("Canjea tus puntos")
+        .navigationTitle("Canjea tu cashback")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { toolbarContent }
         .refreshable { await refresh() }
@@ -40,7 +40,7 @@ struct RewardsView: View {
             titleVisibility: .visible,
             presenting: pendingItem
         ) { (item: RewardItem) in
-            Button("Canjear por \(item.pointsCost) pts") {
+            Button("Canjear por \(Cashback.format(cents: item.pointsCost))") {
                 Task { await redeem(item) }
             }
             Button("Cancelar", role: .cancel) {}
@@ -70,19 +70,19 @@ struct RewardsView: View {
 
     private var balanceHeader: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Tus puntos canjeables")
+            Text("Tu cashback disponible")
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(MonAviBrand.onDarkSurface.opacity(0.85))
-            Text("\(viewModel.redeemablePoints) pts")
+            Text(Cashback.format(cents: viewModel.redeemablePoints))
                 .font(.system(size: 40, weight: .bold, design: MonAviBrand.fontDesign))
                 .foregroundStyle(MonAviBrand.onDarkSurface)
                 .contentTransition(.numericText())
             if viewModel.balance.pendingPoints > 0 {
-                Text("+\(viewModel.balance.pendingPoints) pts pendientes de confirmar")
+                Text("+\(Cashback.format(cents: viewModel.balance.pendingPoints)) por confirmar")
                     .font(.caption.weight(.medium))
                     .foregroundStyle(MonAviBrand.accentOnDark)
             } else {
-                Text("Cámbialos por productos en comercios aliados.")
+                Text("Úsalo en productos de comercios aliados.")
                     .font(.caption)
                     .foregroundStyle(MonAviBrand.onDarkSurface.opacity(0.75))
             }
@@ -152,7 +152,7 @@ struct RewardsView: View {
         ContentUnavailableView(
             "Pronto habrá comercios aliados aquí",
             systemImage: "gift",
-            description: Text("Sigue sumando puntos con tus facturas: cuando lleguen los primeros comercios, los vas a poder canjear aquí mismo.")
+            description: Text("Sigue sumando cashback con tus facturas: cuando lleguen los primeros comercios, lo vas a poder canjear aquí mismo.")
         )
         .padding(.top, 24)
     }
@@ -188,7 +188,7 @@ struct RewardsView: View {
 
     private var confirmationTitle: String {
         guard let item = pendingItem else { return "¿Canjear este producto?" }
-        return "¿Canjear \(item.name) en \(item.merchantName) por \(item.pointsCost) puntos?"
+        return RewardsMath.confirmationTitle(itemName: item.name, merchantName: item.merchantName, cost: item.pointsCost)
     }
 
     private var isShowingRedeemError: Binding<Bool> {

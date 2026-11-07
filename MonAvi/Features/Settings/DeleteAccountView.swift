@@ -25,7 +25,7 @@ struct DeleteAccountView: View {
                     Text("⚠️").font(.largeTitle)
                     Text("Esto no se puede deshacer")
                         .font(.title3.weight(.bold))
-                    Text("Se borran para siempre tus cuentas, movimientos, presupuestos, deudas, metas de ahorro, facturas, puntos y todo lo demás que hayas registrado en MonAvi. No hay forma de recuperarlo después.")
+                    Text("Se borran para siempre tus cuentas, movimientos, presupuestos, deudas, metas de ahorro, facturas, cashback y todo lo demás que hayas registrado en MonAvi. No hay forma de recuperarlo después.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }

@@ -35,7 +35,7 @@ struct PointsHubView: View {
                     Label("Mis canjes", systemImage: "ticket.fill")
                 }
             } footer: {
-                Text("Cambia tus puntos canjeables por productos en comercios aliados.")
+                Text("Usa tu cashback en productos de comercios aliados.")
             }
 
             Section {
@@ -49,9 +49,9 @@ struct PointsHubView: View {
                     Label("Facturas que suman", systemImage: "qrcode.viewfinder")
                 }
             } header: {
-                Text("Gana puntos canjeables")
+                Text("Gana cashback")
             } footer: {
-                Text("Solo las facturas confirmadas por la DGI dan puntos canjeables.")
+                Text("Ganas 1% de cashback de cada factura confirmada por la DGI.")
             }
 
             Section {
@@ -78,7 +78,7 @@ struct PointsHubView: View {
                 }
             }
         }
-        .navigationTitle("Puntos")
+        .navigationTitle("Cashback")
         .refreshable { await refresh() }
         .task { await refresh() }
     }
@@ -96,9 +96,9 @@ struct PointsHubView: View {
             .frame(width: 48, height: 48)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("Canjea tus puntos")
+                Text("Canjea tu cashback")
                     .font(.system(.headline, design: MonAviBrand.fontDesign, weight: .bold))
-                Text("Tienes \(viewModel.balance.confirmedPoints) pts para usar en comercios aliados")
+                Text("\(RewardsMath.balanceText(cents: viewModel.balance.confirmedPoints)) para usar en comercios aliados")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -109,12 +109,12 @@ struct PointsHubView: View {
     private var balanceSummary: some View {
         HStack(spacing: 24) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Canjeables").font(.caption).foregroundStyle(.secondary)
-                Text("\(viewModel.balance.confirmedPoints) pts").font(.title.weight(.bold))
+                Text("Cashback disponible").font(.caption).foregroundStyle(.secondary)
+                Text(Cashback.format(cents: viewModel.balance.confirmedPoints)).font(.title.weight(.bold))
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text("Pendientes").font(.caption).foregroundStyle(.secondary)
-                Text("\(viewModel.balance.pendingPoints) pts").font(.title.weight(.bold))
+                Text("Por confirmar").font(.caption).foregroundStyle(.secondary)
+                Text(Cashback.format(cents: viewModel.balance.pendingPoints)).font(.title.weight(.bold))
             }
             Spacer()
         }

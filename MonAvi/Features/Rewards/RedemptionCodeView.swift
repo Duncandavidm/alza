@@ -81,7 +81,7 @@ struct RedemptionCodeView: View {
 
     @ViewBuilder
     private var qrImage: some View {
-        if let qr = QRCodeGenerator.image(from: redemption.code) {
+        if let qr = QRCodeGenerator.image(from: qrPayload) {
             qr
                 .interpolation(.none)
                 .resizable()
@@ -95,7 +95,7 @@ struct RedemptionCodeView: View {
 
     private var instructions: some View {
         VStack(spacing: 6) {
-            Text("Muéstralo en caja para recibir tu \(redemption.itemName)")
+            Text("Muéstralo en caja. El comercio lo valida con su PIN.")
                 .font(.headline)
                 .multilineTextAlignment(.center)
             Text("Vence el \(redemption.expiresAt.formatted(date: .long, time: .shortened))")
@@ -119,6 +119,14 @@ struct RedemptionCodeView: View {
             .controlSize(.large)
             .tint(MonAviBrand.primary)
         }
+    }
+
+    /// El QR lleva el link de validacion con el codigo
+    /// (`https://monavi.maday.app/canjear?code=...`) para que el cajero lo
+    /// abra con la camara de cualquier telefono; si no se pudiera armar el
+    /// link, cae al codigo solo.
+    private var qrPayload: String {
+        RewardsMath.redeemURL(code: redemption.code)?.absoluteString ?? redemption.code
     }
 
     /// "A B C 1 2 3" para que VoiceOver lo lea letra por letra.

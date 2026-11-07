@@ -114,14 +114,45 @@ struct RewardRedemption: Codable, Identifiable, Hashable {
 /// Logica pura del catalogo (sin red, sin UI) — separada para poder
 /// probarla en MonAviTests.
 enum RewardsMath {
-    /// Cuantos puntos le faltan al usuario para poder canjear (0 si ya
-    /// le alcanza).
+    /// Cuantos puntos (centavos de cashback) le faltan al usuario para
+    /// poder canjear (0 si ya le alcanza).
     static func pointsMissing(cost: Int, balance: Int) -> Int {
         max(0, cost - max(0, balance))
     }
 
     static func canAfford(cost: Int, balance: Int) -> Bool {
         pointsMissing(cost: cost, balance: balance) == 0
+    }
+
+    // MARK: - Textos (cashback en dolares)
+
+    /// "Tienes $6.50 de cashback".
+    static func balanceText(cents: Int) -> String {
+        "Tienes \(Cashback.format(cents: max(0, cents))) de cashback"
+    }
+
+    /// "Te faltan $1.20" — nil si ya le alcanza.
+    static func missingText(cost: Int, balance: Int) -> String? {
+        let missing = pointsMissing(cost: cost, balance: balance)
+        guard missing > 0 else { return nil }
+        return "Te faltan \(Cashback.format(cents: missing))"
+    }
+
+    /// "¿Canjear Capuchino en Café X por $3.50 de cashback?"
+    static func confirmationTitle(itemName: String, merchantName: String, cost: Int) -> String {
+        "¿Canjear \(itemName) en \(merchantName) por \(Cashback.format(cents: cost)) de cashback?"
+    }
+
+    /// Lo que codifica el QR del canje:
+    /// `https://monavi.maday.app/canjear?code=<CODIGO>` — el cajero lo
+    /// escanea con la camara de cualquier telefono y abre la pagina de
+    /// validacion con el codigo ya puesto.
+    static func redeemURL(code: String, baseURL: URL = Config.redeemBaseURL) -> URL? {
+        guard var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else {
+            return nil
+        }
+        components.queryItems = [URLQueryItem(name: "code", value: code)]
+        return components.url
     }
 
     /// Orden del catalogo: por nombre del comercio y, dentro de cada

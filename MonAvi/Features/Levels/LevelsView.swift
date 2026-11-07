@@ -101,7 +101,7 @@ struct LevelsView: View {
 
     private var disclaimer: some View {
         Label {
-            Text("Los niveles e insignias son para motivarte: no se canjean por dinero ni premios. Los puntos canjeables vienen solo de facturas verificadas por la DGI.")
+            Text("Los niveles e insignias son para motivarte: no se canjean por dinero ni premios. El cashback canjeable viene solo de facturas verificadas por la DGI.")
         } icon: {
             Image(systemName: "info.circle.fill")
                 .foregroundStyle(MonAviBrand.primary)

@@ -38,7 +38,7 @@ struct MyRedemptionsView: View {
             ContentUnavailableView(
                 "Todavía no has canjeado nada",
                 systemImage: "ticket",
-                description: Text("Cuando canjees tus puntos en un comercio aliado, tus códigos aparecen aquí.")
+                description: Text("Cuando canjees tu cashback en un comercio aliado, tus códigos aparecen aquí.")
             )
             .listRowBackground(Color.clear)
         } else {
@@ -47,7 +47,7 @@ struct MyRedemptionsView: View {
                     row(redemption)
                 }
             } footer: {
-                Text("Los códigos vencen a los 7 días. Si no lo usas a tiempo, te devolvemos los puntos.")
+                Text("Los códigos vencen a los 7 días. Si no lo usas a tiempo, te devolvemos el cashback.")
             }
         }
     }
@@ -88,7 +88,7 @@ struct MyRedemptionsView: View {
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 4) {
                 RedemptionStatusBadge(status: redemption.effectiveStatus())
-                Text("\(redemption.pointsCost) pts")
+                Text(Cashback.format(cents: redemption.pointsCost))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
             }

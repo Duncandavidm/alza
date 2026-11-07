@@ -14,7 +14,7 @@ struct LinkedCardsView: View {
                 ContentUnavailableView(
                     "Sin tarjetas vinculadas",
                     systemImage: "creditcard",
-                    description: Text("Vincula una tarjeta para ganar puntos automáticamente cuando pagues en un comercio aliado.")
+                    description: Text("Vincula una tarjeta para ganar cashback automáticamente cuando pagues en un comercio aliado.")
                 )
             } else {
                 ForEach(viewModel.linkedCards) { card in
@@ -110,7 +110,7 @@ private struct AddLinkedCardView: View {
 
                 Section {
                     Toggle(isOn: $hasConsented) {
-                        Text("Autorizo a MonAvi a identificar mis compras con esta tarjeta en comercios aliados para acreditarme puntos.")
+                        Text("Autorizo a MonAvi a identificar mis compras con esta tarjeta en comercios aliados para acreditarme cashback.")
                             .font(.footnote)
                     }
                 }

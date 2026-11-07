@@ -62,14 +62,15 @@ struct PartnerMerchantOffer: Codable, Identifiable, Hashable {
         case status
     }
 
-    /// Texto corto para la tarjeta de la oferta ("5% en puntos" / "80
-    /// puntos fijos por compra").
+    /// Texto corto para la tarjeta de la oferta ("5% de cashback" /
+    /// "$0.80 de cashback por compra"). En ofertas fijas `value` son
+    /// puntos = centavos de cashback.
     var summaryText: String {
         switch offerType {
         case .percent:
-            return "\(value.formatted(.number.precision(.fractionLength(0))))% en puntos"
+            return "\(value.formatted(.number.precision(.fractionLength(0))))% de cashback"
         case .fixed:
-            return "\(value.formatted(.number.precision(.fractionLength(0)))) puntos fijos por compra"
+            return "\(Cashback.format(cents: NSDecimalNumber(decimal: value).intValue)) de cashback por compra"
         }
     }
 }

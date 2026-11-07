@@ -1,7 +1,7 @@
 import XCTest
 @testable import MonAvi
 
-/// Logica pura del catalogo de canje: puntos faltantes, orden, filtros,
+/// Logica pura del catalogo de canje: cashback faltante y sus textos, orden, filtros,
 /// "Como llegar", estados de un canje y el decodificado de los embeds
 /// de PostgREST (`partner_merchants`, `reward_items`).
 final class RewardsTests: XCTestCase {
@@ -45,7 +45,7 @@ final class RewardsTests: XCTestCase {
         )
     }
 
-    // MARK: - Puntos faltantes
+    // MARK: - Cashback faltante (en centavos)
 
     func testPointsMissing() {
         XCTAssertEqual(RewardsMath.pointsMissing(cost: 150, balance: 100), 50)
@@ -57,6 +57,35 @@ final class RewardsTests: XCTestCase {
     func testCanAfford() {
         XCTAssertTrue(RewardsMath.canAfford(cost: 100, balance: 100))
         XCTAssertFalse(RewardsMath.canAfford(cost: 101, balance: 100))
+    }
+
+    // MARK: - Textos de cashback (centavos -> dolares)
+
+    func testBalanceText() {
+        XCTAssertEqual(RewardsMath.balanceText(cents: 650), "Tienes $6.50 de cashback")
+        XCTAssertEqual(RewardsMath.balanceText(cents: 0), "Tienes $0.00 de cashback")
+    }
+
+    func testMissingText() {
+        XCTAssertEqual(RewardsMath.missingText(cost: 350, balance: 230), "Te faltan $1.20")
+        XCTAssertNil(RewardsMath.missingText(cost: 350, balance: 350))
+        XCTAssertNil(RewardsMath.missingText(cost: 350, balance: 1000))
+    }
+
+    func testConfirmationTitle() {
+        XCTAssertEqual(
+            RewardsMath.confirmationTitle(itemName: "Capuchino", merchantName: "Café X", cost: 350),
+            "¿Canjear Capuchino en Café X por $3.50 de cashback?"
+        )
+    }
+
+    // MARK: - QR del canje
+
+    func testRedeemURLEncodesCode() throws {
+        let url = try XCTUnwrap(RewardsMath.redeemURL(code: "AB23CD"))
+        XCTAssertEqual(url.absoluteString, "https://monavi.maday.app/canjear?code=AB23CD")
+        let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        XCTAssertEqual(components.queryItems?.first(where: { $0.name == "code" })?.value, "AB23CD")
     }
 
     // MARK: - Orden y filtros

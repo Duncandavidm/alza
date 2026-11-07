@@ -1,9 +1,11 @@
 import SwiftUI
 import UIKit
 
-/// "Canjea tu cashback": catalogo de productos de comercios aliados. El
-/// usuario toca "Canjear", confirma, y la RPC `redeem_reward` descuenta
-/// el cashback (puntos en centavos) y genera el codigo que muestra en caja.
+/// "Canjea tus premios": catalogo de productos de comercios aliados. Cada
+/// comercio canjea en una moneda: cashback (centavos, de facturas DGI) o
+/// puntos (por buenos habitos). El usuario toca "Canjear", confirma, y la
+/// RPC `redeem_reward` descuenta de la moneda correcta y genera el codigo
+/// que muestra en caja.
 struct RewardsView: View {
     @EnvironmentObject private var appState: AppState
     @Environment(\.openURL) private var openURL
@@ -28,7 +30,7 @@ struct RewardsView: View {
             .padding(.vertical, 12)
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle("Canjea tu cashback")
+        .navigationTitle("Canjea tus premios")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { toolbarContent }
         .refreshable { await refresh() }
@@ -40,7 +42,7 @@ struct RewardsView: View {
             titleVisibility: .visible,
             presenting: pendingItem
         ) { (item: RewardItem) in
-            Button("Canjear por \(Cashback.format(cents: item.pointsCost))") {
+            Button("Canjear por \(item.formattedCost)") {
                 Task { await redeem(item) }
             }
             Button("Cancelar", role: .cancel) {}
@@ -69,28 +71,7 @@ struct RewardsView: View {
     }
 
     private var balanceHeader: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Tu cashback disponible")
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(MonAviBrand.onDarkSurface.opacity(0.85))
-            Text(Cashback.format(cents: viewModel.redeemablePoints))
-                .font(.system(size: 40, weight: .bold, design: MonAviBrand.fontDesign))
-                .foregroundStyle(MonAviBrand.onDarkSurface)
-                .contentTransition(.numericText())
-            if viewModel.balance.pendingPoints > 0 {
-                Text("+\(Cashback.format(cents: viewModel.balance.pendingPoints)) por confirmar")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(MonAviBrand.accentOnDark)
-            } else {
-                Text("Úsalo en productos de comercios aliados.")
-                    .font(.caption)
-                    .foregroundStyle(MonAviBrand.onDarkSurface.opacity(0.75))
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(20)
-        .background(MonAviBrand.headerGradient, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .accessibilityElement(children: .combine)
+        RewardBalancesHeader(balance: viewModel.balance)
     }
 
     private var categoryChips: some View {
@@ -140,7 +121,7 @@ struct RewardsView: View {
         ForEach(viewModel.filteredItems) { (item: RewardItem) in
             RewardItemCard(
                 item: item,
-                balance: viewModel.redeemablePoints,
+                balance: viewModel.spendableBalance(for: item),
                 isRedeeming: isRedeeming,
                 onDirections: { openDirections(for: item) },
                 onRedeem: { askToRedeem(item) }
@@ -148,13 +129,23 @@ struct RewardsView: View {
         }
     }
 
+    @ViewBuilder
     private var emptyState: some View {
-        ContentUnavailableView(
-            "Pronto habrá comercios aliados aquí",
-            systemImage: "gift",
-            description: Text("Sigue sumando cashback con tus facturas: cuando lleguen los primeros comercios, lo vas a poder canjear aquí mismo.")
-        )
-        .padding(.top, 24)
+        if viewModel.items.isEmpty {
+            ContentUnavailableView(
+                "Pronto habrá comercios aliados",
+                systemImage: "gift",
+                description: Text("Pronto verás aquí los comercios aliados donde canjear tus puntos y tu cashback.")
+            )
+            .padding(.top, 24)
+        } else {
+            ContentUnavailableView(
+                "Nada en esta categoría",
+                systemImage: "line.3.horizontal.decrease.circle",
+                description: Text("Prueba con otra categoría o toca \"Todos\".")
+            )
+            .padding(.top, 24)
+        }
     }
 
     private func errorState(_ message: String) -> some View {
@@ -188,7 +179,12 @@ struct RewardsView: View {
 
     private var confirmationTitle: String {
         guard let item = pendingItem else { return "¿Canjear este producto?" }
-        return RewardsMath.confirmationTitle(itemName: item.name, merchantName: item.merchantName, cost: item.pointsCost)
+        return RewardsMath.confirmationTitle(
+            itemName: item.name,
+            merchantName: item.merchantName,
+            cost: item.pointsCost,
+            currency: item.currency
+        )
     }
 
     private var isShowingRedeemError: Binding<Bool> {

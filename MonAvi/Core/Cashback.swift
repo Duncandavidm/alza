@@ -2,9 +2,10 @@ import Foundation
 
 /// Los puntos canjeables se muestran como cashback en dolares: el ledger
 /// guarda enteros donde 1 punto = US$0.01 (1% de cada factura verificada
-/// por la DGI; una factura de $84.25 da 84 = $0.84). Todo lo que el
-/// usuario puede canjear se muestra con este formato, nunca como "pts".
-/// Los XP de habitos (niveles/insignias) NO son cashback.
+/// por la DGI; una factura de $84.25 da 84 = $0.84). El cashback siempre
+/// se muestra con este formato, nunca como "pts". Los puntos por habitos
+/// (`habit_points`) son otra moneda: se muestran como "150 pts"
+/// (`RewardCurrency.format`).
 enum Cashback {
     /// Locale fijo para que siempre se vea "$6.50" (Panama usa el mismo
     /// separador decimal "." y de miles "," que en_US) sin depender del

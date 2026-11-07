@@ -51,6 +51,15 @@ struct DashboardTabView: View {
                         }
                     }
             }
+        case .rewards:
+            NavigationStack {
+                RewardsView()
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Cerrar") { router.destination = nil }
+                        }
+                    }
+            }
         }
     }
 

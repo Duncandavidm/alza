@@ -24,6 +24,7 @@ struct DayJournalView: View {
     @State private var isSearching = false
     @State private var selectedBudgetProgress: BudgetProgress?
     @State private var pointsByTransaction: [UUID: Int] = [:]
+    @State private var featuredRewards = FeaturedRewards.empty
 
     var body: some View {
         NavigationStack {
@@ -54,6 +55,10 @@ struct DayJournalView: View {
 
                         pointsStrip
 
+                        if !featuredRewards.items.isEmpty {
+                            RewardsForYouCard(items: featuredRewards.items, balance: featuredRewards.balance)
+                        }
+
                         ForEach(recurringViewModel.dueToday) { item in
                             recurringReminderRow(item)
                         }
@@ -67,6 +72,7 @@ struct DayJournalView: View {
                 .refreshable {
                     await refresh()
                     await refreshBudgets()
+                    await refreshFeaturedRewards()
                 }
 
                 fabRow
@@ -92,6 +98,7 @@ struct DayJournalView: View {
             .task { await refreshRecurring() }
             .task { await refreshBills() }
             .task { await refreshDgiConsent() }
+            .task { await refreshFeaturedRewards() }
             .task { await appState.subscriptionStore.refreshRenewalInfo() }
             .sheet(isPresented: $isQuickAdding) {
                 QuickAddView(viewModel: viewModel)
@@ -326,9 +333,9 @@ struct DayJournalView: View {
             HStack(spacing: 10) {
                 Text("⭐️")
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Cashback")
+                    Text("Puntos y cashback")
                         .font(.subheadline.weight(.medium))
-                    Text("Canjea tu cashback en comercios aliados")
+                    Text("Canjea tus puntos y tu cashback en comercios aliados")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -603,6 +610,12 @@ struct DayJournalView: View {
     private func refreshBills() async {
         guard let userId = appState.currentUserId else { return }
         await billsViewModel.refresh(userId: userId)
+    }
+
+    /// "Premios para ti": si falla o no hay productos, se esconde.
+    private func refreshFeaturedRewards() async {
+        guard let userId = appState.currentUserId else { return }
+        featuredRewards = await FeaturedRewards.load(userId: userId)
     }
 
     private func refreshDgiConsent() async {

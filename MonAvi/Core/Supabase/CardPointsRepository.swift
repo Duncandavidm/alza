@@ -1,20 +1,53 @@
 import Foundation
 import Supabase
 
-/// Saldo de puntos confirmados/pendientes (vista `points_balances`,
-/// `security_invoker=true` — cada quien solo ve el suyo).
+/// Saldos del usuario (vista `points_balances`, `security_invoker=true`
+/// — cada quien solo ve el suyo). Dos monedas (migracion 0036):
+/// - Cashback en centavos (1 = US$0.01): `confirmed_points` (canjeable)
+///   y `pending_points` (por confirmar), de facturas verificadas por la DGI.
+/// - Puntos por buenos habitos: `habit_points` (saldo canjeable) y
+///   `habit_points_earned` (total historico ganado, define el nivel).
 struct PointsBalance: Codable {
     let userId: UUID
+    /// Cashback disponible, en centavos.
     let confirmedPoints: Int
+    /// Cashback por confirmar, en centavos.
     let pendingPoints: Int
+    /// Puntos por habitos disponibles para canjear.
+    var habitPoints: Int = 0
+    /// Puntos por habitos ganados en total (para el nivel).
+    var habitPointsEarned: Int = 0
 
     enum CodingKeys: String, CodingKey {
         case userId = "user_id"
         case confirmedPoints = "confirmed_points"
         case pendingPoints = "pending_points"
+        case habitPoints = "habit_points"
+        case habitPointsEarned = "habit_points_earned"
     }
 
     static let zero = PointsBalance(userId: UUID(), confirmedPoints: 0, pendingPoints: 0)
+
+    /// Saldo canjeable en la moneda de un comercio.
+    func spendable(in currency: RewardCurrency) -> Int {
+        switch currency {
+        case .cashback: return confirmedPoints
+        case .puntos: return habitPoints
+        }
+    }
+}
+
+extension PointsBalance {
+    /// Decodificado tolerante: las columnas nuevas pueden faltar (vista
+    /// vieja) o llegar en null -> 0.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        userId = try container.decode(UUID.self, forKey: .userId)
+        confirmedPoints = try container.decodeIfPresent(Int.self, forKey: .confirmedPoints) ?? 0
+        pendingPoints = try container.decodeIfPresent(Int.self, forKey: .pendingPoints) ?? 0
+        habitPoints = try container.decodeIfPresent(Int.self, forKey: .habitPoints) ?? 0
+        habitPointsEarned = try container.decodeIfPresent(Int.self, forKey: .habitPointsEarned) ?? 0
+    }
 }
 
 /// Datos de "Mis tarjetas" + "Ofertas cerca" + el saldo de puntos
@@ -82,8 +115,17 @@ final class CardPointsRepository {
     }
 
     func fetchBalance(userId: UUID) async -> PointsBalance {
-        let row: PointsBalance? = try? await supabase
+        (try? await fetchBalanceOrThrow(userId: userId))
+            ?? PointsBalance(userId: userId, confirmedPoints: 0, pendingPoints: 0)
+    }
+
+    /// Igual que `fetchBalance` pero distingue un error de red (lanza)
+    /// de un usuario sin movimientos en el ledger (saldo en cero).
+    func fetchBalanceOrThrow(userId: UUID) async throws -> PointsBalance {
+        let row: PointsBalance? = try await supabase
             .from("points_balances")
+            // `*`: trae confirmed/pending (cashback) y habit_points /
+            // habit_points_earned (puntos); si alguna falta, decodifica 0.
             .select()
             .eq("user_id", value: userId)
             .maybeSingle()

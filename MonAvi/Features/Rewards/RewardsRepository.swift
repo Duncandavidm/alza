@@ -11,7 +11,9 @@ final class RewardsRepository {
     private init() {}
 
     /// Productos activos de comercios activos (la RLS ya filtra), en
-    /// orden de comercio y luego `sort_order`.
+    /// orden de comercio y luego `sort_order`. El embed
+    /// `partner_merchants(*)` trae `reward_currency` (moneda de canje del
+    /// comercio): `points_cost` esta en esa moneda.
     func fetchItems() async throws -> [RewardItem] {
         let items: [RewardItem] = try await supabase
             .from("reward_items")

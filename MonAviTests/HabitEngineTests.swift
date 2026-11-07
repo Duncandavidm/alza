@@ -201,9 +201,52 @@ final class HabitEngineTests: XCTestCase {
     // MARK: - Tope y niveles
 
     func testMonthlyCap() {
-        let receipts = (0..<60).map { _ in date(2026, 10, 10) }
+        // 20 presupuestos mensuales cumplidos en octubre (20 x 30 = 600).
+        // Esos puntos se dan al cerrar el periodo (1 de noviembre), asi
+        // que noviembre queda topado en 400; octubre solo suma los 12
+        // dias anotados.
+        let budgets = (0..<20).map { _ in
+            Budget(
+                id: UUID(),
+                userId: userId,
+                category: "Comida",
+                period: .monthly,
+                limitAmount: 300,
+                color: nil,
+                createdAt: date(2026, 9, 20),
+                updatedAt: date(2026, 9, 20)
+            )
+        }
+        let transactions = (1...12).map { day in
+            transaction(10, .gasto, category: "Otro", occurred: date(2026, 10, day))
+        }
+        let progress = engine.progress(for: input(transactions: transactions, budgets: budgets))
+        XCTAssertEqual(progress.xpThisMonth, HabitEngine.Rules.monthlyXPCap)
+        XCTAssertEqual(
+            progress.totalXP,
+            12 * HabitEngine.Rules.xpPerLoggedDay + HabitEngine.Rules.monthlyXPCap
+        )
+    }
+
+    func testVerifiedReceiptsGiveNoPoints() {
+        // Las facturas DGI dan cashback, no puntos: solo cuentan para
+        // las insignias de facturas.
+        let receipts = (0..<10).map { _ in date(2026, 10, 10) }
         let progress = engine.progress(for: input(receipts: receipts))
-        XCTAssertEqual(progress.totalXP, HabitEngine.Rules.monthlyXPCap)
+        XCTAssertEqual(progress.totalXP, 0)
+        XCTAssertTrue(progress.earnedBadges.contains { $0.id == "receipt_1" })
+    }
+
+    func testServerTotalsDriveTheLevel() {
+        let local = engine.progress(for: input(
+            transactions: [transaction(5, .gasto, occurred: date(2026, 11, 14))]
+        ))
+        let server = local.withServerTotals(totalXP: 260, xpThisMonth: 1_000)
+        XCTAssertTrue(server.isFromServer)
+        XCTAssertEqual(server.totalXP, 260)
+        XCTAssertEqual(server.level.number, 3)
+        XCTAssertEqual(server.xpThisMonth, HabitEngine.Rules.monthlyXPCap)
+        XCTAssertEqual(server.xpBySource, local.xpBySource)
     }
 
     func testLevels() {

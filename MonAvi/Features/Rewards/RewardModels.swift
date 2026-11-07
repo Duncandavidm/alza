@@ -1,5 +1,53 @@
 import Foundation
 
+/// Moneda en la que un comercio aliado canjea sus premios
+/// (`partner_merchants.reward_currency`, migracion 0036):
+/// - `cashback`: US$ en centavos, de facturas verificadas por la DGI.
+/// - `puntos`: puntos ganados con buenos habitos.
+enum RewardCurrency: String, Codable, CaseIterable, Hashable {
+    case cashback
+    case puntos
+
+    /// Tolerante: un valor desconocido cae en `.cashback` en vez de
+    /// romper el decodificado de todo el catalogo.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let raw = (try? container.decode(String.self)) ?? ""
+        self = RewardCurrency(rawValue: raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()) ?? .cashback
+    }
+
+    /// Costo o saldo en esta moneda: cashback -> "$3.50", puntos -> "150 pts".
+    func format(_ amount: Int) -> String {
+        switch self {
+        case .cashback:
+            return Cashback.format(cents: amount)
+        case .puntos:
+            return RewardCurrency.formatPoints(amount)
+        }
+    }
+
+    /// "1,500 pts" (separador de miles fijo, como el cashback).
+    static func formatPoints(_ points: Int) -> String {
+        let number = points.formatted(.number.locale(Locale(identifier: "en_US")))
+        return "\(number) pts"
+    }
+
+    /// Badge de cada comercio: "Canje con puntos" / "Canje con cashback".
+    var badgeText: String {
+        switch self {
+        case .cashback: return "Canje con cashback"
+        case .puntos: return "Canje con puntos"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .cashback: return "dollarsign.circle.fill"
+        case .puntos: return "star.circle.fill"
+        }
+    }
+}
+
 /// Producto canjeable de un comercio aliado (tabla `reward_items`,
 /// migracion 0031). La RLS solo devuelve productos activos de comercios
 /// activos. Se lee con el comercio embebido:
@@ -31,6 +79,13 @@ struct RewardItem: Codable, Identifiable, Hashable {
     }
 
     var merchantName: String { merchant?.name ?? "Comercio aliado" }
+
+    /// Moneda en la que se paga: la del comercio (cashback si no viene).
+    /// `pointsCost` esta en esta moneda (centavos o puntos).
+    var currency: RewardCurrency { merchant?.currency ?? .cashback }
+
+    /// "$3.50" o "150 pts".
+    var formattedCost: String { currency.format(pointsCost) }
 }
 
 enum RewardRedemptionStatus: String, Codable, CaseIterable, Identifiable, Hashable {
@@ -73,6 +128,9 @@ struct RewardRedemption: Codable, Identifiable, Hashable {
     let createdAt: Date
     var item: RewardItem?
     var merchant: PartnerMerchant?
+    /// Columna `currency` (migracion 0036). Opcional: canjes viejos o
+    /// selects sin la columna caen en la moneda del comercio.
+    var currency: RewardCurrency? = nil
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -87,6 +145,7 @@ struct RewardRedemption: Codable, Identifiable, Hashable {
         case createdAt = "created_at"
         case item = "reward_items"
         case merchant = "partner_merchants"
+        case currency
     }
 
     /// Comercio a mostrar: el directo, o el que viene dentro del producto.
@@ -95,6 +154,14 @@ struct RewardRedemption: Codable, Identifiable, Hashable {
     var merchantName: String { displayMerchant?.name ?? "Comercio aliado" }
 
     var itemName: String { item?.name ?? "tu producto" }
+
+    /// Moneda en la que se pago este canje.
+    var displayCurrency: RewardCurrency {
+        currency ?? displayMerchant?.currency ?? .cashback
+    }
+
+    /// "$3.50" o "150 pts".
+    var formattedCost: String { displayCurrency.format(pointsCost) }
 
     /// El vencimiento real lo aplica un cron una vez al dia; mientras
     /// tanto, un codigo "emitido" que ya paso su fecha se muestra como
@@ -114,8 +181,8 @@ struct RewardRedemption: Codable, Identifiable, Hashable {
 /// Logica pura del catalogo (sin red, sin UI) — separada para poder
 /// probarla en MonAviTests.
 enum RewardsMath {
-    /// Cuantos puntos (centavos de cashback) le faltan al usuario para
-    /// poder canjear (0 si ya le alcanza).
+    /// Cuanto le falta al usuario para poder canjear (0 si ya le alcanza),
+    /// en la misma unidad que `cost` y `balance` (centavos o puntos).
     static func pointsMissing(cost: Int, balance: Int) -> Int {
         max(0, cost - max(0, balance))
     }
@@ -124,23 +191,86 @@ enum RewardsMath {
         pointsMissing(cost: cost, balance: balance) == 0
     }
 
-    // MARK: - Textos (cashback en dolares)
+    /// Saldo que aplica a un producto: cashback (centavos) o puntos,
+    /// segun la moneda del comercio.
+    static func balance(for currency: RewardCurrency, cashbackCents: Int, habitPoints: Int) -> Int {
+        switch currency {
+        case .cashback: return cashbackCents
+        case .puntos: return habitPoints
+        }
+    }
+
+    static func pointsMissing(item: RewardItem, cashbackCents: Int, habitPoints: Int) -> Int {
+        pointsMissing(
+            cost: item.pointsCost,
+            balance: balance(for: item.currency, cashbackCents: cashbackCents, habitPoints: habitPoints)
+        )
+    }
+
+    static func canAfford(item: RewardItem, cashbackCents: Int, habitPoints: Int) -> Bool {
+        pointsMissing(item: item, cashbackCents: cashbackCents, habitPoints: habitPoints) == 0
+    }
+
+    // MARK: - Textos
 
     /// "Tienes $6.50 de cashback".
     static func balanceText(cents: Int) -> String {
         "Tienes \(Cashback.format(cents: max(0, cents))) de cashback"
     }
 
-    /// "Te faltan $1.20" — nil si ya le alcanza.
-    static func missingText(cost: Int, balance: Int) -> String? {
-        let missing = pointsMissing(cost: cost, balance: balance)
-        guard missing > 0 else { return nil }
-        return "Te faltan \(Cashback.format(cents: missing))"
+    /// "Tienes 150 pts".
+    static func pointsBalanceText(points: Int) -> String {
+        "Tienes \(RewardCurrency.formatPoints(max(0, points)))"
     }
 
-    /// "¿Canjear Capuchino en Café X por $3.50 de cashback?"
-    static func confirmationTitle(itemName: String, merchantName: String, cost: Int) -> String {
-        "¿Canjear \(itemName) en \(merchantName) por \(Cashback.format(cents: cost)) de cashback?"
+    /// "Te faltan $1.20" / "Te faltan 30 pts" — nil si ya le alcanza.
+    static func missingText(cost: Int, balance: Int, currency: RewardCurrency = .cashback) -> String? {
+        let missing = pointsMissing(cost: cost, balance: balance)
+        guard missing > 0 else { return nil }
+        return "Te faltan \(currency.format(missing))"
+    }
+
+    /// "¿Canjear Capuchino en Café X por $3.50 de cashback?" /
+    /// "¿Canjear Capuchino en Café X por 150 pts?"
+    static func confirmationTitle(
+        itemName: String,
+        merchantName: String,
+        cost: Int,
+        currency: RewardCurrency = .cashback
+    ) -> String {
+        switch currency {
+        case .cashback:
+            return "¿Canjear \(itemName) en \(merchantName) por \(Cashback.format(cents: cost)) de cashback?"
+        case .puntos:
+            return "¿Canjear \(itemName) en \(merchantName) por \(RewardCurrency.formatPoints(cost))?"
+        }
+    }
+
+    /// Premios destacados para "Hoy": primero los que ya le alcanzan
+    /// (del mas caro al mas barato, para que se sientan como premio), luego
+    /// los que estan mas cerca de alcanzarse (menor proporcion faltante).
+    static func featured(
+        _ items: [RewardItem],
+        cashbackCents: Int,
+        habitPoints: Int,
+        limit: Int = 5
+    ) -> [RewardItem] {
+        let affordable = items
+            .filter { canAfford(item: $0, cashbackCents: cashbackCents, habitPoints: habitPoints) }
+            .sorted { $0.pointsCost > $1.pointsCost }
+        let pending = items
+            .filter { !canAfford(item: $0, cashbackCents: cashbackCents, habitPoints: habitPoints) }
+            .sorted { lhs, rhs in
+                missingRatio(lhs, cashbackCents: cashbackCents, habitPoints: habitPoints)
+                    < missingRatio(rhs, cashbackCents: cashbackCents, habitPoints: habitPoints)
+            }
+        return Array((affordable + pending).prefix(max(0, limit)))
+    }
+
+    private static func missingRatio(_ item: RewardItem, cashbackCents: Int, habitPoints: Int) -> Double {
+        let missing = pointsMissing(item: item, cashbackCents: cashbackCents, habitPoints: habitPoints)
+        guard item.pointsCost > 0 else { return 0 }
+        return Double(missing) / Double(item.pointsCost)
     }
 
     /// Lo que codifica el QR del canje:

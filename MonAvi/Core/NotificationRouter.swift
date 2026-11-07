@@ -1,10 +1,12 @@
 import Foundation
 
 /// A que pantalla lleva tocar una notificacion. Las push del servidor
-/// traen `"screen": "points"` en el payload (ver verify-dgi-receipt);
-/// llega como `userInfo["screen"]`.
+/// traen `"screen": "points"` (ver verify-dgi-receipt) o
+/// `"screen": "rewards"` (aviso diario de premios desbloqueados) en el
+/// payload; llega como `userInfo["screen"]`.
 enum NotificationDestination: String, Identifiable {
     case points
+    case rewards
 
     var id: String { rawValue }
 }

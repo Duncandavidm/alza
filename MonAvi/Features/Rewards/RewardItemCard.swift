@@ -5,6 +5,8 @@ import SwiftUI
 /// producto, la descripcion, el costo y las acciones.
 struct RewardItemCard: View {
     let item: RewardItem
+    /// Saldo en la moneda del comercio (`item.currency`): centavos de
+    /// cashback o puntos por habitos.
     let balance: Int
     let isRedeeming: Bool
     let onDirections: () -> Void
@@ -42,7 +44,8 @@ struct RewardItemCard: View {
                         .lineLimit(1)
                 }
             }
-            Spacer(minLength: 0)
+            Spacer(minLength: 8)
+            RewardCurrencyBadge(currency: item.currency)
         }
     }
 
@@ -53,7 +56,7 @@ struct RewardItemCard: View {
                     .font(.headline)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 8)
-                RewardPointsPill(points: item.pointsCost)
+                RewardPointsPill(points: item.pointsCost, currency: item.currency)
             }
             if let description = item.itemDescription, !description.isEmpty {
                 Text(description)
@@ -84,7 +87,7 @@ struct RewardItemCard: View {
             }
             .controlSize(.large)
 
-            if let missingText = RewardsMath.missingText(cost: item.pointsCost, balance: balance) {
+            if let missingText = RewardsMath.missingText(cost: item.pointsCost, balance: balance, currency: item.currency) {
                 Text(missingText)
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)

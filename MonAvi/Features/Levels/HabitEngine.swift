@@ -1,11 +1,13 @@
 import Foundation
 
-/// Niveles e insignias: experiencia (XP) por habitos financieros que la
-/// app puede medir con los datos del propio usuario. NO se canjea por
-/// dinero ni premios — por eso no hace falta un banco que lo verifique:
-/// inventar datos no le da al usuario nada de valor.
+/// Niveles e insignias: puntos por habitos financieros que la app puede
+/// medir con los datos del propio usuario. Los puntos que cuentan (saldo
+/// canjeable y nivel) los calcula el SERVIDOR (`award_habit_points`,
+/// migracion 0036) con estas mismas reglas; este calculo local solo da el
+/// desglose estimado por fuente, las insignias y el respaldo si no se
+/// pudo leer el saldo. Las facturas DGI dan cashback, no puntos.
 ///
-/// Aun asi, las reglas estan pensadas para que hacer trampa no rinda:
+/// Las reglas estan pensadas para que hacer trampa no rinda:
 /// - Constancia, no montos: se premia anotar cada dia y apartar algo cada
 ///   semana; anotar $10.000 falsos da lo mismo que $5.
 /// - Los dias "anotados" se cuentan por `created_at` (hora del servidor),
@@ -16,14 +18,13 @@ import Foundation
 ///   de esa meta ("madura").
 /// - Un presupuesto solo cuenta como cumplido si ese periodo el usuario
 ///   realmente estuvo anotando (un mes vacio no es un mes sin gastos).
-/// - Tope de XP por mes.
+/// - Tope de puntos por mes (400, igual que el servidor).
 struct HabitEngine {
     enum Rules {
         static let xpPerLoggedDay = 5
         static let xpPerSavingsWeek = 25
         static let xpPerMonthlyBudgetMet = 30
         static let xpPerWeeklyBudgetMet = 10
-        static let xpPerVerifiedReceipt = 10
         static let monthlyXPCap = 400
         static let maturationDays = 30
         static let minLoggedDaysForMonthlyBudget = 10
@@ -40,12 +41,13 @@ struct HabitEngine {
         var budgets: [Budget]
         var goals: [SavingsGoal]
         var contributions: [SavingsContribution]
-        /// Fechas de facturas DGI confirmadas (verificadas por la DGI).
-        var verifiedReceiptDates: [Date]
+        /// Fechas de facturas DGI confirmadas. Solo para las insignias de
+        /// facturas: NO dan puntos (las facturas dan cashback).
+        var verifiedReceiptDates: [Date] = []
     }
 
     enum XPSource: String, CaseIterable, Identifiable {
-        case logging, savings, budgets, receipts
+        case logging, savings, budgets
 
         var id: String { rawValue }
 
@@ -54,7 +56,6 @@ struct HabitEngine {
             case .logging: return "Anotar tus movimientos"
             case .savings: return "Ahorro constante"
             case .budgets: return "Presupuestos cumplidos"
-            case .receipts: return "Facturas verificadas"
             }
         }
 
@@ -63,16 +64,14 @@ struct HabitEngine {
             case .logging: return "📝"
             case .savings: return "🐷"
             case .budgets: return "✅"
-            case .receipts: return "🧾"
             }
         }
 
         var rule: String {
             switch self {
-            case .logging: return "+\(Rules.xpPerLoggedDay) XP por cada día que anotas algo"
-            case .savings: return "+\(Rules.xpPerSavingsWeek) XP por cada semana con un aporte que madura (30 días sin retirar)"
-            case .budgets: return "+\(Rules.xpPerMonthlyBudgetMet) XP por mes (+\(Rules.xpPerWeeklyBudgetMet) por semana) sin pasarte de un presupuesto"
-            case .receipts: return "+\(Rules.xpPerVerifiedReceipt) XP por cada factura confirmada por la DGI"
+            case .logging: return "+\(Rules.xpPerLoggedDay) puntos por cada día que anotas algo"
+            case .savings: return "+\(Rules.xpPerSavingsWeek) puntos por cada semana con un aporte que madura (30 días sin retirar)"
+            case .budgets: return "+\(Rules.xpPerMonthlyBudgetMet) puntos por mes (+\(Rules.xpPerWeeklyBudgetMet) por semana) sin pasarte de un presupuesto"
             }
         }
     }
@@ -104,8 +103,30 @@ struct HabitEngine {
         let badges: [HabitBadge]
         /// Aportes positivos, del mas reciente al mas antiguo.
         let contributionReviews: [ContributionReview]
+        /// true si `totalXP`/`xpThisMonth` vienen del servidor
+        /// (`points_balances.habit_points_earned`); false si son el
+        /// calculo local de respaldo.
+        var isFromServer: Bool = false
 
         var earnedBadges: [HabitBadge] { badges.filter(\.isEarned) }
+
+        /// Mismo progreso con el total (y lo del mes) que calculo el
+        /// servidor: el nivel sale de ahi. El desglose por fuente, la
+        /// racha y las insignias siguen siendo los locales (estimado).
+        func withServerTotals(totalXP serverTotal: Int, xpThisMonth serverMonth: Int?) -> Progress {
+            let total = max(0, serverTotal)
+            return Progress(
+                totalXP: total,
+                xpThisMonth: min(HabitEngine.Rules.monthlyXPCap, max(0, serverMonth ?? xpThisMonth)),
+                xpBySource: xpBySource,
+                level: HabitLevel.level(forXP: total),
+                currentStreak: currentStreak,
+                bestStreak: bestStreak,
+                badges: badges,
+                contributionReviews: contributionReviews,
+                isFromServer: true
+            )
+        }
     }
 
     private struct XPEvent {
@@ -135,9 +156,6 @@ struct HabitEngine {
                 xp: $0.period == .monthly ? Rules.xpPerMonthlyBudgetMet : Rules.xpPerWeeklyBudgetMet,
                 source: .budgets
             )
-        }
-        events += input.verifiedReceiptDates.map {
-            XPEvent(date: $0, xp: Rules.xpPerVerifiedReceipt, source: .receipts)
         }
 
         let (total, bySource, thisMonth) = applyMonthlyCap(events)

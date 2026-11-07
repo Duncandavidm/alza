@@ -17,6 +17,10 @@ struct PartnerMerchant: Codable, Identifiable, Hashable {
     var address: String?
     let createdAt: Date
     let updatedAt: Date
+    /// En que moneda canjea sus premios (migracion 0036): `cashback` o
+    /// `puntos`. Opcional por si llega en null o un select no la trae —
+    /// usa `currency`, que cae en `.cashback`.
+    var rewardCurrency: RewardCurrency? = nil
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -29,7 +33,11 @@ struct PartnerMerchant: Codable, Identifiable, Hashable {
         case address
         case createdAt = "created_at"
         case updatedAt = "updated_at"
+        case rewardCurrency = "reward_currency"
     }
+
+    /// Moneda de canje del comercio (cashback si no viene).
+    var currency: RewardCurrency { rewardCurrency ?? .cashback }
 }
 
 enum PartnerOfferType: String, Codable {

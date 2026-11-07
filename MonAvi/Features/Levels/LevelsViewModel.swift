@@ -39,14 +39,14 @@ final class LevelsViewModel: ObservableObject {
                 .execute()
                 .value
 
-            // Si las facturas fallan (ej. sin conexion a esa tabla), los
-            // niveles igual se calculan con lo demas.
+            // Las facturas ya no dan puntos (dan cashback); solo se usan
+            // para las insignias de facturas. Si fallan, igual se sigue.
             let receipts = (try? await DgiReceiptsRepository.shared.fetchAll(userId: userId)) ?? []
             let verifiedDates = receipts
                 .filter { $0.status == .confirmada }
                 .map { $0.dgiCheckedAt ?? $0.scannedAt }
 
-            progress = HabitEngine().progress(
+            let local = HabitEngine().progress(
                 for: HabitEngine.Input(
                     transactions: transactions,
                     budgets: budgets,
@@ -55,6 +55,16 @@ final class LevelsViewModel: ObservableObject {
                     verifiedReceiptDates: verifiedDates
                 )
             )
+
+            // El nivel sale de los puntos que calculo el servidor
+            // (`habit_points_earned`). Si no se pudo leer el saldo, queda
+            // el calculo local como respaldo.
+            if let balance = try? await CardPointsRepository.shared.fetchBalanceOrThrow(userId: userId) {
+                let thisMonth = await CardPointsRepository.shared.habitPointsThisMonth(userId: userId)
+                progress = local.withServerTotals(totalXP: balance.habitPointsEarned, xpThisMonth: thisMonth)
+            } else {
+                progress = local
+            }
             goalsById = Dictionary(uniqueKeysWithValues: goals.map { ($0.id, $0) })
         } catch {
             errorMessage = "No se pudo cargar tu nivel. Intenta de nuevo más tarde."

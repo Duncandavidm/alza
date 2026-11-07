@@ -1,7 +1,7 @@
 import Foundation
 
-/// Estado de "Canjea tus puntos": el catalogo, el saldo canjeable y el
-/// filtro de categoria.
+/// Estado de "Puntos y cashback": el catalogo, los dos saldos canjeables
+/// (cashback en centavos y puntos por habitos) y el filtro de categoria.
 @MainActor
 final class RewardsViewModel: ObservableObject {
     @Published private(set) var items: [RewardItem] = []
@@ -19,7 +19,16 @@ final class RewardsViewModel: ObservableObject {
         RewardsMath.filter(items, category: selectedCategory)
     }
 
-    var redeemablePoints: Int { balance.confirmedPoints }
+    /// Cashback canjeable, en centavos.
+    var cashbackCents: Int { balance.confirmedPoints }
+
+    /// Puntos por habitos canjeables.
+    var habitPoints: Int { balance.habitPoints }
+
+    /// Saldo que aplica a un producto segun la moneda de su comercio.
+    func spendableBalance(for item: RewardItem) -> Int {
+        balance.spendable(in: item.currency)
+    }
 
     func refresh(userId: UUID) async {
         isLoading = true
@@ -46,3 +55,4 @@ final class RewardsViewModel: ObservableObject {
         balance = await CardPointsRepository.shared.fetchBalance(userId: userId)
     }
 }
+

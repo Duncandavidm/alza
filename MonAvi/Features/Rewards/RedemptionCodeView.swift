@@ -49,7 +49,7 @@ struct RedemptionCodeView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
-                RewardPointsPill(points: redemption.pointsCost)
+                RewardPointsPill(points: redemption.pointsCost, currency: redemption.displayCurrency)
             }
             Spacer(minLength: 0)
         }

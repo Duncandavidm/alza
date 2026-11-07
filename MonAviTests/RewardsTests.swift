@@ -15,7 +15,8 @@ final class RewardsTests: XCTestCase {
         name: String,
         category: String? = nil,
         address: String? = nil,
-        mapsUrl: String? = nil
+        mapsUrl: String? = nil,
+        currency: RewardCurrency? = nil
     ) -> PartnerMerchant {
         PartnerMerchant(
             id: UUID(),
@@ -27,7 +28,8 @@ final class RewardsTests: XCTestCase {
             category: category,
             address: address,
             createdAt: Date(),
-            updatedAt: Date()
+            updatedAt: Date(),
+            rewardCurrency: currency
         )
     }
 
@@ -77,6 +79,57 @@ final class RewardsTests: XCTestCase {
             RewardsMath.confirmationTitle(itemName: "Capuchino", merchantName: "Café X", cost: 350),
             "¿Canjear Capuchino en Café X por $3.50 de cashback?"
         )
+    }
+
+    // MARK: - Dos monedas (cashback y puntos)
+
+    func testCurrencyFormatting() {
+        XCTAssertEqual(RewardCurrency.cashback.format(350), "$3.50")
+        XCTAssertEqual(RewardCurrency.puntos.format(150), "150 pts")
+        XCTAssertEqual(RewardCurrency.puntos.format(1500), "1,500 pts")
+        XCTAssertEqual(RewardCurrency.puntos.badgeText, "Canje con puntos")
+        XCTAssertEqual(RewardCurrency.cashback.badgeText, "Canje con cashback")
+    }
+
+    func testMissingTextAndConfirmationInPoints() {
+        XCTAssertEqual(RewardsMath.missingText(cost: 150, balance: 120, currency: .puntos), "Te faltan 30 pts")
+        XCTAssertEqual(
+            RewardsMath.confirmationTitle(itemName: "Capuchino", merchantName: "Café X", cost: 150, currency: .puntos),
+            "¿Canjear Capuchino en Café X por 150 pts?"
+        )
+    }
+
+    func testAffordabilityUsesTheMerchantCurrency() {
+        let puntosItem = item(name: "Galleta", merchant: merchant(name: "M1", currency: .puntos), cost: 200)
+        let cashbackItem = item(name: "Café", merchant: merchant(name: "M2", currency: .cashback), cost: 200)
+        let defaultItem = item(name: "Jugo", merchant: merchant(name: "M3"), cost: 200)
+
+        XCTAssertEqual(puntosItem.currency, .puntos)
+        XCTAssertEqual(defaultItem.currency, .cashback)
+        XCTAssertEqual(puntosItem.formattedCost, "200 pts")
+        XCTAssertEqual(cashbackItem.formattedCost, "$2.00")
+
+        // 500 centavos de cashback, 50 puntos.
+        XCTAssertFalse(RewardsMath.canAfford(item: puntosItem, cashbackCents: 500, habitPoints: 50))
+        XCTAssertTrue(RewardsMath.canAfford(item: cashbackItem, cashbackCents: 500, habitPoints: 50))
+        XCTAssertEqual(RewardsMath.pointsMissing(item: puntosItem, cashbackCents: 500, habitPoints: 50), 150)
+
+        let balance = PointsBalance(userId: UUID(), confirmedPoints: 500, pendingPoints: 0, habitPoints: 50, habitPointsEarned: 80)
+        XCTAssertEqual(balance.spendable(in: .puntos), 50)
+        XCTAssertEqual(balance.spendable(in: .cashback), 500)
+    }
+
+    func testFeaturedPrefersAffordableThenNearest() {
+        let cafe = merchant(name: "Café", currency: .cashback)
+        let tienda = merchant(name: "Tienda", currency: .puntos)
+        let items = [
+            item(name: "Lejos", merchant: cafe, cost: 5_000),
+            item(name: "Cerca", merchant: tienda, cost: 120),
+            item(name: "Alcanza barato", merchant: cafe, cost: 100),
+            item(name: "Alcanza caro", merchant: tienda, cost: 90),
+        ]
+        let featured = RewardsMath.featured(items, cashbackCents: 300, habitPoints: 100, limit: 3)
+        XCTAssertEqual(featured.map(\.name), ["Alcanza barato", "Alcanza caro", "Cerca"])
     }
 
     // MARK: - QR del canje
@@ -190,7 +243,53 @@ final class RewardsTests: XCTestCase {
         XCTAssertEqual(decoded.merchant?.category, "Cafés")
     }
 
-    private func redemptionJSON(status: String, expiresAt: String, withItem: Bool) -> String {
+    func testDecodesMerchantRewardCurrency() throws {
+        func merchantJSON(_ currency: String?) -> String {
+            let field = currency.map { ", \"reward_currency\": \($0)" } ?? ""
+            return """
+            {
+              "id": "7F9619FF-8B86-D011-B42D-00C04FC964FF",
+              "name": "Café Duran",
+              "ruc": "155-1-2024",
+              "status": "active",
+              "created_at": "2026-11-01T10:00:00Z",
+              "updated_at": "2026-11-01T10:00:00Z"\(field)
+            }
+            """
+        }
+        let puntos = try decoder.decode(PartnerMerchant.self, from: Data(merchantJSON("\"puntos\"").utf8))
+        XCTAssertEqual(puntos.currency, .puntos)
+        let cashback = try decoder.decode(PartnerMerchant.self, from: Data(merchantJSON("\"cashback\"").utf8))
+        XCTAssertEqual(cashback.currency, .cashback)
+        let null = try decoder.decode(PartnerMerchant.self, from: Data(merchantJSON("null").utf8))
+        XCTAssertEqual(null.currency, .cashback)
+        let missing = try decoder.decode(PartnerMerchant.self, from: Data(merchantJSON(nil).utf8))
+        XCTAssertEqual(missing.currency, .cashback)
+        let unknown = try decoder.decode(PartnerMerchant.self, from: Data(merchantJSON("\"millas\"").utf8))
+        XCTAssertEqual(unknown.currency, .cashback)
+    }
+
+    func testDecodesPointsBalanceWithAndWithoutHabitColumns() throws {
+        let full = """
+        {"user_id": "2F9619FF-8B86-D011-B42D-00C04FC964FF", "confirmed_points": 650, "pending_points": 120,
+         "habit_points": 340, "habit_points_earned": 900}
+        """
+        let balance = try decoder.decode(PointsBalance.self, from: Data(full.utf8))
+        XCTAssertEqual(balance.confirmedPoints, 650)
+        XCTAssertEqual(balance.pendingPoints, 120)
+        XCTAssertEqual(balance.habitPoints, 340)
+        XCTAssertEqual(balance.habitPointsEarned, 900)
+
+        let old = """
+        {"user_id": "2F9619FF-8B86-D011-B42D-00C04FC964FF", "confirmed_points": 650, "pending_points": 0}
+        """
+        let legacy = try decoder.decode(PointsBalance.self, from: Data(old.utf8))
+        XCTAssertEqual(legacy.habitPoints, 0)
+        XCTAssertEqual(legacy.habitPointsEarned, 0)
+    }
+
+    private func redemptionJSON(status: String, expiresAt: String, withItem: Bool, currency: String? = nil) -> String {
+        let currencyField = currency.map { ",\n  \"currency\": \"\($0)\"" } ?? ""
         let itemJSON = """
         {
           "id": "6F9619FF-8B86-D011-B42D-00C04FC964FF",
@@ -217,7 +316,7 @@ final class RewardsTests: XCTestCase {
           "expires_at": "\(expiresAt)",
           "delivered_at": null,
           "created_at": "2026-11-01T10:00:00Z",
-          "reward_items": \(itemValue)
+          "reward_items": \(itemValue)\(currencyField)
         }
         """
     }
@@ -238,6 +337,22 @@ final class RewardsTests: XCTestCase {
         XCTAssertNil(withoutItem.item)
         XCTAssertEqual(withoutItem.merchantName, "Comercio aliado")
         XCTAssertFalse(withoutItem.isUsable())
+    }
+
+    func testDecodesRedemptionCurrency() throws {
+        let puntos = try decoder.decode(
+            RewardRedemption.self,
+            from: Data(redemptionJSON(status: "emitido", expiresAt: "2099-01-01T00:00:00Z", withItem: true, currency: "puntos").utf8)
+        )
+        XCTAssertEqual(puntos.displayCurrency, .puntos)
+        XCTAssertEqual(puntos.formattedCost, "150 pts")
+
+        let legacy = try decoder.decode(
+            RewardRedemption.self,
+            from: Data(redemptionJSON(status: "emitido", expiresAt: "2099-01-01T00:00:00Z", withItem: false).utf8)
+        )
+        XCTAssertEqual(legacy.displayCurrency, .cashback)
+        XCTAssertEqual(legacy.formattedCost, "$1.50")
     }
 
     func testIssuedButExpiredRedemptionShowsAsExpired() throws {

@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// Entrada unica a todo lo de puntos: el saldo canjeable (solo fuentes
-/// verificadas por un tercero, hoy facturas DGI) y, aparte, los habitos
-/// (nivel e insignias, que no se canjean).
+/// "Puntos y cashback": entrada unica a las dos monedas de premio — el
+/// cashback (facturas verificadas por la DGI) y los puntos (buenos
+/// habitos, calculados en el servidor) — y al catalogo de canje.
 ///
 /// "Ahorro verificado" con bancos se quito por completo del app (vistas,
 /// modelos y llamadas): depender de reportes de bancos no era viable para
@@ -23,6 +23,12 @@ struct PointsHubView: View {
     var body: some View {
         List {
             Section {
+                RewardBalancesHeader(balance: viewModel.balance)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+            }
+
+            Section {
                 NavigationLink {
                     RewardsView()
                 } label: {
@@ -35,11 +41,7 @@ struct PointsHubView: View {
                     Label("Mis canjes", systemImage: "ticket.fill")
                 }
             } footer: {
-                Text("Usa tu cashback en productos de comercios aliados.")
-            }
-
-            Section {
-                balanceSummary
+                Text("Cada comercio aliado elige si canjea con puntos o con cashback.")
             }
 
             Section {
@@ -67,9 +69,9 @@ struct PointsHubView: View {
                     Label("Metas de ahorro", systemImage: "banknote.fill")
                 }
             } header: {
-                Text("Hábitos")
+                Text("Gana puntos")
             } footer: {
-                Text("Anotar tus movimientos, ahorrar con constancia y cumplir presupuestos te sube de nivel. Los niveles no se canjean.")
+                Text("Anotar tus movimientos, ahorrar con constancia y cumplir presupuestos te da puntos (hasta \(HabitEngine.Rules.monthlyXPCap) al mes) y te sube de nivel.")
             }
 
             if let errorMessage = viewModel.errorMessage {
@@ -78,12 +80,12 @@ struct PointsHubView: View {
                 }
             }
         }
-        .navigationTitle("Cashback")
+        .navigationTitle("Puntos y cashback")
         .refreshable { await refresh() }
         .task { await refresh() }
     }
 
-    /// Entrada destacada al catalogo de canje — lo primero que se ve.
+    /// Entrada destacada al catalogo de canje.
     private var rewardsCard: some View {
         HStack(spacing: 14) {
             ZStack {
@@ -96,29 +98,14 @@ struct PointsHubView: View {
             .frame(width: 48, height: 48)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("Canjea tu cashback")
+                Text("Canjea tus premios")
                     .font(.system(.headline, design: MonAviBrand.fontDesign, weight: .bold))
-                Text("\(RewardsMath.balanceText(cents: viewModel.balance.confirmedPoints)) para usar en comercios aliados")
+                Text("Usa tus puntos y tu cashback en comercios aliados")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
         }
         .padding(.vertical, 8)
-    }
-
-    private var balanceSummary: some View {
-        HStack(spacing: 24) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Cashback disponible").font(.caption).foregroundStyle(.secondary)
-                Text(Cashback.format(cents: viewModel.balance.confirmedPoints)).font(.title.weight(.bold))
-            }
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Por confirmar").font(.caption).foregroundStyle(.secondary)
-                Text(Cashback.format(cents: viewModel.balance.pendingPoints)).font(.title.weight(.bold))
-            }
-            Spacer()
-        }
-        .padding(.vertical, 6)
     }
 
     private func refresh() async {

@@ -1,7 +1,9 @@
 import SwiftUI
 
-/// "Nivel e insignias": la experiencia que da cuidar tus finanzas. No se
-/// canjea por nada — es para motivarte (ver HabitEngine para las reglas).
+/// "Nivel e insignias": los puntos que da cuidar tus finanzas. El nivel
+/// sale del total de puntos ganados que calcula el servidor
+/// (`habit_points_earned`); el desglose por fuente es un estimado local
+/// (ver HabitEngine para las reglas).
 struct LevelsView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = LevelsViewModel()
@@ -59,10 +61,10 @@ struct LevelsView: View {
                 ProgressView(value: level.progress(xp: progress.totalXP))
                     .tint(MonAviBrand.accentOnDark)
                 HStack {
-                    Text("\(progress.totalXP) XP")
+                    Text("\(progress.totalXP) puntos ganados")
                     Spacer()
                     if let next = level.nextLevelXP {
-                        Text("Faltan \(next - progress.totalXP) XP para el nivel \(level.number + 1)")
+                        Text("Faltan \(max(0, next - progress.totalXP)) puntos para el nivel \(level.number + 1)")
                     } else {
                         Text("¡Nivel máximo!")
                     }
@@ -76,7 +78,7 @@ struct LevelsView: View {
                 Divider().frame(height: 32).overlay(MonAviBrand.onDarkSurface.opacity(0.3))
                 stat(value: "\(progress.earnedBadges.count)/\(progress.badges.count)", label: "insignias")
                 Divider().frame(height: 32).overlay(MonAviBrand.onDarkSurface.opacity(0.3))
-                stat(value: "\(progress.xpThisMonth)/\(HabitEngine.Rules.monthlyXPCap)", label: "XP este mes")
+                stat(value: "\(progress.xpThisMonth)/\(HabitEngine.Rules.monthlyXPCap)", label: "puntos este mes")
             }
         }
         .padding(20)
@@ -101,7 +103,7 @@ struct LevelsView: View {
 
     private var disclaimer: some View {
         Label {
-            Text("Los niveles e insignias son para motivarte: no se canjean por dinero ni premios. El cashback canjeable viene solo de facturas verificadas por la DGI.")
+            Text("Tus puntos se ganan con buenos hábitos y se canjean en los comercios aliados que aceptan puntos. El cashback viene de tus facturas verificadas por la DGI.")
         } icon: {
             Image(systemName: "info.circle.fill")
                 .foregroundStyle(MonAviBrand.primary)
@@ -167,10 +169,10 @@ struct LevelsView: View {
         .accessibilityLabel("\(badge.title). \(badge.detail) \(badge.isEarned ? "Ganada" : "Progreso \(min(badge.current, badge.target)) de \(badge.target)")")
     }
 
-    // MARK: - Como se gana XP
+    // MARK: - Como se ganan puntos
 
     private func sourcesSection(_ progress: HabitEngine.Progress) -> some View {
-        section(title: "Cómo ganas experiencia") {
+        section(title: "Cómo ganas puntos") {
             VStack(spacing: 0) {
                 ForEach(HabitEngine.XPSource.allCases) { source in
                     HStack(alignment: .top, spacing: 12) {
@@ -185,7 +187,7 @@ struct LevelsView: View {
                                 .foregroundStyle(.secondary)
                         }
                         Spacer(minLength: 8)
-                        Text("\(progress.xpBySource[source] ?? 0) XP")
+                        Text("\(progress.xpBySource[source] ?? 0) pts")
                             .font(.subheadline.weight(.semibold).monospacedDigit())
                             .foregroundStyle(MonAviBrand.primary)
                     }
@@ -195,6 +197,11 @@ struct LevelsView: View {
                         Divider()
                     }
                 }
+
+                Text("Desglose estimado con tus datos en este teléfono. Tu saldo y tu nivel los calcula MonAvi una vez al día.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 6)
             }
         }
     }
@@ -205,7 +212,7 @@ struct LevelsView: View {
         section(title: "Tus aportes de ahorro") {
             VStack(alignment: .leading, spacing: 0) {
                 if progress.contributionReviews.isEmpty {
-                    Text("Todavía no tienes aportes. Crea una meta y aparta algo cada semana: cada aporte que se quede 30 días sin retirarse suma a tu nivel.")
+                    Text("Todavía no tienes aportes. Crea una meta y aparta algo cada semana: cada aporte que se quede 30 días sin retirarse te da puntos.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .padding(.vertical, 6)
@@ -274,7 +281,7 @@ struct LevelsView: View {
                 ruleRow("Lo que ahorras en un mes tiene que caber en lo que registraste ese mes (ingresos menos gastos). Anota tus ingresos.")
                 ruleRow("Un aporte cuenta cuando pasan 30 días sin retirar dinero de esa meta.")
                 ruleRow("Los días anotados se cuentan el día que anotas, no la fecha que le pones al movimiento.")
-                ruleRow("Puedes ganar hasta \(HabitEngine.Rules.monthlyXPCap) XP por mes.")
+                ruleRow("Puedes ganar hasta \(HabitEngine.Rules.monthlyXPCap) puntos por mes.")
             }
         }
     }

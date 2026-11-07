@@ -15,23 +15,15 @@ async function countRows(table: string, filters: Record<string, string>): Promis
 
 export default async function DashboardPage() {
   const [
-    pendingCard,
-    ambiguousCard,
-    pendingBank,
     budgetExhausted,
     activeMerchants,
-    activeBanks,
     pendingDgi,
     newApplications,
     pendingRedemptions,
     activeRewards,
   ] = await Promise.all([
-    countRows("card_transactions", { match_status: "pending_match" }),
-    countRows("card_transactions", { match_status: "ambiguous" }),
-    countRows("savings_bank_reports", { match_status: "pending_match" }),
     countRows("partner_merchant_offers", { status: "budget_exhausted" }),
     countRows("partner_merchants", { status: "active" }),
-    countRows("bank_partners", { status: "active" }),
     countRows("dgi_receipts", { status: "pendiente" }),
     countRows("merchant_applications", { status: "nueva" }),
     countRows("reward_redemptions", { status: "emitido" }),
@@ -48,10 +40,6 @@ export default async function DashboardPage() {
       <h1>Resumen</h1>
       <div className="grid-form">
         <StatCard label="Comercios activos" value={activeMerchants} href="/merchants" />
-        <StatCard label="Bancos activos" value={activeBanks} href="/bank-partners" />
-        <StatCard label="Compras de tarjeta sin procesar" value={pendingCard} href="/card-reports" />
-        <StatCard label="Compras ambiguas (revisar)" value={ambiguousCard} href="/alerts" warn={ambiguousCard > 0} />
-        <StatCard label="Reportes de banco sin procesar" value={pendingBank} href="/bank-reports" />
         <StatCard label="Ofertas con presupuesto agotado" value={budgetExhausted} href="/alerts" warn={budgetExhausted > 0} />
         <StatCard label="Facturas DGI pendientes" value={pendingDgi} href="/dgi-verification" />
         <StatCard label="Solicitudes de comercios nuevas" value={newApplications} href="/applications?status=nueva" warn={newApplications > 0} />

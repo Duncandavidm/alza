@@ -110,6 +110,10 @@ npm run dev
 
 ## Que hace cada pantalla
 
+(Las pantallas de reportes de tarjeta y de "Ahorro verificado" con
+bancos se quitaron: esas funciones ya no existen en la app. Las tablas
+siguen en Supabase.)
+
 - **Comercios y ofertas** (`/merchants`, `/merchants/[id]`): crear,
   editar y pausar comercios aliados (`partner_merchants`) con su ficha
   (nombre, RUC, categoria, direccion, enlace de Google Maps para "Cómo
@@ -146,25 +150,8 @@ npm run dev
   Cada seccion tiene "Descargar CSV" (`/insights/export?days=&ruc=&section=`,
   protegido por la sesion) y la pagina tiene una version para imprimir /
   guardar como PDF para compartir con el aliado.
-- **Reportes de tarjeta** (`/card-reports`): subir un CSV de ventas con
-  tarjeta de un comercio aliado (columnas: `provider_transaction_id,
-  occurred_at, amount, card_last4, card_brand[, branch]`) e insertarlas
-  en `card_transactions` con `provider='merchant_report'`. El boton
-  "Procesar reportes pendientes" llama a la Edge Function
-  `reconcile-card-transactions`, que cruza por ultimos4+marca contra
-  las tarjetas vinculadas por los usuarios.
-- **Bancos patrocinadores** (`/bank-partners`): crear/pausar bancos
-  para "Ahorro verificado" (`bank_partners`).
-- **Reportes de banco** (`/bank-reports`): subir un CSV del banco
-  (columnas: `external_account_ref, period_month, avg_balance`) e
-  insertarlas en `savings_bank_reports`. El boton "Procesar reportes
-  pendientes" llama a `reconcile-savings-reports`.
-- **Facturas DGI** (`/dgi-verification`): la verificacion corre todos
-  los dias a las 8:00 a. m. (hora de Panama). Las reglas se editan en
-  puntos con su equivalente en cashback.
-- **Alertas** (`/alerts`): compras con 2+ tarjetas posibles (sin
-  cashback, por diseño), reportes de banco sin inscripcion que los
-  reclame, y campañas con presupuesto agotado.
+- **Alertas** (`/alerts`): ofertas de comercios con el presupuesto de
+  cashback agotado.
 
 ## Por que no hay Supabase Auth aqui
 

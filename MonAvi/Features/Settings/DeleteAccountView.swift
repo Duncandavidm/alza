@@ -9,8 +9,6 @@ struct DeleteAccountView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var confirmationText = ""
-    @State private var familyGroup: FamilyGroup?
-    @State private var isLoadingFamilyGroup = true
     @State private var isDeleting = false
     @State private var errorMessage: String?
 
@@ -30,14 +28,6 @@ struct DeleteAccountView: View {
                         .foregroundStyle(.secondary)
                 }
                 .padding(.vertical, 6)
-            }
-
-            if let familyGroup, familyGroup.isOwner, !familyGroup.members.isEmpty {
-                Section {
-                    Text("Eres dueño de un grupo familiar con \(familyGroup.members.count) persona\(familyGroup.members.count == 1 ? "" : "s"). Si eliminas tu cuenta, \(familyGroup.members.count == 1 ? "esa persona pierde" : "esas personas pierden") su acceso Pro de inmediato.")
-                        .font(.subheadline)
-                        .foregroundStyle(MonAviBrand.alert)
-                }
             }
 
             Section {
@@ -70,18 +60,6 @@ struct DeleteAccountView: View {
         }
         .navigationTitle("Eliminar cuenta")
         .navigationBarTitleDisplayMode(.inline)
-        .overlay {
-            if isLoadingFamilyGroup {
-                ProgressView()
-            }
-        }
-        .task { await loadFamilyGroup() }
-    }
-
-    private func loadFamilyGroup() async {
-        isLoadingFamilyGroup = true
-        defer { isLoadingFamilyGroup = false }
-        familyGroup = try? await FamilyGroupService.shared.fetchMyGroup()
     }
 
     private func delete() async {

@@ -23,15 +23,9 @@ final class AppState: ObservableObject {
     @Published private(set) var session: Session?
     @Published private(set) var isLoadingSession = true
     @Published private(set) var subscriptionStatus: SubscriptionStatus = .unknown
-    /// product_id de la suscripcion que da el acceso actual — la propia, o
-    /// si isFamilyMember es true, la del dueno del grupo familiar al que
-    /// pertenece. nil si no hay ninguna. Lo usan Settings/Paywall para
-    /// saber que mostrar (ej. "Mi familia" solo si es un product_id de
-    /// familia, propio o heredado).
+    /// product_id de la suscripcion que da el acceso actual (mensual o
+    /// anual). nil si no hay ninguna.
     @Published private(set) var entitlementProductId: String?
-    /// true si el acceso viene heredado de un grupo familiar ajeno (no de
-    /// una suscripcion propia) — ver get_entitlement_status.
-    @Published private(set) var isFamilyMember = false
     @Published private(set) var onboardingStatus: OnboardingStatus = .unknown
     @Published private(set) var mfaStatus: MFAChallengeStatus = .unknown
 
@@ -90,15 +84,13 @@ final class AppState: ObservableObject {
         await signOut()
     }
 
-    /// Lee el acceso efectivo del usuario via la RPC get_entitlement_status
-    /// (propia suscripcion, o heredada de un grupo familiar) en vez de leer
-    /// directo la tabla subscriptions — ver
-    /// supabase/migrations/0017_family_groups.sql para el porque.
+    /// Lee el acceso efectivo del usuario (su propia suscripcion) via la
+    /// RPC get_entitlement_status en vez de leer directo la tabla
+    /// subscriptions.
     func refreshSubscriptionStatus() async {
         guard session?.user.id != nil else {
             subscriptionStatus = .none
             entitlementProductId = nil
-            isFamilyMember = false
             return
         }
         do {
@@ -109,11 +101,9 @@ final class AppState: ObservableObject {
             if let row = rows.first {
                 subscriptionStatus = SubscriptionStatus(status: row.status, expiresAt: row.expiresAt)
                 entitlementProductId = row.productId
-                isFamilyMember = row.viaFamily
             } else {
                 subscriptionStatus = .none
                 entitlementProductId = nil
-                isFamilyMember = false
             }
         } catch {
             subscriptionStatus = .unknown

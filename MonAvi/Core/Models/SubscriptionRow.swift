@@ -21,20 +21,18 @@ struct SubscriptionRow: Codable, Hashable {
 }
 
 /// Fila que devuelve la RPC get_entitlement_status — la propia suscripcion
-/// del usuario si la tiene, o si no, la del dueno del grupo familiar al
-/// que pertenece (ver supabase/migrations/0017_family_groups.sql). Vacia
-/// (sin filas) significa que no hay ninguna de las dos.
+/// del usuario. Vacia (sin filas) significa que no tiene ninguna. Cualquier
+/// otra columna que devuelva la RPC (ej. una antigua `via_family`) se
+/// ignora: no esta en CodingKeys, asi que decodifique exista o no.
 struct EntitlementRow: Decodable, Hashable {
     let status: String
     let productId: String?
     let expiresAt: Date?
-    let viaFamily: Bool
 
     enum CodingKeys: String, CodingKey {
         case status
         case productId = "product_id"
         case expiresAt = "expires_at"
-        case viaFamily = "via_family"
     }
 }
 
@@ -60,7 +58,7 @@ enum SubscriptionStatus: Equatable {
     }
 
     /// status == nil equivale a "sin fila" (SubscriptionStatus.none) — pasa
-    /// cuando no hay suscripcion propia ni membresia de familia activa.
+    /// cuando el usuario no tiene ninguna suscripcion.
     init(status: String?, expiresAt: Date?) {
         switch status {
         case "active":

@@ -21,7 +21,6 @@ struct PaywallView: View {
     @EnvironmentObject private var appState: AppState
     @ObservedObject var subscriptionStore: SubscriptionStore
     @State private var isSigningOut = false
-    @State private var isShowingFamilyCode = false
     @State private var audience: PaywallAudience = .personal
     @State private var appeared = false
 
@@ -61,8 +60,6 @@ struct PaywallView: View {
                         .animation(.easeInOut(duration: 0.2), value: audience)
                         .id(audience)
                         .transition(.opacity)
-
-                    tierToggle
 
                     pricingCard
 
@@ -144,75 +141,23 @@ struct PaywallView: View {
         .background(Capsule().fill(Color(.secondarySystemBackground)))
     }
 
-    /// Individual / Familia — independiente del audienceToggle de arriba
-    /// (ese es solo texto descriptivo). Familia es un producto propio mas
-    /// caro (no Apple Family Sharing, ver Config.swift), por eso vive aqui
-    /// junto a la eleccion de precio, no junto al toggle de audiencia.
-    private var tierToggle: some View {
-        HStack(spacing: 4) {
-            ForEach(SubscriptionTier.allCases) { tier in
-                Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                        selectTier(tier)
-                    }
-                } label: {
-                    Text(tier == .individual ? "Individual" : "Familia")
-                        .font(.system(.subheadline, design: MonAviBrand.fontDesign, weight: .semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                .fill(subscriptionStore.selectedPlan.tier == tier ? MonAviBrand.primary : .clear)
-                        )
-                        .foregroundStyle(subscriptionStore.selectedPlan.tier == tier ? .white : .primary)
-                }
-                .buttonStyle(.plain)
-                .pressable()
-            }
-        }
-        .padding(4)
-        .background(Capsule().fill(Color(.secondarySystemBackground)))
-    }
-
-    /// Cambia de tier conservando el ciclo (mensual/anual) elegido si ese
-    /// producto ya cargo; si no, cae al otro ciclo del mismo tier que si
-    /// haya cargado, para no dejar el tier nuevo sin nada que comprar.
-    private func selectTier(_ tier: SubscriptionTier) {
-        let billing = subscriptionStore.selectedPlan.billing
-        if subscriptionStore.product(tier: tier, billing: billing) != nil {
-            subscriptionStore.selectPlan(.plan(tier: tier, billing: billing))
-        } else if let fallback = SubscriptionBilling.allCases.first(where: { subscriptionStore.product(tier: tier, billing: $0) != nil }) {
-            subscriptionStore.selectPlan(.plan(tier: tier, billing: fallback))
-        }
-    }
-
     @ViewBuilder
     private var pricingCard: some View {
-        let tier = subscriptionStore.selectedPlan.tier
-        let annual = subscriptionStore.product(tier: tier, billing: .annual)
-        let monthly = subscriptionStore.product(tier: tier, billing: .monthly)
+        let annual = subscriptionStore.product(for: .annual)
+        let monthly = subscriptionStore.product(for: .monthly)
 
         if annual != nil || monthly != nil {
             VStack(spacing: 14) {
                 HStack(spacing: 12) {
                     if let annual {
-                        planOption(plan: .plan(tier: tier, billing: .annual), product: annual, badge: "Mejor precio")
+                        planOption(plan: .annual, product: annual, badge: "Mejor precio")
                     }
                     if let monthly {
-                        planOption(plan: .plan(tier: tier, billing: .monthly), product: monthly, badge: nil)
+                        planOption(plan: .monthly, product: monthly, badge: nil)
                     }
                 }
 
                 commitmentCaption
-
-                // Solo el tier Familia anuncia compartir — el Individual no
-                // usa Apple Family Sharing nativo a proposito (competiria
-                // gratis con el plan Familia de pago, ver Config.swift).
-                if tier == .familia {
-                    Label("Invita hasta 5 personas con tu código (Ajustes > Mi familia)", systemImage: "person.3.fill")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
             }
         } else if subscriptionStore.isLoadingProduct {
             RoundedRectangle(cornerRadius: 20)
@@ -256,7 +201,7 @@ struct PaywallView: View {
                     .foregroundStyle(.white)
                     .opacity(badge == nil ? 0 : 1)
 
-                Text(plan.billing == .annual ? "12 meses" : "Mensual")
+                Text(plan == .annual ? "12 meses" : "Mensual")
                     .font(.system(.subheadline, design: MonAviBrand.fontDesign, weight: .semibold))
                     .foregroundStyle(.primary)
 
@@ -290,7 +235,7 @@ struct PaywallView: View {
     private var commitmentCaption: some View {
         if let product = subscriptionStore.selectedProduct {
             Group {
-                if subscriptionStore.selectedPlan.billing == .annual {
+                if subscriptionStore.selectedPlan == .annual {
                     Text("Cobro anual — compromiso de 12 meses, \(product.displayPrice) en total")
                 } else {
                     Text("Cobro mensual, cancela cuando quieras")
@@ -337,7 +282,7 @@ struct PaywallView: View {
     private var confirmationNote: some View {
         if let price = subscriptionStore.selectedProduct?.displayPrice,
            subscriptionStore.freeTrialDurationText != nil {
-            let cadence = subscriptionStore.selectedPlan.billing == .annual ? "al año" : "al mes"
+            let cadence = subscriptionStore.selectedPlan == .annual ? "al año" : "al mes"
             VStack(spacing: 4) {
                 Label("Hoy no pagas nada.", systemImage: "checkmark.seal.fill")
                     .font(.footnote.weight(.semibold))
@@ -375,20 +320,6 @@ struct PaywallView: View {
             }
             .font(.footnote)
 
-            // Los invitados al plan Familia no pagan: entran con el codigo
-            // que les comparte el dueno (Ajustes > Mi familia queda detras
-            // de este paywall, por eso el codigo se pide aqui).
-            Button {
-                isShowingFamilyCode = true
-            } label: {
-                Label("Tengo un código familiar", systemImage: "person.3.fill")
-            }
-            .font(.footnote.weight(.semibold))
-            .tint(MonAviBrand.primary)
-            .sheet(isPresented: $isShowingFamilyCode) {
-                FamilyCodeEntrySheet()
-            }
-
             Button {
                 Task {
                     isSigningOut = true
@@ -409,82 +340,3 @@ struct PaywallView: View {
     }
 }
 
-
-/// Unirse a un plan Familia desde el paywall con el codigo que compartio
-/// el dueno. Al unirse, el acceso Pro llega por el grupo y el paywall se
-/// cierra solo al refrescar el estado de la suscripcion.
-private struct FamilyCodeEntrySheet: View {
-    @EnvironmentObject private var appState: AppState
-    @Environment(\.dismiss) private var dismiss
-    @State private var code = ""
-    @State private var isJoining = false
-    @State private var errorMessage: String?
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    TextField("Código de invitación", text: $code)
-                        .textInputAutocapitalization(.characters)
-                        .autocorrectionDisabled()
-                        .font(.title3.monospaced())
-                } footer: {
-                    Text("Pídele el código a quien tiene el plan Familia (lo ve en Ajustes > Mi familia). Tendrás acceso completo con tu propia cuenta y tus propios datos.")
-                }
-
-                if let errorMessage {
-                    Section {
-                        Text(errorMessage)
-                            .foregroundStyle(MonAviBrand.alert)
-                    }
-                }
-
-                Section {
-                    Button {
-                        Task { await join() }
-                    } label: {
-                        if isJoining {
-                            ProgressView().frame(maxWidth: .infinity)
-                        } else {
-                            Text("Unirme a la familia").frame(maxWidth: .infinity)
-                        }
-                    }
-                    .disabled(code.trimmingCharacters(in: .whitespaces).count < 4 || isJoining)
-                }
-            }
-            .navigationTitle("Código familiar")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancelar") { dismiss() }
-                }
-            }
-        }
-    }
-
-    private func join() async {
-        isJoining = true
-        errorMessage = nil
-        do {
-            try await FamilyGroupService.shared.join(inviteCode: code)
-            await appState.refreshSubscriptionStatus()
-            isJoining = false
-            if appState.subscriptionStatus.isEntitled {
-                dismiss()
-            } else {
-                errorMessage = "Te uniste al grupo, pero el plan Familia de quien te invitó no está activo. Pídele que lo revise."
-            }
-        } catch {
-            isJoining = false
-            errorMessage = FamilyCodeEntrySheet.message(for: error)
-        }
-    }
-
-    private static func message(for error: Error) -> String {
-        let text = String(describing: error)
-        if text.contains("invalido") { return "Ese código no existe. Revísalo con quien te invitó." }
-        if text.contains("maximo") { return "Ese grupo familiar ya tiene 5 personas." }
-        if text.contains("propio grupo") { return "Ese es tu propio código familiar." }
-        return "No se pudo unir al grupo. Revisa tu conexión e intenta de nuevo."
-    }
-}

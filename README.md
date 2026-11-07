@@ -111,31 +111,19 @@ Providers):
   - **Anual**: `app.monavi.sub.pro.annual` — **$74.99/año** (equivale a
     ~$6.25/mes, ~22% de descuento vs el mensual). Debe coincidir con
     `Config.subscriptionProductIdAnnual`.
-  - **Familia Mensual**: `app.monavi.sub.pro.family` — **$14.99/mes**. Debe
-    coincidir con `Config.subscriptionProductIdFamily`.
-  - **Familia Anual**: `app.monavi.sub.pro.family.annual` — **$134.99/año**
-    (equivale a ~$11.25/mes, ~25% de descuento vs el mensual, igual que el
-    individual). Debe coincidir con
-    `Config.subscriptionProductIdFamilyAnnual`.
   - **Importante**: el Product ID de un producto NUNCA se puede editar una
-    vez creado en App Store Connect — revisa bien estos 4 antes de darle
-    "Crear" a cada uno. Si te equivocas, borra el producto (si todavia no
-    tiene ninguna compra real) y vuelve a crearlo con el ID correcto, en
-    vez de dejarlo mal escrito para siempre (asi quedaron los de la marca
-    anterior, "Alza" — ver el historial de git de este archivo si quieres
-    ver esos typos).
-  - **NO actives "Family Sharing" en NINGUNO de los 4** — ni individuales
-    ni Familia. El Individual no lo usa a proposito: si lo activaras,
-    cualquiera podria compartirlo gratis con su familia de Apple (hasta 6
-    personas) y nadie pagaria el plan Familia. Todo el compartir pasa por
-    el sistema propio de invitacion por codigo (hasta 5 personas, ver
-    `MonAvi/Core/FamilyGroupService.swift` y
-    `supabase/migrations/0017_family_groups.sql`), exclusivo del plan
-    Familia de pago. Ademas, activar "Family Sharing" en App Store Connect
-    es PERMANENTE (Apple no deja desactivarlo despues), asi que nunca lo
-    actives por error.
-  - Mismo periodo de prueba gratis (1 semana) en los cuatro, si quieres
-    ofrecerla en todos.
+    vez creado en App Store Connect. Si te equivocas, borra el producto (si
+    todavia no tiene ninguna compra real) y vuelve a crearlo con el ID
+    correcto.
+  - Solo hay planes **personales**: cada persona paga su propia cuenta. El
+    plan Familia se quito antes del primer envio (los Product ID
+    `app.monavi.sub.pro.family*` no se usan; las tablas de
+    `0017_family_groups.sql` quedan en la base sin uso).
+  - **NO actives "Family Sharing"** en ninguno de los dos: cualquiera podria
+    compartirlo gratis con su familia de Apple, y activarlo en App Store
+    Connect es PERMANENTE (Apple no deja desactivarlo despues).
+  - Mismo periodo de prueba gratis (1 semana) en los dos, si quieres
+    ofrecerla.
 - Categoria, privacy questionnaire, icono 1024x1024 (ponlo en
   `MonAvi/Resources/Assets.xcassets/AppIcon.appiconset/`), capturas.
 - Banking/Tax: si ya los tienes configurados con maday en la misma cuenta de
@@ -550,13 +538,9 @@ encabezado de cada funcion:
   / Importar): exporta todos tus movimientos y recurrentes a un CSV
   (compartible por cualquier medio), o importa uno de vuelta a una cuenta
   que elijas.
-- Paywall: 4 planes del mismo Pro — Individual Mensual ($7.99) / Anual
-  (~$6.25/mes, $74.99 facturados una vez al año), y Familia Mensual
-  ($14.99) / Anual (~$11.25/mes, $134.99/año) que habilita invitar hasta 5
-  personas con codigo (ver "Mi familia" en Ajustes) — sin Apple Family
-  Sharing nativo en ninguno de los dos tiers, a proposito (competiria
-  gratis con el plan Familia de pago) — mas "Restaurar compras" y
-  "Administrar suscripcion".
+- Paywall: 2 planes personales del mismo Pro — Mensual ($7.99) y Anual
+  (~$6.25/mes, $74.99 facturados una vez al año), sin Apple Family Sharing,
+  mas "Restaurar compras" y "Administrar suscripcion".
 - Cerrar sesion (en Ajustes y en el Paywall) muestra un spinner y se
   deshabilita mientras corre, para que quede claro que esta funcionando.
 - **Recurrentes** (Ajustes > Recurrentes): pagos/ingresos fijos mensuales

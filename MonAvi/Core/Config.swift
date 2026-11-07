@@ -33,22 +33,14 @@ enum Config {
     static let subscriptionProductIdFamily = "app.monavi.sub.pro.family"
     static let subscriptionProductIdFamilyAnnual = "app.monavi.sub.pro.family.annual"
 
-    /// Paginas reales en `docs/privacy.html` y `docs/terms.html`, servidas
-    /// gratis por GitHub Pages (ver README para activarlo) — cumplen App
-    /// Store Review Guideline 3.1.2 (obligatorio por tener suscripcion) y
-    /// siguen funcionando. La URL dice "/alza/" porque asi se sigue
-    /// llamando el repositorio en GitHub — no afecta el nombre que ve el
-    /// cliente. maday.app ya tiene una pagina de privacidad propia
-    /// (/monavi/privacidad, usada en App Store Connect) pero todavia no
-    /// tiene una de terminos — si se construye esa pagina, cambiar estas
-    /// dos URLs para que la app use el mismo origen que ASC.
-    static let privacyPolicyURL = URL(string: "https://duncandavidm.github.io/alza/privacy.html")!
-    static let termsOfUseURL = URL(string: "https://duncandavidm.github.io/alza/terms.html")!
-    /// Pagina de soporte/FAQ real en maday.app (la misma que usa App Store
-    /// Connect como "URL de soporte"). El mailto de abajo sigue siendo el
-    /// contacto directo, esta es para que el cliente encuentre respuestas
-    /// sin tener que escribir.
-    static let supportURL = URL(string: "https://maday.app/monavi/soporte")!
+    /// Privacidad y terminos (App Store Review Guideline 3.1.2), en el
+    /// dominio de MonAvi. La version oficial vive en admin/legal/*.html y
+    /// la sirve el panel; usa estas mismas URLs en App Store Connect.
+    static let privacyPolicyURL = URL(string: "https://monavi.maday.app/privacy")!
+    static let termsOfUseURL = URL(string: "https://monavi.maday.app/terms")!
+    /// Soporte/FAQ publico (tambien es la "URL de soporte" de App Store
+    /// Connect). El mailto de abajo es el contacto directo.
+    static let supportURL = URL(string: "https://monavi.maday.app/support")!
     static let supportEmail = "hola@maday.app"
 
     /// Pagina de validacion de canjes para el comercio: el QR del canje

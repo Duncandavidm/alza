@@ -72,7 +72,7 @@ export default function SupportPage() {
       <div className="card">
         <h3>Política de privacidad</h3>
         <p className="text-dim">
-          Puedes leerla completa en <a href="/privacy">monavi.vercel.app/privacy</a>.
+          Puedes leerla completa en <a href="/privacy">monavi.maday.app/privacy</a>.
         </p>
       </div>
     </div>

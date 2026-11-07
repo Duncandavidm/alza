@@ -146,7 +146,7 @@ export default function AliadosPage() {
       <footer className="landing-footer">
         <span>© {new Date().getFullYear()} MonAvi · Panamá</span>
         <span>
-          <a href="/privacy">Privacidad</a> · <a href="/support">Soporte</a> ·{" "}
+          <a href="/privacy">Privacidad</a> · <a href="/terms">Términos</a> · <a href="/support">Soporte</a> ·{" "}
           <a href="mailto:hola@maday.app">hola@maday.app</a>
         </span>
       </footer>

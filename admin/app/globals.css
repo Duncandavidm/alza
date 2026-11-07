@@ -702,6 +702,60 @@ a.secondary-link {
   width: 14px;
 }
 
+.column-bar.highlight {
+  background: var(--warning);
+}
+
+.kpi-hint {
+  margin-top: 2px;
+  font-size: 12px;
+}
+
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin: -4px 0 16px;
+  font-size: 13px;
+}
+
+.filter-chip {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #e6f6f2;
+  border: 1px solid var(--brand);
+  color: var(--brand-dark);
+}
+
+/* ---- Campañas de marcas ---- */
+
+.badge.draft { color: var(--text-dim); }
+.badge.ended { color: var(--text-dim); background: var(--surface-alt); }
+
+.field small.hint {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+.grid-form .field textarea {
+  width: 100%;
+}
+
+.grid-form .field.wide {
+  grid-column: 1 / -1;
+}
+
+.inline-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
 @media (max-width: 640px) {
   .column-label:nth-child(n) {
     font-size: 8px;

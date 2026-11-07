@@ -1,11 +1,20 @@
 import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import {
+  AGE_FILTERS,
   ALLOWED_DAYS,
+  EXPENSE_CATEGORIES,
+  GENDER_FILTERS,
   GENDER_LABELS,
+  PAYMENT_FILTERS,
+  PAYMENT_FILTER_LABELS,
   WEEKDAY_LABELS,
   fetchMarketInsights,
+  filterChips,
+  filtersQuery,
+  hasFilters,
   parseDays,
+  parseInsightFilters,
   parseRuc,
   paymentMethodLabel,
   weekdayLabel,
@@ -13,15 +22,27 @@ import {
 import { formatCashback, formatDateTime, formatDecimal, formatInt, formatMoney, formatPercent, num } from "@/lib/format";
 import PrintButton from "@/components/PrintButton";
 import { formatRewardValue, toRewardCurrency } from "@/lib/currency";
+import { BarList, ColumnChart, Kpi } from "@/components/Charts";
 
 export const dynamic = "force-dynamic";
 
-type BarItem = { label: string; value: number; detail?: string; tag?: string };
+type SearchParams = {
+  days?: string;
+  ruc?: string;
+  gender?: string;
+  age?: string;
+  payment?: string;
+  product?: string;
+  category?: string;
+};
 
-export default async function InsightsPage({ searchParams }: { searchParams: Promise<{ days?: string; ruc?: string }> }) {
+export default async function InsightsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const params = await searchParams;
   const days = parseDays(params.days);
   const ruc = parseRuc(params.ruc);
+  const filters = parseInsightFilters((key) => params[key as keyof SearchParams]);
+  const filtered = hasFilters(filters);
+  const filterParams = filtersQuery(filters);
 
   const [{ data: merchants }, result] = await Promise.all([
     supabaseAdmin()
@@ -29,15 +50,16 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
       .select("id, name, ruc")
       .order("name")
       .returns<{ id: string; name: string; ruc: string }[]>(),
-    fetchMarketInsights(days, ruc),
+    fetchMarketInsights(days, ruc, filters),
   ]);
 
   const partner = ruc ? (merchants ?? []).find((merchant) => merchant.ruc === ruc) : undefined;
 
   // Valor canjeado (entregado) en el periodo, separado por moneda: cada
   // canje guarda su currency (cashback en centavos, puntos tal cual).
+  // Con filtros de segmento no aplica (los canjes no se segmentan).
   const redeemedTotals = { cashback: 0, puntos: 0 };
-  if (!ruc || partner) {
+  if (!filtered && (!ruc || partner)) {
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
     let redeemedQuery = supabaseAdmin()
       .from("reward_redemptions")
@@ -52,10 +74,14 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
     }
   }
   const scopeLabel = ruc ? `Clientes de ${partner?.name ?? `RUC ${ruc}`}` : "Panorama general de MonAvi";
-  const exportBase = `/insights/export?days=${days}${ruc ? `&ruc=${encodeURIComponent(ruc)}` : ""}`;
+  const baseQuery = `days=${days}${ruc ? `&ruc=${encodeURIComponent(ruc)}` : ""}`;
+  const exportBase = `/insights/export?${baseQuery}${filterParams ? `&${filterParams}` : ""}`;
+  const chips = filterChips(filters);
 
   const data = result.data;
-  const isEmpty = !data || (num(data.summary.receipts) === 0 && num(data.summary.people) === 0);
+  const tooSmall = Boolean(data?.too_small);
+  const isEmpty = !data || (!tooSmall && num(data.summary.receipts) === 0 && num(data.summary.people) === 0);
+  const minUsers = formatInt(data?.min_users ?? 5);
 
   return (
     <div className="insights">
@@ -67,7 +93,10 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
             {data?.generated_at ? ` · generado ${formatDateTime(data.generated_at)}` : ""}
           </p>
         </div>
-        <div className="no-print">
+        <div className="no-print" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <a href={`${exportBase}&format=json`} className="csv-link" download>
+            Descargar todo (JSON)
+          </a>
           <PrintButton />
         </div>
       </div>
@@ -95,15 +124,86 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
             ))}
           </select>
         </div>
+        <div className="field">
+          <label>Género</label>
+          <select name="gender" defaultValue={filters.gender ?? ""}>
+            <option value="">Todos</option>
+            {GENDER_FILTERS.map((value) => (
+              <option key={value} value={value}>
+                {GENDER_LABELS[value] ?? value}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="field">
+          <label>Edad</label>
+          <select name="age" defaultValue={filters.age_range ?? ""}>
+            <option value="">Todas</option>
+            {AGE_FILTERS.map((value) => (
+              <option key={value} value={value}>
+                {value === "Sin dato" ? value : `${value} años`}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="field">
+          <label>Medio de pago</label>
+          <select name="payment" defaultValue={filters.payment ?? ""}>
+            <option value="">Todos</option>
+            {PAYMENT_FILTERS.map((value) => (
+              <option key={value} value={value}>
+                {PAYMENT_FILTER_LABELS[value]}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="field">
+          <label>Producto (en la factura)</label>
+          <input
+            type="text"
+            name="product"
+            maxLength={80}
+            defaultValue={filters.product ?? ""}
+            placeholder="ej. coca cola"
+          />
+        </div>
+        <div className="field">
+          <label>Categoría de gasto</label>
+          <select name="category" defaultValue={filters.category ?? ""}>
+            <option value="">Todas</option>
+            {filters.category && !(EXPENSE_CATEGORIES as readonly string[]).includes(filters.category) && (
+              <option value={filters.category}>{filters.category}</option>
+            )}
+            {EXPENSE_CATEGORIES.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="field" style={{ alignSelf: "end", display: "flex", gap: 8 }}>
           <button type="submit">Ver reporte</button>
           {ruc && (
-            <Link href={`/insights?days=${days}`} className="button secondary-link">
+            <Link href={`/insights?days=${days}${filterParams ? `&${filterParams}` : ""}`} className="button secondary-link">
               Quitar aliado
             </Link>
           )}
         </div>
       </form>
+
+      {chips.length > 0 && (
+        <div className="filter-chips">
+          <span className="text-dim">Segmento:</span>
+          {chips.map((chip) => (
+            <span key={chip.key} className="filter-chip">
+              {chip.label}
+            </span>
+          ))}
+          <Link href={`/insights?${baseQuery}`} className="no-print">
+            Quitar filtros
+          </Link>
+        </div>
+      )}
 
       {ruc && (
         <p className="text-dim">
@@ -118,6 +218,20 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
         </div>
       )}
 
+      {data && tooSmall && (
+        <div className="card empty-state">
+          <h3>Segmento demasiado pequeño</h3>
+          <p>
+            Este segmento tiene menos de {minUsers} personas: para proteger su privacidad no mostramos el detalle.
+          </p>
+          <div className="kpi-grid" style={{ maxWidth: 420, margin: "0 auto" }}>
+            <Kpi label="Personas en el segmento" value={formatInt(data.summary.people)} />
+            <Kpi label="Personas que aceptaron el estudio" value={formatInt(data.summary.consented_people)} />
+          </div>
+          <p className="text-dim">Prueba con menos filtros o un periodo más largo.</p>
+        </div>
+      )}
+
       {data && isEmpty && (
         <div className="card empty-state">
           <h3>Todavía no hay datos para este periodo</h3>
@@ -129,7 +243,7 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
         </div>
       )}
 
-      {data && !isEmpty && (
+      {data && !isEmpty && !tooSmall && (
         <>
           <Section
             title="Resumen"
@@ -146,8 +260,14 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
               <Kpi label="Compras por persona al mes" value={formatDecimal(data.summary.receipts_per_person_month, 1)} />
               <Kpi label="Cashback emitido" value={formatCashback(data.summary.points_issued)} />
               <Kpi label="Canjes" value={formatInt(data.summary.redemptions)} />
-              <Kpi label="Canjeado en cashback" value={formatRewardValue(redeemedTotals.cashback, "cashback")} />
-              <Kpi label="Canjeado en puntos" value={formatRewardValue(redeemedTotals.puntos, "puntos")} />
+              {!filtered && (
+                <>
+                  <Kpi label="Canjeado en cashback" value={formatRewardValue(redeemedTotals.cashback, "cashback")} />
+                  <Kpi label="Canjeado en puntos" value={formatRewardValue(redeemedTotals.puntos, "puntos")} />
+                </>
+              )}
+              <Kpi label="Productos promedio por factura" value={formatDecimal(data.summary.avg_items_per_receipt, 1)} />
+              <Kpi label="Personas que aceptaron el estudio" value={formatInt(data.summary.consented_people)} />
             </div>
           </Section>
 
@@ -161,7 +281,7 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
                 items={data.payment_methods.map((row) => ({
                   label: paymentMethodLabel(row.method),
                   value: num(row.receipts),
-                  detail: `${formatPercent(row.share)} · ${formatInt(row.receipts)} facturas`,
+                  detail: `${formatPercent(row.share)} · ${formatInt(row.receipts)} facturas · ticket ${formatMoney(row.avg_ticket)}`,
                 }))}
               />
             </Section>
@@ -231,6 +351,7 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
             csv={`${exportBase}&section=hours`}
           >
             <ColumnChart
+              ariaLabel="Facturas por hora del día"
               items={Array.from({ length: 24 }, (_, hour) => {
                 const row = data.hours.find((item) => num(item.hour) === hour);
                 return {
@@ -240,6 +361,64 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
                 };
               })}
             />
+          </Section>
+
+          <Section
+            title="Compras por día del mes"
+            caption="Cuántas facturas hay cada día del mes. En Panamá se cobra por quincena (el 15 y el 30): las columnas resaltadas muestran esos días y el siguiente, cuando suele subir el gasto."
+            csv={`${exportBase}&section=month_days`}
+          >
+            <ColumnChart
+              ariaLabel="Facturas por día del mes"
+              highlight={(_, index) => [14, 15, 29, 30].includes(index)}
+              items={Array.from({ length: 31 }, (_, index) => {
+                const day = index + 1;
+                const row = data.month_days.find((item) => num(item.day) === day);
+                return {
+                  label: String(day),
+                  value: num(row?.receipts),
+                  detail: `Día ${day} — ${formatInt(row?.receipts)} facturas · ${formatMoney(row?.total ?? null)} · ticket ${formatMoney(row?.avg_ticket ?? null)}`,
+                };
+              })}
+            />
+          </Section>
+
+          <div className="insights-two">
+            <Section
+              title="Momento del día"
+              caption="Facturas y ticket según el momento del día. Ayuda a elegir cuándo lanzar una promoción o una notificación."
+              csv={`${exportBase}&section=dayparts`}
+            >
+              <BarList
+                items={data.dayparts.map((row) => ({
+                  label: row.daypart ?? "—",
+                  value: num(row.receipts),
+                  detail: `${formatInt(row.receipts)} facturas · ticket ${formatMoney(row.avg_ticket)}`,
+                }))}
+              />
+            </Section>
+
+            <Section
+              title="Frecuencia de compra"
+              caption="Cuántas veces compró cada persona en el periodo. Separa a los clientes ocasionales de los habituales."
+              csv={`${exportBase}&section=frequency`}
+            >
+              <BarList
+                items={data.frequency.map((row) => ({
+                  label: row.bucket ?? "—",
+                  value: num(row.people),
+                  detail: `${formatInt(row.people)} personas`,
+                }))}
+              />
+            </Section>
+          </div>
+
+          <Section
+            title="Medio de pago por género"
+            caption="Cómo paga cada grupo y su ticket promedio. Útil para campañas con bancos o tarjetas dirigidas a un público."
+            csv={`${exportBase}&section=payment_by_gender`}
+          >
+            <PaymentByGender rows={data.payment_by_gender} />
           </Section>
 
           <div className="insights-two">
@@ -319,6 +498,22 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
             />
           </Section>
 
+          {ruc && (
+            <Section
+              title="Dónde más compran también sus clientes"
+              caption="Otros comercios que visitan las personas que compran aquí, ordenados por cuántas personas comparten. Sirve para alianzas y para entender a la competencia."
+              csv={`${exportBase}&section=also_shop_at`}
+            >
+              <BarList
+                items={data.also_shop_at.map((row) => ({
+                  label: row.merchant ?? `RUC ${row.ruc ?? "—"}`,
+                  value: num(row.people),
+                  detail: `${formatInt(row.people)} personas · ${formatInt(row.visits)} visitas · ${formatMoney(row.total)}`,
+                }))}
+              />
+            </Section>
+          )}
+
           <Section
             title="Productos canjeados"
             caption="Qué recompensas eligen las personas con su cashback o sus puntos. Indica qué tipo de producto atrae más visitas."
@@ -371,7 +566,8 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
       )}
 
       <p className="insights-footer">
-        Datos agregados y anónimos. Ningún grupo con menos de {formatInt(data?.min_users ?? 5)} personas se muestra.
+        Datos agregados y anónimos, solo de personas que aceptaron participar en el estudio. Ningún grupo con menos de{" "}
+        {minUsers} personas se muestra.
       </p>
     </div>
   );
@@ -416,55 +612,47 @@ function Section({
   );
 }
 
-function Kpi({ label, value }: { label: string; value: string }) {
+function PaymentByGender({ rows }: { rows: { gender: string | null; method: string | null; receipts: unknown; people: unknown; avg_ticket: unknown }[] }) {
+  if (rows.length === 0) return <p className="text-dim">Sin datos suficientes (ningún grupo llega a 5 personas).</p>;
+  const genders = Array.from(new Set(rows.map((row) => row.gender ?? "sin_dato")));
+  const methods = Array.from(new Set(rows.map((row) => row.method ?? "Otro"))).sort();
+  const lookup = new Map(rows.map((row) => [`${row.gender ?? "sin_dato"}|${row.method ?? "Otro"}`, row]));
   return (
-    <div className="kpi">
-      <div className="text-dim">{label}</div>
-      <div className="kpi-value">{value}</div>
-    </div>
-  );
-}
-
-function BarList({ items }: { items: BarItem[] }) {
-  if (items.length === 0) {
-    return <p className="text-dim">Sin datos suficientes (ningún grupo llega a 5 personas).</p>;
-  }
-  const max = Math.max(...items.map((item) => item.value), 1);
-  return (
-    <ul className="bar-list">
-      {items.map((item, index) => (
-        <li key={`${item.label}-${index}`}>
-          <div className="bar-list-label">
-            <span>
-              {item.label}
-              {item.tag && <span className="badge active bar-tag">{item.tag}</span>}
-            </span>
-            <span className="text-dim">{item.detail}</span>
-          </div>
-          <div className="bar-track">
-            <div className="bar-fill" style={{ width: `${Math.max((item.value / max) * 100, item.value > 0 ? 1.5 : 0)}%` }} />
-          </div>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function ColumnChart({ items }: { items: BarItem[] }) {
-  const max = Math.max(...items.map((item) => item.value), 1);
-  if (items.every((item) => item.value === 0)) {
-    return <p className="text-dim">Sin datos suficientes.</p>;
-  }
-  return (
-    <div className="column-chart" role="img" aria-label="Facturas por hora del día">
-      {items.map((item) => (
-        <div key={item.label} className="column" title={item.detail}>
-          <div className="column-bar-area">
-            <div className="column-bar" style={{ height: `${(item.value / max) * 100}%` }} />
-          </div>
-          <span className="column-label">{item.label}</span>
-        </div>
-      ))}
+    <div className="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Género</th>
+            {methods.map((method) => (
+              <th key={method}>{method}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {genders.map((gender) => (
+            <tr key={gender}>
+              <td>{GENDER_LABELS[gender] ?? gender}</td>
+              {methods.map((method) => {
+                const cell = lookup.get(`${gender}|${method}`);
+                return (
+                  <td key={method}>
+                    {cell ? (
+                      <>
+                        {formatInt(cell.receipts)} facturas
+                        <div className="text-dim">
+                          {formatInt(cell.people)} personas · ticket {formatMoney(cell.avg_ticket)}
+                        </div>
+                      </>
+                    ) : (
+                      <span className="text-dim">—</span>
+                    )}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

@@ -47,6 +47,30 @@ final class RewardsTests: XCTestCase {
         )
     }
 
+    // MARK: - Donde canjear (agrupado por comercio)
+
+    func testMerchantSummaryGroupsItemsInCatalogOrder() {
+        let cafe = merchant(name: "Café Uno", currency: .puntos)
+        let panaderia = merchant(name: "Panadería Dos")
+        let items = [
+            item(name: "Capuchino", merchant: cafe, cost: 150),
+            item(name: "Pan", merchant: panaderia, cost: 300),
+            item(name: "Galleta", merchant: cafe, cost: 80),
+        ]
+
+        let summaries = PartnerMerchantSummary.group(items)
+
+        XCTAssertEqual(summaries.map(\.name), ["Café Uno", "Panadería Dos"])
+        XCTAssertEqual(summaries[0].items.count, 2)
+        XCTAssertEqual(summaries[0].cheapestCost, 80)
+        XCTAssertEqual(summaries[0].currency, .puntos)
+        XCTAssertEqual(summaries[1].currency, .cashback)
+    }
+
+    func testMerchantSummaryEmptyCatalog() {
+        XCTAssertTrue(PartnerMerchantSummary.group([]).isEmpty)
+    }
+
     // MARK: - Cashback faltante (en centavos)
 
     func testPointsMissing() {

@@ -11,6 +11,21 @@ struct RewardsView: View {
     @Environment(\.openURL) private var openURL
     @StateObject private var viewModel = RewardsViewModel()
 
+    /// "Premios" (catalogo) o "Comercios" (donde canjear).
+    enum Mode: String, CaseIterable, Identifiable {
+        case rewards = "Premios"
+        case merchants = "Comercios"
+        var id: String { rawValue }
+    }
+
+    @State private var mode: Mode
+    /// Si viene de "Ver premios" de un comercio, solo muestra los suyos.
+    @State private var merchantFilter: UUID?
+
+    init(initialMode: Mode = .rewards) {
+        _mode = State(initialValue: initialMode)
+    }
+
     @State private var pendingItem: RewardItem?
     @State private var isConfirming = false
     @State private var isRedeeming = false
@@ -21,8 +36,18 @@ struct RewardsView: View {
         ScrollView {
             LazyVStack(spacing: 20) {
                 balanceHeader
-                if viewModel.categories.count > 1 {
-                    categoryChips
+                Picker("Ver", selection: $mode) {
+                    ForEach(Mode.allCases) { (option: Mode) in
+                        Text(option.rawValue).tag(option)
+                    }
+                }
+                .pickerStyle(.segmented)
+                if mode == .rewards {
+                    if let merchantFilter {
+                        merchantFilterChip(merchantFilter)
+                    } else if viewModel.categories.count > 1 {
+                        categoryChips
+                    }
                 }
                 content
             }
@@ -30,7 +55,7 @@ struct RewardsView: View {
             .padding(.vertical, 12)
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle("Canjea tus premios")
+        .navigationTitle(mode == .rewards ? "Canjea tus premios" : "Dónde canjear")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { toolbarContent }
         .refreshable { await refresh() }
@@ -110,15 +135,59 @@ struct RewardsView: View {
                 .padding(.top, 40)
         } else if let errorMessage = viewModel.errorMessage, viewModel.items.isEmpty {
             errorState(errorMessage)
-        } else if viewModel.filteredItems.isEmpty {
+        } else if viewModel.items.isEmpty {
+            emptyState
+        } else if mode == .merchants {
+            merchantsList
+        } else if visibleItems.isEmpty {
             emptyState
         } else {
             itemsList
         }
     }
 
+    private var visibleItems: [RewardItem] {
+        if let merchantFilter {
+            return viewModel.items.filter { $0.merchantId == merchantFilter }
+        }
+        return viewModel.filteredItems
+    }
+
+    private var merchantsList: some View {
+        ForEach(PartnerMerchantSummary.group(viewModel.items)) { (summary: PartnerMerchantSummary) in
+            PartnerMerchantRow(
+                summary: summary,
+                balance: viewModel.spendableBalance(for: summary.items[0]),
+                onDirections: { openDirections(for: summary.items[0]) },
+                onShowRewards: {
+                    withAnimation(.snappy) {
+                        merchantFilter = summary.id
+                        mode = .rewards
+                    }
+                }
+            )
+        }
+    }
+
+    private func merchantFilterChip(_ merchantId: UUID) -> some View {
+        let name = viewModel.items.first { $0.merchantId == merchantId }?.merchantName ?? "Comercio"
+        return Button {
+            withAnimation(.snappy) { merchantFilter = nil }
+        } label: {
+            Label("\(name)  ✕", systemImage: "storefront")
+                .font(.subheadline.weight(.semibold))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(MonAviBrand.primary, in: Capsule())
+                .foregroundStyle(Color.white)
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityLabel("Quitar filtro de \(name)")
+    }
+
     private var itemsList: some View {
-        ForEach(viewModel.filteredItems) { (item: RewardItem) in
+        ForEach(visibleItems) { (item: RewardItem) in
             RewardItemCard(
                 item: item,
                 balance: viewModel.spendableBalance(for: item),

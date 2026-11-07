@@ -45,6 +45,12 @@ struct PointsHubView: View {
                 }
 
                 NavigationLink {
+                    RewardsView(initialMode: .merchants)
+                } label: {
+                    Label("Dónde canjear: comercios aliados", systemImage: "storefront.fill")
+                }
+
+                NavigationLink {
                     MyRedemptionsView()
                 } label: {
                     Label("Mis canjes", systemImage: "ticket.fill")

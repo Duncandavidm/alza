@@ -83,6 +83,15 @@ struct DayJournalView: View {
                 fabRow
             }
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    NavigationLink {
+                        RewardsView(initialMode: .merchants)
+                    } label: {
+                        Image(systemName: "gift.fill")
+                            .foregroundStyle(MonAviBrand.primary)
+                    }
+                    .accessibilityLabel("Dónde canjear")
+                }
                 ToolbarItem(placement: .primaryAction) {
                     if viewModel.isViewingToday {
                         Button {
@@ -328,30 +337,46 @@ struct DayJournalView: View {
         .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemBackground)))
     }
 
-    /// Entrada al hub de "Puntos" — siempre visible (es la puerta de
-    /// descubrimiento de todas las formas de ganar: facturas, tarjeta,
-    /// y lo que venga despues), no solo cuando ya hay algo acumulado.
+    /// Dos accesos siempre visibles: el hub (saldos y como ganar) y
+    /// "Dónde canjear" (comercios aliados y sus premios), para que nadie
+    /// tenga que buscar donde usar su cashback o sus puntos.
     private var pointsStrip: some View {
-        NavigationLink {
-            PointsHubView()
-        } label: {
-            HStack(spacing: 10) {
-                Text("⭐️")
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Puntos y cashback")
-                        .font(.subheadline.weight(.medium))
-                    Text("Canjea tus puntos y tu cashback en comercios aliados")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Image(systemName: "chevron.right")
+        HStack(spacing: 10) {
+            NavigationLink {
+                PointsHubView()
+            } label: {
+                stripTile(emoji: "⭐️", title: "Puntos y cashback", subtitle: "Tus saldos y cómo ganar")
+            }
+            NavigationLink {
+                RewardsView(initialMode: .merchants)
+            } label: {
+                stripTile(emoji: "🎁", title: "Dónde canjear", subtitle: "Comercios aliados")
+            }
+        }
+    }
+
+    private func stripTile(emoji: String, title: String, subtitle: String) -> some View {
+        HStack(spacing: 8) {
+            Text(emoji)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline.weight(.medium))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
+                Text(subtitle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
             }
-            .padding(12)
-            .foregroundStyle(.primary)
+            Spacer(minLength: 0)
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
+        .padding(12)
+        .frame(maxWidth: .infinity)
+        .foregroundStyle(.primary)
         .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemBackground)))
     }
 

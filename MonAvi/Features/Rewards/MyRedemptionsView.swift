@@ -42,9 +42,34 @@ struct MyRedemptionsView: View {
             )
             .listRowBackground(Color.clear)
         } else {
+            let gifts = RewardsMath.activeGifts(redemptions)
+            if !gifts.isEmpty {
+                Section {
+                    ForEach(gifts) { (gift: RewardRedemption) in
+                        Button {
+                            presentedRedemption = gift
+                        } label: {
+                            GiftCouponCard(redemption: gift)
+                        }
+                        .buttonStyle(.plain)
+                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                    }
+                } header: {
+                    Text("Tus regalos")
+                } footer: {
+                    Text("Regalos de MonAvi: no te costaron nada. Toca uno para ver su código y muéstralo en caja.")
+                }
+            }
+
             Section {
                 ForEach(redemptions) { (redemption: RewardRedemption) in
                     row(redemption)
+                }
+            } header: {
+                if !gifts.isEmpty {
+                    Text("Historial")
                 }
             } footer: {
                 Text("Los códigos vencen a los 7 días. Si no lo usas a tiempo, te devolvemos tus puntos o tu cashback.")
@@ -74,6 +99,9 @@ struct MyRedemptionsView: View {
                 size: 40
             )
             VStack(alignment: .leading, spacing: 3) {
+                if redemption.isGift {
+                    GiftBadge()
+                }
                 Text(redemption.item?.name ?? "Producto canjeado")
                     .font(.body.weight(.semibold))
                     .lineLimit(1)
@@ -81,6 +109,12 @@ struct MyRedemptionsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+                if redemption.isGift, let message = redemption.displayGiftMessage {
+                    Text(message)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
                 Text(detailText(redemption))
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -88,7 +122,7 @@ struct MyRedemptionsView: View {
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 4) {
                 RedemptionStatusBadge(status: redemption.effectiveStatus())
-                Text(redemption.formattedCost)
+                Text(redemption.displayCostText)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
@@ -104,6 +138,9 @@ struct MyRedemptionsView: View {
         }
         if redemption.status == .entregado, let deliveredAt = redemption.deliveredAt {
             return "Entregado el \(deliveredAt.formatted(date: .abbreviated, time: .omitted))"
+        }
+        if redemption.isGift {
+            return "Recibido el \(created)"
         }
         return "Canjeado el \(created)"
     }

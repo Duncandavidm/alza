@@ -60,6 +60,15 @@ struct DashboardTabView: View {
                         }
                     }
             }
+        case .redemptions:
+            NavigationStack {
+                MyRedemptionsView()
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Cerrar") { router.destination = nil }
+                        }
+                    }
+            }
         }
     }
 

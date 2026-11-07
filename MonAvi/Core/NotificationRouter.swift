@@ -3,10 +3,13 @@ import Foundation
 /// A que pantalla lleva tocar una notificacion. Las push del servidor
 /// traen `"screen": "points"` (ver verify-dgi-receipt) o
 /// `"screen": "rewards"` (aviso diario de premios desbloqueados) en el
-/// payload; llega como `userInfo["screen"]`.
+/// payload; llega como `userInfo["screen"]`. Tambien `"redemptions"`
+/// (regalos y codigos en "Mis canjes") y `"home"` (solo abre la app en
+/// Hoy, sin hoja encima).
 enum NotificationDestination: String, Identifiable {
     case points
     case rewards
+    case redemptions
 
     var id: String { rawValue }
 }
@@ -22,7 +25,14 @@ final class NotificationRouter: ObservableObject {
     @Published var destination: NotificationDestination?
 
     func open(screen: String?) {
-        guard let screen, let destination = NotificationDestination(rawValue: screen) else { return }
+        guard let screen else { return }
+        let normalized = screen.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if normalized == "home" {
+            // La app abre en Hoy: basta con cerrar la hoja que hubiera.
+            destination = nil
+            return
+        }
+        guard let destination = NotificationDestination(rawValue: normalized) else { return }
         self.destination = destination
     }
 }

@@ -312,8 +312,21 @@ final class RewardsTests: XCTestCase {
         XCTAssertEqual(legacy.habitPointsEarned, 0)
     }
 
-    private func redemptionJSON(status: String, expiresAt: String, withItem: Bool, currency: String? = nil) -> String {
-        let currencyField = currency.map { ",\n  \"currency\": \"\($0)\"" } ?? ""
+    private func redemptionJSON(
+        status: String,
+        expiresAt: String,
+        withItem: Bool,
+        currency: String? = nil,
+        source: String? = nil,
+        giftMessage: String? = nil
+    ) -> String {
+        var currencyField = currency.map { ",\n  \"currency\": \"\($0)\"" } ?? ""
+        if let source {
+            currencyField += ",\n  \"source\": \"\(source)\""
+        }
+        if let giftMessage {
+            currencyField += ",\n  \"gift_message\": \"\(giftMessage)\""
+        }
         let itemJSON = """
         {
           "id": "6F9619FF-8B86-D011-B42D-00C04FC964FF",
@@ -390,5 +403,66 @@ final class RewardsTests: XCTestCase {
 
         let before = ISO8601DateFormatter().date(from: "2025-12-01T00:00:00Z")!
         XCTAssertEqual(redemption.effectiveStatus(now: before), .emitido)
+    }
+
+    func testDecodesGiftSourceAndMessage() throws {
+        let gift = try decoder.decode(
+            RewardRedemption.self,
+            from: Data(redemptionJSON(
+                status: "emitido",
+                expiresAt: "2099-01-01T00:00:00Z",
+                withItem: true,
+                source: "regalo",
+                giftMessage: "  ¡Gracias por usar MonAvi!  "
+            ).utf8)
+        )
+        XCTAssertTrue(gift.isGift)
+        XCTAssertEqual(gift.displayGiftMessage, "¡Gracias por usar MonAvi!")
+        XCTAssertEqual(gift.displayCostText, "Gratis")
+
+        let legacy = try decoder.decode(
+            RewardRedemption.self,
+            from: Data(redemptionJSON(status: "emitido", expiresAt: "2099-01-01T00:00:00Z", withItem: true).utf8)
+        )
+        XCTAssertFalse(legacy.isGift)
+        XCTAssertNil(legacy.displayGiftMessage)
+        XCTAssertEqual(legacy.displayCostText, "$1.50")
+
+        let unknown = try decoder.decode(
+            RewardRedemption.self,
+            from: Data(redemptionJSON(status: "emitido", expiresAt: "2099-01-01T00:00:00Z", withItem: false, source: "otro").utf8)
+        )
+        XCTAssertFalse(unknown.isGift)
+    }
+
+    func testActiveGiftsKeepsOnlyUsableGiftsSoonestFirst() throws {
+        let later = try decoder.decode(
+            RewardRedemption.self,
+            from: Data(redemptionJSON(status: "emitido", expiresAt: "2099-06-01T00:00:00Z", withItem: false, source: "regalo").utf8)
+        )
+        let sooner = try decoder.decode(
+            RewardRedemption.self,
+            from: Data(redemptionJSON(status: "emitido", expiresAt: "2099-01-01T00:00:00Z", withItem: false, source: "regalo").utf8)
+        )
+        let expired = try decoder.decode(
+            RewardRedemption.self,
+            from: Data(redemptionJSON(status: "emitido", expiresAt: "2026-01-01T00:00:00Z", withItem: false, source: "regalo").utf8)
+        )
+        let delivered = try decoder.decode(
+            RewardRedemption.self,
+            from: Data(redemptionJSON(status: "entregado", expiresAt: "2099-01-01T00:00:00Z", withItem: false, source: "regalo").utf8)
+        )
+        let purchase = try decoder.decode(
+            RewardRedemption.self,
+            from: Data(redemptionJSON(status: "emitido", expiresAt: "2099-01-01T00:00:00Z", withItem: false).utf8)
+        )
+        let now = ISO8601DateFormatter().date(from: "2026-11-07T00:00:00Z")!
+        let gifts = RewardsMath.activeGifts([later, expired, purchase, delivered, sooner], now: now)
+        XCTAssertEqual(gifts.map(\.expiresAt), [sooner.expiresAt, later.expiresAt])
+    }
+
+    func testGiftCountText() {
+        XCTAssertEqual(RewardsMath.giftCountText(1), "Tienes 1 regalo")
+        XCTAssertEqual(RewardsMath.giftCountText(3), "Tienes 3 regalos")
     }
 }

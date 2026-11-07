@@ -26,6 +26,7 @@ struct DayJournalView: View {
     @State private var pointsByTransaction: [UUID: Int] = [:]
     @State private var featuredRewards = FeaturedRewards.empty
     @State private var brandCampaigns: [BrandCampaign] = []
+    @State private var activeGiftsCount = 0
 
     var body: some View {
         NavigationStack {
@@ -55,6 +56,10 @@ struct DayJournalView: View {
                         }
 
                         pointsStrip
+
+                        if activeGiftsCount > 0 {
+                            GiftsTodayCard(count: activeGiftsCount)
+                        }
 
                         if !featuredRewards.items.isEmpty {
                             RewardsForYouCard(items: featuredRewards.items, balance: featuredRewards.balance)
@@ -647,6 +652,7 @@ struct DayJournalView: View {
         guard let userId = appState.currentUserId else { return }
         featuredRewards = await FeaturedRewards.load(userId: userId)
         brandCampaigns = await BrandCampaignsRepository.shared.fetchActiveOrEmpty()
+        activeGiftsCount = await RewardsRepository.shared.fetchActiveGiftsOrEmpty(userId: userId).count
     }
 
     private func refreshDgiConsent() async {

@@ -16,4 +16,18 @@ final class NotificationRouterTests: XCTestCase {
         router.open(screen: "otra-cosa")
         XCTAssertNil(router.destination)
     }
+
+    func testRedemptionsScreenOpensMyRedemptions() {
+        let router = NotificationRouter()
+        router.open(screen: "redemptions")
+        XCTAssertEqual(router.destination, .redemptions)
+    }
+
+    func testHomeScreenClearsAnyOpenDestination() {
+        let router = NotificationRouter()
+        router.open(screen: "rewards")
+        XCTAssertEqual(router.destination, .rewards)
+        router.open(screen: "home")
+        XCTAssertNil(router.destination)
+    }
 }

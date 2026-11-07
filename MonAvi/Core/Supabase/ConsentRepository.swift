@@ -8,6 +8,9 @@ import Supabase
 enum ConsentPurpose: String, Codable {
     case estudioMercado = "estudio_mercado"
     case programaRecompensas = "programa_recompensas"
+    /// Push de promociones de comercios y marcas + bonos y regalos
+    /// personalizados (cashback, productos gratis). Migracion 0040.
+    case ofertas
 }
 
 struct ConsentDecision: Decodable, Hashable {

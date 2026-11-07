@@ -216,3 +216,145 @@ struct RedemptionStatusBadge: View {
         }
     }
 }
+
+/// Badge "🎁 Regalo de MonAvi" de los canjes que son regalos.
+struct GiftBadge: View {
+    var body: some View {
+        Text("🎁 Regalo de MonAvi")
+            .font(.caption2.weight(.bold))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(Color.orange.opacity(0.18), in: Capsule())
+            .foregroundStyle(Color.orange)
+            .lineLimit(1)
+    }
+}
+
+/// Regalo activo en "Mis canjes", con forma de cupon: foto del producto,
+/// comercio, nombre, mensaje y vencimiento.
+struct GiftCouponCard: View {
+    let redemption: RewardRedemption
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .top, spacing: 12) {
+                RewardPhotoView(urlString: redemption.item?.photoUrl, cornerRadius: 12)
+                    .frame(width: 104)
+
+                VStack(alignment: .leading, spacing: 5) {
+                    GiftBadge()
+                    HStack(spacing: 6) {
+                        MerchantLogoView(
+                            urlString: redemption.displayMerchant?.logoUrl,
+                            name: redemption.merchantName,
+                            size: 20
+                        )
+                        Text(redemption.merchantName)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                    Text(redemption.itemName)
+                        .font(.system(.headline, design: MonAviBrand.fontDesign, weight: .bold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(2)
+                    if let message = redemption.displayGiftMessage {
+                        Text(message)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(14)
+
+            // Linea punteada del cupon.
+            Line()
+                .stroke(style: StrokeStyle(lineWidth: 1, dash: [5, 4]))
+                .foregroundStyle(MonAviBrand.border)
+                .frame(height: 1)
+                .padding(.horizontal, 14)
+
+            HStack {
+                Label(
+                    "Vence el \(redemption.expiresAt.formatted(date: .abbreviated, time: .omitted))",
+                    systemImage: "clock"
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                Spacer()
+                Text("Gratis")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(MonAviBrand.primaryDark)
+                Label("Ver código", systemImage: "qrcode")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(MonAviBrand.primary)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color(.secondarySystemGroupedBackground))
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.orange.opacity(0.35), lineWidth: 1)
+        )
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("Abre el código para mostrarlo en caja")
+    }
+
+    /// Linea horizontal para el separador punteado.
+    private struct Line: Shape {
+        func path(in rect: CGRect) -> Path {
+            var path = Path()
+            path.move(to: CGPoint(x: rect.minX, y: rect.midY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
+            return path
+        }
+    }
+}
+
+/// "🎁 Tienes N regalo(s)" en Hoy: lleva a "Mis canjes". Quien lo usa
+/// debe esconderlo cuando no hay regalos activos.
+struct GiftsTodayCard: View {
+    let count: Int
+
+    var body: some View {
+        NavigationLink {
+            MyRedemptionsView()
+        } label: {
+            HStack(spacing: 12) {
+                Text("🎁")
+                    .font(.system(size: 30))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(RewardsMath.giftCountText(count))
+                        .font(.system(.headline, design: MonAviBrand.fontDesign, weight: .bold))
+                        .foregroundStyle(.primary)
+                    Text("Muéstralo en caja y llévatelo gratis.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(Color.orange.opacity(0.12))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(Color.orange.opacity(0.35), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(RewardsMath.giftCountText(count))
+    }
+}

@@ -29,6 +29,26 @@ final class PushAndProfileTests: XCTestCase {
         XCTAssertThrowsError(try ProfileSettingsViewModel.parseAge("130").get())
     }
 
+    func testParsePhoneMatchesDatabaseCheck() {
+        XCTAssertEqual(try ProfileSettingsViewModel.parsePhone("").get(), nil)
+        XCTAssertEqual(try ProfileSettingsViewModel.parsePhone("  ").get(), nil)
+        XCTAssertEqual(try ProfileSettingsViewModel.parsePhone(" +507 6123-4567 ").get(), "+507 6123-4567")
+        XCTAssertEqual(try ProfileSettingsViewModel.parsePhone("(507) 6123 4567").get(), "(507) 6123 4567")
+        XCTAssertThrowsError(try ProfileSettingsViewModel.parsePhone("123456").get())
+        XCTAssertThrowsError(try ProfileSettingsViewModel.parsePhone("6123-4567 ext. 2").get())
+        XCTAssertThrowsError(try ProfileSettingsViewModel.parsePhone("507+61234567").get())
+        XCTAssertThrowsError(try ProfileSettingsViewModel.parsePhone(String(repeating: "1", count: 22)).get())
+    }
+
+    func testCleanedTextTurnsBlankIntoNil() {
+        XCTAssertNil(ProfileSettingsViewModel.cleanedText("   "))
+        XCTAssertEqual(ProfileSettingsViewModel.cleanedText(" Ana "), "Ana")
+    }
+
+    func testOffersConsentPurposeRawValue() {
+        XCTAssertEqual(ConsentPurpose.ofertas.rawValue, "ofertas")
+    }
+
     private func receiptJSON(merchantName: String?) -> String {
         let nameValue = merchantName.map { "\"\($0)\"" } ?? "null"
         return """

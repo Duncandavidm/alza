@@ -107,6 +107,22 @@ enum RewardRedemptionStatus: String, Codable, CaseIterable, Identifiable, Hashab
     }
 }
 
+/// Origen de un canje (`reward_redemptions.source`, migracion 0040):
+/// - `canje`: el usuario lo pago con su cashback o sus puntos.
+/// - `regalo`: un producto gratis que le regalo MonAvi (bono); ya viene
+///   emitido con su codigo y no le costo nada.
+enum RewardRedemptionSource: String, Codable, Hashable {
+    case canje
+    case regalo
+
+    /// Tolerante: un valor desconocido cae en `.canje`.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let raw = (try? container.decode(String.self)) ?? ""
+        self = RewardRedemptionSource(rawValue: raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()) ?? .canje
+    }
+}
+
 /// Un canje: el codigo de 6 caracteres que el usuario muestra en caja
 /// (tabla `reward_redemptions`). Para "Mis canjes" se lee con
 /// `select("*, reward_items(*, partner_merchants(*)), partner_merchants(*)")`
@@ -131,6 +147,10 @@ struct RewardRedemption: Codable, Identifiable, Hashable {
     /// Columna `currency` (migracion 0036). Opcional: canjes viejos o
     /// selects sin la columna caen en la moneda del comercio.
     var currency: RewardCurrency? = nil
+    /// Columna `source` (migracion 0040). Opcional: si no viene es `canje`.
+    var source: RewardRedemptionSource? = nil
+    /// Mensaje de MonAvi que acompana un regalo (`gift_message`).
+    var giftMessage: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -146,7 +166,22 @@ struct RewardRedemption: Codable, Identifiable, Hashable {
         case item = "reward_items"
         case merchant = "partner_merchants"
         case currency
+        case source
+        case giftMessage = "gift_message"
     }
+
+    /// true si es un producto gratis que regalo MonAvi.
+    var isGift: Bool { (source ?? .canje) == .regalo }
+
+    /// El mensaje del regalo sin espacios, o nil si esta vacio.
+    var displayGiftMessage: String? {
+        guard let trimmed = giftMessage?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmed.isEmpty else { return nil }
+        return trimmed
+    }
+
+    /// Lo que se muestra como costo: "Gratis" en los regalos.
+    var displayCostText: String { isGift ? "Gratis" : formattedCost }
 
     /// Comercio a mostrar: el directo, o el que viene dentro del producto.
     var displayMerchant: PartnerMerchant? { merchant ?? item?.merchant }
@@ -271,6 +306,19 @@ enum RewardsMath {
         let missing = pointsMissing(item: item, cashbackCents: cashbackCents, habitPoints: habitPoints)
         guard item.pointsCost > 0 else { return 0 }
         return Double(missing) / Double(item.pointsCost)
+    }
+
+    /// Regalos que todavia se pueden usar (emitidos y sin vencer), del
+    /// que vence primero al ultimo.
+    static func activeGifts(_ redemptions: [RewardRedemption], now: Date = Date()) -> [RewardRedemption] {
+        redemptions
+            .filter { $0.isGift && $0.isUsable(now: now) }
+            .sorted { $0.expiresAt < $1.expiresAt }
+    }
+
+    /// "Tienes 1 regalo" / "Tienes 3 regalos".
+    static func giftCountText(_ count: Int) -> String {
+        count == 1 ? "Tienes 1 regalo" : "Tienes \(count) regalos"
     }
 
     /// Lo que codifica el QR del canje:

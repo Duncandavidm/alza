@@ -11,6 +11,9 @@ struct MarketStudyConsentView: View {
 
     @State private var isSaving = false
     @State private var errorMessage: String?
+    /// Segunda decision, aparte: promociones y regalos ('ofertas').
+    /// Empieza apagada; se guarda junto con la del estudio.
+    @State private var wantsOffers = false
 
     var body: some View {
         NavigationStack {
@@ -41,6 +44,8 @@ struct MarketStudyConsentView: View {
                         title: "Tú decides",
                         text: "Puedes cambiar de opinión cuando quieras en Ajustes > Privacidad."
                     )
+
+                    offersCard
 
                     if let errorMessage {
                         Text(errorMessage)
@@ -95,6 +100,26 @@ struct MarketStudyConsentView: View {
         .interactiveDismissDisabled()
     }
 
+    /// Decision separada del estudio: recibir promociones y regalos.
+    private var offersCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Toggle(isOn: $wantsOffers) {
+                Label("Recibir promociones y regalos", systemImage: "gift.fill")
+                    .font(.subheadline.weight(.semibold))
+            }
+            .tint(MonAviBrand.primary)
+            Text(PrivacySettingsSection.offersFooter)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color(.secondarySystemBackground))
+        )
+    }
+
     private func item(icon: String, title: String, text: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
@@ -121,7 +146,9 @@ struct MarketStudyConsentView: View {
         isSaving = true
         defer { isSaving = false }
         do {
+            // Dos decisiones independientes, ambas quedan registradas.
             try await ConsentRepository.shared.record(userId: userId, purpose: .estudioMercado, granted: granted)
+            try await ConsentRepository.shared.record(userId: userId, purpose: .ofertas, granted: wantsOffers)
             onDecided(granted)
             dismiss()
         } catch {
@@ -162,9 +189,46 @@ enum MarketStudyConsentPrompt {
     }
 }
 
-/// Ajustes > Privacidad: el interruptor del estudio de mercado (cada
-/// cambio guarda una fila nueva) y la politica de privacidad.
+/// Ajustes > Privacidad: los interruptores del estudio de mercado y de
+/// promociones y regalos (cada cambio guarda una fila nueva) y la
+/// politica de privacidad.
 struct PrivacySettingsSection: View {
+    static let offersFooter = "Te avisaremos de ofertas de comercios y marcas, y podrás recibir regalos como cashback o productos gratis. Puedes desactivarlo cuando quieras."
+
+    var body: some View {
+        Section {
+            ConsentToggleRow(
+                title: "Participar en el estudio de mercado anónimo",
+                purpose: .estudioMercado
+            )
+
+            Link(destination: Config.privacyPolicyURL) {
+                Label("Ver política de privacidad", systemImage: "hand.raised.fill")
+            }
+            .foregroundStyle(.primary)
+        } header: {
+            Text("Privacidad")
+        } footer: {
+            Text("Usamos tus facturas verificadas solo en estudios agregados y anónimos de al menos 5 personas. Nunca tu nombre, correo ni compras individuales: los comercios y marcas ven tendencias, no personas.")
+        }
+
+        Section {
+            ConsentToggleRow(
+                title: "Recibir promociones y regalos",
+                purpose: .ofertas
+            )
+        } footer: {
+            Text(Self.offersFooter)
+        }
+    }
+}
+
+/// Un interruptor de consentimiento: lee la ultima decision y guarda una
+/// fila nueva en cada cambio (si falla, vuelve al valor anterior).
+private struct ConsentToggleRow: View {
+    let title: String
+    let purpose: ConsentPurpose
+
     @EnvironmentObject private var appState: AppState
     @State private var granted = false
     @State private var isLoaded = false
@@ -172,26 +236,15 @@ struct PrivacySettingsSection: View {
     @State private var errorMessage: String?
 
     var body: some View {
-        Section {
-            Toggle("Participar en el estudio de mercado anónimo", isOn: binding)
-                .disabled(!isLoaded || isSaving)
+        Toggle(title, isOn: binding)
+            .disabled(!isLoaded || isSaving)
+            .task { await load() }
 
-            Link(destination: Config.privacyPolicyURL) {
-                Label("Ver política de privacidad", systemImage: "hand.raised.fill")
-            }
-            .foregroundStyle(.primary)
-
-            if let errorMessage {
-                Text(errorMessage)
-                    .font(.footnote)
-                    .foregroundStyle(.red)
-            }
-        } header: {
-            Text("Privacidad")
-        } footer: {
-            Text("Usamos tus facturas verificadas solo en estudios agregados y anónimos de al menos 5 personas. Nunca tu nombre, correo ni compras individuales: los comercios y marcas ven tendencias, no personas.")
+        if let errorMessage {
+            Text(errorMessage)
+                .font(.footnote)
+                .foregroundStyle(.red)
         }
-        .task { await load() }
     }
 
     private var binding: Binding<Bool> {
@@ -208,7 +261,7 @@ struct PrivacySettingsSection: View {
     private func load() async {
         guard let userId = appState.currentUserId else { return }
         do {
-            let decision = try await ConsentRepository.shared.current(userId: userId, purpose: .estudioMercado)
+            let decision = try await ConsentRepository.shared.current(userId: userId, purpose: purpose)
             granted = decision?.granted ?? false
             isLoaded = true
             errorMessage = nil
@@ -226,8 +279,10 @@ struct PrivacySettingsSection: View {
         isSaving = true
         defer { isSaving = false }
         do {
-            try await ConsentRepository.shared.record(userId: userId, purpose: .estudioMercado, granted: newValue)
-            MarketStudyConsentPrompt.markShown(userId: userId)
+            try await ConsentRepository.shared.record(userId: userId, purpose: purpose, granted: newValue)
+            if purpose == .estudioMercado {
+                MarketStudyConsentPrompt.markShown(userId: userId)
+            }
             errorMessage = nil
         } catch {
             granted = previous

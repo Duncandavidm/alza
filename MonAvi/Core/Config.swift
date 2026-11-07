@@ -49,5 +49,5 @@ enum Config {
     /// contacto directo, esta es para que el cliente encuentre respuestas
     /// sin tener que escribir.
     static let supportURL = URL(string: "https://maday.app/monavi/soporte")!
-    static let supportEmail = "soporte@monavi.app"
+    static let supportEmail = "hola@maday.app"
 }

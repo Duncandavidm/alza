@@ -52,9 +52,8 @@ export default function AliadosPage() {
     <div className="landing">
       <header className="landing-nav">
         <span className="landing-logo">
-          <span className="landing-logo-mark" aria-hidden="true">
-            M
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="landing-logo-mark" src="/monavi-mark.svg" alt="" aria-hidden="true" />
           MonAvi
         </span>
         <a href="#solicitud" className="landing-nav-cta">
@@ -143,7 +142,7 @@ export default function AliadosPage() {
         <span>© {new Date().getFullYear()} MonAvi · Panamá</span>
         <span>
           <a href="/privacy">Privacidad</a> · <a href="/support">Soporte</a> ·{" "}
-          <a href="mailto:soporte@monavi.app">soporte@monavi.app</a>
+          <a href="mailto:hola@maday.app">hola@maday.app</a>
         </span>
       </footer>
     </div>

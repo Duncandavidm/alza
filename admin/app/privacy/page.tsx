@@ -17,7 +17,7 @@ export default function PrivacyPage() {
         <p>
           MonAvi es una app desarrollada y operada por David Muñoz Duncan. Si tienes alguna pregunta sobre esta
           política o sobre tus datos, escribe a{" "}
-          <a href="mailto:soporte@monavi.app">soporte@monavi.app</a>.
+          <a href="mailto:hola@maday.app">hola@maday.app</a>.
         </p>
       </div>
 
@@ -143,7 +143,7 @@ export default function PrivacyPage() {
           </li>
           <li>
             Si prefieres que tus datos no se incluyan en estas estadísticas, escríbenos a{" "}
-            <a href="mailto:soporte@monavi.app">soporte@monavi.app</a> y los excluiremos.
+            <a href="mailto:hola@maday.app">hola@maday.app</a> y los excluiremos.
           </li>
         </ul>
       </div>
@@ -161,7 +161,7 @@ export default function PrivacyPage() {
         <h3>7. Tus derechos</h3>
         <p>
           Puedes pedirnos en cualquier momento, escribiendo a{" "}
-          <a href="mailto:soporte@monavi.app">soporte@monavi.app</a>:
+          <a href="mailto:hola@maday.app">hola@maday.app</a>:
         </p>
         <ul>
           <li>Una copia de los datos que tenemos sobre ti.</li>

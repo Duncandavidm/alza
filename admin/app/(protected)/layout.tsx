@@ -25,7 +25,11 @@ export default async function ProtectedLayout({ children }: { children: React.Re
   return (
     <>
       <nav className="top">
-        <span className="brand">MonAvi Admin</span>
+        <span className="brand">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="brand-mark" src="/monavi-mark.svg" alt="" aria-hidden="true" />
+          MonAvi Admin
+        </span>
         <Link href="/">Resumen</Link>
         <Link href="/merchants">Comercios y ofertas</Link>
         <Link href="/applications">

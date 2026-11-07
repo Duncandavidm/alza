@@ -5,6 +5,11 @@ se despliega solo con cada push a `claude/clever-planck-lf32rw`, con
 Root Directory = `admin`. Landing publica de aliados:
 https://monavi.maday.app/aliados
 
+**¿Olvidaste la clave del panel?** `ADMIN_PANEL_PASSWORD` esta guardada
+como "Sensitive" en Vercel (no se puede ver). Cambiala en Settings >
+Environment Variables > ⋯ > Edit y vuelve a publicar (Deployments >
+Redeploy, o cualquier push a la rama de produccion).
+
 Panel interno minimo (Fase 4 del modulo de puntos): comercios aliados,
 sus ofertas y productos canjeables, solicitudes de nuevos comercios,
 canjes de puntos, estudio de mercado, subir reportes de comercio/banco,

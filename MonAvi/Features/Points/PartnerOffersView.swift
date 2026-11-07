@@ -36,7 +36,7 @@ struct PartnerOffersView: View {
                         .foregroundStyle(.secondary)
                 }
                 if let endsAt = offer.endsAt {
-                    Text("Vigente hasta \(endsAt.formatted(date: .abbreviated, time: .omitted))")
+                    Text("Vigente hasta \(endsAt.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi)))")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

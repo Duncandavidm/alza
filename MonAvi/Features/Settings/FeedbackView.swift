@@ -36,7 +36,7 @@ struct FeedbackView: View {
                     ForEach(viewModel.suggestions) { suggestion in
                         VStack(alignment: .leading, spacing: 4) {
                             Text(suggestion.message)
-                            Text(suggestion.createdAt.formatted(date: .abbreviated, time: .shortened))
+                            Text(suggestion.createdAt.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, locale: .monavi)))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }

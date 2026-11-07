@@ -198,7 +198,7 @@ struct DayJournalView: View {
     }
 
     private var dateLabel: String {
-        viewModel.selectedDate.formatted(date: .abbreviated, time: .omitted)
+        viewModel.selectedDate.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi))
     }
 
     private var searchField: some View {
@@ -295,7 +295,7 @@ struct DayJournalView: View {
                     Text("Tu suscripción no se va a renovar")
                         .font(.subheadline.weight(.medium))
                     if let endDate = appState.subscriptionStore.currentPeriodEndDate {
-                        Text("Finaliza el \(endDate.formatted(date: .long, time: .omitted)) — hasta ahí tienes acceso completo.")
+                        Text("Finaliza el \(endDate.formatted(Date.FormatStyle(date: .long, time: .omitted, locale: .monavi))) — hasta ahí tienes acceso completo.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -323,7 +323,7 @@ struct DayJournalView: View {
                     Text("\(billsViewModel.pending.count) cuenta(s) por pagar")
                         .font(.subheadline.weight(.medium))
                     if let next = billsViewModel.pending.first {
-                        Text("\(next.name) — \(next.dueDateValue.formatted(date: .abbreviated, time: .omitted))\(next.isOverdue ? " (vencida)" : "")")
+                        Text("\(next.name) — \(next.dueDateValue.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi)))\(next.isOverdue ? " (vencida)" : "")")
                             .font(.caption)
                             .foregroundStyle(next.isOverdue ? MonAviBrand.alert : .secondary)
                     }
@@ -498,7 +498,7 @@ struct DayJournalView: View {
                 Text(transaction.description ?? transaction.movementType.displayName)
                     .font(.body)
                 HStack(spacing: 6) {
-                    Text(transaction.occurredAt.formatted(date: .omitted, time: .shortened))
+                    Text(transaction.occurredAt.formatted(Date.FormatStyle(date: .omitted, time: .shortened, locale: .monavi)))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     if let points = pointsByTransaction[transaction.id] {

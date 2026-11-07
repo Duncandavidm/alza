@@ -65,7 +65,7 @@ struct SavingsGoalsView: View {
                 Text(goal.emoji).font(.title2)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(goal.name).font(.body)
-                    Text(goal.targetDateValue.formatted(date: .abbreviated, time: .omitted))
+                    Text(goal.targetDateValue.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi)))
                         .font(.caption)
                         .foregroundStyle(goal.isPastDue ? MonAviBrand.alert : .secondary)
                 }

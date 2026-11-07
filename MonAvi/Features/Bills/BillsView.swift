@@ -55,7 +55,7 @@ struct BillsView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(bill.name).font(.body)
                 HStack(spacing: 6) {
-                    Text(bill.dueDateValue.formatted(date: .abbreviated, time: .omitted))
+                    Text(bill.dueDateValue.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi)))
                     if bill.isOverdue {
                         Text("Vencida").foregroundStyle(.red).fontWeight(.semibold)
                     }

@@ -132,12 +132,12 @@ struct MyRedemptionsView: View {
     }
 
     private func detailText(_ redemption: RewardRedemption) -> String {
-        let created = redemption.createdAt.formatted(date: .abbreviated, time: .omitted)
+        let created = redemption.createdAt.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi))
         if redemption.isUsable() {
-            return "Código \(redemption.code) · vence el \(redemption.expiresAt.formatted(date: .abbreviated, time: .omitted))"
+            return "Código \(redemption.code) · vence el \(redemption.expiresAt.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi)))"
         }
         if redemption.status == .entregado, let deliveredAt = redemption.deliveredAt {
-            return "Entregado el \(deliveredAt.formatted(date: .abbreviated, time: .omitted))"
+            return "Entregado el \(deliveredAt.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi)))"
         }
         if redemption.isGift {
             return "Recibido el \(created)"

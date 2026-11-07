@@ -91,9 +91,9 @@ struct DgiReceiptsListView: View {
     /// la fecha del QR.
     private func receiptDateText(_ receipt: DgiReceipt) -> String {
         if let authorizedAt = receipt.authorizedAt {
-            return authorizedAt.formatted(date: .abbreviated, time: .shortened)
+            return authorizedAt.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, locale: .monavi))
         }
-        return receipt.fechaFacturaValue.formatted(date: .abbreviated, time: .omitted)
+        return receipt.fechaFacturaValue.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi))
     }
 
     private func statusBadge(_ status: DgiReceiptStatus) -> some View {

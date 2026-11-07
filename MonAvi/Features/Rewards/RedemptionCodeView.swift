@@ -149,10 +149,10 @@ struct RedemptionCodeView: View {
 
     private var instructions: some View {
         VStack(spacing: 6) {
-            Text("Muéstralo en caja. El comercio lo valida con su PIN.")
+            Text("Muéstralo en caja: el comercio escanea el código y te lo entrega.")
                 .font(.headline)
                 .multilineTextAlignment(.center)
-            Text("Vence el \(redemption.expiresAt.formatted(date: .long, time: .shortened))")
+            Text("Vence el \(redemption.expiresAt.formatted(Date.FormatStyle(date: .long, time: .shortened, locale: .monavi)))")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

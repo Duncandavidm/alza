@@ -68,7 +68,7 @@ struct FamilyGroupView: View {
                 ForEach(group.members) { member in
                     VStack(alignment: .leading, spacing: 2) {
                         Text(member.displayName)
-                        Text("Se unio el \(member.joinedAt.formatted(date: .abbreviated, time: .omitted))")
+                        Text("Se unio el \(member.joinedAt.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi)))")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

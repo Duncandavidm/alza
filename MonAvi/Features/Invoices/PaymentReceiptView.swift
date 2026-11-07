@@ -77,7 +77,7 @@ struct ReceiptDocumentView: View {
 
             VStack(spacing: 6) {
                 row("Recibo", receipt.receiptNumber)
-                row("Fecha", receipt.paidAt.formatted(date: .abbreviated, time: .shortened))
+                row("Fecha", receipt.paidAt.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, locale: .monavi)))
                 row("Cliente", invoice.customerName)
                 row("Referencia", "\(invoice.docType.displayName) \(invoice.number ?? "")")
             }

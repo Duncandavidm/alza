@@ -278,7 +278,7 @@ struct GiftCouponCard: View {
 
             HStack {
                 Label(
-                    "Vence el \(redemption.expiresAt.formatted(date: .abbreviated, time: .omitted))",
+                    "Vence el \(redemption.expiresAt.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi)))",
                     systemImage: "clock"
                 )
                 .font(.caption)

@@ -198,12 +198,12 @@ struct SettingsView: View {
                         let periodEndDate = appState.subscriptionStore.currentPeriodEndDate ?? expiresAt
                         if appState.subscriptionStore.willAutoRenew == false {
                             if let periodEndDate {
-                                Text("Tu suscripción no se va a renovar. Finaliza el \(periodEndDate.formatted(date: .long, time: .omitted)) — hasta esa fecha sigues con acceso completo.")
+                                Text("Tu suscripción no se va a renovar. Finaliza el \(periodEndDate.formatted(Date.FormatStyle(date: .long, time: .omitted, locale: .monavi))) — hasta esa fecha sigues con acceso completo.")
                                     .font(.footnote)
                                     .foregroundStyle(MonAviBrand.alert)
                             }
                         } else if let periodEndDate {
-                            LabeledContent("Renueva", value: periodEndDate.formatted(date: .abbreviated, time: .omitted))
+                            LabeledContent("Renueva", value: periodEndDate.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi)))
                         }
                     case .inGracePeriod:
                         LabeledContent("Estado", value: "En periodo de gracia")

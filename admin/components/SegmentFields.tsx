@@ -124,6 +124,7 @@ export default function SegmentFields({ segment, merchants, showPresets }: Props
               </option>
             ))}
           </select>
+          <small className="hint">Según la factura. La factura no dice la marca de la tarjeta (Visa, Mastercard, Amex).</small>
         </div>
         <div className="field">
           <label htmlFor="seg-min-receipts">Mínimo de facturas</label>
@@ -148,6 +149,22 @@ export default function SegmentFields({ segment, merchants, showPresets }: Props
             defaultValue={segment.min_cashback ? (segment.min_cashback / 100).toFixed(2) : ""}
             placeholder="0.00"
           />
+        </div>
+        <div className="field">
+          <label htmlFor="seg-min-savings">Ahorro mínimo en metas (US$)</label>
+          <input id="seg-min-savings" name="min_savings" type="text" inputMode="decimal"
+            defaultValue={segment.min_savings ?? ""} placeholder="ej. 500" />
+        </div>
+        <div className="field">
+          <label htmlFor="seg-min-income">Ingreso mensual desde (US$)</label>
+          <input id="seg-min-income" name="min_income" type="text" inputMode="decimal"
+            defaultValue={segment.min_income ?? ""} placeholder="ej. 1000" />
+          <small className="hint">Promedio de lo que registran como ingreso en el periodo elegido.</small>
+        </div>
+        <div className="field">
+          <label htmlFor="seg-max-income">Ingreso mensual hasta (US$)</label>
+          <input id="seg-max-income" name="max_income" type="text" inputMode="decimal"
+            defaultValue={segment.max_income ?? ""} placeholder="ej. 3000" />
         </div>
       </div>
     </fieldset>

@@ -12,8 +12,10 @@ import { parseDollarsToCents } from "./format";
 export const SEGMENT_GENDERS = ["femenino", "masculino", "otro"] as const;
 export const SEGMENT_AGES = ["18-24", "25-34", "35-44", "45-54", "55+"] as const;
 export const SEGMENT_DAYS = [7, 14, 30, 60, 90, 180, 365] as const;
-export const SEGMENT_ACTIVITIES = ["mas_activos", "menos_activos", "inactivos", "top_facturas"] as const;
-export const SEGMENT_PAYMENTS = ["tarjeta", "efectivo"] as const;
+export const SEGMENT_ACTIVITIES = ["mas_activos", "menos_activos", "inactivos", "top_facturas", "mas_ahorro", "mas_ingresos"] as const;
+export const SEGMENT_PAYMENTS = [
+  "tarjeta", "credito", "debito", "efectivo", "yappy", "transferencia", "billetera", "cheque", "vale", "otro",
+] as const;
 
 export type SegmentGender = (typeof SEGMENT_GENDERS)[number];
 export type SegmentAge = (typeof SEGMENT_AGES)[number];
@@ -30,6 +32,11 @@ export type Segment = {
   merchant_ruc?: string;
   payment?: SegmentPayment;
   min_cashback?: number;
+  /// Ahorro minimo en metas (US$).
+  min_savings?: number;
+  /// Ingreso mensual promedio registrado, minimo y maximo (US$).
+  min_income?: number;
+  max_income?: number;
 };
 
 export const SEGMENT_GENDER_LABELS: Record<SegmentGender, string> = {
@@ -43,11 +50,21 @@ export const SEGMENT_ACTIVITY_LABELS: Record<SegmentActivity, string> = {
   menos_activos: "Los que menos la usan (1 a 5 días con actividad)",
   inactivos: "Inactivos hace más de 14 días",
   top_facturas: "Los que más escanean facturas (20 % superior)",
+  mas_ahorro: "Los que más ahorran (20 % con más ahorro en metas)",
+  mas_ingresos: "Los de mayores ingresos (20 % con más ingreso mensual)",
 };
 
 export const SEGMENT_PAYMENT_LABELS: Record<SegmentPayment, string> = {
-  tarjeta: "Pagan con tarjeta",
-  efectivo: "Pagan en efectivo",
+  tarjeta: "Tarjeta (crédito o débito)",
+  credito: "Tarjeta de crédito",
+  debito: "Tarjeta de débito / Clave",
+  efectivo: "Efectivo",
+  yappy: "Yappy",
+  transferencia: "Transferencia / ACH / depósito",
+  billetera: "Billetera digital (Yappy, Nequi…)",
+  cheque: "Cheque",
+  vale: "Vale, tarjeta de regalo o fidelización",
+  otro: "Otro medio de pago",
 };
 
 /// Atajos de un clic (Bonos y regalos / Notificaciones).
@@ -56,6 +73,8 @@ export const SEGMENT_PRESETS: { activity: SegmentActivity; label: string }[] = [
   { activity: "top_facturas", label: "Los que más escanean facturas" },
   { activity: "menos_activos", label: "Los que menos la usan" },
   { activity: "inactivos", label: "Inactivos +14 días" },
+  { activity: "mas_ahorro", label: "Los que más ahorran" },
+  { activity: "mas_ingresos", label: "Los de mayores ingresos" },
 ];
 
 /// Nombres de los campos del formulario (GET o FormData).
@@ -69,6 +88,9 @@ export const SEGMENT_FIELD_NAMES = [
   "ruc",
   "payment",
   "min_cashback",
+  "min_savings",
+  "min_income",
+  "max_income",
   "preset",
 ] as const;
 
@@ -117,6 +139,18 @@ export function parseSegment(get: (key: string) => string | undefined | null): S
     const cents = parseDollarsToCents(minCashback);
     if (cents) segment.min_cashback = cents;
   }
+
+  const dollars = (key: string) => {
+    const text = cleanText(read(key), 14)?.replace(/[$,\s]/g, "");
+    const value = Number(text);
+    return text && Number.isFinite(value) && value > 0 && value < 10_000_000 ? Math.round(value * 100) / 100 : undefined;
+  };
+  const minSavings = dollars("min_savings");
+  if (minSavings) segment.min_savings = minSavings;
+  const minIncome = dollars("min_income");
+  if (minIncome) segment.min_income = minIncome;
+  const maxIncome = dollars("max_income");
+  if (maxIncome) segment.max_income = maxIncome;
   return segment;
 }
 
@@ -132,6 +166,9 @@ export function segmentToFields(segment: Segment): Record<string, string> {
   if (segment.merchant_ruc) fields.ruc = segment.merchant_ruc;
   if (segment.payment) fields.payment = segment.payment;
   if (segment.min_cashback) fields.min_cashback = (segment.min_cashback / 100).toFixed(2);
+  if (segment.min_savings) fields.min_savings = String(segment.min_savings);
+  if (segment.min_income) fields.min_income = String(segment.min_income);
+  if (segment.max_income) fields.max_income = String(segment.max_income);
   return fields;
 }
 
@@ -150,6 +187,8 @@ export function segmentFromJson(raw: unknown): Segment {
   });
 }
 
+const money = (value: number) => "$" + value.toLocaleString("en-US");
+
 /// Descripcion corta para tablas e historial: ["Mujeres", "25-34 años", ...].
 export function segmentLabels(segment: Segment): string[] {
   const labels: string[] = [];
@@ -161,6 +200,14 @@ export function segmentLabels(segment: Segment): string[] {
   if (segment.merchant_ruc) labels.push(`Compró en RUC ${segment.merchant_ruc}`);
   if (segment.payment) labels.push(SEGMENT_PAYMENT_LABELS[segment.payment]);
   if (segment.min_cashback) labels.push(`Cashback ≥ $${(segment.min_cashback / 100).toFixed(2)}`);
+  if (segment.min_savings) labels.push("Ahorro ≥ " + money(segment.min_savings));
+  if (segment.min_income && segment.max_income) {
+    labels.push("Ingreso " + money(segment.min_income) + "–" + money(segment.max_income) + "/mes");
+  } else if (segment.min_income) {
+    labels.push("Ingreso ≥ " + money(segment.min_income) + "/mes");
+  } else if (segment.max_income) {
+    labels.push("Ingreso ≤ " + money(segment.max_income) + "/mes");
+  }
   if (labels.length > 0) labels.push(`últimos ${segment.days ?? 30} días`);
   return labels;
 }

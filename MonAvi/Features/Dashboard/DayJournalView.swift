@@ -24,9 +24,8 @@ struct DayJournalView: View {
     @State private var isSearching = false
     @State private var selectedBudgetProgress: BudgetProgress?
     @State private var pointsByTransaction: [UUID: Int] = [:]
-    @State private var featuredRewards = FeaturedRewards.empty
-    @State private var brandCampaigns: [BrandCampaign] = []
     @State private var activeGiftsCount = 0
+    @StateObject private var savingsViewModel = SavingsGoalsViewModel()
 
     var body: some View {
         NavigationStack {
@@ -45,6 +44,8 @@ struct DayJournalView: View {
 
                         totalsCard
 
+                        savingsCard
+
                         if !budgetsViewModel.progresses.isEmpty {
                             BudgetCandyBarRow(progresses: budgetsViewModel.progresses) { progress in
                                 selectedBudgetProgress = progress
@@ -53,20 +54,6 @@ struct DayJournalView: View {
 
                         if !billsViewModel.pending.isEmpty {
                             billsStrip
-                        }
-
-                        pointsStrip
-
-                        if activeGiftsCount > 0 {
-                            GiftsTodayCard(count: activeGiftsCount)
-                        }
-
-                        if !featuredRewards.items.isEmpty {
-                            RewardsForYouCard(items: featuredRewards.items, balance: featuredRewards.balance)
-                        }
-
-                        if !brandCampaigns.isEmpty {
-                            BrandCampaignsTodayRow(campaigns: brandCampaigns)
                         }
 
                         ForEach(recurringViewModel.dueToday) { item in
@@ -89,13 +76,23 @@ struct DayJournalView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
+                    // Los premios viven detras de este boton, no en la
+                    // pantalla principal: Hoy es para tus gastos y tu ahorro.
                     NavigationLink {
-                        RewardsView(initialMode: .merchants)
+                        PointsHubView()
                     } label: {
                         Image(systemName: "gift.fill")
                             .foregroundStyle(MonAviBrand.primary)
+                            .overlay(alignment: .topTrailing) {
+                                if activeGiftsCount > 0 {
+                                    Circle()
+                                        .fill(MonAviBrand.alert)
+                                        .frame(width: 9, height: 9)
+                                        .offset(x: 4, y: -3)
+                                }
+                            }
                     }
-                    .accessibilityLabel("Dónde canjear")
+                    .accessibilityLabel(activeGiftsCount > 0 ? "Canjear premios. Tienes regalos sin usar" : "Canjear premios")
                 }
                 ToolbarItem(placement: .primaryAction) {
                     if viewModel.isViewingToday {
@@ -342,47 +339,63 @@ struct DayJournalView: View {
         .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemBackground)))
     }
 
-    /// Dos accesos siempre visibles: el hub (saldos y como ganar) y
-    /// "Dónde canjear" (comercios aliados y sus premios), para que nadie
-    /// tenga que buscar donde usar su cashback o sus puntos.
-    private var pointsStrip: some View {
-        HStack(spacing: 10) {
-            NavigationLink {
-                PointsHubView()
-            } label: {
-                stripTile(emoji: "⭐️", title: "Puntos y cashback", subtitle: "Tus saldos y cómo ganar")
+    /// "Tu ahorro": lo primero despues del dia. Total apartado en metas y
+    /// el avance de las mas cercanas; invita a crear la primera meta.
+    private var savingsCard: some View {
+        NavigationLink {
+            SavingsGoalsView()
+        } label: {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Label("Tu ahorro", systemImage: "banknote.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(MonAviBrand.primary)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                if savingsViewModel.goals.isEmpty {
+                    Text("Crea tu primera meta y aparta algo cada semana. Ahorrar con constancia también te da puntos.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
+                } else {
+                    Text(totalSaved, format: .currency(code: "USD"))
+                        .font(.system(size: 30, weight: .heavy, design: MonAviBrand.fontDesign))
+                        .foregroundStyle(.primary)
+                    Text(savingsViewModel.goals.count == 1 ? "ahorrado en tu meta" : "ahorrado en \(savingsViewModel.goals.count) metas")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    ForEach(savingsViewModel.goals.prefix(2)) { goal in
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text("\(goal.emoji) \(goal.name)")
+                                    .font(.subheadline.weight(.medium))
+                                    .lineLimit(1)
+                                Spacer()
+                                Text("\(Int((goal.progress * 100).rounded()))%")
+                                    .font(.caption.weight(.semibold).monospacedDigit())
+                                    .foregroundStyle(.secondary)
+                            }
+                            ProgressView(value: goal.progress)
+                                .tint(MonAviBrand.primary)
+                        }
+                        .foregroundStyle(.primary)
+                    }
+                }
             }
-            NavigationLink {
-                RewardsView(initialMode: .merchants)
-            } label: {
-                stripTile(emoji: "🎁", title: "Dónde canjear", subtitle: "Comercios aliados")
-            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Color(.secondarySystemBackground)))
         }
+        .buttonStyle(.plain)
     }
 
-    private func stripTile(emoji: String, title: String, subtitle: String) -> some View {
-        HStack(spacing: 8) {
-            Text(emoji)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.subheadline.weight(.medium))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
-            }
-            Spacer(minLength: 0)
-            Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity)
-        .foregroundStyle(.primary)
-        .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemBackground)))
+    private var totalSaved: Decimal {
+        savingsViewModel.goals.reduce(Decimal(0)) { $0 + $1.currentAmount }
     }
 
     /// "¿Pagaste el Gimnasio hoy?" — recordatorio de una recurrente que le
@@ -648,10 +661,11 @@ struct DayJournalView: View {
     }
 
     /// "Premios para ti": si falla o no hay productos, se esconde.
+    /// Solo el aviso discreto (punto en el boton de regalo) y las metas de
+    /// ahorro: los premios no se muestran en Hoy.
     private func refreshFeaturedRewards() async {
         guard let userId = appState.currentUserId else { return }
-        featuredRewards = await FeaturedRewards.load(userId: userId)
-        brandCampaigns = await BrandCampaignsRepository.shared.fetchActiveOrEmpty()
+        await savingsViewModel.refresh(userId: userId)
         activeGiftsCount = await RewardsRepository.shared.fetchActiveGiftsOrEmpty(userId: userId).count
     }
 

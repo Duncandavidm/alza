@@ -1803,3 +1803,16 @@ button.preset-chip.active {
   font-weight: 800;
   line-height: 120px;
 }
+
+/* MonAvi Caja (PWA): aviso para instalar */
+.install-banner {
+  position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom));
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px; z-index: 50;
+  background: var(--surface, #fff); border: 1px solid var(--border, #e4e9e7); border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12); max-width: 520px; margin: 0 auto;
+}
+.install-banner img { border-radius: 10px; flex: none; }
+.install-text { display: flex; flex-direction: column; gap: 2px; font-size: 14px; flex: 1; }
+.install-text span { color: var(--text-dim, #5b6462); }
+.install-button { background: var(--primary, #027a64); color: #fff; border: 0; border-radius: 10px; padding: 10px 14px; font-weight: 600; }
+.install-close { background: transparent; border: 0; font-size: 16px; color: var(--text-dim, #5b6462); padding: 6px; }

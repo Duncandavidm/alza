@@ -18,7 +18,7 @@ export default async function LoginPage({
       <form action={login} className="card">
         <div className="field">
           <label htmlFor="password">Clave</label>
-          <input id="password" name="password" type="password" autoFocus required style={{ width: "100%" }} />
+          <input id="password" name="password" type="password" autoFocus required autoCapitalize="off" autoCorrect="off" spellCheck={false} autoComplete="current-password" style={{ width: "100%" }} />
         </div>
         <button type="submit" style={{ width: "100%" }}>
           Entrar

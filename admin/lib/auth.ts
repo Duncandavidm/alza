@@ -52,5 +52,21 @@ export async function isValidSessionToken(token: string | undefined): Promise<bo
 export function checkAdminPassword(candidate: string): boolean {
   const expected = process.env.ADMIN_PANEL_PASSWORD;
   if (!expected) throw new Error("Falta la variable de entorno ADMIN_PANEL_PASSWORD");
-  return candidate === expected;
+  // Se ignoran espacios y saltos de linea al inicio y al final: al pegar la
+  // clave en Vercel (o en el formulario) es facil que se cuele uno y la
+  // clave "correcta" nunca coincida.
+  return constantTimeEqual(candidate.trim(), expected.trim());
+}
+
+/// Compara sin cortar en la primera diferencia, para no dar pistas por
+/// tiempo de respuesta a quien intente adivinar la clave.
+function constantTimeEqual(a: string, b: string): boolean {
+  const left = new TextEncoder().encode(a);
+  const right = new TextEncoder().encode(b);
+  let diff = left.length ^ right.length;
+  const length = Math.max(left.length, right.length);
+  for (let i = 0; i < length; i++) {
+    diff |= (left[i] ?? 0) ^ (right[i] ?? 0);
+  }
+  return diff === 0;
 }

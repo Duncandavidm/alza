@@ -42,6 +42,14 @@ export default async function MerchantsPage() {
 
       <div className="card">
         <h3>Nuevo comercio</h3>
+        <ol className="steps-hint">
+          <li>Crea el comercio con su nombre, RUC, logo y enlace de Google Maps.</li>
+          <li>
+            Se abre su ficha: ahí, en <strong>Productos canjeables</strong>, agregas lo que el cliente puede canjear
+            (por ejemplo, <em>Capuchino</em>, con su foto y su valor en cashback, como $3.50).
+          </li>
+          <li>En esa misma ficha generas el <strong>PIN de canje</strong> y se lo mandas al comercio.</li>
+        </ol>
         <ActionForm action={createMerchant} className="grid-form" submitLabel="Crear comercio" pendingLabel="Creando…">
           <MerchantFieldsInputs />
         </ActionForm>

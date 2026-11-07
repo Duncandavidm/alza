@@ -36,7 +36,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
           MonAvi Admin
         </span>
         <Link href="/">Resumen</Link>
-        <Link href="/merchants">Comercios y ofertas</Link>
+        <Link href="/merchants">Comercios y productos</Link>
         <Link href="/applications">
           Solicitudes
           {newApplications > 0 && <span className="nav-badge">{newApplications}</span>}

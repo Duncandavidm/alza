@@ -1,14 +1,16 @@
 :root {
-  --bg: #0f1115;
-  --surface: #1a1d24;
-  --surface-alt: #22262f;
-  --border: #2c313c;
-  --text: #e8eaed;
-  --text-dim: #9aa1ac;
-  --primary: #4f7cff;
-  --danger: #ef5a5a;
-  --success: #3ecf8e;
-  --warning: #e3b341;
+  /* Tema claro con los colores de marca (antes era oscuro). */
+  color-scheme: light;
+  --bg: #f4f7f6;
+  --surface: #ffffff;
+  --surface-alt: #eef3f1;
+  --border: #dbe4e1;
+  --text: #0f1f1b;
+  --text-dim: #5b6b66;
+  --primary: #027a64;
+  --danger: #c0392b;
+  --success: #1f9d6c;
+  --warning: #b7791f;
   --brand: #00a585;
   --brand-dark: #027a64;
 }
@@ -146,6 +148,7 @@ button:disabled {
 }
 
 nav.top {
+  background: var(--surface);
   border-bottom: 1px solid var(--border);
   padding: 14px 20px;
   display: flex;
@@ -1463,3 +1466,16 @@ body:has(.landing) {
   padding: 12px;
   margin: 0;
 }
+
+/* Pasos guia en "Nuevo comercio" */
+.steps-hint {
+  margin: 0 0 16px;
+  padding: 12px 16px 12px 34px;
+  background: rgba(0, 165, 133, 0.08);
+  border: 1px solid rgba(0, 165, 133, 0.25);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.steps-hint li + li { margin-top: 4px; }

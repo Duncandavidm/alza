@@ -1,5 +1,6 @@
 import "server-only";
 import { optionalText, parseMapsUrl, text } from "./validation";
+import { REWARD_CURRENCIES, type RewardCurrency } from "./currency";
 
 export type MerchantFields = {
   name: string;
@@ -7,6 +8,7 @@ export type MerchantFields = {
   category: string | null;
   address: string | null;
   maps_url: string | null;
+  reward_currency: RewardCurrency;
 };
 
 /// Lee y valida la "ficha" del comercio desde un formulario del panel.
@@ -19,6 +21,11 @@ export function parseMerchantFields(formData: FormData): { fields?: MerchantFiel
   const maps = parseMapsUrl(text(formData, "maps_url", 600));
   if (maps.error) return { error: maps.error };
 
+  const currency = text(formData, "reward_currency", 20);
+  if (!(REWARD_CURRENCIES as readonly string[]).includes(currency)) {
+    return { error: "Elige cómo canjean tus clientes: con cashback o con puntos." };
+  }
+
   return {
     fields: {
       name,
@@ -26,6 +33,7 @@ export function parseMerchantFields(formData: FormData): { fields?: MerchantFiel
       category: optionalText(formData, "category", 80),
       address: optionalText(formData, "address", 300),
       maps_url: maps.url,
+      reward_currency: currency as RewardCurrency,
     },
   };
 }

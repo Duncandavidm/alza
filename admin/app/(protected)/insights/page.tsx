@@ -12,6 +12,7 @@ import {
 } from "@/lib/insights";
 import { formatCashback, formatDateTime, formatDecimal, formatInt, formatMoney, formatPercent, num } from "@/lib/format";
 import PrintButton from "@/components/PrintButton";
+import { formatRewardValue, toRewardCurrency } from "@/lib/currency";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,24 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
   ]);
 
   const partner = ruc ? (merchants ?? []).find((merchant) => merchant.ruc === ruc) : undefined;
+
+  // Valor canjeado (entregado) en el periodo, separado por moneda: cada
+  // canje guarda su currency (cashback en centavos, puntos tal cual).
+  const redeemedTotals = { cashback: 0, puntos: 0 };
+  if (!ruc || partner) {
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+    let redeemedQuery = supabaseAdmin()
+      .from("reward_redemptions")
+      .select("points_cost, currency")
+      .eq("status", "entregado")
+      .gte("created_at", since)
+      .limit(10000);
+    if (partner) redeemedQuery = redeemedQuery.eq("merchant_id", partner.id);
+    const { data: redeemedRows } = await redeemedQuery.returns<{ points_cost: number; currency: string | null }[]>();
+    for (const row of redeemedRows ?? []) {
+      redeemedTotals[toRewardCurrency(row.currency)] += num(row.points_cost);
+    }
+  }
   const scopeLabel = ruc ? `Clientes de ${partner?.name ?? `RUC ${ruc}`}` : "Panorama general de MonAvi";
   const exportBase = `/insights/export?days=${days}${ruc ? `&ruc=${encodeURIComponent(ruc)}` : ""}`;
 
@@ -127,6 +146,8 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
               <Kpi label="Compras por persona al mes" value={formatDecimal(data.summary.receipts_per_person_month, 1)} />
               <Kpi label="Cashback emitido" value={formatCashback(data.summary.points_issued)} />
               <Kpi label="Canjes" value={formatInt(data.summary.redemptions)} />
+              <Kpi label="Canjeado en cashback" value={formatRewardValue(redeemedTotals.cashback, "cashback")} />
+              <Kpi label="Canjeado en puntos" value={formatRewardValue(redeemedTotals.puntos, "puntos")} />
             </div>
           </Section>
 
@@ -300,7 +321,7 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
 
           <Section
             title="Productos canjeados"
-            caption="Qué recompensas eligen las personas con su cashback. Indica qué tipo de producto atrae más visitas."
+            caption="Qué recompensas eligen las personas con su cashback o sus puntos. Indica qué tipo de producto atrae más visitas."
             csv={`${exportBase}&section=top_rewards`}
           >
             <BarList

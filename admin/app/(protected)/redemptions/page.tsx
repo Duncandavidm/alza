@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { embedded, formatCashback, formatDateTime } from "@/lib/format";
+import { embedded, formatDateTime } from "@/lib/format";
+import { formatRewardValue, formatRewardValueLong, toRewardCurrency } from "@/lib/currency";
 import ActionForm from "@/components/ActionForm";
 import { cancelRedemption, markRedemptionDelivered } from "./actions";
 
@@ -12,6 +13,7 @@ type Redemption = {
   code: string;
   status: RedemptionStatus;
   points_cost: number;
+  currency: "cashback" | "puntos" | null;
   expires_at: string;
   delivered_at: string | null;
   delivered_via: "comercio" | "panel" | null;
@@ -39,7 +41,7 @@ export default async function RedemptionsPage({
   let query = supabase
     .from("reward_redemptions")
     .select(
-      "id, code, status, points_cost, expires_at, delivered_at, delivered_via, created_at, merchant_id, reward_items(name), partner_merchants(name)"
+      "id, code, status, points_cost, currency, expires_at, delivered_at, delivered_via, created_at, merchant_id, reward_items(name), partner_merchants(name)"
     )
     .order("created_at", { ascending: false })
     .limit(200);
@@ -76,7 +78,7 @@ export default async function RedemptionsPage({
           monavi.maday.app/canjear
         </a>{" "}
         (queda “en caja”); si no puede, márcalo aquí como entregado (queda “desde el panel”). Los canjes que no se
-        entregan vencen a los 7 días y un proceso nocturno los libera y devuelve el cashback al cliente.
+        entregan vencen a los 7 días y un proceso nocturno los libera y le devuelve al cliente su cashback o sus puntos.
       </p>
 
       <div className="grid-form" style={{ marginBottom: 16 }}>
@@ -149,6 +151,7 @@ export default async function RedemptionsPage({
               const isOverdue = isEmitted && expiresAt <= now;
               const expiresToday = isEmitted && !isOverdue && panamaDate(expiresAt) === today;
               const canAct = isEmitted && !isOverdue;
+              const currency = toRewardCurrency(redemption.currency);
 
               return (
                 <tr key={redemption.id} className={isOverdue ? "row-dim" : undefined}>
@@ -159,7 +162,7 @@ export default async function RedemptionsPage({
                   <td>
                     <Link href={`/merchants/${redemption.merchant_id}`}>{embedded(redemption.partner_merchants)?.name ?? "—"}</Link>
                   </td>
-                  <td>{formatCashback(redemption.points_cost)}</td>
+                  <td>{formatRewardValue(redemption.points_cost, currency)}</td>
                   <td className="text-dim">{formatDateTime(redemption.created_at)}</td>
                   <td className="text-dim">
                     {redemption.status === "entregado" ? (
@@ -175,7 +178,7 @@ export default async function RedemptionsPage({
                   </td>
                   <td>
                     {isOverdue ? (
-                      <span className="badge vencido" title="El proceso nocturno lo libera y devuelve el cashback">
+                      <span className="badge vencido" title="El proceso nocturno lo libera y devuelve el valor al cliente">
                         vencido (por liberar)
                       </span>
                     ) : expiresToday ? (
@@ -198,8 +201,8 @@ export default async function RedemptionsPage({
                         </ActionForm>
                         <ActionForm
                           action={cancelRedemption.bind(null, redemption.id)}
-                          confirm={`¿Cancelar ${redemption.code} y devolver ${formatCashback(redemption.points_cost)} de cashback al cliente?`}
-                          submitLabel="Cancelar y devolver cashback"
+                          confirm={`¿Cancelar ${redemption.code} y devolver ${formatRewardValueLong(redemption.points_cost, currency)} al cliente?`}
+                          submitLabel={currency === "puntos" ? "Cancelar y devolver puntos" : "Cancelar y devolver cashback"}
                           submitClassName="danger"
                           pendingLabel="Cancelando…"
                           inline

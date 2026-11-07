@@ -1,4 +1,5 @@
 import { MERCHANT_CATEGORIES } from "@/lib/merchant-categories";
+import { REWARD_CURRENCIES, REWARD_CURRENCY_LABELS, toRewardCurrency } from "@/lib/currency";
 
 type Defaults = {
   name?: string | null;
@@ -7,10 +8,13 @@ type Defaults = {
   address?: string | null;
   maps_url?: string | null;
   logo_url?: string | null;
+  reward_currency?: string | null;
 };
 
 /// Campos de la "ficha" del comercio aliado (crear y editar).
-export default function MerchantFieldsInputs({ defaults = {} }: { defaults?: Defaults }) {
+/// itemsCount > 0 (solo al editar) muestra el aviso de que cambiar la moneda
+/// no convierte el valor de los productos existentes.
+export default function MerchantFieldsInputs({ defaults = {}, itemsCount = 0 }: { defaults?: Defaults; itemsCount?: number }) {
   const category = defaults.category ?? "";
   const isKnownCategory = (MERCHANT_CATEGORIES as readonly string[]).includes(category);
 
@@ -35,6 +39,22 @@ export default function MerchantFieldsInputs({ defaults = {} }: { defaults?: Def
             </option>
           ))}
         </select>
+      </div>
+      <div className="field">
+        <label>¿Cómo canjean tus clientes?</label>
+        <select name="reward_currency" defaultValue={toRewardCurrency(defaults.reward_currency)} required>
+          {REWARD_CURRENCIES.map((option) => (
+            <option key={option} value={option}>
+              {REWARD_CURRENCY_LABELS[option]}
+            </option>
+          ))}
+        </select>
+        {itemsCount > 0 && (
+          <small className="text-dim" style={{ display: "block", marginTop: 4 }}>
+            Si cambias la moneda, revisa el valor de {itemsCount === 1 ? "su producto" : `sus ${itemsCount} productos`}: no
+            se convierte solo (por ejemplo, $3.50 pasaría a leerse como 350 pts).
+          </small>
+        )}
       </div>
       <div className="field">
         <label>Dirección</label>

@@ -5,6 +5,7 @@ import ActionForm from "@/components/ActionForm";
 import MerchantFieldsInputs from "@/components/MerchantFieldsInputs";
 import RewardPreviewCard from "@/components/RewardPreviewCard";
 import { formatCashback, formatDateTime, formatMoney } from "@/lib/format";
+import { formatRewardValue, REWARD_CURRENCY_LABELS, type RewardCurrency, toRewardCurrency } from "@/lib/currency";
 import {
   createOffer,
   createRewardItem,
@@ -28,6 +29,7 @@ type Merchant = {
   maps_url: string | null;
   logo_url: string | null;
   redeem_pin_set_at: string | null;
+  reward_currency: RewardCurrency | null;
 };
 type Offer = {
   id: string;
@@ -56,7 +58,7 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
 
   const { data: merchant } = await supabase
     .from("partner_merchants")
-    .select("id, name, ruc, status, category, address, maps_url, logo_url, redeem_pin_set_at")
+    .select("id, name, ruc, status, category, address, maps_url, logo_url, redeem_pin_set_at, reward_currency")
     .eq("id", id)
     .maybeSingle<Merchant>();
   if (!merchant) notFound();
@@ -87,6 +89,7 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
 
   const rewardItems = items ?? [];
   const hasMaps = Boolean(merchant.maps_url);
+  const currency = toRewardCurrency(merchant.reward_currency);
 
   return (
     <>
@@ -105,7 +108,8 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
           <p className="text-dim" style={{ margin: "4px 0 0" }}>
             RUC {merchant.ruc}
             {merchant.category ? ` · ${merchant.category}` : ""} ·{" "}
-            <span className={`badge ${merchant.status}`}>{merchant.status === "active" ? "activo" : "pausado"}</span>
+            <span className={`badge ${merchant.status}`}>{merchant.status === "active" ? "activo" : "pausado"}</span>{" "}
+            <span className={`badge currency-${currency}`}>{REWARD_CURRENCY_LABELS[currency]}</span>
             {merchant.maps_url && (
               <>
                 {" "}
@@ -123,7 +127,7 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
         <h3>Ficha del comercio</h3>
         <p className="text-dim">Esto es lo que ven los clientes en la app: nombre, logo, categoría, dirección y “Cómo llegar”.</p>
         <ActionForm action={updateMerchant.bind(null, merchant.id)} className="grid-form" submitLabel="Guardar ficha">
-          <MerchantFieldsInputs defaults={merchant} />
+          <MerchantFieldsInputs defaults={merchant} itemsCount={rewardItems.length} />
           <div className="field">
             <label>Estado</label>
             <select name="status" defaultValue={merchant.status}>
@@ -155,7 +159,9 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
       <div className="card">
         <h3>Productos canjeables</h3>
         <p className="text-dim">
-          Lo que los clientes pueden canjear con su cashback en este comercio. La foto del producto es lo más visible en la
+          Lo que los clientes pueden canjear{" "}
+          {currency === "puntos" ? "con sus puntos (buenos hábitos)" : "con su cashback (dólares de facturas)"} en este
+          comercio. La foto del producto es lo más visible en la
           app: usa una foto horizontal, bien iluminada y sin texto encima.
           {!hasMaps && " Falta el enlace de Google Maps en la ficha: sin él, el botón “Cómo llegar” no funciona."}
         </p>
@@ -166,7 +172,7 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
               <tr>
                 <th>Foto</th>
                 <th>Producto</th>
-                <th>Valor en cashback</th>
+                <th>{currency === "puntos" ? "Puntos" : "Valor en cashback"}</th>
                 <th>Estado</th>
                 <th>Orden</th>
                 <th></th>
@@ -187,7 +193,7 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
                     {item.name}
                     {item.description && <div className="text-dim">{item.description}</div>}
                   </td>
-                  <td>{formatCashback(item.points_cost)}</td>
+                  <td>{formatRewardValue(item.points_cost, currency)}</td>
                   <td>
                     <span className={`badge ${item.status}`}>{item.status === "active" ? "activo" : "pausado"}</span>
                   </td>
@@ -239,6 +245,7 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
               merchantName={merchant.name}
               logoUrl={merchant.logo_url}
               hasMaps={hasMaps}
+              currency={currency}
               item={item}
               submitLabel="Guardar producto"
             />
@@ -251,6 +258,7 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
           merchantName={merchant.name}
           logoUrl={merchant.logo_url}
           hasMaps={hasMaps}
+          currency={currency}
           submitLabel="Agregar producto"
         />
 
@@ -265,7 +273,8 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
                   logoUrl={merchant.logo_url}
                   productName={item.name}
                   photoUrl={item.photo_url}
-                  valueCents={item.points_cost}
+                  value={item.points_cost}
+                  currency={currency}
                   description={item.description}
                   hasMaps={hasMaps}
                   paused={item.status === "paused" || merchant.status === "paused"}

@@ -3,7 +3,8 @@
 import { createHash } from "node:crypto";
 import { headers } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { formatCashback, formatDateTime } from "@/lib/format";
+import { formatDateTime } from "@/lib/format";
+import { formatRewardValueLong, toRewardCurrency } from "@/lib/currency";
 
 export type RedeemResult =
   | {
@@ -28,6 +29,8 @@ type RpcResponse = {
   photo_url?: string | null;
   merchant?: string | null;
   value_cents?: number | null;
+  currency?: string | null;
+  value?: number | null;
   expires_at?: string | null;
   delivered_at?: string | null;
 };
@@ -86,7 +89,11 @@ export async function redeemCode(input: { code: string; pin: string; confirm: bo
       product: result.product ?? "Producto",
       photoUrl: result.photo_url ?? null,
       merchant: result.merchant ?? "",
-      valueLabel: formatCashback(result.value_cents),
+      // "$3.50 de cashback" o "150 puntos". Si la RPC no trae currency/value
+      // (version anterior), se asume cashback en centavos (value_cents).
+      valueLabel: result.currency
+        ? formatRewardValueLong(Number(result.value ?? result.value_cents ?? 0), toRewardCurrency(result.currency))
+        : formatRewardValueLong(Number(result.value_cents ?? 0), "cashback"),
       expiresLabel: formatDateTime(result.expires_at),
       deliveredLabel: result.delivered_at ? formatDateTime(result.delivered_at) : null,
     };

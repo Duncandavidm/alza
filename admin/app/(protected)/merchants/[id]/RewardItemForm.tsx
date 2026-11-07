@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import ActionForm, { type ActionState } from "@/components/ActionForm";
 import RewardPreviewCard from "@/components/RewardPreviewCard";
 import { centsToDollarInput } from "@/lib/format";
+import type { RewardCurrency } from "@/lib/currency";
 
 type Item = {
   name: string;
@@ -19,17 +20,24 @@ type Props = {
   merchantName: string;
   logoUrl: string | null;
   hasMaps: boolean;
+  /// Moneda del comercio: solo cambia la etiqueta y el input; el servidor
+  /// vuelve a leerla de la base para decidir la conversion.
+  currency: RewardCurrency;
   item?: Item;
   submitLabel: string;
 };
 
 /// Formulario de producto canjeable con vista previa en vivo (como se ve
 /// en la app) que se actualiza mientras se escribe o se elige la foto.
-export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps, item, submitLabel }: Props) {
+export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps, currency, item, submitLabel }: Props) {
+  const isPoints = currency === "puntos";
   const [name, setName] = useState(item?.name ?? "");
   const [description, setDescription] = useState(item?.description ?? "");
-  // Valor en cashback en US$ (ej. "3.50"); el servidor lo guarda en centavos.
-  const [cashback, setCashback] = useState(item ? centsToDollarInput(item.points_cost) : "");
+  // Cashback: US$ (ej. "3.50"), el servidor lo guarda en centavos.
+  // Puntos: entero (ej. "150"), se guarda tal cual.
+  const [rewardValue, setRewardValue] = useState(
+    item ? (isPoints ? String(item.points_cost) : centsToDollarInput(item.points_cost)) : ""
+  );
   const [paused, setPaused] = useState(item?.status === "paused");
   const [localPhoto, setLocalPhoto] = useState<string | null>(null);
   const [removePhoto, setRemovePhoto] = useState(false);
@@ -53,7 +61,7 @@ export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps,
           if (item) return;
           setName("");
           setDescription("");
-          setCashback("");
+          setRewardValue("");
           setPaused(false);
           setLocalPhoto(null);
         }}
@@ -71,17 +79,17 @@ export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps,
           />
         </div>
         <div className="field">
-          <label>Valor en cashback (US$)</label>
+          <label>{isPoints ? "Puntos necesarios" : "Valor en cashback (US$)"}</label>
           <input
             type="number"
-            name="cashback_value"
+            name="reward_value"
             required
-            min={0.01}
-            step={0.01}
-            inputMode="decimal"
-            placeholder="3.50"
-            value={cashback}
-            onChange={(event) => setCashback(event.target.value)}
+            min={isPoints ? 1 : 0.01}
+            step={isPoints ? 1 : 0.01}
+            inputMode={isPoints ? "numeric" : "decimal"}
+            placeholder={isPoints ? "150" : "3.50"}
+            value={rewardValue}
+            onChange={(event) => setRewardValue(event.target.value)}
           />
         </div>
         <div className="field">
@@ -143,7 +151,8 @@ export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps,
           logoUrl={logoUrl}
           productName={name}
           photoUrl={photoUrl}
-          valueCents={Math.round(Number(cashback) * 100) || null}
+          value={(isPoints ? Math.round(Number(rewardValue)) : Math.round(Number(rewardValue) * 100)) || null}
+          currency={currency}
           description={description}
           hasMaps={hasMaps}
           paused={paused}

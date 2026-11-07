@@ -1,17 +1,19 @@
 // Vista previa de como se ve un producto canjeable en la app de MonAvi:
 // nombre del comercio (con su logo) arriba, la foto del producto grande
-// (4:3) como protagonista, el producto con su valor en cashback (US$), y los
+// (4:3) como protagonista, el producto con su valor ($ o pts), y los
 // botones "Cómo llegar" y "Canjear". Sin hooks: sirve en server y client.
 
-import { formatCashback } from "@/lib/format";
+import { formatRewardValue, type RewardCurrency } from "@/lib/currency";
 
 type Props = {
   merchantName: string;
   logoUrl?: string | null;
   productName: string;
   photoUrl?: string | null;
-  /// Valor en cashback en centavos (reward_items.points_cost; 1 punto = US$0.01).
-  valueCents?: number | null;
+  /// reward_items.points_cost en la moneda del comercio: centavos si es
+  /// cashback (1 punto = US$0.01), puntos si es "puntos".
+  value?: number | null;
+  currency?: RewardCurrency;
   description?: string | null;
   hasMaps?: boolean;
   paused?: boolean;
@@ -22,7 +24,8 @@ export default function RewardPreviewCard({
   logoUrl,
   productName,
   photoUrl,
-  valueCents,
+  value,
+  currency = "cashback",
   description,
   hasMaps = true,
   paused,
@@ -49,7 +52,7 @@ export default function RewardPreviewCard({
       <div className="reward-preview-body">
         <span className="reward-preview-product">{productName || "Nombre del producto"}</span>
         <span className="reward-preview-points">
-          {valueCents && valueCents > 0 ? formatCashback(valueCents) : "$—"}
+          {value && value > 0 ? formatRewardValue(value, currency) : currency === "puntos" ? "— pts" : "$—"}
         </span>
       </div>
       {description && <p className="reward-preview-description">{description}</p>}

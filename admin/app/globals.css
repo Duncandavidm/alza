@@ -296,6 +296,8 @@ a.secondary-link {
 .badge.aprobada, .badge.entregado { color: var(--success); border-color: var(--success); }
 .badge.cancelado { color: var(--text-dim); }
 .badge.vencido { color: var(--danger); border-color: var(--danger); }
+.badge.currency-cashback { color: var(--brand-dark); border-color: var(--brand); background: #e6f6f2; }
+.badge.currency-puntos { color: #6b46c1; border-color: #9f7aea; background: #f3effc; }
 
 .tabs {
   display: flex;

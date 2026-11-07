@@ -130,7 +130,7 @@ export default function RedeemForm({ initialCode }: { initialCode: string }) {
           <dl className="redeem-facts">
             <div>
               <dt>Valor</dt>
-              <dd>{data.valueLabel} de cashback</dd>
+              <dd>{data.valueLabel}</dd>
             </div>
             <div>
               <dt>Vence el</dt>

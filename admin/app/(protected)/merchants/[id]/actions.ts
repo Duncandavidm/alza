@@ -7,6 +7,7 @@ import { friendlyDbError, parseMerchantFields } from "@/lib/merchant-form";
 import { fileFromForm, uploadRewardImage } from "@/lib/uploads";
 import { parseDollarsToCents } from "@/lib/format";
 import { optionalText, text } from "@/lib/validation";
+import { type RewardCurrency, toRewardCurrency } from "@/lib/currency";
 import type { ActionState } from "@/components/ActionForm";
 
 function revalidateMerchant(merchantId: string) {
@@ -36,10 +37,23 @@ export async function updateMerchant(merchantId: string, _prev: ActionState, for
   }
 
   const supabase = supabaseAdmin();
+  const previousCurrency = await merchantCurrency(merchantId);
   const { error } = await supabase.from("partner_merchants").update(update).eq("id", merchantId);
   if (error) return { error: friendlyDbError(error) };
 
   revalidateMerchant(merchantId);
+  if (previousCurrency && previousCurrency !== parsed.fields.reward_currency) {
+    const { count } = await supabase
+      .from("reward_items")
+      .select("id", { count: "exact", head: true })
+      .eq("merchant_id", merchantId);
+    if ((count ?? 0) > 0) {
+      return {
+        message:
+          "Ficha guardada. Cambiaste cómo canjean los clientes: revisa el valor de cada producto, no se convirtió automáticamente.",
+      };
+    }
+  }
   return { message: "Ficha guardada." };
 }
 
@@ -117,14 +131,39 @@ type RewardItemFields = {
   status: "active" | "paused";
 };
 
-function parseRewardItemFields(formData: FormData): { fields?: RewardItemFields; error?: string } {
+/// Moneda de canje del comercio leida de la base (no se confia en el
+/// formulario): decide como se interpreta el valor del producto.
+async function merchantCurrency(merchantId: string): Promise<RewardCurrency | null> {
+  const { data } = await supabaseAdmin()
+    .from("partner_merchants")
+    .select("reward_currency")
+    .eq("id", merchantId)
+    .maybeSingle<{ reward_currency: string | null }>();
+  return data ? toRewardCurrency(data.reward_currency) : null;
+}
+
+function parseRewardItemFields(
+  formData: FormData,
+  currency: RewardCurrency
+): { fields?: RewardItemFields; error?: string } {
   const name = text(formData, "name", 120);
   if (!name) return { error: "El nombre del producto es obligatorio." };
 
-  // Se escribe en US$ (ej. 3.50) y se guarda en centavos (350): 1 punto = US$0.01.
-  const pointsCost = parseDollarsToCents(text(formData, "cashback_value", 16));
-  if (pointsCost === null || pointsCost > 10_000_000) {
-    return { error: "El valor en cashback debe ser un monto mayor que $0 con máximo 2 decimales (por ejemplo 3.50)." };
+  const rawValue = text(formData, "reward_value", 16);
+  let pointsCost: number | null;
+  if (currency === "puntos") {
+    // Puntos por buenos habitos: entero >= 1, se guarda tal cual.
+    const points = /^\d{1,9}$/.test(rawValue) ? Number(rawValue) : NaN;
+    if (!Number.isInteger(points) || points < 1 || points > 10_000_000) {
+      return { error: "Los puntos necesarios deben ser un número entero mayor o igual a 1 (por ejemplo 150)." };
+    }
+    pointsCost = points;
+  } else {
+    // Se escribe en US$ (ej. 3.50) y se guarda en centavos (350): 1 punto = US$0.01.
+    pointsCost = parseDollarsToCents(rawValue);
+    if (pointsCost === null || pointsCost > 10_000_000) {
+      return { error: "El valor en cashback debe ser un monto mayor que $0 con máximo 2 decimales (por ejemplo 3.50)." };
+    }
   }
 
   const sortRaw = text(formData, "sort_order", 12);
@@ -145,7 +184,9 @@ function parseRewardItemFields(formData: FormData): { fields?: RewardItemFields;
 }
 
 export async function createRewardItem(merchantId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
-  const parsed = parseRewardItemFields(formData);
+  const currency = await merchantCurrency(merchantId);
+  if (!currency) return { error: "No se encontró el comercio." };
+  const parsed = parseRewardItemFields(formData, currency);
   if (!parsed.fields) return { error: parsed.error };
 
   const insert: Record<string, unknown> = { ...parsed.fields, merchant_id: merchantId };
@@ -170,7 +211,9 @@ export async function updateRewardItem(
   _prev: ActionState,
   formData: FormData
 ): Promise<ActionState> {
-  const parsed = parseRewardItemFields(formData);
+  const currency = await merchantCurrency(merchantId);
+  if (!currency) return { error: "No se encontró el comercio." };
+  const parsed = parseRewardItemFields(formData, currency);
   if (!parsed.fields) return { error: parsed.error };
 
   const update: Record<string, unknown> = { ...parsed.fields };

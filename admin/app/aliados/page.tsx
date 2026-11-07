@@ -6,7 +6,7 @@ import ApplicationForm from "./ApplicationForm";
 export const metadata: Metadata = {
   title: "Comercios aliados — MonAvi",
   description:
-    "Lleva clientes nuevos a tu negocio con MonAvi: publica un producto canjeable y recibe a clientes que canjean su cashback en tu local. Sin costo de integración.",
+    "Lleva clientes nuevos a tu negocio con MonAvi: publica un producto canjeable y recibe a clientes que lo canjean en tu local con su cashback o sus puntos. Sin costo de integración.",
 };
 
 const STEPS = [
@@ -16,11 +16,11 @@ const STEPS = [
   },
   {
     title: "Publicas un producto canjeable",
-    text: "Eliges qué ofreces a cambio de cashback: un café, un postre, un servicio. Nosotros lo mostramos con foto, tu logo y cómo llegar.",
+    text: "Eliges qué ofreces (un café, un postre, un servicio) y si se canjea con cashback o con puntos. Nosotros lo mostramos con foto, tu logo y cómo llegar.",
   },
   {
     title: "Los clientes de MonAvi te visitan",
-    text: "Las personas que ganan cashback con sus facturas van a tu local a canjearlo, y muchas vuelven a comprar.",
+    text: "Las personas ganan cashback con sus facturas verificadas y puntos por buenos hábitos financieros. Van a tu local a canjearlos, y muchas vuelven a comprar.",
   },
   {
     title: "Validas el código en caja",
@@ -32,7 +32,7 @@ const BENEFITS = [
   {
     icon: "people",
     title: "Clientes nuevos y recurrentes",
-    text: "Personas que ya compran en Panamá y buscan dónde usar su cashback llegan a tu puerta, y regresan.",
+    text: "Personas que ya compran en Panamá y buscan dónde usar su cashback o sus puntos llegan a tu puerta, y regresan.",
   },
   {
     icon: "phone",
@@ -71,7 +71,8 @@ export default function AliadosPage() {
           <h1>Lleva clientes nuevos a tu negocio con MonAvi</h1>
           <p>
             MonAvi es la app de finanzas personales donde las personas en Panamá ganan cashback escaneando sus facturas
-            electrónicas de la DGI. Conviértete en aliado y deja que vengan a canjearlo en tu local.
+            electrónicas de la DGI y puntos por sus buenos hábitos financieros. Conviértete en aliado, elige con cuál de
+            los dos se canjean tus premios y deja que vengan a tu local.
           </p>
           <div className="landing-hero-actions">
             <a href="#solicitud" className="landing-button">

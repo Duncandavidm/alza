@@ -2,6 +2,7 @@ import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import ActionForm from "@/components/ActionForm";
 import MerchantFieldsInputs from "@/components/MerchantFieldsInputs";
+import { REWARD_CURRENCY_LABELS, type RewardCurrency, toRewardCurrency } from "@/lib/currency";
 import { createMerchant, updateMerchantStatus } from "./actions";
 
 type Merchant = {
@@ -12,6 +13,7 @@ type Merchant = {
   category: string | null;
   logo_url: string | null;
   maps_url: string | null;
+  reward_currency: RewardCurrency | null;
 };
 
 export default async function MerchantsPage() {
@@ -19,7 +21,7 @@ export default async function MerchantsPage() {
   const [{ data: merchants }, { data: items }] = await Promise.all([
     supabase
       .from("partner_merchants")
-      .select("id, name, ruc, status, category, logo_url, maps_url")
+      .select("id, name, ruc, status, category, logo_url, maps_url, reward_currency")
       .order("name", { ascending: true })
       .returns<Merchant[]>(),
     supabase.from("reward_items").select("merchant_id, status").returns<{ merchant_id: string; status: string }[]>(),
@@ -43,10 +45,13 @@ export default async function MerchantsPage() {
       <div className="card">
         <h3>Nuevo comercio</h3>
         <ol className="steps-hint">
-          <li>Crea el comercio con su nombre, RUC, logo y enlace de Google Maps.</li>
+          <li>
+            Crea el comercio con su nombre, RUC, logo, enlace de Google Maps y cómo canjean sus clientes: con{" "}
+            <strong>cashback</strong> (dólares de facturas) o con <strong>puntos</strong> (buenos hábitos).
+          </li>
           <li>
             Se abre su ficha: ahí, en <strong>Productos canjeables</strong>, agregas lo que el cliente puede canjear
-            (por ejemplo, <em>Capuchino</em>, con su foto y su valor en cashback, como $3.50).
+            (por ejemplo, <em>Capuchino</em>, con su foto y su valor: $3.50 de cashback o 150 puntos).
           </li>
           <li>En esa misma ficha generas el <strong>PIN de canje</strong> y se lo mandas al comercio.</li>
         </ol>
@@ -63,6 +68,7 @@ export default async function MerchantsPage() {
               <th>Nombre</th>
               <th>RUC</th>
               <th>Categoría</th>
+              <th>Canje con</th>
               <th>Productos activos</th>
               <th>Estado</th>
               <th></th>
@@ -86,6 +92,16 @@ export default async function MerchantsPage() {
                 </td>
                 <td>{merchant.ruc}</td>
                 <td className="text-dim">{merchant.category ?? "—"}</td>
+                <td>
+                  {(() => {
+                    const currency = toRewardCurrency(merchant.reward_currency);
+                    return (
+                      <span className={`badge currency-${currency}`} title={REWARD_CURRENCY_LABELS[currency]}>
+                        {currency}
+                      </span>
+                    );
+                  })()}
+                </td>
                 <td>{activeItemsByMerchant.get(merchant.id) ?? 0}</td>
                 <td>
                   <span className={`badge ${merchant.status}`}>{merchant.status === "active" ? "activo" : "pausado"}</span>
@@ -104,7 +120,7 @@ export default async function MerchantsPage() {
             ))}
             {(merchants ?? []).length === 0 && (
               <tr>
-                <td colSpan={8} className="text-dim">
+                <td colSpan={9} className="text-dim">
                   Todavía no hay comercios aliados.
                 </td>
               </tr>

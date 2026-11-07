@@ -1,10 +1,16 @@
 "use server";
 
 import { createHash } from "node:crypto";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { formatDateTime } from "@/lib/format";
 import { formatRewardValueLong, toRewardCurrency } from "@/lib/currency";
+import {
+  REDEEM_SESSION_COOKIE,
+  REDEEM_SESSION_COOKIE_OPTIONS,
+  createRedeemSessionToken,
+  readRedeemSessionToken,
+} from "@/lib/redeem-session";
 
 export type RedeemResult =
   | {
@@ -14,11 +20,14 @@ export type RedeemResult =
       product: string;
       photoUrl: string | null;
       merchant: string;
+      isGift: boolean;
       valueLabel: string;
       expiresLabel: string;
       deliveredLabel: string | null;
+      /// Comercio del turno abierto (si quedo una sesion activa).
+      session: { merchant: string } | null;
     }
-  | { ok: false; error: string; product?: string };
+  | { ok: false; error: string; product?: string; needsPin?: boolean; session?: { merchant: string } | null };
 
 type RpcResponse = {
   ok?: boolean;
@@ -28,6 +37,8 @@ type RpcResponse = {
   product?: string | null;
   photo_url?: string | null;
   merchant?: string | null;
+  merchant_id?: string | null;
+  is_gift?: boolean | null;
   value_cents?: number | null;
   currency?: string | null;
   value?: number | null;
@@ -36,8 +47,8 @@ type RpcResponse = {
 };
 
 /// IP del cliente -> hash SHA-256 con SESSION_SECRET. Nunca se guarda ni
-/// se envia la IP en claro: merchant_redeem() solo la usa para limitar
-/// los intentos fallidos (10 cada 15 minutos).
+/// se envia la IP en claro: las RPC solo la usan para limitar los
+/// intentos fallidos (10 cada 15 minutos).
 async function clientIpHash(): Promise<string> {
   const list = await headers();
   const forwarded = list.get("x-forwarded-for")?.split(",")[0]?.trim();
@@ -47,29 +58,48 @@ async function clientIpHash(): Promise<string> {
   return createHash("sha256").update(`${secret}:${ip}`).digest("hex");
 }
 
-// Accion PUBLICA (sin sesion): /canjear esta en PUBLIC_PATHS de proxy.ts.
-// Toda la verificacion (codigo del comercio correcto, PIN bcrypt, vigencia,
-// limite de intentos) la hace la RPC merchant_redeem con service role; aqui
-// solo se normaliza la entrada y se devuelve lo minimo para la pantalla.
-export async function redeemCode(input: { code: string; pin: string; confirm: boolean }): Promise<RedeemResult> {
+/// Sesion de turno vigente (cookie firmada) o null.
+async function currentSession() {
+  const store = await cookies();
+  return readRedeemSessionToken(store.get(REDEEM_SESSION_COOKIE)?.value);
+}
+
+// Accion PUBLICA (sin sesion del panel): /canjear esta en PUBLIC_PATHS de
+// proxy.ts. Con un turno abierto se valida sin PIN (merchant_redeem_session,
+// solo codigos de ese comercio); si no, con PIN (merchant_redeem). Toda la
+// verificacion la hacen las RPC con service role.
+export async function redeemCode(input: { code: string; pin?: string; confirm: boolean }): Promise<RedeemResult> {
   const code = String(input?.code ?? "")
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, "")
     .slice(0, 12);
   const pin = String(input?.pin ?? "").trim();
-
   if (code.length !== 6) return { ok: false, error: "El código tiene 6 letras y números." };
-  if (!/^\d{6}$/.test(pin)) return { ok: false, error: "El PIN tiene 6 dígitos." };
 
   try {
-    const { data, error } = await supabaseAdmin().rpc("merchant_redeem", {
-      p_code: code,
-      p_pin: pin,
-      p_ip_hash: await clientIpHash(),
-      p_confirm: input.confirm === true,
-    });
-    if (error) {
-      console.error("merchant_redeem", error.message);
+    const session = await currentSession();
+    const ipHash = await clientIpHash();
+    let data: unknown;
+    let rpcError: { message: string } | null;
+
+    if (session) {
+      ({ data, error: rpcError } = await supabaseAdmin().rpc("merchant_redeem_session", {
+        p_code: code,
+        p_merchant_id: session.merchant_id,
+        p_ip_hash: ipHash,
+        p_confirm: input.confirm === true,
+      }));
+    } else {
+      if (!/^\d{6}$/.test(pin)) return { ok: false, error: "Escribe el PIN de 6 dígitos del comercio.", needsPin: true };
+      ({ data, error: rpcError } = await supabaseAdmin().rpc("merchant_redeem", {
+        p_code: code,
+        p_pin: pin,
+        p_ip_hash: ipHash,
+        p_confirm: input.confirm === true,
+      }));
+    }
+    if (rpcError) {
+      console.error("canjear rpc", rpcError.message);
       return { ok: false, error: "No se pudo validar el código. Intenta de nuevo en un momento." };
     }
 
@@ -79,7 +109,16 @@ export async function redeemCode(input: { code: string; pin: string; confirm: bo
         ok: false,
         error: result.error || "No se pudo validar el código.",
         product: result.product ?? undefined,
+        needsPin: !session,
       };
+    }
+
+    // Primer PIN correcto del turno: se abre la sesion de 12 horas.
+    let sessionInfo: { merchant: string } | null = session ? { merchant: result.merchant ?? "" } : null;
+    if (!session && result.merchant_id) {
+      const store = await cookies();
+      store.set(REDEEM_SESSION_COOKIE, createRedeemSessionToken(result.merchant_id), REDEEM_SESSION_COOKIE_OPTIONS);
+      sessionInfo = { merchant: result.merchant ?? "" };
     }
 
     return {
@@ -89,6 +128,7 @@ export async function redeemCode(input: { code: string; pin: string; confirm: bo
       product: result.product ?? "Producto",
       photoUrl: result.photo_url ?? null,
       merchant: result.merchant ?? "",
+      isGift: result.is_gift === true,
       // "$3.50 de cashback" o "150 puntos". Si la RPC no trae currency/value
       // (version anterior), se asume cashback en centavos (value_cents).
       valueLabel: result.currency
@@ -96,9 +136,16 @@ export async function redeemCode(input: { code: string; pin: string; confirm: bo
         : formatRewardValueLong(Number(result.value_cents ?? 0), "cashback"),
       expiresLabel: formatDateTime(result.expires_at),
       deliveredLabel: result.delivered_at ? formatDateTime(result.delivered_at) : null,
+      session: sessionInfo,
     };
   } catch (error) {
-    console.error("merchant_redeem", error instanceof Error ? error.message : error);
+    console.error("canjear", error instanceof Error ? error.message : error);
     return { ok: false, error: "No se pudo validar el código. Revisa tu conexión e intenta de nuevo." };
   }
+}
+
+/// "Cerrar turno": borra la cookie; el proximo canje vuelve a pedir PIN.
+export async function endShift(): Promise<void> {
+  const store = await cookies();
+  store.set(REDEEM_SESSION_COOKIE, "", { ...REDEEM_SESSION_COOKIE_OPTIONS, maxAge: 0 });
 }

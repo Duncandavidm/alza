@@ -1535,3 +1535,271 @@ body:has(.landing) {
   line-height: 1.5;
 }
 .steps-hint li + li { margin-top: 4px; }
+
+/* ---- Nav: con muchas secciones, mas compacta ---- */
+nav.top {
+  gap: 8px 16px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Segmentos, notificaciones push, bonos y clientes                   */
+/* ------------------------------------------------------------------ */
+
+.segment-fields {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px 4px;
+  margin: 8px 0 16px;
+}
+
+.segment-fields legend {
+  font-weight: 600;
+  padding: 0 6px;
+}
+
+.segment-presets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin-bottom: 14px;
+  font-size: 13px;
+}
+
+button.preset-chip {
+  background: var(--surface-alt);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 13px;
+}
+
+button.preset-chip:hover,
+button.preset-chip.active {
+  border-color: var(--brand);
+  background: rgba(0, 165, 133, 0.12);
+  color: var(--brand-dark);
+}
+
+.confirm-card {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(0, 165, 133, 0.12);
+}
+
+.confirm-layout {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 760px) {
+  .confirm-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Vista previa de la notificacion (pantalla bloqueada del iPhone) */
+.push-phone {
+  background: linear-gradient(160deg, #1d4f45, #0e2a25 60%, #0b1f1b);
+  border-radius: 28px;
+  padding: 18px 12px 24px;
+  max-width: 320px;
+  width: 100%;
+  min-height: 200px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.push-phone-time {
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+  font-size: 40px;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  margin-bottom: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+}
+
+.push-card {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: rgba(30, 30, 32, 0.82);
+  color: #ffffff;
+  border-radius: 18px;
+  padding: 11px 12px;
+  backdrop-filter: blur(12px);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+}
+
+.push-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: #ffffff;
+  padding: 4px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.push-card-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.push-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.push-card-when {
+  text-transform: none;
+}
+
+.push-card-title {
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.25;
+  margin-top: 2px;
+  word-break: break-word;
+}
+
+.push-card-body {
+  font-size: 14px;
+  line-height: 1.3;
+  color: rgba(255, 255, 255, 0.9);
+  margin-top: 1px;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.badge.push-sent, .badge.bonus-granted { color: var(--success); border-color: var(--success); }
+.badge.push-sending { color: var(--warning); border-color: var(--warning); }
+.badge.push-failed { color: var(--danger); border-color: var(--danger); }
+.badge.push-draft, .badge.bonus-draft { color: var(--text-dim); }
+
+.pii-note {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  background: #fdf0ee;
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+
+.customers-table td {
+  font-size: 13px;
+}
+
+/* ---- /canjear: escaner QR, turno y entrega ---- */
+
+.redeem-session {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: #e9f6f2;
+  border: 1px solid rgba(0, 165, 133, 0.35);
+  color: var(--brand-dark);
+  font-size: 15px;
+}
+
+.redeem-session .redeem-link {
+  padding: 6px 0;
+}
+
+.qr-scanner {
+  display: grid;
+  gap: 12px;
+}
+
+.qr-viewport {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #0b1f1b;
+}
+
+.qr-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.qr-frame {
+  position: absolute;
+  inset: 18%;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  border-radius: 18px;
+  box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.28);
+  pointer-events: none;
+}
+
+.qr-status {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+}
+
+.landing .landing-button.redeem-scan {
+  min-height: 72px;
+  font-size: 21px;
+}
+
+.redeem-gift {
+  justify-self: start;
+  font-size: 16px;
+  font-weight: 800;
+  color: #6b46c1;
+  background: #f3effc;
+  border: 1px solid #9f7aea;
+  padding: 6px 14px;
+  border-radius: 999px;
+}
+
+.redeem-card-body h2.redeem-product {
+  font-size: 32px;
+}
+
+.landing .landing-button.redeem-deliver {
+  min-height: 76px;
+  font-size: 24px;
+  background: #1f9d6c;
+}
+
+.landing .landing-button.redeem-deliver:hover {
+  background: #17805a;
+}
+
+.redeem-check {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: #1f9d6c;
+  color: white;
+  font-size: 72px;
+  font-weight: 800;
+  line-height: 120px;
+}

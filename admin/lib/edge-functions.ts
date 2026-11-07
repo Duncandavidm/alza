@@ -1,4 +1,5 @@
 import "server-only";
+import { callAdminEdgeFunction } from "./edge";
 
 type ReconcileFunctionName = "reconcile-card-transactions" | "reconcile-savings-reports" | "verify-dgi-receipt";
 
@@ -10,21 +11,5 @@ export async function callReconcileFunction(
   functionName: ReconcileFunctionName,
   body: Record<string, unknown>
 ): Promise<{ ok: boolean; status: number; data: unknown }> {
-  const url = process.env.SUPABASE_URL;
-  const adminSecret = process.env.ADMIN_JOB_SECRET;
-  if (!url || !adminSecret) {
-    throw new Error("Faltan las variables de entorno SUPABASE_URL o ADMIN_JOB_SECRET");
-  }
-
-  const response = await fetch(`${url}/functions/v1/${functionName}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-admin-secret": adminSecret,
-    },
-    body: JSON.stringify(body),
-  });
-
-  const data = await response.json().catch(() => ({}));
-  return { ok: response.ok, status: response.status, data };
+  return callAdminEdgeFunction(functionName, body);
 }

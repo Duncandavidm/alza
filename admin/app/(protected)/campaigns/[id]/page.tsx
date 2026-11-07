@@ -19,8 +19,16 @@ import { REWARD_CURRENCY_LABELS, formatRewardValue, formatRewardValueLong, toRew
 import { centsToDollarInput, formatCashback, formatDate, formatDateTime, formatInt, formatMoney, num } from "@/lib/format";
 import { setCampaignStatus, updateCampaign } from "../actions";
 
-export default async function CampaignDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function CampaignDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ try?: string | string[] }>;
+}) {
   const { id } = await params;
+  const query = await searchParams;
+  const tryRaw = (Array.isArray(query.try) ? query.try[0] : query.try) ?? "";
   const supabase = supabaseAdmin();
 
   const { data: campaign } = await supabase
@@ -32,6 +40,24 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
 
   const { data: rawReport, error: reportError } = await supabase.rpc("brand_campaign_report", { p_campaign_id: id });
   const report = normalizeCampaignReport(rawReport);
+
+  // "Probar palabras": que lineas reales de facturas encontrarian las
+  // palabras de la campaña (o las que se escriban en el cuadro).
+  const triedWords = parseKeywordList(tryRaw);
+  const testWords = triedWords.length > 0 ? triedWords : campaign.keywords;
+  const { data: rawMatches, error: matchesError } =
+    testWords.length > 0
+      ? await supabase.rpc("campaign_keyword_matches", { p_keywords: testWords, p_days: 90 })
+      : { data: [], error: null };
+  const matches = (Array.isArray(rawMatches) ? rawMatches : []) as KeywordMatch[];
+
+  const pushHref = `/notificaciones?${new URLSearchParams({
+    title: `Gana más con ${campaign.brand}`.slice(0, 80),
+    body: (campaign.description || `Compra ${campaign.brand}, escanea tu factura y gana un premio extra en MonAvi.`).slice(0, 240),
+    screen: "points",
+    brand_campaign_id: campaign.id,
+    ...(campaign.keywords[0] ? { product: campaign.keywords[0] } : {}),
+  }).toString()}`;
 
   const status = toCampaignStatus(campaign.status);
   const currency = toRewardCurrency(campaign.bonus_currency);
@@ -90,12 +116,76 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
               </button>
             </form>
           ))}
+          <Link href={pushHref} className="button secondary-link">
+            Avisar por push
+          </Link>
         </div>
+        <p className="text-dim" style={{ marginBottom: 0 }}>
+          “Avisar por push” abre Notificaciones con el mensaje listo y, como sugerencia, a quienes ya compraron “
+          {campaign.keywords[0] ?? "el producto"}” (puedes quitar ese filtro).
+        </p>
         <p className="text-dim" style={{ marginBottom: 0 }}>
           Actualizada {formatDateTime(campaign.updated_at)}
           {campaign.sponsor_contact ? ` · Contacto: ${campaign.sponsor_contact}` : ""}
         </p>
       </div>
+
+      <section className="card" id="probar">
+        <h3>Probar palabras</h3>
+        <p className="text-dim insights-caption">
+          Líneas reales de facturas de los últimos 90 días que estas palabras premiarían. La búsqueda ignora tildes y
+          mayúsculas y busca la palabra <em>dentro</em> del texto de la línea. Cada comercio abrevia distinto: agrega
+          variantes como “coca cola, cocacola, coca-cola”.
+        </p>
+        <form method="get" action={`/campaigns/${campaign.id}#probar`} className="inline-actions" style={{ marginBottom: 12 }}>
+          <input
+            type="text"
+            name="try"
+            defaultValue={triedWords.join(", ")}
+            placeholder={campaign.keywords.join(", ")}
+            style={{ flex: "1 1 280px" }}
+            aria-label="Palabras a probar, separadas por coma"
+          />
+          <button type="submit">Probar</button>
+          {triedWords.length > 0 && (
+            <Link href={`/campaigns/${campaign.id}#probar`} className="button secondary-link">
+              Volver a las de la campaña
+            </Link>
+          )}
+        </form>
+        <p className="text-dim">
+          Probando: {testWords.length > 0 ? testWords.map((word) => `“${word}”`).join(", ") : "—"}
+          {triedWords.length > 0 ? " (no se guardan: cópialas a la ficha si te sirven)" : " (palabras de la campaña)"}
+        </p>
+        {matchesError ? (
+          <p className="error">No se pudo probar: {matchesError.message}</p>
+        ) : matches.length === 0 ? (
+          <p className="text-dim">Ninguna línea de factura coincide. Prueba variantes más cortas o abreviadas.</p>
+        ) : (
+          <div className="table-scroll" style={{ maxHeight: 360, overflowY: "auto" }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Texto en la factura</th>
+                  <th>Veces</th>
+                  <th>Unidades</th>
+                </tr>
+              </thead>
+              <tbody>
+                {matches.map((row, index) => (
+                  <tr key={`${row.description}-${index}`}>
+                    <td>
+                      <code>{row.description ?? "—"}</code>
+                    </td>
+                    <td>{formatInt(row.times)}</td>
+                    <td>{formatDecimalUnits(row.units)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       <section className="card insights-section">
         <h3>Resultados</h3>
@@ -199,6 +289,22 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
       </div>
     </>
   );
+}
+
+type KeywordMatch = { description: string | null; times: number | string | null; units: number | string | null };
+
+/// "coca cola, cocacola" -> ["coca cola", "cocacola"] (max 20 palabras).
+function parseKeywordList(raw: string): string[] {
+  const words = raw
+    .split(/[,\n;]/)
+    .map((word) => word.replace(/\s+/g, " ").trim().slice(0, 60))
+    .filter(Boolean);
+  return [...new Set(words)].slice(0, 20);
+}
+
+function formatDecimalUnits(value: unknown): string {
+  const parsed = num(value);
+  return Number.isInteger(parsed) ? formatInt(parsed) : parsed.toLocaleString("es-PA", { maximumFractionDigits: 2 });
 }
 
 function weekLabel(week: string | null): string {

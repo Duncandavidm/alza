@@ -42,6 +42,9 @@ export default async function ProtectedLayout({ children }: { children: React.Re
           {newApplications > 0 && <span className="nav-badge">{newApplications}</span>}
         </Link>
         <Link href="/redemptions">Canjes</Link>
+        <Link href="/clientes">Clientes</Link>
+        <Link href="/notificaciones">Notificaciones</Link>
+        <Link href="/bonos">Bonos y regalos</Link>
         <Link href="/campaigns">Campañas de marcas</Link>
         <Link href="/insights">Estudio de mercado</Link>
         <Link href="/dgi-verification">Facturas DGI</Link>

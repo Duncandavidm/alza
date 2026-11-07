@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import RedeemForm from "./RedeemForm";
+import { supabaseAdmin } from "@/lib/supabase-admin";
+import { REDEEM_SESSION_COOKIE, readRedeemSessionToken } from "@/lib/redeem-session";
 
 // Pagina PUBLICA (sin clave del panel, ver PUBLIC_PATHS en proxy.ts) para
 // que el cajero del comercio aliado valide el codigo de canje del cliente
@@ -23,6 +26,22 @@ export default async function CanjearPage({ searchParams }: { searchParams: Prom
   const params = await searchParams;
   const initialCode = normalizeCode(params.code);
 
+  // Turno abierto (cookie firmada): nombre del comercio para la cabecera.
+  const session = readRedeemSessionToken((await cookies()).get(REDEEM_SESSION_COOKIE)?.value);
+  let sessionMerchant: string | null = null;
+  if (session) {
+    try {
+      const { data } = await supabaseAdmin()
+        .from("partner_merchants")
+        .select("name")
+        .eq("id", session.merchant_id)
+        .maybeSingle<{ name: string }>();
+      sessionMerchant = data?.name ?? null;
+    } catch {
+      sessionMerchant = null;
+    }
+  }
+
   return (
     <div className="landing redeem-page">
       <header className="landing-nav">
@@ -37,9 +56,10 @@ export default async function CanjearPage({ searchParams }: { searchParams: Prom
       <main className="redeem-main">
         <h1>Validar un canje</h1>
         <p className="redeem-help">
-          El cliente te muestra un código de 6 letras y números en la app MonAvi. Escríbelo o escanea su QR con la cámara.
+          El cliente te muestra un QR o un código de 6 letras y números en la app MonAvi. Escanéalo con la cámara o
+          escríbelo.
         </p>
-        <RedeemForm initialCode={initialCode} />
+        <RedeemForm initialCode={initialCode} initialSession={sessionMerchant ? { merchant: sessionMerchant } : null} />
       </main>
 
       <footer className="landing-footer">

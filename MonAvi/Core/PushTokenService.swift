@@ -87,7 +87,9 @@ final class PushTokenService {
             syncedToken = token
             syncedUserId = userId
         } catch {
+            #if DEBUG
             print("[Push] No se pudo guardar el token: \(error.localizedDescription)")
+            #endif
         }
     }
 

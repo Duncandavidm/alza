@@ -14,15 +14,14 @@ struct RedemptionCodeView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: 16) {
                     merchantHeader
                     giftMessageCard
                     codeCard
                     instructions
-                    directionsButton
                 }
                 .padding(.horizontal, 16)
-                .padding(.vertical, 20)
+                .padding(.vertical, 16)
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Tu canje")
@@ -32,6 +31,9 @@ struct RedemptionCodeView: View {
                     Button("Listo") { dismiss() }
                 }
             }
+            // "Cómo llegar" fijo abajo: en un iPhone pequeño queda siempre
+            // visible sin tener que hacer scroll bajo el QR.
+            .safeAreaInset(edge: .bottom) { directionsBar }
         }
         .onAppear { raiseBrightness() }
         .onDisappear { restoreBrightness() }
@@ -140,7 +142,7 @@ struct RedemptionCodeView: View {
                 .interpolation(.none)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 260, height: 260)
+                .frame(width: 220, height: 220)
                 .padding(16)
                 .background(Color.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .accessibilityHidden(true)
@@ -160,8 +162,11 @@ struct RedemptionCodeView: View {
         .frame(maxWidth: .infinity)
     }
 
+    /// Barra de accion fija al fondo (safeAreaInset): solo aparece si el
+    /// comercio tiene ubicacion. Fondo propio para separarla del contenido
+    /// que pasa por debajo al hacer scroll.
     @ViewBuilder
-    private var directionsButton: some View {
+    private var directionsBar: some View {
         if let url = RewardsMath.directionsURL(for: redemption.displayMerchant) {
             Button {
                 openURL(url)
@@ -172,6 +177,11 @@ struct RedemptionCodeView: View {
             .buttonStyle(.bordered)
             .controlSize(.large)
             .tint(MonAviBrand.primary)
+            .padding(.horizontal, 16)
+            .padding(.top, 10)
+            .padding(.bottom, 8)
+            .frame(maxWidth: .infinity)
+            .background(.bar)
         }
     }
 

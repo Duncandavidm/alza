@@ -266,7 +266,7 @@ struct LevelsView: View {
         case .matured:
             return ("Maduró: cuenta para tu nivel", "checkmark.seal.fill", MonAviBrand.primary)
         case .maturing(let date):
-            return ("Madura el \(date.formatted(.dateTime.day().month(.abbreviated)))", "hourglass", Color.secondary)
+            return ("Madura el \(date.formatted(.dateTime.day().month(.abbreviated).locale(.monavi)))", "hourglass", Color.secondary)
         case .broken:
             return ("No cuenta: retiraste antes de 30 días", "xmark.circle", MonAviBrand.alert)
         case .unbacked:

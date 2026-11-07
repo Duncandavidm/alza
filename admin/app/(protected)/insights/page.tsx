@@ -10,7 +10,7 @@ import {
   paymentMethodLabel,
   weekdayLabel,
 } from "@/lib/insights";
-import { formatDateTime, formatDecimal, formatInt, formatMoney, formatPercent, num } from "@/lib/format";
+import { formatCashback, formatDateTime, formatDecimal, formatInt, formatMoney, formatPercent, num } from "@/lib/format";
 import PrintButton from "@/components/PrintButton";
 
 export const dynamic = "force-dynamic";
@@ -125,7 +125,7 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
               <Kpi label="Ticket mediano" value={formatMoney(data.summary.median_ticket)} />
               <Kpi label="Gasto promedio por persona al mes" value={formatMoney(data.summary.avg_spend_per_person_month)} />
               <Kpi label="Compras por persona al mes" value={formatDecimal(data.summary.receipts_per_person_month, 1)} />
-              <Kpi label="Puntos emitidos" value={formatInt(data.summary.points_issued)} />
+              <Kpi label="Cashback emitido" value={formatCashback(data.summary.points_issued)} />
               <Kpi label="Canjes" value={formatInt(data.summary.redemptions)} />
             </div>
           </Section>
@@ -147,7 +147,7 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
 
             <Section
               title="Ticket por rango"
-              caption="Cuántas compras caen en cada rango de monto. Ayuda a fijar el valor de un combo o el costo en puntos de un producto canjeable."
+              caption="Cuántas compras caen en cada rango de monto. Ayuda a fijar el valor de un combo o el valor en cashback de un producto canjeable."
               csv={`${exportBase}&section=ticket_ranges`}
             >
               <BarList
@@ -300,7 +300,7 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
 
           <Section
             title="Productos canjeados"
-            caption="Qué recompensas eligen las personas con sus puntos. Indica qué tipo de producto atrae más visitas."
+            caption="Qué recompensas eligen las personas con su cashback. Indica qué tipo de producto atrae más visitas."
             csv={`${exportBase}&section=top_rewards`}
           >
             <BarList

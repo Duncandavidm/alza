@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { formatCashback } from "@/lib/format";
 import UploadCardReportForm from "./UploadCardReportForm";
 import RunReconciliationButton from "./RunReconciliationButton";
 
@@ -39,7 +40,7 @@ export default async function CardReportsPage() {
       <h1>Reportes de tarjeta (comercios aliados)</h1>
       <p className="text-dim">
         Sube las ventas con tarjeta de un comercio aliado — se cruzan por ultimos 4 digitos + marca contra las
-        tarjetas vinculadas por los usuarios. Si hay mas de una tarjeta posible, no se asignan puntos (queda
+        tarjetas vinculadas por los usuarios. Si hay mas de una tarjeta posible, no se asigna cashback (queda
         "ambiguous", ver Alertas).
       </p>
 
@@ -71,7 +72,7 @@ export default async function CardReportsPage() {
               <th>Tarjeta</th>
               <th>Estado</th>
               <th>Nota</th>
-              <th>Puntos</th>
+              <th>Cashback</th>
             </tr>
           </thead>
           <tbody>
@@ -87,7 +88,7 @@ export default async function CardReportsPage() {
                   <span className={`badge ${row.match_status}`}>{row.match_status}</span>
                 </td>
                 <td className="text-dim">{row.match_note ?? "—"}</td>
-                <td>{row.points_awarded ?? "—"}</td>
+                <td>{row.points_awarded !== null ? formatCashback(row.points_awarded) : "—"}</td>
               </tr>
             ))}
             {(recent ?? []).length === 0 && (

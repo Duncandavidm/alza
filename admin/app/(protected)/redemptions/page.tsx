@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { embedded, formatDateTime, formatPoints } from "@/lib/format";
+import { embedded, formatCashback, formatDateTime } from "@/lib/format";
 import ActionForm from "@/components/ActionForm";
 import { cancelRedemption, markRedemptionDelivered } from "./actions";
 
@@ -14,6 +14,7 @@ type Redemption = {
   points_cost: number;
   expires_at: string;
   delivered_at: string | null;
+  delivered_via: "comercio" | "panel" | null;
   created_at: string;
   merchant_id: string;
   reward_items: { name: string } | { name: string }[] | null;
@@ -38,7 +39,7 @@ export default async function RedemptionsPage({
   let query = supabase
     .from("reward_redemptions")
     .select(
-      "id, code, status, points_cost, expires_at, delivered_at, created_at, merchant_id, reward_items(name), partner_merchants(name)"
+      "id, code, status, points_cost, expires_at, delivered_at, delivered_via, created_at, merchant_id, reward_items(name), partner_merchants(name)"
     )
     .order("created_at", { ascending: false })
     .limit(200);
@@ -70,9 +71,12 @@ export default async function RedemptionsPage({
     <>
       <h1>Canjes</h1>
       <p className="text-dim">
-        Cada canje genera un código de 6 caracteres que el cliente muestra en caja. Cuando el comercio entrega el producto,
-        márcalo como entregado. Los canjes que no se entregan vencen a los 7 días y un proceso nocturno los libera y devuelve
-        los puntos.
+        Cada canje genera un código de 6 caracteres que el cliente muestra en caja. El comercio lo valida con su PIN en{" "}
+        <a href="/canjear" target="_blank" rel="noreferrer">
+          monavi.maday.app/canjear
+        </a>{" "}
+        (queda “en caja”); si no puede, márcalo aquí como entregado (queda “desde el panel”). Los canjes que no se
+        entregan vencen a los 7 días y un proceso nocturno los libera y devuelve el cashback al cliente.
       </p>
 
       <div className="grid-form" style={{ marginBottom: 16 }}>
@@ -131,7 +135,7 @@ export default async function RedemptionsPage({
               <th>Código</th>
               <th>Producto</th>
               <th>Comercio</th>
-              <th>Puntos</th>
+              <th>Valor</th>
               <th>Creado</th>
               <th>Vence / entregado</th>
               <th>Estado</th>
@@ -155,16 +159,23 @@ export default async function RedemptionsPage({
                   <td>
                     <Link href={`/merchants/${redemption.merchant_id}`}>{embedded(redemption.partner_merchants)?.name ?? "—"}</Link>
                   </td>
-                  <td>{formatPoints(redemption.points_cost)}</td>
+                  <td>{formatCashback(redemption.points_cost)}</td>
                   <td className="text-dim">{formatDateTime(redemption.created_at)}</td>
                   <td className="text-dim">
-                    {redemption.status === "entregado"
-                      ? `Entregado ${formatDateTime(redemption.delivered_at)}`
-                      : formatDateTime(redemption.expires_at)}
+                    {redemption.status === "entregado" ? (
+                      <>
+                        Entregado {formatDateTime(redemption.delivered_at)}
+                        {redemption.delivered_via && (
+                          <div>{redemption.delivered_via === "comercio" ? "en caja" : "desde el panel"}</div>
+                        )}
+                      </>
+                    ) : (
+                      formatDateTime(redemption.expires_at)
+                    )}
                   </td>
                   <td>
                     {isOverdue ? (
-                      <span className="badge vencido" title="El proceso nocturno lo libera y devuelve los puntos">
+                      <span className="badge vencido" title="El proceso nocturno lo libera y devuelve el cashback">
                         vencido (por liberar)
                       </span>
                     ) : expiresToday ? (
@@ -187,8 +198,8 @@ export default async function RedemptionsPage({
                         </ActionForm>
                         <ActionForm
                           action={cancelRedemption.bind(null, redemption.id)}
-                          confirm={`¿Cancelar ${redemption.code} y devolver ${redemption.points_cost} puntos al cliente?`}
-                          submitLabel="Cancelar y devolver puntos"
+                          confirm={`¿Cancelar ${redemption.code} y devolver ${formatCashback(redemption.points_cost)} de cashback al cliente?`}
+                          submitLabel="Cancelar y devolver cashback"
                           submitClassName="danger"
                           pendingLabel="Cancelando…"
                           inline

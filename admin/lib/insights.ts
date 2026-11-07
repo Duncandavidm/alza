@@ -162,7 +162,7 @@ export const CSV_SECTIONS: Record<string, { title: string; columns: Column[]; ro
         { metric: "Gastos registrados (USD)", value: s.expenses_total },
         { metric: "Gasto promedio por persona al mes (USD)", value: s.avg_spend_per_person_month },
         { metric: "Compras por persona al mes", value: s.receipts_per_person_month },
-        { metric: "Puntos emitidos", value: s.points_issued },
+        { metric: "Cashback emitido (USD)", value: s.points_issued === null ? null : num(s.points_issued) / 100 },
         { metric: "Canjes", value: s.redemptions },
       ];
     },

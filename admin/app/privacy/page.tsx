@@ -48,7 +48,7 @@ export default function PrivacyPage() {
             tarjeta) y el detalle de productos comprados.
           </li>
           <li>
-            <strong>Puntos y canjes:</strong> los puntos que ganas y los productos que canjeas en comercios
+            <strong>Cashback y canjes:</strong> el cashback que ganas y los productos que canjeas con él en comercios
             aliados (qué producto, en qué comercio, el código de canje y si ya se entregó).
           </li>
           <li>
@@ -58,7 +58,7 @@ export default function PrivacyPage() {
           </li>
           <li>
             <strong>Notificaciones:</strong> si las permites, un identificador de tu dispositivo que Apple nos
-            entrega para poder enviarte avisos (por ejemplo, &quot;sumaste puntos&quot;). Se borra al cerrar
+            entrega para poder enviarte avisos (por ejemplo, &quot;ganaste cashback&quot;). Se borra al cerrar
             sesión.
           </li>
           <li>
@@ -81,8 +81,8 @@ export default function PrivacyPage() {
             Para generar los insights y respuestas de IA que pides dentro de la app (por ejemplo,
             &quot;¿cuánto gasté en comida este mes?&quot; o el consejo de qué pagar primero).
           </li>
-          <li>Para verificar y acreditar tus puntos, y para gestionar tus canjes en comercios aliados.</li>
-          <li>Para enviarte recordatorios y avisos que tú activas (pagos, puntos sumados).</li>
+          <li>Para verificar y acreditar tu cashback, y para gestionar tus canjes en comercios aliados.</li>
+          <li>Para enviarte recordatorios y avisos que tú activas (pagos, cashback ganado).</li>
           <li>
             Para elaborar estudios de mercado con datos <strong>anónimos y agregados</strong>, como se explica en
             la sección 5.
@@ -118,7 +118,7 @@ export default function PrivacyPage() {
           </li>
           <li>
             <strong>El comercio aliado donde canjeas</strong> — cuando muestras tu código de canje en caja, el
-            comercio ve solo el código y el producto canjeado. No ve tu nombre, tu correo ni tus movimientos.
+            comercio ve solo el código, el producto canjeado y su valor. No ve tu nombre, tu correo ni tus movimientos.
           </li>
         </ul>
       </div>

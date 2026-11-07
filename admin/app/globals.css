@@ -1217,3 +1217,245 @@ body:has(.landing) {
     grid-template-columns: repeat(4, 1fr);
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* /canjear: el cajero valida el codigo del cliente (publica, movil)   */
+/* ------------------------------------------------------------------ */
+
+.redeem-tag {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand-dark);
+  background: rgba(0, 165, 133, 0.12);
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+
+.redeem-main {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 12px 16px 40px;
+}
+
+.redeem-main h1 {
+  font-size: clamp(26px, 7vw, 34px);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 8px 0 8px;
+}
+
+.redeem-help {
+  color: var(--l-dim);
+  margin: 0 0 20px;
+}
+
+.redeem-form,
+.redeem-card,
+.redeem-done {
+  background: white;
+  border: 1px solid var(--l-border);
+  border-radius: 20px;
+  box-shadow: 0 16px 40px rgba(2, 122, 100, 0.1);
+}
+
+.redeem-form {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+}
+
+.landing-field input.redeem-code-input {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  text-align: center;
+  text-transform: uppercase;
+  padding: 14px 10px;
+}
+
+.landing-field input.redeem-pin-input {
+  font-size: 30px;
+  letter-spacing: 0.4em;
+  text-align: center;
+  padding: 14px 10px;
+}
+
+.redeem-remember {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  font-size: 15px;
+}
+
+.redeem-remember label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.redeem-remember input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--brand);
+}
+
+.redeem-link {
+  background: none;
+  border: none;
+  padding: 10px 0;
+  color: var(--brand-dark);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.landing .landing-button.redeem-big {
+  width: 100%;
+  min-height: 60px;
+  font-size: 19px;
+  border-radius: 16px;
+}
+
+.landing .landing-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.redeem-card {
+  overflow: hidden;
+}
+
+.redeem-photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: #e9f6f2;
+}
+
+.redeem-card-body {
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+}
+
+.redeem-card-body h2 {
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.redeem-ok-badge {
+  justify-self: start;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand-dark);
+  background: rgba(0, 165, 133, 0.12);
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.redeem-merchant {
+  margin: -6px 0 0;
+  color: var(--l-dim);
+  font-weight: 600;
+}
+
+.redeem-facts {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 14px;
+  border-radius: 14px;
+  background: #f6faf9;
+  border: 1px solid var(--l-border);
+}
+
+.redeem-facts div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.redeem-facts dt {
+  color: var(--l-dim);
+}
+
+.redeem-facts dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+}
+
+.redeem-fine {
+  margin: 0;
+  font-size: 14px;
+  color: var(--l-dim);
+  text-align: center;
+}
+
+.redeem-done {
+  padding: 32px 20px;
+  text-align: center;
+  display: grid;
+  gap: 12px;
+}
+
+.redeem-done-icon {
+  font-size: 64px;
+  line-height: 1;
+}
+
+.redeem-done h2 {
+  font-size: 32px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--brand-dark);
+}
+
+.redeem-done p {
+  margin: 0;
+  font-size: 19px;
+}
+
+.redeem-done p.redeem-fine {
+  font-size: 14px;
+}
+
+/* PIN mostrado una sola vez en el panel (/merchants/[id]) */
+.pin-reveal {
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid var(--success);
+  border-radius: 10px;
+  background: rgba(62, 207, 142, 0.08);
+  display: grid;
+  gap: 10px;
+}
+
+.pin-value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+}
+
+.pin-instructions {
+  white-space: pre-wrap;
+  font-family: inherit;
+  font-size: 14px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 0;
+}

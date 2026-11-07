@@ -35,8 +35,28 @@ export function formatPercent(value: unknown): string {
   return `${parsed.toLocaleString("es-PA", { maximumFractionDigits: 1 })} %`;
 }
 
-export function formatPoints(value: unknown): string {
-  return `${formatInt(value)} pts`;
+/// Cashback: el ledger de puntos guarda enteros donde 1 punto = US$0.01
+/// (la regla de 1 punto por dolar de factura = 1% de cashback). En el
+/// panel SIEMPRE se muestra dinero, nunca "puntos": 350 -> "$3.50".
+/// Sirve para reward_items.points_cost, reward_redemptions.points_cost,
+/// points_awarded, presupuestos de ofertas, etc.
+export function formatCashback(cents: unknown): string {
+  return formatMoney(Math.round(num(cents)) / 100);
+}
+
+/// "3.50" (dolares, para un input) a partir de centavos.
+export function centsToDollarInput(cents: unknown): string {
+  return (Math.round(num(cents)) / 100).toFixed(2);
+}
+
+/// Convierte lo que se escribe en un campo "US$" (ej. "3.5", "3,50",
+/// "$3.50") a centavos enteros. Devuelve null si no es un monto valido
+/// mayor que 0 con maximo 2 decimales.
+export function parseDollarsToCents(raw: string): number | null {
+  const value = raw.trim().replace(/^\$/, "").replace(",", ".").trim();
+  if (!/^\d{1,7}(\.\d{1,2})?$/.test(value)) return null;
+  const cents = Math.round(Number(value) * 100);
+  return Number.isInteger(cents) && cents > 0 ? cents : null;
 }
 
 export function formatDateTime(value: string | null | undefined): string {

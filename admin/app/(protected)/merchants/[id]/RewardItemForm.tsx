@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import ActionForm, { type ActionState } from "@/components/ActionForm";
 import RewardPreviewCard from "@/components/RewardPreviewCard";
+import { centsToDollarInput } from "@/lib/format";
 
 type Item = {
   name: string;
@@ -27,7 +28,8 @@ type Props = {
 export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps, item, submitLabel }: Props) {
   const [name, setName] = useState(item?.name ?? "");
   const [description, setDescription] = useState(item?.description ?? "");
-  const [points, setPoints] = useState(item ? String(item.points_cost) : "");
+  // Valor en cashback en US$ (ej. "3.50"); el servidor lo guarda en centavos.
+  const [cashback, setCashback] = useState(item ? centsToDollarInput(item.points_cost) : "");
   const [paused, setPaused] = useState(item?.status === "paused");
   const [localPhoto, setLocalPhoto] = useState<string | null>(null);
   const [removePhoto, setRemovePhoto] = useState(false);
@@ -51,7 +53,7 @@ export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps,
           if (item) return;
           setName("");
           setDescription("");
-          setPoints("");
+          setCashback("");
           setPaused(false);
           setLocalPhoto(null);
         }}
@@ -69,15 +71,17 @@ export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps,
           />
         </div>
         <div className="field">
-          <label>Costo en puntos</label>
+          <label>Valor en cashback (US$)</label>
           <input
             type="number"
-            name="points_cost"
+            name="cashback_value"
             required
-            min={1}
-            step={1}
-            value={points}
-            onChange={(event) => setPoints(event.target.value)}
+            min={0.01}
+            step={0.01}
+            inputMode="decimal"
+            placeholder="3.50"
+            value={cashback}
+            onChange={(event) => setCashback(event.target.value)}
           />
         </div>
         <div className="field">
@@ -139,7 +143,7 @@ export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps,
           logoUrl={logoUrl}
           productName={name}
           photoUrl={photoUrl}
-          pointsCost={Number(points) || null}
+          valueCents={Math.round(Number(cashback) * 100) || null}
           description={description}
           hasMaps={hasMaps}
           paused={paused}

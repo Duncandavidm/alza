@@ -8,8 +8,11 @@ import { SESSION_COOKIE_NAME, isValidSessionToken } from "./lib/auth";
 // /aliados es la landing donde los comercios piden ser aliados; su
 // formulario es una server action que hace POST a la misma ruta, asi que
 // tambien queda publica (la accion valida todo y solo inserta en
-// merchant_applications).
-const PUBLIC_PATHS = ["/login", "/privacy", "/support", "/aliados"];
+// merchant_applications). /canjear es donde el cajero del comercio valida
+// el codigo de canje del cliente con el PIN de su comercio: su server
+// action solo llama a la RPC merchant_redeem (que verifica el PIN y
+// limita los intentos fallidos por IP).
+const PUBLIC_PATHS = ["/login", "/privacy", "/support", "/aliados", "/canjear"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

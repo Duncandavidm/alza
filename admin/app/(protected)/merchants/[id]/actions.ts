@@ -1,9 +1,11 @@
 "use server";
 
+import { randomInt } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { friendlyDbError, parseMerchantFields } from "@/lib/merchant-form";
 import { fileFromForm, uploadRewardImage } from "@/lib/uploads";
+import { parseDollarsToCents } from "@/lib/format";
 import { optionalText, text } from "@/lib/validation";
 import type { ActionState } from "@/components/ActionForm";
 
@@ -42,7 +44,31 @@ export async function updateMerchant(merchantId: string, _prev: ActionState, for
 }
 
 // ---------------------------------------------------------------------------
-// Ofertas de puntos (sin cambios de comportamiento)
+// PIN de canje en caja (/canjear)
+// ---------------------------------------------------------------------------
+
+export type RedeemPinState = { error?: string; pin?: string; generatedAt?: number };
+
+/// Genera 6 digitos aleatorios (crypto.randomInt), los guarda SOLO como hash
+/// bcrypt via set_merchant_redeem_pin y devuelve el PIN en claro una unica
+/// vez para mostrarlo en pantalla. No se guarda en ningun otro lado: si se
+/// pierde, se genera otro (y el anterior deja de funcionar).
+export async function generateRedeemPin(merchantId: string, _prev: RedeemPinState): Promise<RedeemPinState> {
+  const pin = String(randomInt(0, 1_000_000)).padStart(6, "0");
+  const { error } = await supabaseAdmin().rpc("set_merchant_redeem_pin", {
+    p_merchant_id: merchantId,
+    p_pin: pin,
+  });
+  if (error) return { error: `No se pudo guardar el PIN: ${error.message}` };
+
+  revalidatePath(`/merchants/${merchantId}`);
+  return { pin, generatedAt: Date.now() };
+}
+
+// ---------------------------------------------------------------------------
+// Ofertas de cashback (partner_merchant_offers). En la base siguen en
+// puntos (1 punto = US$0.01): "percent" = puntos por dolar = % de cashback;
+// "fixed" y el presupuesto se escriben en US$ y se guardan en centavos.
 // ---------------------------------------------------------------------------
 
 export async function createOffer(merchantId: string, formData: FormData) {
@@ -53,14 +79,17 @@ export async function createOffer(merchantId: string, formData: FormData) {
   const endsAtRaw = String(formData.get("ends_at") ?? "").trim();
 
   if (!value || value <= 0) return;
+  const storedValue = offerType === "fixed" ? Math.round(value * 100) : value;
+  const budgetCents = budgetRaw ? parseDollarsToCents(budgetRaw) : null;
+  if (budgetRaw && !budgetCents) return;
 
   const supabase = supabaseAdmin();
   const { error } = await supabase.from("partner_merchant_offers").insert({
     merchant_id: merchantId,
     offer_type: offerType,
-    value,
+    value: storedValue,
     min_amount: minAmountRaw ? Number(minAmountRaw) : null,
-    budget_total_points: budgetRaw ? Number(budgetRaw) : null,
+    budget_total_points: budgetCents,
     ends_at: endsAtRaw ? new Date(endsAtRaw).toISOString() : null,
   });
   if (error) throw new Error(error.message);
@@ -92,9 +121,10 @@ function parseRewardItemFields(formData: FormData): { fields?: RewardItemFields;
   const name = text(formData, "name", 120);
   if (!name) return { error: "El nombre del producto es obligatorio." };
 
-  const pointsCost = Number(text(formData, "points_cost", 12));
-  if (!Number.isInteger(pointsCost) || pointsCost <= 0 || pointsCost > 10_000_000) {
-    return { error: "El costo en puntos debe ser un número entero mayor que 0." };
+  // Se escribe en US$ (ej. 3.50) y se guarda en centavos (350): 1 punto = US$0.01.
+  const pointsCost = parseDollarsToCents(text(formData, "cashback_value", 16));
+  if (pointsCost === null || pointsCost > 10_000_000) {
+    return { error: "El valor en cashback debe ser un monto mayor que $0 con máximo 2 decimales (por ejemplo 3.50)." };
   }
 
   const sortRaw = text(formData, "sort_order", 12);

@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { formatCashback } from "@/lib/format";
 import UploadBankReportForm from "./UploadBankReportForm";
 import RunBankReconciliationForm from "./RunBankReconciliationForm";
 
@@ -70,7 +71,7 @@ export default async function BankReportsPage() {
               <th>Saldo promedio</th>
               <th>Estado</th>
               <th>Nota</th>
-              <th>Puntos</th>
+              <th>Cashback</th>
             </tr>
           </thead>
           <tbody>
@@ -83,7 +84,7 @@ export default async function BankReportsPage() {
                   <span className={`badge ${row.match_status}`}>{row.match_status}</span>
                 </td>
                 <td className="text-dim">{row.match_note ?? "—"}</td>
-                <td>{row.points_awarded ?? "—"}</td>
+                <td>{row.points_awarded !== null ? formatCashback(row.points_awarded) : "—"}</td>
               </tr>
             ))}
             {(recent ?? []).length === 0 && (

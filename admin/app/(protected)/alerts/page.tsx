@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { formatCashback } from "@/lib/format";
 
 type AmbiguousRow = {
   id: string;
@@ -59,7 +60,7 @@ export default async function AlertsPage() {
       <h1>Alertas</h1>
 
       <div className="card">
-        <h3>Compras ambiguas (2+ tarjetas posibles — sin puntos)</h3>
+        <h3>Compras ambiguas (2+ tarjetas posibles — sin cashback)</h3>
         <table>
           <thead>
             <tr>
@@ -138,9 +139,9 @@ export default async function AlertsPage() {
             {(exhausted ?? []).map((offer) => (
               <tr key={offer.id}>
                 <td>{merchantNameById.get(offer.merchant_id) ?? "—"}</td>
-                <td>{offer.offer_type === "percent" ? `${offer.value} pts/$` : `${offer.value} pts fijos`}</td>
+                <td>{offer.offer_type === "percent" ? `${offer.value} % de cashback` : `${formatCashback(offer.value)} fijos de cashback`}</td>
                 <td>
-                  {offer.budget_spent_points} / {offer.budget_total_points}
+                  {formatCashback(offer.budget_spent_points)} / {formatCashback(offer.budget_total_points)}
                 </td>
               </tr>
             ))}

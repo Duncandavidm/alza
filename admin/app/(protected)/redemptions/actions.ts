@@ -4,11 +4,13 @@ import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import type { ActionState } from "@/components/ActionForm";
 
-/// El cliente mostró su código en caja y el comercio entregó el producto.
+/// El cliente mostró su código en caja y el comercio entregó el producto,
+/// pero se marca desde el panel (delivered_via = 'panel'); lo normal es
+/// que el comercio lo valide en /canjear (delivered_via = 'comercio').
 export async function markRedemptionDelivered(redemptionId: string): Promise<ActionState> {
   const { data, error } = await supabaseAdmin()
     .from("reward_redemptions")
-    .update({ status: "entregado", delivered_at: new Date().toISOString() })
+    .update({ status: "entregado", delivered_at: new Date().toISOString(), delivered_via: "panel" })
     .eq("id", redemptionId)
     .eq("status", "emitido")
     .gt("expires_at", new Date().toISOString())
@@ -22,7 +24,7 @@ export async function markRedemptionDelivered(redemptionId: string): Promise<Act
   return { message: "Marcado como entregado." };
 }
 
-/// Cancela un canje emitido y devuelve los puntos al cliente
+/// Cancela un canje emitido y devuelve el cashback al cliente
 /// (rpc release_redemption, solo service role).
 export async function cancelRedemption(redemptionId: string): Promise<ActionState> {
   const { data, error } = await supabaseAdmin().rpc("release_redemption", {
@@ -36,5 +38,5 @@ export async function cancelRedemption(redemptionId: string): Promise<ActionStat
   if (row?.status !== "cancelado") {
     return { error: `No se canceló: el canje ya estaba “${row?.status ?? "desconocido"}”.` };
   }
-  return { message: "Cancelado; puntos devueltos." };
+  return { message: "Cancelado; cashback devuelto al cliente." };
 }

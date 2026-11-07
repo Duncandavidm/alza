@@ -103,7 +103,7 @@ struct LevelsView: View {
 
     private var disclaimer: some View {
         Label {
-            Text("Tus puntos se ganan con buenos hábitos y se canjean en los comercios aliados que aceptan puntos. El cashback viene de tus facturas verificadas por la DGI.")
+            Text("Tus puntos se ganan con buenos hábitos y se canjean en los comercios aliados que aceptan puntos. El cashback viene de tus facturas.")
         } icon: {
             Image(systemName: "info.circle.fill")
                 .foregroundStyle(MonAviBrand.primary)

@@ -420,10 +420,10 @@ struct HabitEngine {
                        detail: "Cumple 3 presupuestos mensuales.",
                        current: monthlyBudgetsMet, target: 3),
             HabitBadge(id: "receipt_1", emoji: "🧾", title: "Factura verificada",
-                       detail: "Escanea una factura que confirme la DGI.",
+                       detail: "Escanea una factura que se verifique.",
                        current: input.verifiedReceiptDates.count, target: 1),
             HabitBadge(id: "receipt_10", emoji: "🔎", title: "Cazador de facturas",
-                       detail: "10 facturas confirmadas por la DGI.",
+                       detail: "10 facturas verificadas.",
                        current: input.verifiedReceiptDates.count, target: 10),
         ]
     }

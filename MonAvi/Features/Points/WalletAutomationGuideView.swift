@@ -75,7 +75,7 @@ struct WalletAutomationGuideView: View {
                 )
                 benefit(
                     icon: "checkmark.seal.fill",
-                    text: "La factura de la DGI es la prueba del pago: dice el comercio, el monto y que pagaste con tarjeta. Así nadie puede inventar compras."
+                    text: "Tu factura es la prueba del pago: dice el comercio, el monto y que pagaste con tarjeta. Así nadie puede inventar compras."
                 )
                 benefit(
                     icon: "bell.badge.fill",

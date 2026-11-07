@@ -114,7 +114,7 @@ struct BrandCampaign: Decodable, Identifiable, Hashable {
 
 /// Textos de la tarjeta de una campaña de marca — logica pura (testeable).
 enum BrandCampaignText {
-    static let instruction = "Compra, escanea tu factura y el premio llega cuando la DGI la verifique."
+    static let instruction = "Compra, escanea tu factura y el premio llega cuando verifiquemos tu factura."
 
     /// "+10 pts por unidad", "+25¢ por unidad", "Doble cashback",
     /// "+2¢ por cada $1", "+5 pts por cada $1". nil si la campaña no trae

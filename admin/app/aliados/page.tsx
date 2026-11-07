@@ -71,7 +71,7 @@ export default function AliadosPage() {
           <h1>Lleva clientes nuevos a tu negocio con MonAvi</h1>
           <p>
             MonAvi es la app de finanzas personales donde las personas en Panamá ganan cashback escaneando sus facturas
-            electrónicas de la DGI y puntos por sus buenos hábitos financieros. Conviértete en aliado, elige con cuál de
+            electrónicas y puntos por sus buenos hábitos financieros. Conviértete en aliado, elige con cuál de
             los dos se canjean tus premios y deja que vengan a tu local.
           </p>
           <div className="landing-hero-actions">

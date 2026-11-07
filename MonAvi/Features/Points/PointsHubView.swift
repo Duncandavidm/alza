@@ -62,7 +62,7 @@ struct PointsHubView: View {
             } header: {
                 Text("Gana cashback")
             } footer: {
-                Text("Ganas 1% de cashback de cada factura confirmada por la DGI.")
+                Text("Ganas 1% de cashback de cada factura que escaneas.")
             }
 
             if !brandCampaigns.isEmpty {

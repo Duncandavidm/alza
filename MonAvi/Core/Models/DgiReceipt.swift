@@ -21,10 +21,10 @@ enum DgiReceiptStatus: String, Codable, CaseIterable, Identifiable, Hashable {
     /// significa el estado o cuanto tiene que esperar.
     var statusExplanation: String {
         switch self {
-        case .pendiente: return "Pendiente: la revisamos contra la DGI varias veces al día."
-        case .confirmada: return "Confirmada por la DGI — cashback acreditado."
+        case .pendiente: return "Pendiente: la estamos verificando."
+        case .confirmada: return "Verificada — cashback acreditado."
         case .rechazada: return "Rechazada — el código no es válido o ya fue usado por otra cuenta."
-        case .expirada: return "La DGI no la reconoció a tiempo. El gasto queda registrado, sin cashback."
+        case .expirada: return "No se pudo verificar a tiempo. El gasto queda registrado, sin cashback."
         }
     }
 }

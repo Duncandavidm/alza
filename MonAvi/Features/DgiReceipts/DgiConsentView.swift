@@ -21,8 +21,8 @@ struct DgiConsentView: View {
 
                     bullet("Guardamos el CUFE (código único), el RUC, la sucursal y la fecha de la factura — no guardamos la foto del recibo.")
                     bullet("Ganas 1% de cashback de cada factura verificada: por una factura de $84.25 recibes $0.84 para canjear en comercios aliados.")
-                    bullet("El monto lo escribes tú. Revisamos tu factura contra la DGI varias veces al día (no es al instante) y, en cuanto la confirma, acreditamos tu cashback.")
-                    bullet("Verificamos cada factura contra la página pública de la DGI (dgi-fep.mef.gob.pa) — nunca contra otra fuente.")
+                    bullet("El monto lo escribes tú. Verificamos tu factura (no es al instante) y, en cuanto queda verificada, acreditamos tu cashback.")
+                    bullet("Verificamos cada factura con la información oficial de facturación electrónica de Panamá.")
                     bullet("Cada factura solo se puede registrar una vez en toda la app, aunque la escanee otra persona.")
 
                     if let errorMessage = viewModel.errorMessage {

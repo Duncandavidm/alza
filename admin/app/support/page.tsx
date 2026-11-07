@@ -54,8 +54,8 @@ export default function SupportPage() {
         <div style={{ marginBottom: 18 }}>
           <strong>¿Qué es &quot;Facturas que suman&quot;?</strong>
           <p className="text-dim">
-            Escaneas el código QR de una factura electrónica verificada por la DGI (Panamá) y, una vez que la DGI
-            la confirma, ganas cashback. Cada factura solo se puede registrar una vez en toda la app.
+            Escaneas el código QR de tu factura electrónica y, una vez que la verificamos, ganas 1% de
+            cashback. Cada factura solo se puede registrar una vez en toda la app.
           </p>
         </div>
 

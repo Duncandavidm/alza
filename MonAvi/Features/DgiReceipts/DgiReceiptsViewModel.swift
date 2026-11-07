@@ -7,7 +7,7 @@ extension DgiUrlParseError {
     var userMessage: String {
         switch self {
         case .notDgiHost:
-            return "Ese código no es de una factura electrónica de la DGI."
+            return "Ese código no es de una factura electrónica."
         case .missingParams:
             return "El código QR está incompleto."
         case .notProduction:

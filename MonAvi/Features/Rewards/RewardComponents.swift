@@ -190,7 +190,7 @@ struct RewardBalancesHeader: View {
         if balance.pendingPoints > 0 {
             return "+\(Cashback.format(cents: balance.pendingPoints)) pendiente"
         }
-        return "de tus facturas DGI"
+        return "de tus facturas"
     }
 }
 

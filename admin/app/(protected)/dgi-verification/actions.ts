@@ -21,13 +21,13 @@ export async function updateDgiRules(formData: FormData) {
   const expireAfterDays = Number(formData.get("expire_after_days"));
 
   if (!Number.isFinite(pointsPerDollar) || pointsPerDollar < 0) {
-    throw new Error("Puntos por dolar invalido.");
+    throw new Error("El cashback por factura (puntos por dólar) no es válido.");
   }
   if (!Number.isFinite(dailyCap) || dailyCap < 0) {
-    throw new Error("Tope diario invalido.");
+    throw new Error("Tope diario inválido.");
   }
   if (!Number.isFinite(expireAfterDays) || expireAfterDays < 1) {
-    throw new Error("Dias para expirar invalido.");
+    throw new Error("Días para expirar inválido.");
   }
 
   const supabase = supabaseAdmin();

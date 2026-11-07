@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { formatCashback } from "@/lib/format";
 import { setDgiVerificationEnabled, updateDgiRules } from "./actions";
 import RunDgiVerificationButton from "./RunDgiVerificationButton";
 
@@ -52,26 +53,27 @@ export default async function DgiVerificationPage() {
 
   return (
     <>
-      <h1>Facturas que suman — verificacion DGI</h1>
+      <h1>Facturas que suman — verificación DGI</h1>
       <p className="text-dim">
         El job verify-dgi-receipt corre todos los días a las 8:00 a. m. (hora de Panamá, pg_cron) y consulta cada factura pendiente directo contra
-        dgi-fep.mef.gob.pa. Confirmada, acredita puntos de "factura" y, si la DGI reporta pago con tarjeta en un
-        comercio aliado con oferta activa, tambien el bono de "tarjeta" — sin vincular ninguna tarjeta.
+        dgi-fep.mef.gob.pa. Confirmada, acredita cashback de “factura” y, si la DGI reporta pago con tarjeta en un
+        comercio aliado con oferta activa, también el bono de “tarjeta” — sin vincular ninguna tarjeta. El ledger guarda
+        puntos enteros donde 1 punto = US$0.01.
       </p>
 
       <div className="card">
         <h3>Estado</h3>
         <p>
-          Verificacion automatica: <span className={`badge ${enabled ? "active" : "paused"}`}>{enabled ? "activa" : "apagada"}</span>
+          Verificación automática: <span className={`badge ${enabled ? "active" : "paused"}`}>{enabled ? "activa" : "apagada"}</span>
         </p>
         <p className="text-dim" style={{ marginBottom: 10 }}>
           {enabled
-            ? "El cron awards puntos de verdad. Apagar esto detiene nuevos puntos, pero no toca los ya otorgados."
+            ? "El cron acredita cashback de verdad. Apagar esto detiene el cashback nuevo, pero no toca el ya otorgado."
             : "El cron corre pero no hace nada (modo seguro) hasta que esto se active."}
         </p>
         <form action={setDgiVerificationEnabled.bind(null, !enabled)}>
           <button type="submit" className={enabled ? "danger" : undefined}>
-            {enabled ? "Apagar verificacion" : "Activar verificacion"}
+            {enabled ? "Apagar verificación" : "Activar verificación"}
           </button>
         </form>
       </div>
@@ -80,15 +82,20 @@ export default async function DgiVerificationPage() {
         <h3>Reglas</h3>
         <form action={updateDgiRules} className="grid-form">
           <div className="field">
-            <label>Puntos por dolar confirmado</label>
+            <label>Cashback por factura (puntos por dólar; 1 = 1% de cashback)</label>
             <input type="number" name="points_per_dollar" defaultValue={pointsPerDollar} min={0} step="0.1" required />
+            <span className="text-dim">
+              Hoy: {pointsPerDollar.toLocaleString("es-PA", { maximumFractionDigits: 2 })} % de cashback (una factura de
+              $84.00 da ≈ {formatCashback(Math.floor(84 * pointsPerDollar))}).
+            </span>
           </div>
           <div className="field">
-            <label>Tope diario de puntos por usuario (factura)</label>
+            <label>Tope diario por usuario (en puntos; 300 = $3.00 al día)</label>
             <input type="number" name="daily_cap_points_per_user" defaultValue={dailyCap} min={0} step="1" required />
+            <span className="text-dim">Hoy: {formatCashback(dailyCap)} de cashback al día por usuario.</span>
           </div>
           <div className="field">
-            <label>Dias antes de expirar una factura sin confirmar</label>
+            <label>Días antes de expirar una factura sin confirmar</label>
             <input type="number" name="expire_after_days" defaultValue={expireAfterDays} min={1} step="1" required />
           </div>
           <div className="field" style={{ alignSelf: "end" }}>
@@ -100,8 +107,8 @@ export default async function DgiVerificationPage() {
       <div className="card">
         <h3>Procesar pendientes ahora</h3>
         <p className="text-dim">
-          Dispara verify-dgi-receipt de una vez, sin esperar la proxima corrida del cron. Util para probar antes de
-          activar la verificacion.
+          Dispara verify-dgi-receipt de una vez, sin esperar la próxima corrida del cron. Útil para probar antes de
+          activar la verificación.
         </p>
         <RunDgiVerificationButton />
       </div>
@@ -122,7 +129,7 @@ export default async function DgiVerificationPage() {
       </div>
 
       <div className="card">
-        <h3>Ultimas facturas escaneadas</h3>
+        <h3>Últimas facturas escaneadas</h3>
         <table>
           <thead>
             <tr>
@@ -150,7 +157,7 @@ export default async function DgiVerificationPage() {
             {(recent ?? []).length === 0 && (
               <tr>
                 <td colSpan={6} className="text-dim">
-                  Sin facturas escaneadas todavia.
+                  Sin facturas escaneadas todavía.
                 </td>
               </tr>
             )}

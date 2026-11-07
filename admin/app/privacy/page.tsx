@@ -4,7 +4,7 @@ export const metadata: Metadata = {
   title: "Política de Privacidad — MonAvi",
 };
 
-const UPDATED_AT = "6 de noviembre de 2026";
+const UPDATED_AT = "7 de noviembre de 2026";
 
 export default function PrivacyPage() {
   return (

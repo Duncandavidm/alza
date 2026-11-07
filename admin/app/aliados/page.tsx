@@ -6,7 +6,7 @@ import ApplicationForm from "./ApplicationForm";
 export const metadata: Metadata = {
   title: "Comercios aliados — MonAvi",
   description:
-    "Lleva clientes nuevos a tu negocio con MonAvi: publica un producto canjeable y recibe a clientes que canjean sus puntos en tu local. Sin costo de integración.",
+    "Lleva clientes nuevos a tu negocio con MonAvi: publica un producto canjeable y recibe a clientes que canjean su cashback en tu local. Sin costo de integración.",
 };
 
 const STEPS = [
@@ -16,11 +16,15 @@ const STEPS = [
   },
   {
     title: "Publicas un producto canjeable",
-    text: "Eliges qué ofreces a cambio de puntos: un café, un postre, un servicio. Nosotros lo mostramos con foto, tu logo y cómo llegar.",
+    text: "Eliges qué ofreces a cambio de cashback: un café, un postre, un servicio. Nosotros lo mostramos con foto, tu logo y cómo llegar.",
   },
   {
     title: "Los clientes de MonAvi te visitan",
-    text: "Las personas que acumulan puntos con sus facturas van a tu local a canjearlos, y muchas vuelven a comprar.",
+    text: "Las personas que ganan cashback con sus facturas van a tu local a canjearlo, y muchas vuelven a comprar.",
+  },
+  {
+    title: "Validas el código en caja",
+    text: "El cliente te muestra un código o un QR. Lo validas desde cualquier celular en monavi.maday.app/canjear con el PIN de tu negocio, sin instalar nada, y le entregas el producto.",
   },
 ];
 
@@ -28,7 +32,7 @@ const BENEFITS = [
   {
     icon: "people",
     title: "Clientes nuevos y recurrentes",
-    text: "Personas que ya compran en Panamá y buscan dónde usar sus puntos llegan a tu puerta, y regresan.",
+    text: "Personas que ya compran en Panamá y buscan dónde usar su cashback llegan a tu puerta, y regresan.",
   },
   {
     icon: "phone",
@@ -43,7 +47,7 @@ const BENEFITS = [
   {
     icon: "code",
     title: "Sin costo de integración",
-    text: "No instalas nada: el cliente muestra un código en caja y listo. Sin terminales, sin sistemas nuevos.",
+    text: "No instalas nada: validas el código del cliente desde cualquier celular en monavi.maday.app/canjear con tu PIN. Sin terminales, sin sistemas nuevos.",
   },
 ];
 
@@ -66,8 +70,8 @@ export default function AliadosPage() {
           <span className="landing-eyebrow">Programa de comercios aliados · Panamá</span>
           <h1>Lleva clientes nuevos a tu negocio con MonAvi</h1>
           <p>
-            MonAvi es la app de finanzas personales donde las personas en Panamá ganan puntos escaneando sus facturas
-            electrónicas de la DGI. Conviértete en aliado y deja que vengan a canjearlos en tu local.
+            MonAvi es la app de finanzas personales donde las personas en Panamá ganan cashback escaneando sus facturas
+            electrónicas de la DGI. Conviértete en aliado y deja que vengan a canjearlo en tu local.
           </p>
           <div className="landing-hero-actions">
             <a href="#solicitud" className="landing-button">
@@ -94,7 +98,7 @@ export default function AliadosPage() {
             </div>
             <div className="landing-phone-row">
               <span>Café latte grande</span>
-              <span className="landing-pill">800 pts</span>
+              <span className="landing-pill">$8.00</span>
             </div>
             <div className="landing-phone-buttons">
               <span className="outline">Cómo llegar</span>

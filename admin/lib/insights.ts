@@ -1,5 +1,6 @@
 import "server-only";
 import { supabaseAdmin } from "./supabase-admin";
+import { num } from "./format";
 
 // Estudio de mercado: wrapper de la RPC market_insights (migracion 0032).
 // Todo es agregado y anonimo; los grupos con menos de p_min_users

@@ -3,16 +3,17 @@
 Publicado en **https://monavi.maday.app** (Vercel, proyecto "monavi"):
 se despliega solo con cada push a `claude/clever-planck-lf32rw`, con
 Root Directory = `admin`. Landing publica de aliados:
-https://monavi.maday.app/aliados
+https://monavi.maday.app/aliados · Canje en caja (comercios):
+https://monavi.maday.app/canjear
 
 **¿Olvidaste la clave del panel?** `ADMIN_PANEL_PASSWORD` esta guardada
 como "Sensitive" en Vercel (no se puede ver). Cambiala en Settings >
 Environment Variables > ⋯ > Edit y vuelve a publicar (Deployments >
 Redeploy, o cualquier push a la rama de produccion).
 
-Panel interno minimo (Fase 4 del modulo de puntos): comercios aliados,
-sus ofertas y productos canjeables, solicitudes de nuevos comercios,
-canjes de puntos, estudio de mercado, subir reportes de comercio/banco,
+Panel interno minimo (Fase 4 del modulo de cashback): comercios aliados,
+sus ofertas y productos canjeables, PIN de canje en caja, solicitudes de
+nuevos comercios, canjes, estudio de mercado, subir reportes de comercio/banco,
 ver resultados del cruce, y alertas (compras ambiguas, campañas con
 presupuesto agotado).
 
@@ -27,10 +28,61 @@ Viven en este mismo proyecto y estan en `PUBLIC_PATHS` de `proxy.ts`:
   campo honeypot oculto y tiempo minimo de llenado contra bots). URL
   para compartir: `https://<dominio-del-panel>/aliados` (el Resumen y
   Solicitudes la muestran con boton para copiar).
+- `/canjear` — **canje en caja** para el cajero del comercio aliado
+  (ver "Canje en caja con PIN" abajo).
 - `/privacy` y `/support` — exigidas por Apple para la app.
 
 No hay usuarios individuales — es una sola clave compartida
 (`ADMIN_PANEL_PASSWORD`) para todo el equipo que administra esto.
+
+## Cashback (convencion)
+
+El ledger de puntos sigue guardando enteros, pero **1 punto = US$0.01**.
+La regla actual (1 punto por dolar de factura) = 1% de cashback; el tope
+diario de 300 = US$3.00. En TODA la UI se muestra dinero, nunca
+"puntos/pts": `formatCashback(cents)` de `lib/format.ts` (350 -> "$3.50").
+
+- `reward_items.points_cost` y `reward_redemptions.points_cost` son
+  centavos. El formulario de producto pide "Valor en cashback (US$)"
+  (ej. 3.50, > 0, max 2 decimales; `parseDollarsToCents`) y guarda 350.
+- Ofertas (`partner_merchant_offers`): "percent" = puntos por dolar =
+  % de cashback (se guarda igual); "fixed" y el presupuesto se escriben
+  en US$ y se guardan en centavos.
+- `/dgi-verification` sigue editando `points_rules` en puntos
+  (`points_per_dollar` 1 = 1% de cashback; `daily_cap_points_per_user`
+  300 = $3.00 al dia) y muestra su equivalente en dinero.
+- `/insights`: `summary.points_issued` es "Cashback emitido" (valor/100).
+- El comercio aliado regala el producto (MonAvi no le paga nada); el
+  panel solo cuenta los canjes por comercio.
+
+## Canje en caja con PIN
+
+Migracion `0034_merchant_redeem_pin.sql`.
+
+1. En `/merchants/[id]`, seccion "PIN de canje en caja", "Generar PIN
+   nuevo" crea 6 digitos con `crypto.randomInt` (server action), llama a
+   `set_merchant_redeem_pin` (guarda solo el hash bcrypt y
+   `redeem_pin_set_at`) y muestra el PIN **una sola vez** con boton para
+   copiarlo y un texto listo para enviar al comercio. Si ya habia PIN
+   pide confirmacion: el anterior deja de funcionar. El PIN en claro no
+   se guarda en ningun otro lado; si se pierde, se genera otro.
+2. El cliente genera su codigo de 6 caracteres en la app; el QR codifica
+   `https://monavi.maday.app/canjear?code=XXXXXX`, asi que el cajero lo
+   escanea con la camara de cualquier celular y llega con el codigo
+   escrito.
+3. En `/canjear` (publica) el cajero escribe el PIN ("Recordar el PIN en
+   este dispositivo" lo guarda en `localStorage` de ese navegador, con
+   enlace para olvidarlo) y toca "Verificar": la server action llama a
+   `merchant_redeem(p_confirm=false)` y muestra producto, foto, comercio,
+   valor en cashback y vencimiento. "Confirmar entrega" llama con
+   `p_confirm=true`: el canje queda `entregado` con
+   `delivered_via='comercio'`. Los errores de la RPC se muestran tal cual.
+4. Limite de intentos: la RPC corta tras 10 fallos por IP en 15 minutos.
+   La IP (`x-forwarded-for`, primer valor, si no `x-real-ip`) nunca se
+   guarda en claro: se envia `sha256(SESSION_SECRET + ":" + ip)`.
+
+"Marcar entregado" en `/redemptions` deja `delivered_via='panel'`; la
+tabla muestra "en caja" o "desde el panel".
 
 ## Variables de entorno
 
@@ -62,9 +114,10 @@ npm run dev
   editar y pausar comercios aliados (`partner_merchants`) con su ficha
   (nombre, RUC, categoria, direccion, enlace de Google Maps para "Cómo
   llegar", logo); sus **productos canjeables** (`reward_items`: foto,
-  nombre, costo en puntos, estado, orden) con vista previa de como se
-  ven en la app; y sus ofertas de puntos (`partner_merchant_offers`) —
-  porcentaje por dolar o puntos fijos, compra minima, presupuesto total.
+  nombre, valor en cashback en US$, estado, orden) con vista previa de
+  como se ven en la app; el PIN de canje en caja; y sus ofertas de
+  cashback (`partner_merchant_offers`) — % de cashback o monto fijo,
+  compra minima, presupuesto total.
   Logos y fotos se suben al bucket publico `rewards`
   (`logos/<merchantId>-<ts>.<ext>`, `products/<id>-<ts>.<ext>`; JPG,
   PNG o WebP, max 5 MB, validado en el servidor). Un producto con canjes
@@ -78,10 +131,12 @@ npm run dev
   lleva al comercio para subir logo y productos.
 - **Canjes** (`/redemptions`): `reward_redemptions` mas recientes
   primero, con producto y comercio; busqueda por codigo y filtros por
-  estado y comercio. En los `emitido` vigentes: "Marcar entregado" y
-  "Cancelar y devolver puntos" (`release_redemption(..., 'cancelado')`).
-  Los vencidos que siguen `emitido` se marcan "vencido (por liberar)":
-  el cron nocturno los libera y devuelve los puntos.
+  estado y comercio. En los `emitido` vigentes: "Marcar entregado"
+  (`delivered_via='panel'`) y "Cancelar y devolver cashback"
+  (`release_redemption(..., 'cancelado')`). Los entregados dicen si fue
+  "en caja" (`/canjear`) o "desde el panel". Los vencidos que siguen
+  `emitido` se marcan "vencido (por liberar)": el cron nocturno los
+  libera y devuelve el cashback.
 - **Estudio de mercado** (`/insights?days=30|90|365&ruc=`): llama a la
   RPC `market_insights` (agregada y anonima, k=5) y muestra KPIs, formas
   de pago, genero, edades, categorias, rangos de ticket, productos y
@@ -105,9 +160,10 @@ npm run dev
   insertarlas en `savings_bank_reports`. El boton "Procesar reportes
   pendientes" llama a `reconcile-savings-reports`.
 - **Facturas DGI** (`/dgi-verification`): la verificacion corre todos
-  los dias a las 8:00 a. m. (hora de Panama).
+  los dias a las 8:00 a. m. (hora de Panama). Las reglas se editan en
+  puntos con su equivalente en cashback.
 - **Alertas** (`/alerts`): compras con 2+ tarjetas posibles (sin
-  puntos, por diseño), reportes de banco sin inscripcion que los
+  cashback, por diseño), reportes de banco sin inscripcion que los
   reclame, y campañas con presupuesto agotado.
 
 ## Por que no hay Supabase Auth aqui

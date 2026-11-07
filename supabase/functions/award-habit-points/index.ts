@@ -4,7 +4,8 @@
 //    toda la regla vive en SQL (dias anotados, aportes de ahorro maduros,
 //    presupuestos cumplidos, tope mensual). Nada lo calcula el iPhone, asi
 //    que nadie puede inflar sus puntos desde la app.
-// 2. Avisa por push a quien ya le alcanza para un premio que antes no
+// 2. Aplica las campañas de marcas a las facturas recien verificadas.
+// 3. Avisa por push a quien ya le alcanza para un premio que antes no
 //    podia canjear (puntos o cashback, segun el comercio). Cada premio se
 //    avisa una sola vez por persona (reward_unlock_notifications).
 //
@@ -66,6 +67,11 @@ Deno.serve(async (req) => {
     const { data: awarded, error: awardError } = await supabase.rpc("award_habit_points");
     if (awardError) throw awardError;
 
+    // Campañas de marcas ("compra X y gana mas") sobre las facturas que la
+    // DGI confirmo a las 8:00. Si falla, no frena lo demas.
+    const { data: campaignsApplied, error: campaignError } = await supabase.rpc("apply_brand_campaigns_recent");
+    if (campaignError) console.error("apply_brand_campaigns_recent", campaignError.message);
+
     const { data: unlocks, error: unlockError } = await supabase.rpc("reward_unlocks_to_notify");
     if (unlockError) throw unlockError;
 
@@ -92,7 +98,7 @@ Deno.serve(async (req) => {
       if (markError) console.error("No se pudo marcar el aviso", markError.message);
     }
 
-    return jsonResponse({ habit_events_awarded: awarded ?? 0, users_notified: usersNotified, push_sent: pushSent });
+    return jsonResponse({ habit_events_awarded: awarded ?? 0, brand_bonuses: campaignsApplied ?? 0, users_notified: usersNotified, push_sent: pushSent });
   } catch (error) {
     console.error("award-habit-points fallo", error);
     return jsonResponse({ error: String((error as { message?: string })?.message ?? error) }, 500);

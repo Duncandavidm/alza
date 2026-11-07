@@ -1281,219 +1281,6 @@ body:has(.landing) {
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* /canjear: el cajero valida el codigo del cliente (publica, movil)   */
-/* ------------------------------------------------------------------ */
-
-.redeem-tag {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--brand-dark);
-  background: rgba(0, 165, 133, 0.12);
-  padding: 5px 12px;
-  border-radius: 999px;
-}
-
-.redeem-main {
-  max-width: 480px;
-  margin: 0 auto;
-  padding: 12px 16px 40px;
-}
-
-.redeem-main h1 {
-  font-size: clamp(26px, 7vw, 34px);
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  margin: 8px 0 8px;
-}
-
-.redeem-help {
-  color: var(--l-dim);
-  margin: 0 0 20px;
-}
-
-.redeem-form,
-.redeem-card,
-.redeem-done {
-  background: white;
-  border: 1px solid var(--l-border);
-  border-radius: 20px;
-  box-shadow: 0 16px 40px rgba(2, 122, 100, 0.1);
-}
-
-.redeem-form {
-  display: grid;
-  gap: 16px;
-  padding: 20px;
-}
-
-.landing-field input.redeem-code-input {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 34px;
-  font-weight: 700;
-  letter-spacing: 0.25em;
-  text-align: center;
-  text-transform: uppercase;
-  padding: 14px 10px;
-}
-
-.landing-field input.redeem-pin-input {
-  font-size: 30px;
-  letter-spacing: 0.4em;
-  text-align: center;
-  padding: 14px 10px;
-}
-
-.redeem-remember {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px 16px;
-  font-size: 15px;
-}
-
-.redeem-remember label {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 44px;
-  cursor: pointer;
-}
-
-.redeem-remember input[type="checkbox"] {
-  width: 22px;
-  height: 22px;
-  accent-color: var(--brand);
-}
-
-.redeem-link {
-  background: none;
-  border: none;
-  padding: 10px 0;
-  color: var(--brand-dark);
-  font-size: 15px;
-  font-weight: 600;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.landing .landing-button.redeem-big {
-  width: 100%;
-  min-height: 60px;
-  font-size: 19px;
-  border-radius: 16px;
-}
-
-.landing .landing-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-.redeem-card {
-  overflow: hidden;
-}
-
-.redeem-photo {
-  display: block;
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  background: #e9f6f2;
-}
-
-.redeem-card-body {
-  display: grid;
-  gap: 12px;
-  padding: 20px;
-}
-
-.redeem-card-body h2 {
-  font-size: 26px;
-  font-weight: 800;
-  margin: 0;
-  line-height: 1.2;
-}
-
-.redeem-ok-badge {
-  justify-self: start;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--brand-dark);
-  background: rgba(0, 165, 133, 0.12);
-  padding: 5px 12px;
-  border-radius: 999px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-}
-
-.redeem-merchant {
-  margin: -6px 0 0;
-  color: var(--l-dim);
-  font-weight: 600;
-}
-
-.redeem-facts {
-  display: grid;
-  gap: 8px;
-  margin: 0;
-  padding: 14px;
-  border-radius: 14px;
-  background: #f6faf9;
-  border: 1px solid var(--l-border);
-}
-
-.redeem-facts div {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.redeem-facts dt {
-  color: var(--l-dim);
-}
-
-.redeem-facts dd {
-  margin: 0;
-  font-weight: 700;
-  text-align: right;
-}
-
-.redeem-fine {
-  margin: 0;
-  font-size: 14px;
-  color: var(--l-dim);
-  text-align: center;
-}
-
-.redeem-done {
-  padding: 32px 20px;
-  text-align: center;
-  display: grid;
-  gap: 12px;
-}
-
-.redeem-done-icon {
-  font-size: 64px;
-  line-height: 1;
-}
-
-.redeem-done h2 {
-  font-size: 32px;
-  font-weight: 800;
-  margin: 0;
-  color: var(--brand-dark);
-}
-
-.redeem-done p {
-  margin: 0;
-  font-size: 19px;
-}
-
-.redeem-done p.redeem-fine {
-  font-size: 14px;
-}
-
 /* PIN mostrado una sola vez en el panel (/merchants/[id]) */
 .pin-reveal {
   margin-top: 12px;
@@ -1701,109 +1488,6 @@ button.preset-chip.active {
   font-size: 13px;
 }
 
-/* ---- /canjear: escaner QR, turno y entrega ---- */
-
-.redeem-session {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px 12px;
-  margin-bottom: 14px;
-  padding: 10px 14px;
-  border-radius: 14px;
-  background: #e9f6f2;
-  border: 1px solid rgba(0, 165, 133, 0.35);
-  color: var(--brand-dark);
-  font-size: 15px;
-}
-
-.redeem-session .redeem-link {
-  padding: 6px 0;
-}
-
-.qr-scanner {
-  display: grid;
-  gap: 12px;
-}
-
-.qr-viewport {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1;
-  border-radius: 20px;
-  overflow: hidden;
-  background: #0b1f1b;
-}
-
-.qr-video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.qr-frame {
-  position: absolute;
-  inset: 18%;
-  border: 3px solid rgba(255, 255, 255, 0.9);
-  border-radius: 18px;
-  box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.28);
-  pointer-events: none;
-}
-
-.qr-status {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 600;
-}
-
-.landing .landing-button.redeem-scan {
-  min-height: 72px;
-  font-size: 21px;
-}
-
-.redeem-gift {
-  justify-self: start;
-  font-size: 16px;
-  font-weight: 800;
-  color: #6b46c1;
-  background: #f3effc;
-  border: 1px solid #9f7aea;
-  padding: 6px 14px;
-  border-radius: 999px;
-}
-
-.redeem-card-body h2.redeem-product {
-  font-size: 32px;
-}
-
-.landing .landing-button.redeem-deliver {
-  min-height: 76px;
-  font-size: 24px;
-  background: #1f9d6c;
-}
-
-.landing .landing-button.redeem-deliver:hover {
-  background: #17805a;
-}
-
-.redeem-check {
-  width: 120px;
-  height: 120px;
-  margin: 0 auto;
-  border-radius: 50%;
-  background: #1f9d6c;
-  color: white;
-  font-size: 72px;
-  font-weight: 800;
-  line-height: 120px;
-}
-
 /* MonAvi Caja (PWA): aviso para instalar */
 .install-banner {
   position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom));
@@ -1816,3 +1500,649 @@ button.preset-chip.active {
 .install-text span { color: var(--text-dim, #5b6462); }
 .install-button { background: var(--primary, #027a64); color: #fff; border: 0; border-radius: 10px; padding: 10px 14px; font-weight: 600; }
 .install-close { background: transparent; border: 0; font-size: 16px; color: var(--text-dim, #5b6462); padding: 6px; }
+
+/* ------------------------------------------------------------------ */
+/* MonAvi Caja (/canjear): app del cajero, movil primero, tema claro   */
+/* ------------------------------------------------------------------ */
+
+.caja {
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.caja-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.caja-header-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.caja-header-text strong {
+  font-size: 16px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.caja-main {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+}
+
+.caja-title {
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.caja-dim {
+  color: var(--text-dim);
+  margin: 0;
+}
+
+.caja-fine {
+  font-size: 14px;
+  color: var(--text-dim);
+  text-align: center;
+  margin: 0;
+}
+
+.caja-info {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.caja-error {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #fdf0ee;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.caja-error-big {
+  font-size: 18px;
+  text-align: center;
+}
+
+/* Botones grandes (objetivo tactil >= 48px) */
+.caja-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  border: 2px solid transparent;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.08s ease, background 0.15s ease;
+}
+
+.caja-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.caja-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.caja-btn:focus-visible,
+.caja-link:focus-visible,
+.caja-result:focus-visible,
+.caja-back:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.caja-btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+
+.caja-btn-secondary {
+  background: var(--surface);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.caja-btn-secondary.is-on {
+  background: #fff7d6;
+  border-color: var(--warning);
+  color: var(--text);
+}
+
+.caja-btn-xl {
+  min-height: 64px;
+  font-size: 22px;
+  letter-spacing: 0.04em;
+}
+
+.caja-btn-lg {
+  min-height: 56px;
+  font-size: 19px;
+  letter-spacing: 0.04em;
+}
+
+.caja-btn-deliver {
+  min-height: 72px;
+  font-size: 22px;
+  background: var(--success);
+  color: #fff;
+}
+
+.caja-link {
+  align-self: center;
+  min-height: 44px;
+  padding: 8px 4px;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.caja-header .caja-link {
+  flex: none;
+  font-size: 15px;
+}
+
+/* Iniciar turno */
+.caja-login {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: center;
+  padding-top: 12px;
+}
+
+.caja-logo {
+  align-self: center;
+  width: 88px;
+  height: 88px;
+  border-radius: 22px;
+  box-shadow: 0 6px 18px rgba(2, 122, 100, 0.25);
+}
+
+.caja-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+  margin-top: 4px;
+}
+
+.caja-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.caja-field input {
+  width: 100%;
+  min-height: 56px;
+  padding: 12px 14px;
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.caja-field input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.caja-field input.caja-pin,
+.caja-field input.caja-code {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* Inicio con turno */
+.caja-home {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 8px;
+}
+
+.caja-type {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.caja-type-link {
+  margin-top: 4px;
+}
+
+/* Escaner */
+.caja-scanner {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.caja-viewfinder {
+  position: relative;
+  min-height: 60vh;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #071512;
+}
+
+.caja-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.caja-target {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  width: 78%;
+  max-width: 28rem;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 200vmax rgba(0, 0, 0, 0.35);
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+.caja-corner {
+  position: absolute;
+  width: 18%;
+  height: 18%;
+  border: 0 solid var(--brand);
+  transition: border-color 0.15s ease;
+}
+
+.caja-corner.tl { top: 0; left: 0; border-top-width: 7px; border-left-width: 7px; border-top-left-radius: 14px; }
+.caja-corner.tr { top: 0; right: 0; border-top-width: 7px; border-right-width: 7px; border-top-right-radius: 14px; }
+.caja-corner.bl { bottom: 0; left: 0; border-bottom-width: 7px; border-left-width: 7px; border-bottom-left-radius: 14px; }
+.caja-corner.br { bottom: 0; right: 0; border-bottom-width: 7px; border-right-width: 7px; border-bottom-right-radius: 14px; }
+
+.caja-viewfinder.is-detected .caja-corner {
+  border-color: #2ee59d;
+}
+
+.caja-sweep {
+  position: absolute;
+  z-index: 2;
+  left: 6%;
+  right: 6%;
+  top: 4%;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--brand);
+  /* Halo blanco fino + brillo de color: se ve sobre imagenes claras y oscuras */
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.55),
+    0 0 10px 2px rgba(0, 165, 133, 0.9),
+    0 0 22px 4px rgba(0, 165, 133, 0.45);
+  animation: caja-sweep 2.2s ease-in-out infinite;
+  will-change: top;
+}
+
+@keyframes caja-sweep {
+  0%,
+  100% { top: 4%; }
+  50% { top: 96%; }
+}
+
+.caja-flash {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  background: rgba(46, 229, 157, 0.45);
+  animation: caja-flash 0.45s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes caja-flash {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.caja-scan-status {
+  position: absolute;
+  z-index: 4;
+  left: 12px;
+  right: 12px;
+  bottom: 14px;
+  text-align: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 17px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+}
+
+.caja-scan-actions {
+  display: flex;
+  gap: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caja-sweep {
+    display: none;
+  }
+  .caja-flash {
+    animation: none;
+    opacity: 0.35;
+  }
+  .caja-btn,
+  .caja-corner {
+    transition: none;
+  }
+  .caja-spinner {
+    animation-duration: 3s;
+  }
+}
+
+/* Buscar cliente */
+.caja-search {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.caja-search-bar {
+  display: flex;
+  gap: 8px;
+}
+
+.caja-search-bar input {
+  flex: 1;
+  min-width: 0;
+  min-height: 56px;
+  padding: 12px 14px;
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 18px;
+}
+
+.caja-search-bar input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.caja-back {
+  flex: none;
+  width: 56px;
+  min-height: 56px;
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.caja-search-status {
+  font-size: 14px;
+  min-height: 1.2em;
+}
+
+.caja-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.caja-result {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 76px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.caja-result:active {
+  background: var(--surface-alt);
+}
+
+.caja-thumb {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: var(--surface-alt);
+}
+
+.caja-thumb-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+}
+
+.caja-result-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.caja-result-body strong {
+  font-size: 17px;
+}
+
+.caja-result-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.caja-gift {
+  font-size: 13px;
+  font-weight: 800;
+  color: #6b46c1;
+  background: #f3effc;
+  border: 1px solid #9f7aea;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.caja-gift-big {
+  align-self: flex-start;
+  font-size: 16px;
+  padding: 6px 14px;
+}
+
+/* Confirmacion */
+.caja-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(15, 31, 27, 0.06);
+}
+
+.caja-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 32px 20px;
+  text-align: center;
+}
+
+.caja-photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: var(--surface-alt);
+}
+
+.caja-photo-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 64px;
+}
+
+.caja-confirm-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 18px 22px;
+}
+
+.caja-product {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.caja-customer {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.caja-facts {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.caja-facts div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface-alt);
+}
+
+.caja-facts dt {
+  color: var(--text-dim);
+}
+
+.caja-facts dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+}
+
+.caja-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.1em;
+}
+
+.caja-check,
+.caja-x {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 68px;
+  font-weight: 800;
+  line-height: 120px;
+  text-align: center;
+}
+
+.caja-check {
+  background: var(--success);
+}
+
+.caja-x {
+  width: 88px;
+  height: 88px;
+  line-height: 88px;
+  font-size: 44px;
+  background: var(--danger);
+}
+
+.caja-done h2 {
+  font-size: 32px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.caja-done p {
+  margin: 0;
+  font-size: 18px;
+}
+
+.caja-spinner {
+  width: 48px;
+  height: 48px;
+  border: 5px solid var(--surface-alt);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: caja-spin 0.8s linear infinite;
+}
+
+@keyframes caja-spin {
+  to { transform: rotate(360deg); }
+}

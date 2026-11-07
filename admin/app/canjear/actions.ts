@@ -27,7 +27,15 @@ export type RedeemResult =
       /// Comercio del turno abierto (si quedo una sesion activa).
       session: { merchant: string } | null;
     }
-  | { ok: false; error: string; product?: string; needsPin?: boolean; session?: { merchant: string } | null };
+  | {
+      ok: false;
+      error: string;
+      product?: string;
+      needsPin?: boolean;
+      /// Se esperaba un turno abierto (sin PIN) y la cookie ya no es valida.
+      sessionExpired?: boolean;
+      session?: { merchant: string } | null;
+    };
 
 type RpcResponse = {
   ok?: boolean;
@@ -68,7 +76,14 @@ async function currentSession() {
 // proxy.ts. Con un turno abierto se valida sin PIN (merchant_redeem_session,
 // solo codigos de ese comercio); si no, con PIN (merchant_redeem). Toda la
 // verificacion la hacen las RPC con service role.
-export async function redeemCode(input: { code: string; pin?: string; confirm: boolean }): Promise<RedeemResult> {
+export async function redeemCode(input: {
+  code: string;
+  pin?: string;
+  confirm: boolean;
+  /// true desde la app con turno: si la cookie vencio no se pide PIN aqui,
+  /// se avisa para volver a "Iniciar turno".
+  requireSession?: boolean;
+}): Promise<RedeemResult> {
   const code = String(input?.code ?? "")
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, "")
@@ -90,6 +105,9 @@ export async function redeemCode(input: { code: string; pin?: string; confirm: b
         p_confirm: input.confirm === true,
       }));
     } else {
+      if (input.requireSession) {
+        return { ok: false, error: "Tu turno terminó. Inicia turno de nuevo.", sessionExpired: true };
+      }
       if (!/^\d{6}$/.test(pin)) return { ok: false, error: "Escribe el PIN de 6 dígitos del comercio.", needsPin: true };
       ({ data, error: rpcError } = await supabaseAdmin().rpc("merchant_redeem", {
         p_code: code,
@@ -141,6 +159,110 @@ export async function redeemCode(input: { code: string; pin?: string; confirm: b
   } catch (error) {
     console.error("canjear", error instanceof Error ? error.message : error);
     return { ok: false, error: "No se pudo validar el código. Revisa tu conexión e intenta de nuevo." };
+  }
+}
+
+/// Respuesta de merchant_login.
+type LoginRpcResponse = {
+  ok?: boolean;
+  error?: string;
+  merchant_id?: string | null;
+  merchant?: string | { name?: string | null } | null;
+};
+
+export type StartShiftResult = { ok: true; merchant: string } | { ok: false; error: string };
+
+/// "Iniciar turno": RUC + PIN del comercio (merchant_login). Si es correcto
+/// se abre la cookie firmada de 12 horas.
+export async function startShift(input: { ruc: string; pin: string }): Promise<StartShiftResult> {
+  const ruc = String(input?.ruc ?? "").trim().slice(0, 40);
+  const pin = String(input?.pin ?? "").trim();
+  if (ruc.length < 3) return { ok: false, error: "Escribe el RUC del comercio." };
+  if (!/^\d{6}$/.test(pin)) return { ok: false, error: "El PIN tiene 6 dígitos." };
+
+  try {
+    const { data, error } = await supabaseAdmin().rpc("merchant_login", {
+      p_ruc: ruc,
+      p_pin: pin,
+      p_ip_hash: await clientIpHash(),
+    });
+    if (error) {
+      console.error("canjear login rpc", error.message);
+      return { ok: false, error: "No se pudo iniciar el turno. Intenta de nuevo en un momento." };
+    }
+    const result = (data ?? {}) as LoginRpcResponse;
+    if (!result.ok || !result.merchant_id) {
+      return { ok: false, error: result.error || "RUC o PIN incorrectos." };
+    }
+    const merchant =
+      typeof result.merchant === "string" ? result.merchant : (result.merchant?.name ?? "");
+    const store = await cookies();
+    store.set(REDEEM_SESSION_COOKIE, createRedeemSessionToken(result.merchant_id), REDEEM_SESSION_COOKIE_OPTIONS);
+    return { ok: true, merchant: merchant || "tu comercio" };
+  } catch (error) {
+    console.error("canjear login", error instanceof Error ? error.message : error);
+    return { ok: false, error: "No se pudo iniciar el turno. Revisa tu conexión e intenta de nuevo." };
+  }
+}
+
+export type PendingRedemption = {
+  code: string;
+  product: string;
+  photoUrl: string | null;
+  isGift: boolean;
+  expiresLabel: string;
+  customer: string;
+  phoneHint: string | null;
+};
+
+export type SearchPendingResult =
+  | { ok: true; items: PendingRedemption[] }
+  | { ok: false; error: string; sessionExpired?: boolean };
+
+type PendingRow = {
+  code?: string | null;
+  product?: string | null;
+  photo_url?: string | null;
+  is_gift?: boolean | null;
+  expires_at?: string | null;
+  customer?: string | null;
+  phone_hint?: string | null;
+};
+
+/// "Buscar cliente": canjes pendientes del comercio del turno
+/// (merchant_pending_redemptions). Consulta vacia = todos los pendientes.
+export async function searchPending(input: { query: string }): Promise<SearchPendingResult> {
+  const query = String(input?.query ?? "").trim().slice(0, 80);
+  try {
+    const session = await currentSession();
+    if (!session) return { ok: false, error: "Tu turno terminó. Inicia turno de nuevo.", sessionExpired: true };
+    const { data, error } = await supabaseAdmin().rpc("merchant_pending_redemptions", {
+      p_merchant_id: session.merchant_id,
+      p_query: query,
+    });
+    if (error) {
+      console.error("canjear pendientes rpc", error.message);
+      return { ok: false, error: "No se pudo buscar. Intenta de nuevo en un momento." };
+    }
+    const rows = (Array.isArray(data) ? data : []) as PendingRow[];
+    return {
+      ok: true,
+      items: rows
+        .filter((row) => typeof row.code === "string" && row.code)
+        .slice(0, 100)
+        .map((row) => ({
+          code: String(row.code),
+          product: row.product ?? "Producto",
+          photoUrl: row.photo_url ?? null,
+          isGift: row.is_gift === true,
+          expiresLabel: formatDateTime(row.expires_at),
+          customer: row.customer ?? "Cliente",
+          phoneHint: row.phone_hint ?? null,
+        })),
+    };
+  } catch (error) {
+    console.error("canjear pendientes", error instanceof Error ? error.message : error);
+    return { ok: false, error: "No se pudo buscar. Revisa tu conexión e intenta de nuevo." };
   }
 }
 

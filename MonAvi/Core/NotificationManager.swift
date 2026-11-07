@@ -66,8 +66,24 @@ enum NotificationManager {
     static let brandSound = UNNotificationSound(named: UNNotificationSoundName("monavi-alert.wav"))
 
     static let dailyLogReminderKey = "dailyLogReminderEnabled"
-    /// Hora del recordatorio diario "¿Anotaste tus gastos de hoy?".
-    static let dailyLogHour = 20
+    /// Hora del recordatorio diario "¿Anotaste tus gastos de hoy?", en
+    /// minutos desde la medianoche (la elige el usuario en Ajustes; por
+    /// defecto 8:00 p. m.).
+    static let dailyLogTimeKey = "dailyLogReminderMinutes"
+    static let defaultDailyLogMinutes = 20 * 60
+
+    static var dailyLogMinutes: Int {
+        get {
+            let stored = UserDefaults.standard.object(forKey: dailyLogTimeKey) as? Int
+            return clampedDailyLogMinutes(stored ?? defaultDailyLogMinutes)
+        }
+        set { UserDefaults.standard.set(clampedDailyLogMinutes(newValue), forKey: dailyLogTimeKey) }
+    }
+
+    /// Cualquier valor fuera de 0...1439 (dato corrupto) vuelve a las 8 p. m.
+    static func clampedDailyLogMinutes(_ minutes: Int) -> Int {
+        (0..<(24 * 60)).contains(minutes) ? minutes : defaultDailyLogMinutes
+    }
 
     static var reminderLeadDays: Int {
         get {
@@ -277,7 +293,12 @@ enum NotificationManager {
             if offset == 0 && loggedToday { continue }
             guard
                 let day = calendar.date(byAdding: .day, value: offset, to: today),
-                let fireDate = calendar.date(bySettingHour: dailyLogHour, minute: 0, second: 0, of: day),
+                let fireDate = calendar.date(
+                    bySettingHour: dailyLogMinutes / 60,
+                    minute: dailyLogMinutes % 60,
+                    second: 0,
+                    of: day
+                ),
                 fireDate > Date()
             else { continue }
 

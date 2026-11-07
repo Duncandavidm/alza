@@ -8,6 +8,7 @@ struct SettingsView: View {
     @AppStorage("isAdvancedMode") private var isAdvancedMode = false
     @AppStorage(NotificationManager.reminderLeadDaysKey) private var reminderLeadDays = NotificationManager.defaultLeadDays
     @AppStorage(NotificationManager.dailyLogReminderKey) private var dailyLogReminder = true
+    @AppStorage(NotificationManager.dailyLogTimeKey) private var dailyLogMinutes = NotificationManager.defaultDailyLogMinutes
     @State private var testNotificationSent = false
 
     private var isNotificationAuthorized: Bool {
@@ -47,10 +48,21 @@ struct SettingsView: View {
                         Task { await refreshReminders() }
                     }
 
-                    Toggle("Recordarme anotar mis gastos (8 p. m.)", isOn: $dailyLogReminder)
+                    Toggle("Recordarme anotar mis gastos", isOn: $dailyLogReminder)
                         .onChange(of: dailyLogReminder) { _, _ in
                             Task { await refreshReminders() }
                         }
+
+                    if dailyLogReminder {
+                        DatePicker(
+                            "Hora del recordatorio",
+                            selection: dailyLogTimeBinding,
+                            displayedComponents: .hourAndMinute
+                        )
+                        .onChange(of: dailyLogMinutes) { _, _ in
+                            Task { await refreshReminders() }
+                        }
+                    }
 
                     Button {
                         NotificationManager.sendTestNotification()
@@ -69,7 +81,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Notificaciones")
                 } footer: {
-                    Text("Te avisamos antes de que venza una cuenta por pagar o una factura, el día que vence y si se pasó. Para tus pagos fijos, unos días antes y el mismo día, para que no olvides registrarlos. También te decimos qué pagar primero cuando anotas un ingreso y, si quieres, te recordamos anotar tus gastos en la noche (solo si ese día no anotaste nada).")
+                    Text("Te avisamos antes de que venza una cuenta por pagar o una factura, el día que vence y si se pasó. Para tus pagos fijos, unos días antes y el mismo día, para que no olvides registrarlos. También te decimos qué pagar primero cuando anotas un ingreso y, si quieres, te recordamos anotar tus gastos a la hora que elijas (solo si ese día no anotaste nada).")
                 }
 
                 Section {
@@ -276,6 +288,26 @@ struct SettingsView: View {
         @unknown default:
             EmptyView()
         }
+    }
+
+    /// El DatePicker trabaja con fechas; aqui se guarda solo la hora del
+    /// dia (minutos desde la medianoche).
+    private var dailyLogTimeBinding: Binding<Date> {
+        Binding(
+            get: {
+                let minutes = NotificationManager.clampedDailyLogMinutes(dailyLogMinutes)
+                return Calendar.current.date(
+                    bySettingHour: minutes / 60,
+                    minute: minutes % 60,
+                    second: 0,
+                    of: Date()
+                ) ?? Date()
+            },
+            set: { newValue in
+                let components = Calendar.current.dateComponents([.hour, .minute], from: newValue)
+                dailyLogMinutes = (components.hour ?? 20) * 60 + (components.minute ?? 0)
+            }
+        )
     }
 
     private func refreshReminders() async {

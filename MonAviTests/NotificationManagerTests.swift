@@ -47,4 +47,12 @@ final class NotificationManagerTests: XCTestCase {
         XCTAssertLessThanOrEqual(NotificationManager.worstCaseScheduledCount, 60)
         XCTAssertLessThan(NotificationManager.worstCaseScheduledCount, 64)
     }
+
+    func testDailyLogTimeClamp() {
+        XCTAssertEqual(NotificationManager.clampedDailyLogMinutes(7 * 60 + 30), 450)
+        XCTAssertEqual(NotificationManager.clampedDailyLogMinutes(0), 0)
+        XCTAssertEqual(NotificationManager.clampedDailyLogMinutes(1439), 1439)
+        XCTAssertEqual(NotificationManager.clampedDailyLogMinutes(1440), NotificationManager.defaultDailyLogMinutes)
+        XCTAssertEqual(NotificationManager.clampedDailyLogMinutes(-5), NotificationManager.defaultDailyLogMinutes)
+    }
 }

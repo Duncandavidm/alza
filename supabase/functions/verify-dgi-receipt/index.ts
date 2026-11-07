@@ -337,6 +337,9 @@ interface ReceiptResult {
   /// Puntos sumados en esta corrida por esta factura (factura + bono).
   points: number;
   merchantName: string | null;
+  /// true si el cashback quedo retenido porque los ingresos registrados no
+  /// respaldan la compra (trigger de la migracion 0045).
+  held: boolean;
 }
 
 async function processReceipt(
@@ -406,7 +409,7 @@ async function processReceipt(
     );
   }
 
-  if (amount === null || amount <= 0) return { points: 0, merchantName };
+  if (amount === null || amount <= 0) return { points: 0, merchantName, held: false };
 
   let awarded = 0;
   const points = Math.max(0, Math.floor(amount * pointsPerDollar));
@@ -434,7 +437,9 @@ async function processReceipt(
     receipt.scanned_at,
   );
 
-  return { points: awarded, merchantName };
+  const { data: after } = await supabase
+    .from("dgi_receipts").select("cashback_status").eq("id", receipt.id).maybeSingle();
+  return { points: awarded, merchantName, held: after?.cashback_status === "sin_ingreso" };
 }
 
 Deno.serve(async (req) => {
@@ -466,7 +471,7 @@ Deno.serve(async (req) => {
     const errors: string[] = [];
     // Por usuario: puntos sumados y facturas confirmadas en esta corrida,
     // para mandar UN solo aviso push por persona al final.
-    const perUser = new Map<string, { points: number; receipts: number; merchants: Set<string> }>();
+    const perUser = new Map<string, { points: number; held: number; receipts: number; merchants: Set<string> }>();
 
     while (Date.now() - startedAt < TIME_BUDGET_MS) {
       const { data, error } = await supabase
@@ -500,8 +505,9 @@ Deno.serve(async (req) => {
           processed++;
           if (result) {
             confirmed++;
-            const entry = perUser.get(receipt.user_id) ?? { points: 0, receipts: 0, merchants: new Set<string>() };
-            entry.points += result.points;
+            const entry = perUser.get(receipt.user_id) ?? { points: 0, held: 0, receipts: 0, merchants: new Set<string>() };
+            if (result.held) entry.held += result.points;
+            else entry.points += result.points;
             entry.receipts += 1;
             if (result.merchantName) entry.merchants.add(result.merchantName);
             perUser.set(receipt.user_id, entry);
@@ -515,17 +521,26 @@ Deno.serve(async (req) => {
 
     let pushesSent = 0;
     for (const [userId, entry] of perUser) {
-      if (entry.points <= 0) continue;
+      if (entry.points <= 0 && entry.held <= 0) continue;
       const merchantText = entry.receipts === 1 && entry.merchants.size === 1
-        ? `Tu factura de ${titleCase([...entry.merchants][0])} fue verificada por la DGI.`
-        : `${entry.receipts} facturas fueron verificadas por la DGI.`;
+        ? `Tu factura de ${titleCase([...entry.merchants][0])} fue verificada.`
+        : `${entry.receipts} facturas fueron verificadas.`;
       // 1 punto = US$0.01 de cashback.
-      const cashback = "$" + (entry.points / 100).toFixed(2);
-      const result = await sendPushToUser(supabase, userId, {
-        title: `¡Ganaste ${cashback} de cashback! 💸`,
-        body: `${merchantText} Úsalo en los comercios aliados de MonAvi.`,
-        data: { screen: "points" },
-      });
+      const money = (points: number) => "$" + (points / 100).toFixed(2);
+      const message = entry.points > 0
+        ? {
+          title: `¡Ganaste ${money(entry.points)} de cashback! 💸`,
+          body: entry.held > 0
+            ? `${merchantText} Tienes ${money(entry.held)} más pendientes: registra tus ingresos para recibirlos.`
+            : `${merchantText} Úsalo en los comercios aliados de MonAvi.`,
+          data: { screen: "points" },
+        }
+        : {
+          title: `Tienes ${money(entry.held)} de cashback pendiente`,
+          body: `${merchantText} Para recibirlo, registra tus ingresos del mes en MonAvi: el cashback se respalda con lo que ganas.`,
+          data: { screen: "home" },
+        };
+      const result = await sendPushToUser(supabase, userId, message);
       pushesSent += result.sent;
     }
 

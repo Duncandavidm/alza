@@ -4,7 +4,8 @@
 //    toda la regla vive en SQL (dias anotados, aportes de ahorro maduros,
 //    presupuestos cumplidos, tope mensual). Nada lo calcula el iPhone, asi
 //    que nadie puede inflar sus puntos desde la app.
-// 2. Aplica las campañas de marcas a las facturas recien verificadas.
+// 2. Aplica las campañas de marcas a las facturas recien verificadas y
+//    libera el cashback retenido que ya respaldan los ingresos.
 // 3. Avisa por push a quien ya le alcanza para un premio que antes no
 //    podia canjear (puntos o cashback, segun el comercio). Cada premio se
 //    avisa una sola vez por persona (reward_unlock_notifications).
@@ -72,6 +73,22 @@ Deno.serve(async (req) => {
     const { data: campaignsApplied, error: campaignError } = await supabase.rpc("apply_brand_campaigns_recent");
     if (campaignError) console.error("apply_brand_campaigns_recent", campaignError.message);
 
+    // Cashback retenido por falta de ingresos registrados: se libera si ya
+    // hay ingresos que respalden la compra (migracion 0045).
+    const { data: released, error: releaseError } = await supabase.rpc("release_income_held_cashback");
+    if (releaseError) console.error("release_income_held_cashback", releaseError.message);
+    let releasedUsers = 0;
+    for (const row of (released ?? []) as { user_id: string; released_cents: number }[]) {
+      if (!row.released_cents) continue;
+      releasedUsers++;
+      await sendPushToUser(supabase, row.user_id, {
+        title: "¡Ya tienes tu cashback! 💸",
+        body: "Registraste tus ingresos y liberamos $" + (row.released_cents / 100).toFixed(2) +
+          " de cashback pendiente. Úsalo en los comercios aliados.",
+        data: { screen: "points" },
+      });
+    }
+
     const { data: unlocks, error: unlockError } = await supabase.rpc("reward_unlocks_to_notify");
     if (unlockError) throw unlockError;
 
@@ -98,7 +115,7 @@ Deno.serve(async (req) => {
       if (markError) console.error("No se pudo marcar el aviso", markError.message);
     }
 
-    return jsonResponse({ habit_events_awarded: awarded ?? 0, brand_bonuses: campaignsApplied ?? 0, users_notified: usersNotified, push_sent: pushSent });
+    return jsonResponse({ habit_events_awarded: awarded ?? 0, brand_bonuses: campaignsApplied ?? 0, cashback_released_users: releasedUsers, users_notified: usersNotified, push_sent: pushSent });
   } catch (error) {
     console.error("award-habit-points fallo", error);
     return jsonResponse({ error: String((error as { message?: string })?.message ?? error) }, 500);

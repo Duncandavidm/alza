@@ -19,6 +19,7 @@ struct ScanInvoiceView: View {
     @State private var mode: Mode = .camera
     @State private var manualText = ""
     @State private var isProcessing = false
+    @State private var progressText = "Validando..."
     @State private var invalidMessage: String?
     @State private var draft: ScanDraft?
     @State private var galleryItem: PhotosPickerItem?
@@ -50,7 +51,7 @@ struct ScanInvoiceView: View {
                 }
 
                 if isProcessing {
-                    ProgressView("Validando...")
+                    ProgressView(progressText)
                         .padding(.bottom, 8)
                 }
             }
@@ -123,6 +124,7 @@ struct ScanInvoiceView: View {
         Task {
             guard let userId = appState.currentUserId else { return }
             isProcessing = true
+            progressText = "Validando..."
             invalidMessage = nil
             defer { isProcessing = false }
 
@@ -130,7 +132,10 @@ struct ScanInvoiceView: View {
             case .invalid(let message):
                 invalidMessage = message
             case .ready(let scanDraft):
-                draft = scanDraft
+                // Intenta leer la factura completa (monto, comercio,
+                // productos); si no se puede, sigue el flujo manual.
+                progressText = "Leyendo tu factura…"
+                draft = await viewModel.lookupInvoice(for: scanDraft)
             }
         }
     }

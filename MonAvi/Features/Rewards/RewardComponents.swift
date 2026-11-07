@@ -169,7 +169,24 @@ struct RewardBalanceTile: View {
 struct RewardBalancesHeader: View {
     let balance: PointsBalance
 
+    /// El cashback pendiente se libera cuando los ingresos registrados
+    /// respaldan las compras (ver migracion 0045).
+    static let pendingHint = "Se libera cuando tus ingresos registrados respalden tus compras."
+
     var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            tiles
+            if balance.pendingPoints > 0 {
+                Label(Self.pendingHint, systemImage: "info.circle")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 4)
+            }
+        }
+    }
+
+    private var tiles: some View {
         HStack(alignment: .top, spacing: 12) {
             RewardBalanceTile(
                 title: "Cashback",

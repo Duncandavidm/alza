@@ -75,7 +75,7 @@ struct DgiReceiptsListView: View {
             Text(receiptDateText(receipt))
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Text(receipt.status.statusExplanation)
+            Text(receipt.statusExplanationText)
                 .font(.caption)
                 .foregroundStyle(.secondary)
             if let paymentMethod = receipt.paymentMethod, !paymentMethod.isEmpty {

@@ -34,7 +34,62 @@ struct ScanDraft: Identifiable {
     var mergeCandidate: FinanceTransaction?
     var mergeWithCandidate: Bool = true
 
+    /// Resultado de leer la factura completa (`lookup-dgi-receipt`).
+    /// `.failed` = no se pudo leer: flujo manual de siempre.
+    var lookup: DgiLookupOutcome = .failed
+    /// Nombre del comercio segun la factura (si se pudo leer).
+    var invoiceMerchantName: String?
+    /// Fecha y hora real de la compra (si se pudo leer); si no, la fecha
+    /// del QR.
+    var authorizedAt: Date?
+    /// Con el monto leido de la factura, el campo queda bloqueado hasta
+    /// que el usuario toque "Editar".
+    var isAmountEditable: Bool = true
+    /// "Separar por categoría": un gasto por cada categoria del desglose.
+    var splitByCategory: Bool = false
+
     var id: String { parsed.cufe }
+
+    /// Nombre a mostrar / usar como descripcion del gasto.
+    var merchantDisplayName: String? {
+        invoiceMerchantName ?? merchant?.name
+    }
+
+    var invoiceDetails: DgiInvoiceDetails? {
+        if case .confirmed(let details) = lookup { return details }
+        return nil
+    }
+
+    var isDuplicate: Bool {
+        if case .duplicate = lookup { return true }
+        return false
+    }
+
+    /// Desglose por categoria (≥2) disponible para separar.
+    var canSplitByCategory: Bool {
+        guard let details = invoiceDetails else { return false }
+        let distinct = Set(details.breakdown.filter { $0.amount > 0 }.map(\.categoryName))
+        return distinct.count >= 2
+    }
+
+    /// Aplica lo que devolvio `lookup-dgi-receipt` al borrador.
+    mutating func apply(_ outcome: DgiLookupOutcome) {
+        lookup = outcome
+        guard case .confirmed(let details) = outcome else { return }
+        if let amount = details.amount, amount > 0 {
+            amountText = DgiInvoiceLookupLogic.amountText(for: amount)
+            isAmountEditable = false
+        }
+        if let name = details.merchantName {
+            invoiceMerchantName = name
+        }
+        authorizedAt = details.authorizedAt
+        // Categoria sugerida por los productos; si no se reconoce, la que
+        // ya teniamos por el RUC del comercio (si habia).
+        if let suggested = details.suggestedCategory {
+            category = suggested
+        }
+    }
 }
 
 @MainActor
@@ -133,6 +188,16 @@ final class DgiReceiptsViewModel: ObservableObject {
         return .ready(draft)
     }
 
+    /// Lee la factura completa (monto, comercio, productos) para
+    /// prellenar la revision. Nunca falla: si no se puede, el borrador
+    /// queda igual y el usuario escribe el monto como siempre.
+    func lookupInvoice(for draft: ScanDraft) async -> ScanDraft {
+        let outcome = await DgiInvoiceLookupService.lookup(cufe: draft.parsed.cufe)
+        var enriched = draft
+        enriched.apply(outcome)
+        return enriched
+    }
+
     /// Se llama cuando el usuario ya escribio un monto, para ofrecer
     /// fusionar en vez de duplicar si hay algo parecido ese mismo dia.
     func mergeCandidate(for draft: ScanDraft, userId: UUID, amount: Decimal) async -> FinanceTransaction? {
@@ -144,19 +209,43 @@ final class DgiReceiptsViewModel: ObservableObject {
     }
 
     /// Guarda el escaneo: fusiona con `mergeCandidate` si el usuario lo
-    /// acepto, o crea un gasto nuevo. Siempre crea la fila de
-    /// `dgi_receipts` como 'pendiente'.
+    /// acepto, separa en un gasto por categoria si lo pidio, o crea un
+    /// gasto nuevo. Siempre crea la fila de `dgi_receipts` como
+    /// 'pendiente' (el cashback se acredita despues, en el servidor).
     func confirmScan(
         draft: ScanDraft,
         userId: UUID,
         accountId: UUID,
         amount: Decimal
     ) async throws {
+        let occurredAt = draft.authorizedAt ?? draft.parsed.fields.fechaISODate
+        let merchantName = draft.merchantDisplayName ?? "Factura \(draft.parsed.fields.ruc)"
+        let splitLines: [DgiCategorySplitLine] = (draft.splitByCategory && draft.canSplitByCategory)
+            ? DgiInvoiceLookupLogic.splitLines(breakdown: draft.invoiceDetails?.breakdown ?? [], total: amount)
+            : []
+
         let transactionId: UUID
-        if draft.mergeWithCandidate, let candidate = draft.mergeCandidate {
+        if splitLines.count >= 2 {
+            var createdIds: [UUID] = []
+            for line in splitLines {
+                let created = try await TransactionsRepository.shared.add(
+                    NewTransaction(
+                        userId: userId,
+                        accountId: accountId,
+                        amount: MovementType.gasto.signedAmount(from: line.amount),
+                        movementType: .gasto,
+                        category: line.category?.rawValue,
+                        description: DgiInvoiceLookupLogic.splitDescription(merchant: merchantName, categoryName: line.categoryName),
+                        occurredAt: occurredAt
+                    )
+                )
+                createdIds.append(created.id)
+            }
+            let largest = DgiInvoiceLookupLogic.indexOfLargest(splitLines.map(\.amount)) ?? 0
+            transactionId = createdIds[largest]
+        } else if draft.mergeWithCandidate, let candidate = draft.mergeCandidate {
             transactionId = candidate.id
         } else {
-            let merchantName = draft.merchant?.name
             let created = try await TransactionsRepository.shared.add(
                 NewTransaction(
                     userId: userId,
@@ -164,14 +253,14 @@ final class DgiReceiptsViewModel: ObservableObject {
                     amount: MovementType.gasto.signedAmount(from: amount),
                     movementType: .gasto,
                     category: draft.category?.rawValue,
-                    description: merchantName ?? "Factura \(draft.parsed.fields.ruc)",
-                    occurredAt: draft.parsed.fields.fechaISODate
+                    description: merchantName,
+                    occurredAt: occurredAt
                 )
             )
             transactionId = created.id
         }
 
-        try await repository.add(
+        _ = try await repository.add(
             NewDgiReceipt(
                 userId: userId,
                 transactionId: transactionId,

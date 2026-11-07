@@ -29,6 +29,24 @@ enum DgiReceiptStatus: String, Codable, CaseIterable, Identifiable, Hashable {
     }
 }
 
+/// Estado del cashback de una factura ya verificada (columna
+/// `dgi_receipts.cashback_status`, nil mientras no se verifica). El
+/// cashback solo se acredita si los ingresos registrados del usuario
+/// respaldan sus compras con cashback.
+enum DgiCashbackStatus: String, Codable, CaseIterable, Hashable {
+    case acreditado
+    case sinIngreso = "sin_ingreso"
+    case vencido
+
+    var explanation: String {
+        switch self {
+        case .acreditado: return "Cashback acreditado"
+        case .sinIngreso: return "Cashback pendiente: registra tus ingresos para recibirlo"
+        case .vencido: return "Cashback vencido (sin ingresos registrados)"
+        }
+    }
+}
+
 /// Formato de la columna `fecha_factura` (Postgres `date`, sin hora):
 /// mismo patron que BillDateFormat/InvoiceDateFormat — se maneja como
 /// String de punta a punta.
@@ -90,6 +108,8 @@ struct DgiReceipt: Codable, Identifiable, Hashable {
     var merchantName: String?
     /// Fecha y hora real de la compra (autorizacion DGI), si se conoce.
     var authorizedAt: Date?
+    /// Estado del cashback (migracion 0045) — nil mientras no se verifica.
+    var cashbackStatus: DgiCashbackStatus?
 
     let scannedAt: Date
     var dgiCheckedAt: Date?
@@ -123,6 +143,7 @@ struct DgiReceipt: Codable, Identifiable, Hashable {
         case paymentMethod = "payment_method"
         case merchantName = "merchant_name"
         case authorizedAt = "authorized_at"
+        case cashbackStatus = "cashback_status"
         case scannedAt = "scanned_at"
         case dgiCheckedAt = "dgi_checked_at"
         case dgiCheckCount = "dgi_check_count"
@@ -131,6 +152,15 @@ struct DgiReceipt: Codable, Identifiable, Hashable {
     }
 
     var fechaFacturaValue: Date { DgiReceiptDateFormat.date(from: fechaFactura) }
+
+    /// Texto de estado para la lista: en facturas confirmadas, el estado
+    /// real del cashback (si ya se conoce); si no, el texto de siempre.
+    var statusExplanationText: String {
+        if status == .confirmada, let cashbackStatus {
+            return cashbackStatus.explanation
+        }
+        return status.statusExplanation
+    }
 
     /// Titulo para la lista: el nombre del comercio si ya lo tenemos;
     /// si no, el RUC.

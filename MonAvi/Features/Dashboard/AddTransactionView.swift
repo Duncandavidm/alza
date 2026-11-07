@@ -4,6 +4,9 @@ struct AddTransactionView: View {
     @EnvironmentObject private var appState: AppState
     @ObservedObject var viewModel: DashboardViewModel
     let accounts: [Account]
+    /// Para abrir el formulario ya en "ingreso" (ej. desde el aviso de
+    /// cashback al escanear una factura). nil = gasto, como siempre.
+    var initialMovementType: MovementType? = nil
     @Environment(\.dismiss) private var dismiss
     @AppStorage("isAdvancedMode") private var isAdvancedMode = false
     @StateObject private var budgetsViewModel = BudgetsViewModel()
@@ -95,6 +98,9 @@ struct AddTransactionView: View {
             }
             .navigationTitle("Nuevo movimiento")
             .onAppear {
+                if let initialMovementType, amountText.isEmpty {
+                    movementType = initialMovementType
+                }
                 selectedAccountId = selectedAccountId ?? accounts.first?.id
                 selectedCurrency = selectedAccount?.currency ?? "USD"
             }

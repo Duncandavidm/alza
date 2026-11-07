@@ -1,9 +1,10 @@
 import SwiftUI
 
-/// Pantalla de confirmacion despues de un escaneo valido: el usuario
-/// escribe el monto (la DGI no lo manda en el QR), confirma o cambia la
-/// categoria, y si hay un gasto parecido ese mismo dia, decide si
-/// fusionar en vez de duplicar.
+/// Pantalla de confirmacion despues de un escaneo valido. Si pudimos leer
+/// la factura, el monto, el comercio, la fecha y la categoria ya vienen
+/// llenos (el monto bloqueado, con opcion de "Editar"); si no, el usuario
+/// escribe el monto como siempre. Si hay un gasto parecido ese mismo dia,
+/// decide si fusionar en vez de duplicar.
 struct ScanReviewView: View {
     @EnvironmentObject private var appState: AppState
     @ObservedObject var viewModel: DgiReceiptsViewModel
@@ -16,30 +17,67 @@ struct ScanReviewView: View {
     @State private var isSaving = false
     @State private var errorMessage: String?
     @State private var checkedMergeForAmount: Decimal?
+    @State private var isShowingIncomeForm = false
+    @StateObject private var incomeViewModel = DashboardViewModel()
 
     private var amount: Decimal {
         Decimal(string: draft.amountText.replacingOccurrences(of: ",", with: ".")) ?? 0
+    }
+
+    /// Solo se puede unir con un gasto existente cuando NO se separa por
+    /// categoria.
+    private var isSplitting: Bool {
+        draft.splitByCategory && draft.canSplitByCategory
+    }
+
+    private var splitPreview: [DgiCategorySplitLine] {
+        DgiInvoiceLookupLogic.splitLines(breakdown: draft.invoiceDetails?.breakdown ?? [], total: amount)
+    }
+
+    private var dateText: String {
+        if let authorizedAt = draft.authorizedAt {
+            return authorizedAt.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, locale: .monavi))
+        }
+        return DgiReceiptDateFormat.date(from: draft.parsed.fields.fechaISO)
+            .formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi))
     }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section("Factura") {
-                    LabeledContent("Comercio", value: draft.merchant?.name ?? "Sin identificar (RUC \(draft.parsed.fields.ruc))")
-                    LabeledContent("Fecha", value: draft.parsed.fields.fechaISO)
+                    LabeledContent("Comercio", value: draft.merchantDisplayName ?? "Sin identificar (RUC \(draft.parsed.fields.ruc))")
+                    LabeledContent("Fecha", value: dateText)
                     LabeledContent("Sucursal", value: draft.parsed.fields.sucursal)
+                    if let details = draft.invoiceDetails, !details.paymentMethods.isEmpty {
+                        LabeledContent(
+                            details.paymentMethods.count > 1 ? "Formas de pago" : "Forma de pago",
+                            value: details.paymentMethods.joined(separator: ", ")
+                        )
+                    }
                 }
 
-                Section {
-                    AmountField(placeholder: "Monto de la factura", text: $draft.amountText)
-                        .onChange(of: draft.amountText) { _, _ in
-                            Task { await checkMerge() }
+                if let details = draft.invoiceDetails, !details.items.isEmpty {
+                    Section {
+                        DisclosureGroup("Productos (\(details.items.count))") {
+                            ForEach(details.items) { item in
+                                itemRow(item)
+                            }
                         }
+                    }
+                }
 
-                    Picker("Categoría", selection: $draft.category) {
-                        Text("Sin categoría").tag(TransactionCategory?.none)
-                        ForEach(TransactionCategory.allCases) { category in
-                            Text("\(category.emoji) \(category.rawValue)").tag(Optional(category))
+                lookupNoticeSection
+
+                Section {
+                    amountRow
+
+                    if !isSplitting {
+                        Picker("Categoría", selection: $draft.category) {
+                            Text("Sin categoría").tag(TransactionCategory?.none)
+                            ForEach(TransactionCategory.allCases) { category in
+                                Text("\(category.emoji) \(category.rawValue)").tag(Optional(category))
+                            }
                         }
                     }
 
@@ -51,10 +89,28 @@ struct ScanReviewView: View {
                 } header: {
                     Text("Monto y categoría")
                 } footer: {
-                    Text("El monto se registra de una vez; el cashback (1% de la factura) se acredita cuando la verifiquemos (24-72 h).")
+                    Text("El gasto se registra de una vez. El cashback (1%) se acredita cuando verifiquemos tu factura y tus ingresos lo respalden.")
                 }
 
-                if let candidate = draft.mergeCandidate {
+                if draft.canSplitByCategory {
+                    Section {
+                        Toggle("Separar por categoría", isOn: $draft.splitByCategory)
+                        ForEach(splitPreview) { line in
+                            LabeledContent {
+                                Text(line.amount, format: .currency(code: "USD"))
+                            } label: {
+                                Text("\(line.category?.emoji ?? "🏷️") \(line.categoryName)")
+                            }
+                            .foregroundStyle(draft.splitByCategory ? Color.primary : Color.secondary)
+                        }
+                    } footer: {
+                        Text(draft.splitByCategory
+                             ? "Se va a crear un gasto por cada categoría, con la misma cuenta y fecha."
+                             : "Se registra como un solo gasto.")
+                    }
+                }
+
+                if let candidate = draft.mergeCandidate, !isSplitting {
                     Section {
                         Toggle(isOn: $draft.mergeWithCandidate) {
                             VStack(alignment: .leading, spacing: 2) {
@@ -83,11 +139,103 @@ struct ScanReviewView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Guardar") { Task { await save() } }
-                        .disabled(amount <= 0 || selectedAccountId == nil || isSaving)
+                        .disabled(amount <= 0 || selectedAccountId == nil || isSaving || draft.isDuplicate)
                 }
             }
             .onAppear {
                 selectedAccountId = selectedAccountId ?? accounts.first?.id
+            }
+            .task {
+                // Con el monto ya leido de la factura, ofrecer de una vez
+                // la fusion con un gasto parecido del mismo dia.
+                await checkMerge()
+            }
+            .sheet(isPresented: $isShowingIncomeForm) {
+                AddTransactionView(
+                    viewModel: incomeViewModel,
+                    accounts: accounts,
+                    initialMovementType: .ingreso
+                )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var amountRow: some View {
+        if draft.isAmountEditable {
+            AmountField(placeholder: "Monto de la factura", text: $draft.amountText)
+                .onChange(of: draft.amountText) { _, _ in
+                    Task { await checkMerge() }
+                }
+        } else {
+            HStack {
+                Text("Monto")
+                Spacer()
+                Text(amount, format: .currency(code: "USD"))
+                    .fontWeight(.semibold)
+                Button("Editar") {
+                    draft.isAmountEditable = true
+                }
+                .buttonStyle(.borderless)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var lookupNoticeSection: some View {
+        switch draft.lookup {
+        case .duplicate(let message, _):
+            Section {
+                Text(message)
+                    .foregroundStyle(.red)
+            }
+        case .rateLimited:
+            Section {
+                Text("No pudimos leer tu factura ahorita. Escribe el monto y la verificamos después.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        case .confirmed, .manual, .failed:
+            EmptyView()
+        }
+
+        if draft.lookup.showsIncomeNotice {
+            Section {
+                VStack(alignment: .leading, spacing: 10) {
+                    Label {
+                        Text("Tu gasto se registra igual. Para recibir el cashback de esta factura, registra tus ingresos del mes: el cashback se respalda con lo que ganas.")
+                            .font(.subheadline)
+                            .fixedSize(horizontal: false, vertical: true)
+                    } icon: {
+                        Image(systemName: "info.circle.fill")
+                            .foregroundStyle(.blue)
+                    }
+                    Button("Registrar ingreso") {
+                        isShowingIncomeForm = true
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(accounts.isEmpty)
+                }
+                .padding(.vertical, 4)
+            }
+        }
+    }
+
+    private func itemRow(_ item: DgiInvoiceItem) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.description)
+                    .font(.subheadline)
+                if let quantity = item.quantity {
+                    Text("Cant. \(quantity.formatted(.number.precision(.fractionLength(0...3)).locale(.monavi)))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Spacer()
+            if let total = item.total {
+                Text(total, format: .currency(code: "USD"))
+                    .font(.subheadline)
             }
         }
     }
@@ -99,7 +247,7 @@ struct ScanReviewView: View {
     }
 
     private func save() async {
-        guard let userId = appState.currentUserId, let accountId = selectedAccountId else { return }
+        guard let userId = appState.currentUserId, let accountId = selectedAccountId, !draft.isDuplicate else { return }
         isSaving = true
         defer { isSaving = false }
 

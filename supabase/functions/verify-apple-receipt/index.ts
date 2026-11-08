@@ -193,10 +193,12 @@ async function fetchSubscriptionStatus(originalTransactionId: string, jwt: strin
       return await response.json();
     }
     lastError = new Error(`${base} -> ${response.status} ${await response.text()}`);
-    if (response.status !== 404) break;
+    // 401 en produccion es normal mientras la app no este publicada; 404 es
+    // una compra de otro entorno. En ambos casos se prueba el siguiente.
+    if (response.status !== 404 && response.status !== 401) break;
   }
-  // 404 en ambos entornos: la compra no existe en Apple (por ejemplo una
-  // compra de prueba local de Xcode, que nunca llega a los servidores).
+  // 404 al final: la compra no existe en Apple (por ejemplo una compra de
+  // prueba local de Xcode, que nunca llega a los servidores).
   if (String(lastError).includes("-> 404")) return { data: [] };
   throw lastError;
 }
@@ -234,14 +236,14 @@ function decodeJWSPayload(jws: string): {
 
 /** Firma un JWT ES256 para autenticarse contra el App Store Server API. */
 async function createAppleServerJWT(): Promise<string> {
-  const header = { alg: "ES256", kid: APPLE_KEY_ID, typ: "JWT" };
+  const header = { alg: "ES256", kid: APPLE_KEY_ID.trim(), typ: "JWT" };
   const now = Math.floor(Date.now() / 1000);
   const payload = {
-    iss: APPLE_ISSUER_ID,
+    iss: APPLE_ISSUER_ID.trim(),
     iat: now,
     exp: now + 60 * 20,
     aud: "appstoreconnect-v1",
-    bid: APPLE_BUNDLE_ID,
+    bid: APPLE_BUNDLE_ID.trim(),
   };
 
   const encoder = new TextEncoder();

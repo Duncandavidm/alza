@@ -6,7 +6,7 @@ Pegar en Supabase > Authentication > Emails > Templates. Asunto y archivo para c
 |---|---|---|
 | Magic Link | `Tu código de MonAvi: {{ .Token }}` | `codigo-de-acceso.html` |
 | Confirm signup | `Confirma tu correo en MonAvi` | `confirmar-registro.html` |
-| Reset Password | `Restablece tu contraseña de MonAvi` | `restablecer-contrasena.html` |
+| Reset Password | `Tu código para cambiar la contraseña: {{ .Token }}` | `restablecer-contrasena.html` |
 | Change Email Address | `Confirma tu nuevo correo en MonAvi` | `cambiar-correo.html` |
 | Reauthentication | `Tu código de seguridad de MonAvi: {{ .Token }}` | `reautenticacion.html` |
 

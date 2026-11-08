@@ -32,6 +32,11 @@ final class AppState: ObservableObject {
     @Published private(set) var entitlementProductId: String?
     @Published private(set) var onboardingStatus: OnboardingStatus = .unknown
     @Published private(set) var mfaStatus: MFAChallengeStatus = .unknown
+    /// true mientras PasswordResetSheet esta abierta: verifyOTP(.recovery)
+    /// crea la sesion antes de guardar la nueva contraseña, y RootView
+    /// tiene que seguir mostrando AuthView (con la hoja encima) hasta que
+    /// termine o se cancele.
+    @Published private(set) var isHoldingAuthScreen = false
 
     let subscriptionStore = SubscriptionStore()
     private let supabase = SupabaseManager.shared.client
@@ -63,6 +68,10 @@ final class AppState: ObservableObject {
                 }
             }
         }
+    }
+
+    func setHoldingAuthScreen(_ hold: Bool) {
+        isHoldingAuthScreen = hold
     }
 
     func signOut() async {

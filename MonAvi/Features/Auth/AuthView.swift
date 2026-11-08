@@ -3,8 +3,10 @@ import UIKit
 import AuthenticationServices
 
 struct AuthView: View {
+    @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = AuthViewModel()
     @State private var appeared = false
+    @State private var showsPasswordReset = false
 
     var body: some View {
         ZStack {
@@ -18,6 +20,11 @@ struct AuthView: View {
             }
         }
         .animation(.easeInOut(duration: 0.35), value: viewModel.showsSignInOverlay)
+        .sheet(isPresented: $showsPasswordReset) {
+            PasswordResetSheet(initialEmail: viewModel.email) { hold in
+                appState.setHoldingAuthScreen(hold)
+            }
+        }
         .onChange(of: viewModel.showsSignInOverlay) { _, isShowing in
             if isShowing {
                 // Que el teclado no se quede encima de la pantalla de carga.
@@ -192,9 +199,11 @@ struct AuthView: View {
 
                 if viewModel.emailAuthMode == .signIn {
                     Button {
-                        Task { await viewModel.sendPasswordReset() }
+                        viewModel.errorMessage = nil
+                        viewModel.infoMessage = nil
+                        showsPasswordReset = true
                     } label: {
-                        Text("Olvidaste tu contraseña?")
+                        Text("¿Olvidaste tu contraseña?")
                             .font(.footnote)
                     }
                 }

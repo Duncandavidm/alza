@@ -174,25 +174,4 @@ final class AuthViewModel: ObservableObject {
             self?.overlayStartedAt = nil
         }
     }
-
-    func sendPasswordReset() async {
-        errorMessage = nil
-        infoMessage = nil
-
-        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmedEmail.contains("@") else {
-            errorMessage = "Escribe tu correo arriba para poder enviarte el link de recuperacion."
-            return
-        }
-
-        isSigningIn = true
-        defer { isSigningIn = false }
-
-        do {
-            try await supabase.auth.resetPasswordForEmail(trimmedEmail)
-            infoMessage = "Te mandamos un correo a \(trimmedEmail) con un link para restablecer tu contraseña."
-        } catch {
-            errorMessage = "No se pudo enviar el correo de recuperacion: \(error.localizedDescription)"
-        }
-    }
 }

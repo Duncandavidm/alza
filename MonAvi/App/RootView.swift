@@ -18,7 +18,7 @@ struct RootView: View {
 
     private var screen: Screen {
         if appState.isLoadingSession { return .loading }
-        if !appState.isSignedIn { return .auth }
+        if !appState.isSignedIn || appState.isHoldingAuthScreen { return .auth }
         if appState.mfaStatus == .unknown { return .loading }
         if appState.mfaStatus == .challengeRequired { return .mfaChallenge }
         if appState.onboardingStatus == .unknown { return .loading }

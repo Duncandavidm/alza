@@ -193,7 +193,11 @@ async function fetchSubscriptionStatus(originalTransactionId: string, jwt: strin
       return await response.json();
     }
     lastError = new Error(`${base} -> ${response.status} ${await response.text()}`);
+    if (response.status !== 404) break;
   }
+  // 404 en ambos entornos: la compra no existe en Apple (por ejemplo una
+  // compra de prueba local de Xcode, que nunca llega a los servidores).
+  if (String(lastError).includes("-> 404")) return { data: [] };
   throw lastError;
 }
 
@@ -256,10 +260,13 @@ async function createAppleServerJWT(): Promise<string> {
 }
 
 async function importApplePrivateKey(pem: string): Promise<CryptoKey> {
+  // El secret puede venir pegado con "\n" literales, comillas o espacios:
+  // se queda solo con el base64 entre los encabezados.
   const pkcs8 = pem
-    .replace("-----BEGIN PRIVATE KEY-----", "")
-    .replace("-----END PRIVATE KEY-----", "")
-    .replace(/\s/g, "");
+    .replace(/\\n/g, "\n")
+    .replace(/-----[A-Z ]+-----/g, "")
+    .replace(/[^A-Za-z0-9+/=]/g, "");
+  if (pkcs8.length < 100) throw new Error("APPLE_PRIVATE_KEY vacia o mal pegada");
   const binary = Uint8Array.from(atob(pkcs8), (c) => c.charCodeAt(0));
 
   return await crypto.subtle.importKey(

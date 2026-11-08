@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { formatCashback, formatDate, formatDateTime, formatInt, num } from "@/lib/format";
+import { cleanLine } from "@/lib/push";
+import { bannedUntilByIds, isBanned } from "@/lib/customer-accounts";
 
 export const dynamic = "force-dynamic";
 
@@ -47,7 +49,10 @@ export default async function ClientesPage({
   const search = (first(params.q) ?? "").replace(/\s+/g, " ").trim().slice(0, 80);
   const pageNumber = Math.max(1, Math.min(10000, Math.floor(Number(first(params.page)) || 1)));
 
-  const { data, error } = await supabaseAdmin().rpc("admin_customers", {
+  const message = cleanLine(first(params.msg), 400);
+  const errorMessage = cleanLine(first(params.err), 400);
+  const supabase = supabaseAdmin();
+  const { data, error } = await supabase.rpc("admin_customers", {
     p_search: search || null,
     p_limit: PAGE_SIZE,
     p_offset: (pageNumber - 1) * PAGE_SIZE,
@@ -55,6 +60,10 @@ export default async function ClientesPage({
   const result = (data ?? {}) as { total?: number | string; rows?: Customer[] };
   const total = num(result.total);
   const rows = result.rows ?? [];
+  const bannedUntil = await bannedUntilByIds(
+    supabase,
+    rows.map((row) => row.id)
+  );
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const pageHref = (page: number) => {
@@ -77,6 +86,17 @@ export default async function ClientesPage({
         </div>
         <span className="pii-note">🔒 Datos personales: no compartir</span>
       </div>
+
+      {message && (
+        <div className="card">
+          <strong className="success-text">Listo.</strong> {message}
+        </div>
+      )}
+      {errorMessage && (
+        <div className="card">
+          <p className="error" style={{ margin: 0 }}>{errorMessage}</p>
+        </div>
+      )}
 
       <form method="get" action="/clientes" className="card inline-actions">
         <input
@@ -117,6 +137,7 @@ export default async function ClientesPage({
                   <th>Push</th>
                   <th>Permisos</th>
                   <th>Suscripción</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -124,6 +145,12 @@ export default async function ClientesPage({
                   <tr key={row.id}>
                     <td>
                       <strong>{row.full_name || "Sin nombre"}</strong>
+                      {isBanned(bannedUntil.get(row.id)) && (
+                        <>
+                          {" "}
+                          <span className="badge rechazada">Suspendida</span>
+                        </>
+                      )}
                       <div className="text-dim">{row.email ?? "—"}</div>
                       {(row.gender || row.age || row.occupation) && (
                         <div className="text-dim">
@@ -160,6 +187,9 @@ export default async function ClientesPage({
                       </div>
                     </td>
                     <td>{row.subscription ? <span className="badge">{row.subscription}</span> : <span className="text-dim">—</span>}</td>
+                    <td>
+                      <Link href={`/clientes/${row.id}`}>Gestionar</Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>

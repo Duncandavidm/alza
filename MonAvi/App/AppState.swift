@@ -23,6 +23,10 @@ final class AppState: ObservableObject {
     @Published private(set) var session: Session?
     @Published private(set) var isLoadingSession = true
     @Published private(set) var subscriptionStatus: SubscriptionStatus = .unknown
+    /// true mientras refreshSubscriptionStatus() esta consultando. RootView
+    /// lo usa para mostrar la pantalla de carga (en vez del paywall)
+    /// mientras el estado todavia es .unknown.
+    @Published private(set) var isCheckingSubscription = false
     /// product_id de la suscripcion que da el acceso actual (mensual o
     /// anual). nil si no hay ninguna.
     @Published private(set) var entitlementProductId: String?
@@ -93,6 +97,8 @@ final class AppState: ObservableObject {
             entitlementProductId = nil
             return
         }
+        isCheckingSubscription = true
+        defer { isCheckingSubscription = false }
         do {
             let rows: [EntitlementRow] = try await supabase
                 .rpc("get_entitlement_status")

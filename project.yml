@@ -32,7 +32,13 @@ targets:
         CFBundleDevelopmentRegion: es
         CFBundleLocalizations:
           - es
-        UILaunchScreen: {}
+        # Pantalla de arranque oscura con el mark de MonAvi (nunca blanca):
+        # mismo color que el fondo de BrandLoadingView para que el paso
+        # launch -> carga sea continuo.
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+          UIImageName: LaunchLogo
+          UIImageRespectsSafeAreaInsets: false
         ITSAppUsesNonExemptEncryption: false
         NSMicrophoneUsageDescription: MonAvi usa el microfono para que anotes un ingreso o gasto diciendolo en voz alta.
         NSSpeechRecognitionUsageDescription: MonAvi transcribe lo que dices para llenar el monto, la descripcion y la categoria del movimiento por ti.

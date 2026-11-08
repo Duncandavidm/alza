@@ -7,6 +7,29 @@ struct AuthView: View {
     @State private var appeared = false
 
     var body: some View {
+        ZStack {
+            form
+                .opacity(viewModel.showsSignInOverlay ? 0 : 1)
+
+            if viewModel.showsSignInOverlay {
+                BrandLoadingView(message: viewModel.signInOverlayMessage)
+                    .transition(.opacity)
+                    .zIndex(1)
+            }
+        }
+        .animation(.easeInOut(duration: 0.35), value: viewModel.showsSignInOverlay)
+        .onChange(of: viewModel.showsSignInOverlay) { _, isShowing in
+            if isShowing {
+                // Que el teclado no se quede encima de la pantalla de carga.
+                UIApplication.shared.sendAction(
+                    #selector(UIResponder.resignFirstResponder),
+                    to: nil, from: nil, for: nil
+                )
+            }
+        }
+    }
+
+    private var form: some View {
         VStack(spacing: 0) {
             header
                 .frame(height: 280)
@@ -75,7 +98,7 @@ struct AuthView: View {
 
             emailForm
 
-            if viewModel.isSigningIn {
+            if viewModel.isSigningIn && !viewModel.showsSignInOverlay {
                 ProgressView()
                     .padding(.top, 4)
             }

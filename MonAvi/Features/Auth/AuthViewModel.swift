@@ -13,6 +13,16 @@ final class AuthViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var infoMessage: String?
     @Published var isSigningIn = false
+    /// Muestra BrandLoadingView a pantalla completa encima del formulario
+    /// mientras se inicia sesion (correo o Apple). Al entrar, RootView
+    /// reemplaza AuthView por su propia pantalla de carga; si falla, se
+    /// quita el overlay y se ve el error de siempre.
+    @Published private(set) var showsSignInOverlay = false
+    @Published private(set) var signInOverlayMessage = "Entrando…"
+
+    /// Tiempo minimo en pantalla del overlay para que no "parpadee".
+    private static let minimumOverlayDuration: TimeInterval = 0.8
+    private var overlayStartedAt: Date?
 
     @Published var emailAuthMode: EmailAuthMode = .signIn
     @Published var email = ""
@@ -66,12 +76,15 @@ final class AuthViewModel: ObservableObject {
 
             isSigningIn = true
             defer { isSigningIn = false }
+            showSignInOverlay(message: "Entrando…")
 
             do {
                 try await supabase.auth.signInWithIdToken(
                     credentials: .init(provider: .apple, idToken: idToken, nonce: nonce)
                 )
+                scheduleOverlayFallbackDismiss()
             } catch {
+                await hideSignInOverlay()
                 errorMessage = "No se pudo iniciar sesión con Apple: \(error.localizedDescription)"
             }
         }
@@ -97,22 +110,63 @@ final class AuthViewModel: ObservableObject {
 
         isSigningIn = true
         defer { isSigningIn = false }
+        showSignInOverlay(message: emailAuthMode == .signIn ? "Entrando…" : "Creando tu cuenta…")
 
         do {
             switch emailAuthMode {
             case .signIn:
                 _ = try await supabase.auth.signIn(email: trimmedEmail, password: password)
+                scheduleOverlayFallbackDismiss()
             case .signUp:
                 let response = try await supabase.auth.signUp(email: trimmedEmail, password: password)
                 if response.session == nil {
+                    // Falta confirmar el correo: no hay sesion, se vuelve
+                    // al formulario con el aviso.
+                    await hideSignInOverlay()
                     infoMessage = "Te mandamos un correo a \(trimmedEmail) para confirmar tu cuenta. Confirma y vuelve a iniciar sesión."
                     emailAuthMode = .signIn
                     password = ""
                     confirmPassword = ""
+                } else {
+                    scheduleOverlayFallbackDismiss()
                 }
             }
         } catch {
+            await hideSignInOverlay()
             errorMessage = "No se pudo \(emailAuthMode == .signIn ? "iniciar sesion" : "crear la cuenta"): \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: - Overlay de carga al iniciar sesion
+
+    private func showSignInOverlay(message: String) {
+        signInOverlayMessage = message
+        overlayStartedAt = Date()
+        showsSignInOverlay = true
+    }
+
+    /// Quita el overlay respetando el tiempo minimo en pantalla.
+    private func hideSignInOverlay() async {
+        guard showsSignInOverlay else { return }
+        if let startedAt = overlayStartedAt {
+            let remaining = Self.minimumOverlayDuration - Date().timeIntervalSince(startedAt)
+            if remaining > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(remaining * 1_000_000_000))
+            }
+        }
+        showsSignInOverlay = false
+        overlayStartedAt = nil
+    }
+
+    /// Al iniciar sesion bien, RootView cambia a su propia pantalla de
+    /// carga y AuthView desaparece con el overlay. Si por lo que sea la
+    /// sesion no llega a RootView, no dejar al usuario atorado: quitar el
+    /// overlay despues de unos segundos.
+    private func scheduleOverlayFallbackDismiss() {
+        Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 6_000_000_000)
+            self?.showsSignInOverlay = false
+            self?.overlayStartedAt = nil
         }
     }
 

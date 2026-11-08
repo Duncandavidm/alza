@@ -31,6 +31,11 @@ struct RewardsView: View {
     @State private var isRedeeming = false
     @State private var presentedRedemption: RewardRedemption?
     @State private var redeemErrorMessage: String?
+    /// Producto cuyo canje pidio verificar el correo; se reintenta solo al
+    /// cerrar EmailVerificationSheet si se verifico.
+    @State private var itemAwaitingVerification: RewardItem?
+    @State private var isVerifyingEmail = false
+    @State private var didVerifyEmail = false
 
     var body: some View {
         ScrollView {
@@ -74,6 +79,11 @@ struct RewardsView: View {
         }
         .sheet(item: $presentedRedemption) { (redemption: RewardRedemption) in
             RedemptionCodeView(redemption: redemption)
+        }
+        .sheet(isPresented: $isVerifyingEmail, onDismiss: retryAfterEmailVerification) {
+            EmailVerificationSheet {
+                didVerifyEmail = true
+            }
         }
         .alert("No se pudo canjear", isPresented: isShowingRedeemError) {
             Button("OK", role: .cancel) { redeemErrorMessage = nil }
@@ -287,6 +297,13 @@ struct RewardsView: View {
             isRedeeming = false
             pendingItem = nil
             presentedRedemption = redemption
+        } catch let error where RewardsRepository.requiresEmailVerification(error) {
+            // Primer canje con el correo sin verificar: pedir el codigo y,
+            // al verificar, reintentar este mismo canje.
+            isRedeeming = false
+            itemAwaitingVerification = item
+            didVerifyEmail = false
+            isVerifyingEmail = true
         } catch {
             UINotificationFeedbackGenerator().notificationOccurred(.error)
             isRedeeming = false
@@ -295,6 +312,18 @@ struct RewardsView: View {
         if let userId = appState.currentUserId {
             await viewModel.refreshBalance(userId: userId)
         }
+    }
+
+    /// Al cerrar EmailVerificationSheet: si se verifico, reintenta el canje
+    /// pendiente (despues de cerrar la hoja, para poder presentar el
+    /// codigo del canje sin chocar con la animacion de cierre).
+    private func retryAfterEmailVerification() {
+        let item = itemAwaitingVerification
+        let verified = didVerifyEmail
+        itemAwaitingVerification = nil
+        didVerifyEmail = false
+        guard verified, let item else { return }
+        Task { await redeem(item) }
     }
 
     private func refresh() async {

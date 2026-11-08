@@ -23,6 +23,9 @@ final class ProfileSettingsViewModel: ObservableObject {
     @Published private(set) var isSaving = false
     @Published var errorMessage: String?
     @Published var didSave = false
+    /// Correo verificado con codigo (RPC `email_is_verified`); nil
+    /// mientras no se sabe (cargando o fallo la consulta).
+    @Published private(set) var isEmailVerified: Bool?
 
     /// Rango de edades que ofrece el selector.
     static let ageRange = 18...99
@@ -169,6 +172,16 @@ final class ProfileSettingsViewModel: ObservableObject {
         }
     }
 
+    /// Pregunta al servidor si el correo ya se verifico (los que entraron
+    /// con Apple ya cuentan como verificados). Si falla, no muestra nada.
+    func loadEmailVerification(userId: UUID) async {
+        isEmailVerified = try? await EmailVerificationService.shared.isVerified(userId: userId)
+    }
+
+    func markEmailVerified() {
+        isEmailVerified = true
+    }
+
     func save(userId: UUID) async {
         let cleanPhone: String?
         switch Self.parsePhone(phone) {
@@ -217,6 +230,7 @@ struct ProfileSettingsView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = ProfileSettingsViewModel()
     @State private var isSigningOut = false
+    @State private var isShowingEmailVerification = false
 
     var body: some View {
         Form {
@@ -234,6 +248,11 @@ struct ProfileSettingsView: View {
         .onChange(of: viewModel.maritalStatus) { _, _ in viewModel.didSave = false }
         .onChange(of: viewModel.dependentsCount) { _, _ in viewModel.didSave = false }
         .onChange(of: viewModel.occupation) { _, _ in viewModel.didSave = false }
+        .sheet(isPresented: $isShowingEmailVerification) {
+            EmailVerificationSheet {
+                viewModel.markEmailVerified()
+            }
+        }
         .alert("Algo salió mal", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") { viewModel.errorMessage = nil }
         } message: {
@@ -255,6 +274,28 @@ struct ProfileSettingsView: View {
             if let signInMethod {
                 LabeledContent("Inicio de sesión", value: signInMethod)
             }
+            if email != nil {
+                emailVerificationRow
+            }
+        }
+    }
+
+    /// "Correo verificado ✓" o el boton para verificarlo (se pide antes
+    /// del primer canje de premios).
+    @ViewBuilder
+    private var emailVerificationRow: some View {
+        switch viewModel.isEmailVerified {
+        case .some(true):
+            Text("Correo verificado ✓")
+                .foregroundStyle(MonAviBrand.primaryDark)
+        case .some(false):
+            Button {
+                isShowingEmailVerification = true
+            } label: {
+                Label("Verificar correo", systemImage: "envelope.badge")
+            }
+        case .none:
+            EmptyView()
         }
     }
 
@@ -399,6 +440,7 @@ struct ProfileSettingsView: View {
     private func load() async {
         guard let userId = appState.currentUserId else { return }
         await viewModel.load(userId: userId)
+        await viewModel.loadEmailVerification(userId: userId)
     }
 
     private func save() async {

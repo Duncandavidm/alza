@@ -73,6 +73,17 @@ final class RewardsRepository {
         (try? await fetchActiveGifts(userId: userId)) ?? []
     }
 
+    /// true si la RPC rechazo el canje porque el correo no esta verificado
+    /// ("Verifica tu correo para canjear"): en vez de una alerta, se abre
+    /// EmailVerificationSheet y luego se reintenta el canje.
+    static func requiresEmailVerification(_ error: Error) -> Bool {
+        if let postgrestError = error as? PostgrestError,
+           EmailVerificationLogic.isVerificationRequired(message: postgrestError.message) {
+            return true
+        }
+        return EmailVerificationLogic.isVerificationRequired(message: userMessage(for: error))
+    }
+
     /// El mensaje que armo la RPC (ya en espanol) si es un error de
     /// Postgres; si no, el texto generico del error.
     static func userMessage(for error: Error) -> String {

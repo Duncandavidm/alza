@@ -41,7 +41,9 @@ struct AuthView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Bienvenido")
                             .font(.system(.largeTitle, design: MonAviBrand.fontDesign, weight: .bold))
-                        Text("Inicia sesión para ver cómo va tu negocio.")
+                        Text(viewModel.emailAuthMode == .signUp
+                             ? "Crea tu cuenta en segundos."
+                             : "Tus gastos, tu ahorro y tus premios, en un solo lugar.")
                             .font(.system(.subheadline, design: MonAviBrand.fontDesign))
                             .foregroundStyle(.secondary)
                     }

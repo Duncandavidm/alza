@@ -118,10 +118,15 @@ final class AuthViewModel: ObservableObject {
                 _ = try await supabase.auth.signIn(email: trimmedEmail, password: password)
                 scheduleOverlayFallbackDismiss()
             case .signUp:
+                // Sin confirmacion de correo ("Confirm email" apagado en
+                // Supabase): signUp ya trae la sesion y el usuario entra de
+                // una (RootView reacciona a authStateChanges). El correo se
+                // verifica con un codigo de 6 digitos solo antes del primer
+                // canje (EmailVerificationSheet).
                 let response = try await supabase.auth.signUp(email: trimmedEmail, password: password)
                 if response.session == nil {
-                    // Falta confirmar el correo: no hay sesion, se vuelve
-                    // al formulario con el aviso.
+                    // Respaldo por si "Confirm email" sigue encendido: no
+                    // hay sesion, se vuelve al formulario con el aviso.
                     await hideSignInOverlay()
                     infoMessage = "Te mandamos un correo a \(trimmedEmail) para confirmar tu cuenta. Confirma y vuelve a iniciar sesión."
                     emailAuthMode = .signIn

@@ -41,6 +41,7 @@ struct RewardsView: View {
         ScrollView {
             LazyVStack(spacing: 20) {
                 balanceHeader
+                referralBanner
                 Picker("Ver", selection: $mode) {
                     ForEach(Mode.allCases) { (option: Mode) in
                         Text(option.rawValue).tag(option)
@@ -107,6 +108,34 @@ struct RewardsView: View {
 
     private var balanceHeader: some View {
         RewardBalancesHeader(balance: viewModel.balance)
+    }
+
+    /// Atajo a "Invita amigos" (mismo ReferralView que en Mi perfil).
+    private var referralBanner: some View {
+        NavigationLink {
+            ReferralView()
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "gift.fill")
+                    .font(.title3)
+                    .foregroundStyle(MonAviBrand.primary)
+                Text("Invita amigos y gana 200 puntos")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.primary)
+                    .multilineTextAlignment(.leading)
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(
+                Color(.secondarySystemGroupedBackground),
+                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     private var categoryChips: some View {

@@ -23,6 +23,8 @@ struct PaywallView: View {
     @State private var isSigningOut = false
     @State private var audience: PaywallAudience = .personal
     @State private var appeared = false
+    /// Hoja de App Store para canjear un codigo de oferta de suscripcion.
+    @State private var isRedeemingOfferCode = false
 
     private static let topChips = [
         MarqueeChip(icon: "💬", text: "Pregunta lo que sea sobre tu dinero"),
@@ -95,6 +97,12 @@ struct PaywallView: View {
         }
         .task {
             await subscriptionStore.loadProduct()
+        }
+        .offerCodeRedemption(isPresented: $isRedeemingOfferCode) { _ in
+            Task {
+                await subscriptionStore.syncCurrentEntitlements()
+                await appState.refreshSubscriptionStatus()
+            }
         }
     }
 
@@ -312,10 +320,16 @@ struct PaywallView: View {
             .lineLimit(1)
             .frame(maxWidth: .infinity)
 
-            Button("Restaurar compras") {
-                Task {
-                    await subscriptionStore.restore()
-                    await appState.refreshSubscriptionStatus()
+            HStack(spacing: 20) {
+                Button("Restaurar compras") {
+                    Task {
+                        await subscriptionStore.restore()
+                        await appState.refreshSubscriptionStatus()
+                    }
+                }
+
+                Button("Canjear código") {
+                    isRedeemingOfferCode = true
                 }
             }
             .font(.footnote)

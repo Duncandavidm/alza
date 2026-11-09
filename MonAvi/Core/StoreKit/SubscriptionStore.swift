@@ -234,6 +234,23 @@ final class SubscriptionStore: ObservableObject {
         }
     }
 
+    /// Despues de canjear un codigo de oferta (`.offerCodeRedemption`):
+    /// la transaccion nueva normalmente llega por `Transaction.updates`,
+    /// pero por si la hoja se cierra antes, se reenvian las
+    /// suscripciones vigentes de MonAvi Pro por el mismo camino de una
+    /// compra (`onVerifiedTransaction` -> verify-apple-receipt) y se
+    /// refresca la info de renovacion. No muestra el login de Apple
+    /// (a diferencia de `restore()` con AppStore.sync).
+    func syncCurrentEntitlements() async {
+        let productIds = Set(SubscriptionPlan.allCases.map(\.productId))
+        for await entitlement in Transaction.currentEntitlements {
+            guard case .verified(let transaction) = entitlement,
+                  productIds.contains(transaction.productID) else { continue }
+            await onVerifiedTransaction?(transaction)
+        }
+        await refreshRenewalInfo()
+    }
+
     func openManageSubscriptions() async {
         guard let scene = PresentationHelper.rootViewController?.view.window?.windowScene else { return }
         try? await AppStore.showManageSubscriptions(in: scene)

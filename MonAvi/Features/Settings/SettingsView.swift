@@ -1,4 +1,5 @@
 import SwiftUI
+import StoreKit
 import UIKit
 import UserNotifications
 
@@ -10,6 +11,8 @@ struct SettingsView: View {
     @AppStorage(NotificationManager.dailyLogReminderKey) private var dailyLogReminder = true
     @AppStorage(NotificationManager.dailyLogTimeKey) private var dailyLogMinutes = NotificationManager.defaultDailyLogMinutes
     @State private var testNotificationSent = false
+    /// Hoja de App Store para canjear un codigo de oferta de suscripcion.
+    @State private var isRedeemingOfferCode = false
 
     private var isNotificationAuthorized: Bool {
         notificationStatus == .authorized || notificationStatus == .provisional || notificationStatus == .ephemeral
@@ -24,6 +27,12 @@ struct SettingsView: View {
                         ProfileSettingsView()
                     } label: {
                         Label("Mi perfil", systemImage: "person.crop.circle.fill")
+                    }
+
+                    NavigationLink {
+                        ReferralView()
+                    } label: {
+                        Label("Invita amigos", systemImage: "gift.fill")
                     }
                 }
 
@@ -219,6 +228,10 @@ struct SettingsView: View {
                             await appState.refreshSubscriptionStatus()
                         }
                     }
+
+                    Button("Canjear código") {
+                        isRedeemingOfferCode = true
+                    }
                 }
 
                 Section {
@@ -248,6 +261,12 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Ajustes")
+            .offerCodeRedemption(isPresented: $isRedeemingOfferCode) { _ in
+                Task {
+                    await appState.subscriptionStore.syncCurrentEntitlements()
+                    await appState.refreshSubscriptionStatus()
+                }
+            }
             .task {
                 await appState.subscriptionStore.refreshRenewalInfo()
             }

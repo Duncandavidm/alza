@@ -33,4 +33,9 @@ enum Config {
     /// abre `?code=<CODIGO>` con la camara de cualquier telefono y el
     /// cajero lo confirma con su PIN.
     static let redeemBaseURL = URL(string: "https://monavi.maday.app/canjear")!
+
+    /// Enlace para descargar MonAvi que va en el mensaje de "Invita
+    /// amigos". Cuando la app tenga su id de App Store, cambia esto por
+    /// `https://apps.apple.com/app/id<ID>`.
+    static let appStoreURL = URL(string: "https://monavi.maday.app")!
 }

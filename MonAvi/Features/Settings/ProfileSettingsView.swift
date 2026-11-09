@@ -235,6 +235,7 @@ struct ProfileSettingsView: View {
     var body: some View {
         Form {
             accountSection
+            referralSection
             personalDataSection
             saveSection
             sessionSection
@@ -315,6 +316,20 @@ struct ProfileSettingsView: View {
         case "email": return "Correo y contraseña"
         case "google": return "Google"
         default: return nil
+        }
+    }
+
+    // MARK: - Invita amigos
+
+    private var referralSection: some View {
+        Section {
+            NavigationLink {
+                ReferralView()
+            } label: {
+                Label("Invita amigos", systemImage: "gift.fill")
+            }
+        } footer: {
+            Text("Comparte tu código: tú ganas 200 puntos y tu amigo 100.")
         }
     }
 

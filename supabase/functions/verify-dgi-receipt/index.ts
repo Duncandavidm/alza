@@ -1,9 +1,11 @@
 // Edge Function: verify-dgi-receipt
 //
 // "Facturas que suman" Fase 2 (verificacion real) + Fase 3 (puntos).
-// Job operativo llamado por pg_cron (migracion 0031: todos los dias a las
-// 8:00 a. m. de Panama) — igual que reconcile-card-transactions/
-// reconcile-savings-reports, exige x-admin-secret, verify_jwt: false.
+// Se llama de dos formas, siempre con x-admin-secret (verify_jwt: false):
+//  - Al registrarse cada factura (trigger de la migracion 0049, body
+//    {receipt_id}): verificacion inmediata de esa factura.
+//  - Cada hora por pg_cron: reintenta las pendientes cuya ultima consulta
+//    fue hace 24 h o mas.
 //
 // Confirmado en vivo contra dgi-fep.mef.gob.pa (ver reporte de la
 // sesion, no es una suposicion): el link directo por CUFE
@@ -33,8 +35,8 @@ const ADMIN_JOB_SECRET = Deno.env.get("ADMIN_JOB_SECRET")!;
 
 const DGI_BASE = "https://dgi-fep.mef.gob.pa";
 const BATCH_SIZE = 20;
-// La corrida es una vez al dia, asi que procesa lote tras lote hasta
-// vaciar los pendientes, sin pasar de este tiempo (el limite de una Edge
+// Cada corrida procesa lote tras lote hasta vaciar los pendientes, sin
+// pasar de este tiempo (el limite de una Edge
 // Function es mayor; esto deja margen para los avisos push del final).
 const TIME_BUDGET_MS = 110_000;
 // Pausa entre cada consulta — no hay razon para martillar un servidor
@@ -350,7 +352,14 @@ async function processReceipt(
   expireAfterDays: number,
 ): Promise<ReceiptResult | null> {
   const now = new Date();
-  const response = await fetch(`${DGI_BASE}/Consultas/FacturasPorCUFE/${receipt.cufe}`);
+  let response: Response;
+  try {
+    response = await fetch(`${DGI_BASE}/Consultas/FacturasPorCUFE/${receipt.cufe}`, {
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch {
+    return null;
+  }
   if (!response.ok) {
     // Fallo transitorio (servidor caido, etc.) — no se cuenta como un
     // intento real, se reintenta en la proxima corrida.
@@ -442,6 +451,37 @@ async function processReceipt(
   return { points: awarded, merchantName, held: after?.cashback_status === "sin_ingreso" };
 }
 
+type UserSummary = { points: number; held: number; receipts: number; merchants: Set<string> };
+
+/// Un solo aviso push por persona con lo que se confirmo.
+async function notifyUser(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  entry: UserSummary,
+): Promise<number> {
+  if (entry.points <= 0 && entry.held <= 0) return 0;
+  const merchantText = entry.receipts === 1 && entry.merchants.size === 1
+    ? `Tu factura de ${titleCase([...entry.merchants][0])} fue verificada.`
+    : `${entry.receipts} facturas fueron verificadas.`;
+  // 1 punto = US$0.01 de cashback.
+  const money = (points: number) => "$" + (points / 100).toFixed(2);
+  const message = entry.points > 0
+    ? {
+      title: `¡Ganaste ${money(entry.points)} de cashback! 💸`,
+      body: entry.held > 0
+        ? `${merchantText} Tienes ${money(entry.held)} más pendientes: registra tus ingresos para recibirlos.`
+        : `${merchantText} Úsalo en los comercios aliados de MonAvi.`,
+      data: { screen: "points" },
+    }
+    : {
+      title: `Tienes ${money(entry.held)} de cashback pendiente`,
+      body: `${merchantText} Para recibirlo, registra tus ingresos del mes en MonAvi: el cashback se respalda con lo que ganas.`,
+      data: { screen: "home" },
+    };
+  const result = await sendPushToUser(supabase, userId, message);
+  return result.sent;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: CORS_HEADERS });
@@ -463,6 +503,36 @@ Deno.serve(async (req) => {
     const dailyCapFactura = await getRule(supabase, "factura", "daily_cap_points_per_user", 300);
     const expireAfterDays = Number((await getConfig(supabase, "dgi_verification_expire_after_days")) ?? 7);
 
+    // Modo inmediato: el trigger de dgi_receipts (migracion 0049) llama
+    // con {receipt_id} apenas se registra la factura. Se consulta a la DGI
+    // en ese momento; si ya esta publicada, el cashback se suma de una vez.
+    let body: { receipt_id?: string } = {};
+    try { body = await req.json(); } catch { /* corrida diaria sin body */ }
+    if (body.receipt_id) {
+      const { data: row } = await supabase
+        .from("dgi_receipts")
+        .select("id, user_id, cufe, ruc, scanned_at, dgi_check_count")
+        .eq("id", body.receipt_id).eq("status", "pendiente").maybeSingle();
+      if (!row) return jsonResponse({ immediate: true, skipped: "no pendiente" });
+      const result = await processReceipt(supabase, row as PendingReceipt, pointsPerDollar, dailyCapFactura, expireAfterDays);
+      let pushesSent = 0;
+      if (result) {
+        pushesSent = await notifyUser(supabase, row.user_id as string, {
+          points: result.held ? 0 : result.points,
+          held: result.held ? result.points : 0,
+          receipts: 1,
+          merchants: new Set(result.merchantName ? [result.merchantName] : []),
+        });
+      }
+      return jsonResponse({ immediate: true, confirmed: result !== null, pushesSent });
+    }
+
+    // Corrida periodica (cada hora): solo las facturas cuya ultima consulta
+    // fue hace 24 horas o mas. Asi, si al escanear la DGI aun no la tenia
+    // publicada, se vuelve a consultar ~24 h despues (y luego cada 24 h
+    // hasta confirmarla o vencer a los dgi_verification_expire_after_days).
+    const recheckBefore = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
     const startedAt = Date.now();
     const seen = new Set<string>();
     let fetched = 0;
@@ -471,13 +541,14 @@ Deno.serve(async (req) => {
     const errors: string[] = [];
     // Por usuario: puntos sumados y facturas confirmadas en esta corrida,
     // para mandar UN solo aviso push por persona al final.
-    const perUser = new Map<string, { points: number; held: number; receipts: number; merchants: Set<string> }>();
+    const perUser = new Map<string, UserSummary>();
 
     while (Date.now() - startedAt < TIME_BUDGET_MS) {
       const { data, error } = await supabase
         .from("dgi_receipts")
         .select("id, user_id, cufe, ruc, scanned_at, dgi_check_count")
         .eq("status", "pendiente")
+        .or(`dgi_checked_at.is.null,dgi_checked_at.lte.${recheckBefore}`)
         .order("dgi_checked_at", { ascending: true, nullsFirst: true })
         .limit(Math.min(BATCH_SIZE + seen.size, 1000));
       if (error) throw error;
@@ -521,27 +592,7 @@ Deno.serve(async (req) => {
 
     let pushesSent = 0;
     for (const [userId, entry] of perUser) {
-      if (entry.points <= 0 && entry.held <= 0) continue;
-      const merchantText = entry.receipts === 1 && entry.merchants.size === 1
-        ? `Tu factura de ${titleCase([...entry.merchants][0])} fue verificada.`
-        : `${entry.receipts} facturas fueron verificadas.`;
-      // 1 punto = US$0.01 de cashback.
-      const money = (points: number) => "$" + (points / 100).toFixed(2);
-      const message = entry.points > 0
-        ? {
-          title: `¡Ganaste ${money(entry.points)} de cashback! 💸`,
-          body: entry.held > 0
-            ? `${merchantText} Tienes ${money(entry.held)} más pendientes: registra tus ingresos para recibirlos.`
-            : `${merchantText} Úsalo en los comercios aliados de MonAvi.`,
-          data: { screen: "points" },
-        }
-        : {
-          title: `Tienes ${money(entry.held)} de cashback pendiente`,
-          body: `${merchantText} Para recibirlo, registra tus ingresos del mes en MonAvi: el cashback se respalda con lo que ganas.`,
-          data: { screen: "home" },
-        };
-      const result = await sendPushToUser(supabase, userId, message);
-      pushesSent += result.sent;
+      pushesSent += await notifyUser(supabase, userId, entry);
     }
 
     return jsonResponse({ fetched, processed, confirmed, pushesSent, errors });

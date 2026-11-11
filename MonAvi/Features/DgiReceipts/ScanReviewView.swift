@@ -89,7 +89,7 @@ struct ScanReviewView: View {
                 } header: {
                     Text("Monto y categoría")
                 } footer: {
-                    Text("El gasto se registra de una vez. El cashback (1%) se acredita cuando verifiquemos tu factura y tus ingresos lo respalden.")
+                    Text("El gasto se registra de una vez. Verificamos tu factura al guardarla: si ya está publicada, tu cashback (1%) se suma enseguida; si no, la volvemos a revisar en 24 horas y queda pendiente hasta confirmarla.")
                 }
 
                 if draft.canSplitByCategory {
@@ -195,7 +195,18 @@ struct ScanReviewView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
-        case .confirmed, .manual, .failed:
+        case .manual:
+            Section {
+                Label {
+                    Text("Tu factura aún no aparece publicada. Escribe el monto: la guardamos, la volvemos a revisar en 24 horas y tu cashback queda pendiente hasta confirmarla.")
+                        .font(.footnote)
+                        .fixedSize(horizontal: false, vertical: true)
+                } icon: {
+                    Image(systemName: "clock.fill")
+                        .foregroundStyle(.orange)
+                }
+            }
+        case .confirmed, .failed:
             EmptyView()
         }
 

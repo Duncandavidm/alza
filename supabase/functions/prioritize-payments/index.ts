@@ -30,10 +30,10 @@
 // de IA).
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { AiLimitError, callClaude, ensureAiAllowed, extractJsonFromText } from "./ai.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY")!;
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -157,7 +157,7 @@ Deno.serve(async (req) => {
       return jsonResponse({ hasAdvice: false });
     }
 
-    const result = await buildPaymentPlan(incomeAmount, bills ?? [], dueRecurring, activeDebts, accounts ?? [], debtStrategy);
+    const result = await buildPaymentPlan(supabase, userId, incomeAmount, bills ?? [], dueRecurring, activeDebts, accounts ?? [], debtStrategy);
 
     return jsonResponse({ hasAdvice: true, ...result });
   } catch (error) {
@@ -371,6 +371,8 @@ export function liquidityNote(items: { amount: number }[], incomeAmount: number)
 }
 
 async function buildPaymentPlan(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
   incomeAmount: number,
   bills: Record<string, unknown>[],
   dueRecurring: Record<string, unknown>[],
@@ -420,7 +422,7 @@ async function buildPaymentPlan(
   const today = new Date();
   const ranked = computeRanking(bills, dueRecurring, debts, debtStrategy, today);
 
-  const reasons = await explainWithClaude(incomeAmount, ranked, byId, debtStrategy);
+  const reasons = await explainWithClaude(supabase, userId, incomeAmount, ranked, byId, debtStrategy);
 
   const fallbackDetails: ItemDetails = { name: "?", amount: 0, dueInfo: "", accountId: "", movementType: "gasto", category: null };
   const items = ranked.map((scored, idx) => ({
@@ -468,6 +470,8 @@ function extractJson(data: unknown, open: "[" | "{"): unknown {
 /// se devuelve un Map vacio y buildPaymentPlan usa fallbackReason() para
 /// cada item — el plan (orden + montos) nunca depende de que esto funcione.
 async function explainWithClaude(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
   incomeAmount: number,
   ranked: ScoredItem[],
   byId: Map<string, ItemDetails>,
@@ -483,8 +487,8 @@ async function explainWithClaude(
 
   const strategyLabel = debtStrategy === "avalanche" ? "avalancha (mayor tasa de interes primero)" : "bola de nieve (saldo mas chico primero)";
 
-  const prompt = `Eres el asesor financiero de la app MonAvi. El dueño de un \
-negocio acaba de registrar un ingreso de $${incomeAmount.toFixed(2)}. Ya se \
+  const prompt = `Eres el asesor financiero de la app MonAvi. La persona \
+acaba de registrar un ingreso de $${incomeAmount.toFixed(2)}. Ya se \
 calculo el orden de pago (mas urgente primero) con reglas de codigo — tu \
 trabajo es SOLO explicar, en español, por que cada uno va en ese lugar. No \
 cambies el orden ni inventes items nuevos.
@@ -510,28 +514,17 @@ Responde UNICAMENTE con este JSON (sin texto extra, sin markdown):
 "reasons" debe incluir uno por cada id de la lista de arriba, en cualquier orden.`;
 
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-5-5",
-        max_tokens: 1024,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
-
-    if (!response.ok) {
-      console.error("Anthropic API error", response.status, await response.text());
-      return new Map();
+    // Cuota de uso justo (1 plan con IA al dia) y tope diario global. Sin
+    // cuota, el plan sale igual con las razones de fallbackReason().
+    try {
+      await ensureAiAllowed(supabase, userId, "prioritize-payments");
+    } catch (limit) {
+      if (limit instanceof AiLimitError) return new Map();
+      throw limit;
     }
-
-    const data = await response.json();
+    const claude = await callClaude(supabase, userId, "prioritize-payments", { prompt, maxTokens: 8000 });
     // deno-lint-ignore no-explicit-any
-    const parsed = extractJson(data, "{") as any;
+    const parsed = extractJsonFromText(claude.text, "{") as any;
 
     const result = new Map<string, string>();
     if (typeof parsed.advice === "string") result.set("__advice__", parsed.advice);

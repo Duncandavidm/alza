@@ -15,7 +15,8 @@
 // - userId SIEMPRE del JWT verificado (nunca del body).
 // - "question" limitada a 500 caracteres antes de entrar al prompt
 //   (evita abuso de tokens y acota la superficie de prompt injection).
-// - Rate limit: 20 llamadas / 10 minutos por usuario.
+// - Rate limit: 20 llamadas / 10 minutos por usuario, y cuota mensual de
+//   uso justo + tope diario global de gasto de IA (ai.ts, migracion 0050).
 // - CORS sin Access-Control-Allow-Origin (solo la app nativa la llama).
 //
 // NOTA: no se pudo probar contra un runtime Deno real en este entorno.
@@ -24,10 +25,10 @@
 // funciones de IA).
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { AiLimitError, callClaude, ensureAiAllowed, limitResponse } from "./ai.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY")!;
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -106,6 +107,8 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Demasiadas solicitudes, intenta en unos minutos." }, 429);
     }
 
+    await ensureAiAllowed(supabase, userId, "ask-finances");
+
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
@@ -122,7 +125,7 @@ Deno.serve(async (req) => {
       supabase.from("accounts").select("*").eq("user_id", userId),
       supabase
         .from("transactions")
-        .select("*")
+        .select("occurred_at, amount, movement_type, category, description, account_id")
         .eq("user_id", userId)
         .gte("occurred_at", ninetyDaysAgo.toISOString())
         .order("occurred_at", { ascending: false })
@@ -142,6 +145,8 @@ Deno.serve(async (req) => {
     if (debtsError) throw debtsError;
 
     const answer = await askClaude(
+      supabase,
+      userId,
       question,
       profile,
       accounts ?? [],
@@ -154,12 +159,29 @@ Deno.serve(async (req) => {
 
     return jsonResponse({ answer });
   } catch (error) {
+    if (error instanceof AiLimitError) return limitResponse(error, CORS_HEADERS);
     console.error(error);
     return jsonResponse({ error: String(error) }, 500);
   }
 });
 
+/// Quita ids internos y fechas de sistema: el modelo recibe la misma
+/// informacion financiera en menos tokens.
+function compact(rows: Record<string, unknown>[]): Record<string, unknown>[] {
+  const drop = new Set(["user_id", "created_at", "updated_at"]);
+  return rows.map((row) => Object.fromEntries(Object.entries(row).filter(([k, v]) => !drop.has(k) && v !== null)));
+}
+
+function compactTransactions(rows: Record<string, unknown>[]): string {
+  // fecha | monto | tipo | categoria | descripcion | cuenta
+  return rows.map((t) => [
+    String(t.occurred_at ?? "").slice(0, 10), t.amount, t.movement_type, t.category ?? "", t.description ?? "", t.account_id ?? "",
+  ].join(" | ")).join("\n");
+}
+
 async function askClaude(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
   question: string,
   profile: Record<string, unknown> | null,
   accounts: Record<string, unknown>[],
@@ -197,47 +219,29 @@ Pregunta: "${question}"
 
 Perfil del usuario (nombre, edad, estado civil, dependientes, ocupacion, \
 tolerancia al riesgo, metas de corto/largo plazo, ingresos variables):
-${JSON.stringify(profile)}
+${JSON.stringify(profile ? compact([profile])[0] : null)}
 
 Cuentas:
-${JSON.stringify(accounts)}
+${JSON.stringify(compact(accounts))}
 
-Movimientos de los ultimos 90 dias (hasta 300):
-${JSON.stringify(transactions)}
+Movimientos de los ultimos 90 dias (hasta 300), uno por linea: fecha | monto \
+(negativo = sale dinero) | tipo | categoria | descripcion | id de cuenta:
+${compactTransactions(transactions)}
 
 Presupuestos:
-${JSON.stringify(budgets)}
+${JSON.stringify(compact(budgets))}
 
 Ingresos y gastos fijos recurrentes (mensuales):
-${JSON.stringify(recurring)}
+${JSON.stringify(compact(recurring))}
 
 Cuentas por pagar pendientes:
-${JSON.stringify(bills)}
+${JSON.stringify(compact(bills))}
 
 Deudas activas (tarjetas, prestamos, con tasa de interes y si estan en mora):
-${JSON.stringify(debts)}
+${JSON.stringify(compact(debts))}
 
 Responde solo con el texto de la respuesta (2-5 oraciones), sin JSON, sin markdown.`;
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-5-5",
-      max_tokens: 500,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Anthropic API error: ${response.status} ${await response.text()}`);
-  }
-
-  const data = await response.json();
-  const text = data.content?.[0]?.text ?? "No se pudo generar una respuesta.";
-  return String(text).slice(0, 3000);
+  const result = await callClaude(supabase, userId, "ask-finances", { prompt, maxTokens: 16000 });
+  return (result.text || "No se pudo generar una respuesta.").slice(0, 3000);
 }

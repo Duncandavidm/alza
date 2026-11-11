@@ -8,7 +8,7 @@ import SwiftUI
 /// arranque (sesion, MFA, onboarding, suscripcion) y como overlay al
 /// iniciar sesion, para que la app nunca muestre una pantalla en blanco.
 struct BrandLoadingView: View {
-    var message: String = "Preparando tu MonAvi…"
+    var message: String = "Con sabiduría"
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var pulse = false

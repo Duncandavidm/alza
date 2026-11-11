@@ -1,27 +1,10 @@
 import SwiftUI
 import StoreKit
 
-private enum PaywallAudience: String, CaseIterable, Identifiable, Equatable {
-    case personal = "Personal"
-    case negocio = "Negocio"
-
-    var id: String { rawValue }
-
-    var description: String {
-        switch self {
-        case .personal:
-            return "Dashboard financiero completo, metas y consejos de IA para tus finanzas personales."
-        case .negocio:
-            return "Factura, controla cuentas por cobrar y recibe insights de IA para tu negocio."
-        }
-    }
-}
-
 struct PaywallView: View {
     @EnvironmentObject private var appState: AppState
     @ObservedObject var subscriptionStore: SubscriptionStore
     @State private var isSigningOut = false
-    @State private var audience: PaywallAudience = .personal
     @State private var appeared = false
     /// Hoja de App Store para canjear un codigo de oferta de suscripcion.
     @State private var isRedeemingOfferCode = false
@@ -30,14 +13,14 @@ struct PaywallView: View {
         MarqueeChip(icon: "💬", text: "Pregunta lo que sea sobre tu dinero"),
         MarqueeChip(icon: "🔔", text: "Alertas antes de que venza una cuenta"),
         MarqueeChip(icon: "📈", text: "Prioriza qué deuda pagar primero"),
-        MarqueeChip(icon: "🧾", text: "Factura a tus clientes desde la app"),
+        MarqueeChip(icon: "🎁", text: "Cashback por tus facturas"),
     ]
 
     private static let bottomChips = [
         MarqueeChip(icon: "♾️", text: "Transacciones y cuentas ilimitadas"),
         MarqueeChip(icon: "🤖", text: "Insights de IA sobre tus gastos"),
         MarqueeChip(icon: "🎙️", text: "Anota gastos con tu voz"),
-        MarqueeChip(icon: "📊", text: "Reportes de tu negocio al día"),
+        MarqueeChip(icon: "🎯", text: "Metas de ahorro que sí se cumplen"),
     ]
 
     var body: some View {
@@ -52,16 +35,11 @@ struct PaywallView: View {
                 }
 
                 VStack(spacing: 20) {
-                    audienceToggle
-
-                    Text(audience.description)
+                    Text("Todo tu dinero bajo control: dashboard completo, metas, consejos de IA y cashback por tus compras. Y si tienes un negocio, también haces facturas y cotizaciones.")
                         .font(.system(.subheadline, design: MonAviBrand.fontDesign))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)
-                        .animation(.easeInOut(duration: 0.2), value: audience)
-                        .id(audience)
-                        .transition(.opacity)
 
                     pricingCard
 
@@ -121,32 +99,6 @@ struct PaywallView: View {
             )
             .font(.system(.largeTitle, design: MonAviBrand.fontDesign, weight: .heavy))
         }
-    }
-
-    private var audienceToggle: some View {
-        HStack(spacing: 4) {
-            ForEach(PaywallAudience.allCases) { option in
-                Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                        audience = option
-                    }
-                } label: {
-                    Text(option.rawValue)
-                        .font(.system(.subheadline, design: MonAviBrand.fontDesign, weight: .semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                .fill(audience == option ? MonAviBrand.primary : .clear)
-                        )
-                        .foregroundStyle(audience == option ? .white : .primary)
-                }
-                .buttonStyle(.plain)
-                .pressable()
-            }
-        }
-        .padding(4)
-        .background(Capsule().fill(Color(.secondarySystemBackground)))
     }
 
     @ViewBuilder

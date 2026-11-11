@@ -11,6 +11,22 @@ struct DayCloseSummaryView: View {
             VStack(spacing: 24) {
                 Spacer()
 
+                if let headline = summary.headline {
+                    VStack(spacing: 2) {
+                        Text(headline)
+                            .font(.headline)
+                        if let dayLabel = summary.dayLabel {
+                            Text(dayLabel)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        Text("Tu día se cerró solo a las 12 de la noche.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .multilineTextAlignment(.center)
+                }
+
                 Text(summary.mood.emoji)
                     .font(.system(size: 64))
 
@@ -48,7 +64,7 @@ struct DayCloseSummaryView: View {
                     .padding(.horizontal, 24)
             }
             .padding(.bottom, 20)
-            .navigationTitle("Tu día")
+            .navigationTitle(summary.headline == nil ? "Tu día" : "Tu día de ayer")
         }
     }
 

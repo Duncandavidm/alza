@@ -8,6 +8,10 @@ struct DayJournalView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = DayJournalViewModel()
     @ObservedObject private var router = NotificationRouter.shared
+    @Environment(\.scenePhase) private var scenePhase
+    /// Dia en que se vio Hoy por ultima vez, para detectar que paso la
+    /// medianoche con la app abierta o en segundo plano.
+    @State private var lastActiveDay = Calendar.current.startOfDay(for: Date())
     @StateObject private var budgetsViewModel = BudgetsViewModel()
     @StateObject private var recurringViewModel = RecurringTransactionsViewModel()
     @StateObject private var billsViewModel = BillsViewModel()
@@ -117,6 +121,11 @@ struct DayJournalView: View {
             .task { await refreshDgiConsent() }
             .task { await refreshFeaturedRewards() }
             .task { await appState.subscriptionStore.refreshRenewalInfo() }
+            .task { await showPreviousDayIfNeeded() }
+            .onChange(of: scenePhase) { _, phase in
+                guard phase == .active else { return }
+                Task { await handleDayChangeIfNeeded() }
+            }
             // Al cerrar "Registrar con voz" (Atajo / Tocar atrás) puede haber
             // un movimiento nuevo (o uno deshecho): recargar el dia.
             .onChange(of: router.isVoiceCapturePresented) { _, isPresented in
@@ -706,6 +715,29 @@ struct DayJournalView: View {
         await refresh()
     }
 
+    /// Paso la medianoche: Hoy pasa al dia nuevo y se muestra el resumen
+    /// del dia que se cerro solo.
+    private func handleDayChangeIfNeeded() async {
+        let today = Calendar.current.startOfDay(for: Date())
+        guard today != lastActiveDay else { return }
+        let wasViewingThatDay = Calendar.current.isDate(viewModel.selectedDate, inSameDayAs: lastActiveDay)
+        lastActiveDay = today
+        if wasViewingThatDay {
+            viewModel.selectedDate = Date()
+            await refresh()
+        }
+        await showPreviousDayIfNeeded()
+    }
+
+    private func showPreviousDayIfNeeded() async {
+        guard let userId = appState.currentUserId, daySummary == nil else { return }
+        guard let summary = await viewModel.previousDaySummaryIfNeeded(userId: userId) else { return }
+        // Un momento para que termine de abrir la pantalla.
+        try? await Task.sleep(nanoseconds: 700_000_000)
+        guard !router.isVoiceCapturePresented else { return }
+        daySummary = summary
+    }
+
     private func closeDay() async {
         guard let userId = appState.currentUserId else { return }
         isClosingDay = true
@@ -715,5 +747,5 @@ struct DayJournalView: View {
 }
 
 extension DaySummary: Identifiable {
-    var id: String { "\(income)-\(expense)-\(mood.title)" }
+    var id: String { "\(income)-\(expense)-\(mood.title)-\(dayLabel ?? "hoy")" }
 }

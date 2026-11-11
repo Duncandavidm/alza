@@ -85,8 +85,8 @@ final class TransactionsRepository {
     /// Neto (entradas - salidas) de cada uno de los `days` dias anteriores a
     /// hoy. Se usa para comparar el dia de hoy contra "como te ha ido" al
     /// cerrarlo (mejora #5, resumen al cerrar el dia).
-    func fetchPastDailyNets(userId: UUID, days: Int) async throws -> [Decimal] {
-        let today = Calendar.current.startOfDay(for: Date())
+    func fetchPastDailyNets(userId: UUID, days: Int, before referenceDay: Date = Date()) async throws -> [Decimal] {
+        let today = Calendar.current.startOfDay(for: referenceDay)
         guard let start = Calendar.current.date(byAdding: .day, value: -days, to: today) else { return [] }
 
         let rows: [FinanceTransaction] = try await supabase

@@ -48,6 +48,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
         <Link href="/campaigns">Campañas de marcas</Link>
         <Link href="/insights">Estudio de mercado</Link>
         <Link href="/dgi-verification">Facturas DGI</Link>
+        <Link href="/ia">Costo de IA</Link>
         <Link href="/alerts">Alertas</Link>
         <form action={logout}>
           <button type="submit" className="secondary">

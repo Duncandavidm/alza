@@ -127,7 +127,6 @@ schemes:
         MonAviTests: [test]
     run:
       config: Debug
-      storeKitConfiguration: MonAvi.storekit
     test:
       config: Debug
       targets:

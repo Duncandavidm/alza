@@ -83,6 +83,10 @@ struct VoiceCaptureView: View {
         .onChange(of: recognizer.liveTranscript) { _, transcript in
             scheduleAutoStop(after: transcript)
         }
+        .onChange(of: recognizer.endOfSpeechCount) { _, _ in
+            // Termino de hablar: se corta, se interpreta y se guarda solo.
+            Task { await finish() }
+        }
         .sheet(item: $editingTransaction, onDismiss: refreshSavedTransaction) { transaction in
             QuickAddView(viewModel: viewModel, existingTransaction: transaction)
         }

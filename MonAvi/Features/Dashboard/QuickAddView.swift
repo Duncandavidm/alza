@@ -136,6 +136,11 @@ struct QuickAddView: View {
             .onChange(of: voiceRecognizer.liveTranscript) { _, transcript in
                 scheduleAutoStop(after: transcript)
             }
+            .onChange(of: voiceRecognizer.endOfSpeechCount) { _, _ in
+                // Termino de hablar: se corta y se interpreta solo.
+                guard isVoiceMode, voiceRecognizer.isRecording else { return }
+                Task { await finishVoice() }
+            }
             .overlay {
                 if isVoiceMode {
                     VoiceListeningView(

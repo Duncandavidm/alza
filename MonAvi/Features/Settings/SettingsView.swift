@@ -46,6 +46,18 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    NavigationLink {
+                        VoiceBackTapGuideView()
+                    } label: {
+                        Label("Registra con doble toque", systemImage: "hand.tap.fill")
+                    }
+                } header: {
+                    Text("Atajos y Siri")
+                } footer: {
+                    Text("Toca dos veces la parte de atrás de tu iPhone o di «Oye Siri, anota en MonAvi» y anota un gasto o ingreso con tu voz.")
+                }
+
+                Section {
                     notificationStatusRow
 
                     Stepper(

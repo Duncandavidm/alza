@@ -24,6 +24,15 @@ final class NotificationRouter: ObservableObject {
 
     @Published var destination: NotificationDestination?
 
+    /// Pedido pendiente de abrir "Registrar con voz" (ver
+    /// `requestVoiceCapture()`). Igual que `destination`, espera aqui si la
+    /// app estaba cerrada hasta que aparece la pantalla principal.
+    @Published private(set) var voiceCaptureRequestedAt: Date?
+
+    /// true mientras la pantalla de captura por voz esta abierta. Hoy
+    /// (DayJournalView) lo observa para recargar el dia al cerrarla.
+    @Published var isVoiceCapturePresented = false
+
     func open(screen: String?) {
         guard let screen else { return }
         let normalized = screen.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
@@ -34,5 +43,28 @@ final class NotificationRouter: ObservableObject {
         }
         guard let destination = NotificationDestination(rawValue: normalized) else { return }
         self.destination = destination
+    }
+}
+
+extension NotificationRouter {
+    /// Cuanto tiempo vale un pedido de "registrar con voz" (Atajo, Siri o
+    /// Tocar atrás) que todavia no se pudo mostrar. Si en ese rato la
+    /// pantalla principal no aparece (ej. el usuario quedo en el paywall o
+    /// en el segundo paso de verificacion), se descarta: no queremos que el
+    /// microfono se abra solo minutos despues.
+    static let voiceCaptureRequestTTL: TimeInterval = 90
+
+    /// Lo llama `RecordByVoiceIntent` (y "Probar ahora" en la guia):
+    /// DashboardTabView abre la pantalla de captura por voz en cuanto
+    /// aparece, o de una vez si ya estaba en pantalla.
+    func requestVoiceCapture() {
+        voiceCaptureRequestedAt = Date()
+    }
+
+    /// true (y limpia el pedido) si hay un pedido vigente por mostrar.
+    func consumeVoiceCaptureRequest() -> Bool {
+        guard let requestedAt = voiceCaptureRequestedAt else { return false }
+        voiceCaptureRequestedAt = nil
+        return Date().timeIntervalSince(requestedAt) <= Self.voiceCaptureRequestTTL
     }
 }

@@ -7,6 +7,7 @@ import SwiftUI
 struct DayJournalView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = DayJournalViewModel()
+    @ObservedObject private var router = NotificationRouter.shared
     @StateObject private var budgetsViewModel = BudgetsViewModel()
     @StateObject private var recurringViewModel = RecurringTransactionsViewModel()
     @StateObject private var billsViewModel = BillsViewModel()
@@ -116,6 +117,15 @@ struct DayJournalView: View {
             .task { await refreshDgiConsent() }
             .task { await refreshFeaturedRewards() }
             .task { await appState.subscriptionStore.refreshRenewalInfo() }
+            // Al cerrar "Registrar con voz" (Atajo / Tocar atrás) puede haber
+            // un movimiento nuevo (o uno deshecho): recargar el dia.
+            .onChange(of: router.isVoiceCapturePresented) { _, isPresented in
+                guard !isPresented else { return }
+                Task {
+                    await refresh()
+                    await refreshBudgets()
+                }
+            }
             .sheet(isPresented: $isQuickAdding) {
                 QuickAddView(viewModel: viewModel)
             }

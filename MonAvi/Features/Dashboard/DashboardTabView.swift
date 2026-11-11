@@ -37,6 +37,32 @@ struct DashboardTabView: View {
         .sheet(item: $router.destination) { destination in
             destinationView(destination)
         }
+        // "Registrar con voz" desde un Atajo, Siri o Tocar atrás
+        // (RecordByVoiceIntent): si la app estaba cerrada, el pedido espera
+        // en el router hasta que esta pantalla aparece; si ya estaba
+        // abierta, llega por onChange.
+        .fullScreenCover(isPresented: $router.isVoiceCapturePresented) {
+            VoiceCaptureView()
+        }
+        .task { presentPendingVoiceCapture() }
+        .onChange(of: router.voiceCaptureRequestedAt) { _, requestedAt in
+            if requestedAt != nil { presentPendingVoiceCapture() }
+        }
+    }
+
+    private func presentPendingVoiceCapture() {
+        guard router.consumeVoiceCaptureRequest(), !router.isVoiceCapturePresented else { return }
+        if router.destination != nil {
+            // No se pueden presentar dos hojas a la vez desde aqui: se cierra
+            // la de la notificacion y se abre la de voz cuando termina de irse.
+            router.destination = nil
+            Task {
+                try? await Task.sleep(nanoseconds: 600_000_000)
+                router.isVoiceCapturePresented = true
+            }
+        } else {
+            router.isVoiceCapturePresented = true
+        }
     }
 
     @ViewBuilder

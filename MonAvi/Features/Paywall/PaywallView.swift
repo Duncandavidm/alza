@@ -35,7 +35,7 @@ struct PaywallView: View {
                 }
 
                 VStack(spacing: 20) {
-                    Text("Todo tu dinero bajo control: dashboard completo, metas, consejos de IA y cashback por tus compras. Y si tienes un negocio, también haces facturas y cotizaciones.")
+                    Text("Todo tu dinero bajo control: dashboard completo, metas, consejos de IA y cashback por tus compras. Realiza cotizaciones.")
                         .font(.system(.subheadline, design: MonAviBrand.fontDesign))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)

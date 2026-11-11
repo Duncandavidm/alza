@@ -16,6 +16,28 @@ final class AIErrorTests: XCTestCase {
         XCTAssertFalse(msg.lowercased().contains("non-2xx"))
     }
 
+    func testQuotaMessageFromServerIsShownAsIs() {
+        let body = #"{"error": "Usaste tus 100 preguntas de este mes. Se renuevan el 1 de diciembre.", "code": "ai_quota"}"#
+        let error = FunctionsError.httpError(code: 429, data: Data(body.utf8))
+        XCTAssertEqual(message(error), "Usaste tus 100 preguntas de este mes. Se renuevan el 1 de diciembre.")
+        XCTAssertEqual(AIErrorMessage.userMessage(from: error), "Usaste tus 100 preguntas de este mes. Se renuevan el 1 de diciembre.")
+    }
+
+    func testServerMessageOnlyFor429() {
+        let body = #"{"error": "Internal"}"#
+        XCTAssertNil(AIErrorMessage.userMessage(from: FunctionsError.httpError(code: 500, data: Data(body.utf8))))
+        XCTAssertNil(AIErrorMessage.userMessage(from: FunctionsError.httpError(code: 429, data: Data("no json".utf8))))
+    }
+
+    func testAskQuotaCaption() {
+        XCTAssertEqual(AIQuotaEntry(used: 3, limit: 100, remaining: 97, period: "month").askCaption,
+                       "Te quedan 97 preguntas este mes")
+        XCTAssertEqual(AIQuotaEntry(used: 99, limit: 100, remaining: 1, period: "month").askCaption,
+                       "Te queda 1 pregunta este mes")
+        XCTAssertEqual(AIQuotaEntry(used: 100, limit: 100, remaining: 0, period: "month").askCaption,
+                       "Ya no te quedan preguntas este mes")
+    }
+
     func testServerErrorIsFriendly() {
         for code in [500, 502, 503] {
             let msg = message(FunctionsError.httpError(code: code, data: Data()))

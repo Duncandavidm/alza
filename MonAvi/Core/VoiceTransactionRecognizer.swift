@@ -285,6 +285,12 @@ final class VoiceTransactionRecognizer: NSObject, ObservableObject {
             return nil
         }
 
+        // Frases simples ("gasté 12 dólares en almuerzo") se interpretan
+        // en el dispositivo: no gastan cupo de IA ni esperan la red.
+        if let local = SimpleVoiceParser.parse(transcript) {
+            return local
+        }
+
         isProcessing = true
         defer { isProcessing = false }
 
@@ -296,7 +302,10 @@ final class VoiceTransactionRecognizer: NSObject, ObservableObject {
             )
             return parsed
         } catch {
-            errorMessage = VoiceRecognitionError.parseFailed.errorDescription
+            // Cupo de IA agotado / pausa por demanda: el servidor manda el
+            // mensaje ya listo en español.
+            errorMessage = AIErrorMessage.userMessage(from: error)
+                ?? VoiceRecognitionError.parseFailed.errorDescription
             return nil
         }
     }

@@ -53,7 +53,15 @@ final class AppState: ObservableObject {
 
         authTask = Task {
             for await state in supabase.auth.authStateChanges {
-                self.session = state.session
+                var currentSession = state.session
+                if state.event == .initialSession, let stored = currentSession, stored.isExpired {
+                    // La sesion guardada llego vencida: se renueva antes de
+                    // entrar. Si no se puede renovar (refresh token invalido),
+                    // el SDK emite signedOut y el siguiente evento la limpia;
+                    // sin conexion se sigue con la guardada, como antes.
+                    currentSession = (try? await supabase.auth.session) ?? stored
+                }
+                self.session = currentSession
                 self.isLoadingSession = false
 
                 if state.session != nil {

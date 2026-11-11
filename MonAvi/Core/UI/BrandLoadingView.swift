@@ -232,5 +232,5 @@ private struct DollarBillView: View {
 }
 
 #Preview("Entrando") {
-    BrandLoadingView(message: "Entrando…")
+    BrandLoadingView(message: "Bienvenido")
 }

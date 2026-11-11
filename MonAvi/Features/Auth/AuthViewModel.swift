@@ -18,7 +18,7 @@ final class AuthViewModel: ObservableObject {
     /// reemplaza AuthView por su propia pantalla de carga; si falla, se
     /// quita el overlay y se ve el error de siempre.
     @Published private(set) var showsSignInOverlay = false
-    @Published private(set) var signInOverlayMessage = "Entrando…"
+    @Published private(set) var signInOverlayMessage = "Bienvenido"
 
     /// Tiempo minimo en pantalla del overlay para que no "parpadee".
     private static let minimumOverlayDuration: TimeInterval = 0.8
@@ -76,7 +76,7 @@ final class AuthViewModel: ObservableObject {
 
             isSigningIn = true
             defer { isSigningIn = false }
-            showSignInOverlay(message: "Entrando…")
+            showSignInOverlay(message: "Bienvenido")
 
             do {
                 try await supabase.auth.signInWithIdToken(
@@ -110,7 +110,7 @@ final class AuthViewModel: ObservableObject {
 
         isSigningIn = true
         defer { isSigningIn = false }
-        showSignInOverlay(message: emailAuthMode == .signIn ? "Entrando…" : "Creando tu cuenta…")
+        showSignInOverlay(message: emailAuthMode == .signIn ? "Bienvenido" : "Creando tu cuenta…")
 
         do {
             switch emailAuthMode {

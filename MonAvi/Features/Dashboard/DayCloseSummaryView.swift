@@ -20,9 +20,6 @@ struct DayCloseSummaryView: View {
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
-                        Text("Tu día se cerró solo a las 12 de la noche.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
                     }
                     .multilineTextAlignment(.center)
                 }

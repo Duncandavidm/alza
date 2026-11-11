@@ -23,7 +23,7 @@
 // userId que mandara el cliente y lo usaba con la service role key (que
 // salta RLS) para hacer upsert en subscriptions; cualquier usuario
 // autenticado podia pisar la suscripcion de otro con su propio
-// originalTransactionId. Rate limit: 10 llamadas / 10 minutos.
+// originalTransactionId. Rate limit: 30 llamadas / 10 minutos (restaurar compras manda cada renovacion).
 //
 // Secrets necesarios (supabase secrets set ...):
 //   APPLE_BUNDLE_ID              -> ej. app.monavi
@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-    const allowed = await checkRateLimit(supabase, userId, "verify-apple-receipt", 10, 600);
+    const allowed = await checkRateLimit(supabase, userId, "verify-apple-receipt", 30, 600);
     if (!allowed) {
       return jsonResponse({ error: "Demasiadas solicitudes, intenta en unos minutos." }, 429);
     }
@@ -195,11 +195,11 @@ async function fetchSubscriptionStatus(originalTransactionId: string, jwt: strin
     lastError = new Error(`${base} -> ${response.status} ${await response.text()}`);
     // 401 en produccion es normal mientras la app no este publicada; 404 es
     // una compra de otro entorno. En ambos casos se prueba el siguiente.
-    if (response.status !== 404 && response.status !== 401) break;
+    if (![400, 401, 404].includes(response.status)) break;
   }
   // 404 al final: la compra no existe en Apple (por ejemplo una compra de
   // prueba local de Xcode, que nunca llega a los servidores).
-  if (String(lastError).includes("-> 404")) return { data: [] };
+  if (/-> (400|404)/.test(String(lastError))) return { data: [] };
   throw lastError;
 }
 

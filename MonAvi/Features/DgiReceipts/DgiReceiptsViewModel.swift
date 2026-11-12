@@ -32,7 +32,9 @@ struct ScanDraft: Identifiable {
     var amountText: String = ""
     var category: TransactionCategory?
     var mergeCandidate: FinanceTransaction?
-    var mergeWithCandidate: Bool = true
+    /// La factura siempre se registra como gasto nuevo (no se pregunta si
+    /// unirla con otro movimiento).
+    var mergeWithCandidate: Bool = false
 
     /// Resultado de leer la factura completa (`lookup-dgi-receipt`).
     /// `.failed` = no se pudo leer: flujo manual de siempre.
@@ -46,7 +48,8 @@ struct ScanDraft: Identifiable {
     /// que el usuario toque "Editar".
     var isAmountEditable: Bool = true
     /// "Separar por categoría": un gasto por cada categoria del desglose.
-    var splitByCategory: Bool = false
+    /// Si la factura trae productos de varias categorias, se separa sola.
+    var splitByCategory: Bool = true
 
     var id: String { parsed.cufe }
 

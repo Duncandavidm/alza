@@ -20,12 +20,17 @@ final class TransactionsRepository {
         let start = Calendar.current.startOfDay(for: date)
         guard let end = Calendar.current.date(byAdding: .day, value: 1, to: start) else { return [] }
 
+        // Movimientos de ese dia: los que ocurrieron ese dia y tambien los
+        // que se registraron ese dia con otra fecha (ej. una factura de ayer
+        // escaneada hoy), para que se vean en Hoy y cuenten al cerrar el dia.
+        let iso = ISO8601DateFormatter()
+        let from = iso.string(from: start)
+        let to = iso.string(from: end)
         return try await supabase
             .from("transactions")
             .select()
             .eq("user_id", value: userId)
-            .gte("occurred_at", value: start)
-            .lt("occurred_at", value: end)
+            .or("and(occurred_at.gte.\(from),occurred_at.lt.\(to)),and(created_at.gte.\(from),created_at.lt.\(to))")
             .order("created_at", ascending: true)
             .execute()
             .value

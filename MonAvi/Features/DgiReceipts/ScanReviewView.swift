@@ -94,36 +94,17 @@ struct ScanReviewView: View {
 
                 if draft.canSplitByCategory {
                     Section {
-                        Toggle("Separar por categoría", isOn: $draft.splitByCategory)
                         ForEach(splitPreview) { line in
                             LabeledContent {
                                 Text(line.amount, format: .currency(code: "USD"))
                             } label: {
                                 Text("\(line.category?.emoji ?? "🏷️") \(line.categoryName)")
                             }
-                            .foregroundStyle(draft.splitByCategory ? Color.primary : Color.secondary)
                         }
+                    } header: {
+                        Text("Gastos que se registran")
                     } footer: {
-                        Text(draft.splitByCategory
-                             ? "Se va a crear un gasto por cada categoría, con la misma cuenta y fecha."
-                             : "Se registra como un solo gasto.")
-                    }
-                }
-
-                if let candidate = draft.mergeCandidate, !isSplitting {
-                    Section {
-                        Toggle(isOn: $draft.mergeWithCandidate) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Unir con un gasto que ya tienes")
-                                Text("\(candidate.description ?? candidate.movementType.displayName) — \(candidate.amount, format: .currency(code: "USD")), mismo día")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    } footer: {
-                        Text(draft.mergeWithCandidate
-                             ? "Vamos a vincular la factura a ese movimiento, sin crear uno nuevo."
-                             : "Se va a crear un movimiento nuevo aparte.")
+                        Text("Se registra un gasto por cada categoría, con la misma cuenta y fecha.")
                     }
                 }
 
@@ -138,7 +119,7 @@ struct ScanReviewView: View {
                     Button("Cancelar") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Guardar") { Task { await save() } }
+                    Button("Aceptar") { Task { await save() } }
                         .disabled(amount <= 0 || selectedAccountId == nil || isSaving || draft.isDuplicate)
                 }
             }

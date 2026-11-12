@@ -73,9 +73,6 @@ struct QuickAddView: View {
 
                     budgetHint
 
-                    if existingTransaction == nil {
-                        voiceButton
-                    }
 
                     if viewModel.defaultAccountId == nil {
                         Text("Necesitas una cuenta para guardar movimientos — crea una en Ajustes > Cuentas.")
@@ -215,10 +212,25 @@ struct QuickAddView: View {
             if descriptionFocused {
                 Button("Listo") { descriptionFocused = false }
                     .font(.subheadline.weight(.semibold))
+            } else if existingTransaction == nil {
+                // Dictar el movimiento completo (monto, que fue y categoria).
+                Button {
+                    Task { await startVoice() }
+                } label: {
+                    Image(systemName: "mic.fill")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 34, height: 34)
+                        .background(Circle().fill(MonAviBrand.primary))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Dictar movimiento")
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.leading, 14)
+        .padding(.trailing, 8)
+        .padding(.vertical, 6)
+        .frame(minHeight: 46)
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color(.secondarySystemBackground))
@@ -259,27 +271,6 @@ struct QuickAddView: View {
     /// Alternativa al llenado manual: dictar el movimiento en voz alta y
     /// que Claude lo interprete (monto, descripcion, tipo). Inspirado en el
     /// reconocimiento de voz de MonAi.
-    private var voiceButton: some View {
-        Button {
-            Task { await startVoice() }
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "mic.fill")
-                    .foregroundStyle(MonAviBrand.primary)
-                Text("O dilo en voz alta")
-                    .font(.subheadline.weight(.medium))
-                Spacer()
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(Color(.secondarySystemBackground))
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
     /// Fila compacta de categorias, en el panel de abajo junto a "¿Qué
     /// fue?". Se desplaza sola hasta la elegida (o la sugerida).
     private var categoryChips: some View {

@@ -78,7 +78,6 @@ final class InsightsViewModel: ObservableObject {
         } catch {
             errorMessage = Self.friendlyAIError(error, action: "responder tu pregunta")
         }
-        await refreshAskQuota()
     }
 
     /// Lee cuantas preguntas de ask-finances le quedan al usuario.

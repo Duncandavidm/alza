@@ -8,6 +8,8 @@ struct DayJournalView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = DayJournalViewModel()
     @ObservedObject private var router = NotificationRouter.shared
+    /// Para repintar emojis de categorias propias cuando terminan de cargar.
+    @ObservedObject private var userCategories = UserCategoriesStore.shared
     @Environment(\.scenePhase) private var scenePhase
     /// Dia en que se vio Hoy por ultima vez, para detectar que paso la
     /// medianoche con la app abierta o en segundo plano.
@@ -516,16 +518,22 @@ struct DayJournalView: View {
     @ViewBuilder
     private func journalRowContent(_ transaction: FinanceTransaction) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            Text(transaction.movementType.emoji)
+            Text(CategoryDisplay.emoji(for: transaction.category) ?? transaction.movementType.emoji)
                 .font(.title2)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(transaction.description ?? transaction.movementType.displayName)
+                Text(transaction.description ?? CategoryDisplay.name(for: transaction.category) ?? transaction.movementType.displayName)
                     .font(.body)
                 HStack(spacing: 6) {
                     Text(transaction.occurredAt.formatted(Date.FormatStyle(date: .omitted, time: .shortened, locale: .monavi)))
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                    if transaction.description != nil, let categoryName = CategoryDisplay.name(for: transaction.category) {
+                        Text("· \(categoryName)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
                     if let points = pointsByTransaction[transaction.id] {
                         Text("+\(Cashback.format(cents: points)) de cashback")
                             .font(.caption2.weight(.semibold))

@@ -37,12 +37,6 @@ struct InsightsView: View {
                         .disabled(question.trimmingCharacters(in: .whitespaces).isEmpty || viewModel.isAsking)
                     }
 
-                    if let quota = viewModel.askQuota {
-                        Text(quota.askCaption)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
                     if let answer = viewModel.lastAnswer {
                         VStack(alignment: .leading, spacing: 6) {
                             Text(answer)
@@ -101,7 +95,6 @@ struct InsightsView: View {
     private func refresh() async {
         guard let userId = appState.currentUserId else { return }
         await viewModel.refresh(userId: userId)
-        await viewModel.refreshAskQuota()
     }
 
     private func generate() async {

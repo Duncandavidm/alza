@@ -200,6 +200,11 @@ struct AddTransactionView: View {
         }
 
         isSaving = true
+        // Que el teclado no tape la animacion de guardado.
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil, from: nil, for: nil
+        )
         showingSavingAnimation = true
         defer { isSaving = false }
 

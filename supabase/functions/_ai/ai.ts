@@ -57,7 +57,11 @@ function limitMessage(fn: string, guard: Guard): string {
   const when = reset
     ? `el ${new Date(reset.getTime() - 5 * 3600_000).getUTCDate()} de ${MONTHS[new Date(reset.getTime() - 5 * 3600_000).getUTCMonth()]}`
     : "el próximo mes";
-  return `Usaste tus ${guard.limit} ${noun} de este mes. Se renuevan ${when}.`;
+  const again: Record<string, string> = {
+    "ask-finances": "preguntar",
+    "parse-voice-transaction": "anotar por voz",
+  };
+  return `Llegaste al límite de ${noun} de este mes. Podrás volver a ${again[fn] ?? "usarlo"} ${when}.`;
 }
 
 /// Lanza AiLimitError si la persona no tiene cuota o se alcanzo el tope.

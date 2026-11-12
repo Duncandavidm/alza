@@ -77,7 +77,7 @@ struct RecurringTransactionsView: View {
     }
 
     private func iconEmoji(for item: RecurringTransaction) -> String {
-        TransactionCategory(rawValue: item.category ?? "")?.emoji ?? item.movementType.emoji
+        CategoryDisplay.emoji(for: item.category) ?? item.movementType.emoji
     }
 
     private func refresh() async {

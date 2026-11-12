@@ -10,7 +10,12 @@ struct MovementSavingOverlay: View {
     let amount: Decimal
 
     var body: some View {
-        Color(.systemBackground).opacity(0.85).ignoresSafeArea()
+        // Fondo oscurecido (no blanco translucido): la tarjeta de la
+        // animacion es solida y se lee con buen contraste encima del
+        // formulario, en modo claro y oscuro.
+        Color.black.opacity(0.35)
+            .ignoresSafeArea()
+            .transition(.opacity)
 
         if movementType == .ingreso {
             FloatingBillsBackground().ignoresSafeArea()

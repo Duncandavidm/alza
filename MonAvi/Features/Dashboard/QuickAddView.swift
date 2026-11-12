@@ -33,7 +33,14 @@ struct QuickAddView: View {
     /// Opcional a proposito — la idea de quick-add es rapidez, asi que la
     /// categoria sigue sin ser obligatoria. Si la marcas, de una vez ves
     /// cuanto presupuesto te queda en esa categoria.
-    @State private var category: TransactionCategory?
+    @State private var category: CategoryChoice?
+    /// true si el usuario toco una categoria a mano (o vino de la voz o del
+    /// movimiento que se edita): entonces la sugerencia automatica por la
+    /// descripcion ya no la pisa.
+    @State private var userPickedCategory = false
+    /// Espera ~0.4 s sin escribir antes de sugerir categoria.
+    @State private var suggestionTask: Task<Void, Never>?
+    @ObservedObject private var userCategories = UserCategoriesStore.shared
     @State private var sortedCategories: [TransactionCategory] = TransactionCategory.allCases
     @State private var isSaving = false
     @State private var showingSavingAnimation = false
@@ -54,12 +61,6 @@ struct QuickAddView: View {
                         .padding(.top, 8)
 
                     amountDisplay
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Categoría")
-                            .font(.headline)
-                        categoryChips
-                    }
 
                     budgetHint
 
@@ -84,8 +85,10 @@ struct QuickAddView: View {
             .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .bottom) {
                 VStack(spacing: 10) {
-                    // "¿Qué fue?" va pegado al teclado: siempre a la vista,
-                    // sin tener que hacer scroll para encontrarlo.
+                    // Categorias y "¿Qué fue?" van pegados al teclado:
+                    // siempre a la vista (tambien con el teclado del
+                    // sistema arriba), sin tener que hacer scroll.
+                    categoryChips
                     descriptionField
 
                     // El teclado propio se esconde mientras se escribe la
@@ -111,7 +114,7 @@ struct QuickAddView: View {
                 }
             }
             .sheet(isPresented: $showingCategoryPicker) {
-                CategoryPickerSheet(selection: $category, categories: sortedCategories)
+                CategoryPickerSheet(selection: builtInSelection, categories: sortedCategories)
             }
             .onAppear {
                 if let existingTransaction {
@@ -120,7 +123,16 @@ struct QuickAddView: View {
                     Task { await startVoice() }
                 }
             }
-            .onDisappear { cancelVoice() }
+            .onDisappear {
+                cancelVoice()
+                suggestionTask?.cancel()
+            }
+            .onChange(of: description) { _, _ in
+                scheduleCategorySuggestion()
+            }
+            .onChange(of: movementType) { _, _ in
+                scheduleCategorySuggestion(delayNanoseconds: 0)
+            }
             .onChange(of: voiceRecognizer.liveTranscript) { _, transcript in
                 scheduleAutoStop(after: transcript)
             }
@@ -143,11 +155,12 @@ struct QuickAddView: View {
             .animation(.easeInOut(duration: 0.2), value: isVoiceMode)
             .task { await refreshBudgets() }
             .task { await refreshSortedCategories() }
+            .task { await userCategories.refresh() }
             .overlay {
                 if showingSavingAnimation {
                     MovementSavingOverlay(
                         movementType: movementType,
-                        itemEmoji: movementType.emoji,
+                        itemEmoji: category?.emoji ?? movementType.emoji,
                         description: description,
                         amount: enteredMagnitude
                     )
@@ -257,59 +270,137 @@ struct QuickAddView: View {
         .buttonStyle(.plain)
     }
 
+    /// Fila compacta de categorias, en el panel de abajo junto a "¿Qué
+    /// fue?". Se desplaza sola hasta la elegida (o la sugerida).
     private var categoryChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(chipCategories) { option in
-                    Button {
-                        category = (category == option) ? nil : option
-                    } label: {
-                        Text("\(option.emoji) \(option.rawValue)")
-                            .font(.caption.weight(.medium))
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 7)
-                            .background(
-                                Capsule().fill(
-                                    category == option
-                                        ? MonAviBrand.primary
-                                        : Color(.secondarySystemBackground)
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(chipChoices) { option in
+                        let isSelected = category?.id == option.id
+                        Button {
+                            selectCategory(isSelected ? nil : option)
+                        } label: {
+                            Text("\(option.emoji) \(option.title)")
+                                .font(.caption.weight(.medium))
+                                .lineLimit(1)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 7)
+                                .background(
+                                    Capsule().fill(
+                                        isSelected
+                                            ? MonAviBrand.primary
+                                            : Color(.secondarySystemBackground)
+                                    )
                                 )
-                            )
-                            .foregroundStyle(category == option ? .white : .primary)
+                                .foregroundStyle(isSelected ? .white : .primary)
+                        }
+                        .buttonStyle(.plain)
+                        .id(option.id)
+                        .accessibilityAddTraits(isSelected ? .isSelected : [])
                     }
-                }
 
-                Button {
-                    showingCategoryPicker = true
-                } label: {
-                    HStack(spacing: 4) {
-                        Text("Todas")
-                        Image(systemName: "chevron.right")
+                    Button {
+                        showingCategoryPicker = true
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text("Todas")
+                            Image(systemName: "chevron.right")
+                        }
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(Capsule().strokeBorder(MonAviBrand.primary, lineWidth: 1.5))
+                        .foregroundStyle(MonAviBrand.primary)
                     }
-                    .font(.caption.weight(.semibold))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 7)
-                    .background(Capsule().strokeBorder(MonAviBrand.primary, lineWidth: 1.5))
-                    .foregroundStyle(MonAviBrand.primary)
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Ver todas las categorías")
                 }
-                .accessibilityLabel("Ver todas las categorías")
+                .padding(.vertical, 1)
+            }
+            .onChange(of: category?.id) { _, newId in
+                guard let newId else { return }
+                withAnimation(.snappy) {
+                    proxy.scrollTo(newId, anchor: .center)
+                }
             }
         }
+        .accessibilityLabel("Categoría")
     }
 
-    /// Las 6 que mas usa el usuario, y la elegida si no esta entre ellas.
-    private var chipCategories: [TransactionCategory] {
-        var chips = Array(sortedCategories.prefix(6))
-        if let category, !chips.contains(category) {
+    /// Fijas relevantes al tipo de movimiento (para ingresos, las de
+    /// ingreso primero; para gastos, las que mas usa), luego las propias
+    /// del usuario, y la elegida al inicio si no esta entre ellas.
+    private var chipChoices: [CategoryChoice] {
+        let builtIns: [TransactionCategory]
+        if movementType.isInflow {
+            builtIns = [.income, .gifts, .savings, .other]
+        } else {
+            builtIns = Array(sortedCategories.filter { $0 != .income }.prefix(8))
+        }
+
+        var chips = builtIns.map { CategoryChoice.builtIn($0) }
+        for custom in userCategories.applicable(isInflow: movementType.isInflow) {
+            let choice = CategoryChoice(custom)
+            if !chips.contains(where: { $0.id == choice.id }) {
+                chips.append(choice)
+            }
+        }
+        if let category, !chips.contains(where: { $0.id == category.id }) {
             chips.insert(category, at: 0)
         }
         return chips
     }
 
+    /// Puente para la hoja "Todas" (solo categorias fijas).
+    private var builtInSelection: Binding<TransactionCategory?> {
+        Binding(
+            get: { category?.builtIn },
+            set: { newValue in selectCategory(newValue.map { CategoryChoice.builtIn($0) }) }
+        )
+    }
+
+    /// Eleccion manual: desde aqui la sugerencia automatica ya no la cambia.
+    private func selectCategory(_ choice: CategoryChoice?) {
+        category = choice
+        userPickedCategory = choice != nil
+    }
+
+    /// Sugiere categoria por lo escrito en "¿Qué fue?", tras una pausa al
+    /// escribir. Solo si el usuario no eligio una a mano.
+    private func scheduleCategorySuggestion(delayNanoseconds: UInt64 = 400_000_000) {
+        suggestionTask?.cancel()
+        guard !userPickedCategory else { return }
+        let text = description
+        let isInflow = movementType.isInflow
+        suggestionTask = Task { @MainActor in
+            if delayNanoseconds > 0 {
+                try? await Task.sleep(nanoseconds: delayNanoseconds)
+            }
+            guard !Task.isCancelled, !userPickedCategory else { return }
+            withAnimation(.snappy) {
+                category = suggestedCategory(for: text, isInflow: isInflow)
+            }
+        }
+    }
+
+    /// Primero una categoria propia cuyo nombre aparezca en el texto, luego
+    /// las palabras clave de las fijas.
+    private func suggestedCategory(for text: String, isInflow: Bool) -> CategoryChoice? {
+        let padded = CategoryKeywordGuesser.normalizedPadded(text)
+        for custom in userCategories.applicable(isInflow: isInflow) {
+            let name = CategoryKeywordGuesser.normalizedPadded(custom.name).trimmingCharacters(in: .whitespaces)
+            if !name.isEmpty, padded.contains(" \(name)") {
+                return CategoryChoice(custom)
+            }
+        }
+        return CategoryKeywordGuesser.category(for: text, isInflow: isInflow).map { CategoryChoice.builtIn($0) }
+    }
+
     /// "Ve el presupuesto restante al agregar gastos" tambien en el camino
     /// rapido, si el usuario decidio marcar una categoria.
     private var matchingBudgetProgress: BudgetProgress? {
-        guard let category else { return nil }
+        guard let category = category?.builtIn else { return nil }
         return budgetsViewModel.progresses.first { $0.budget.category == category.rawValue }
     }
 
@@ -368,7 +459,8 @@ struct QuickAddView: View {
         }
         description = parsed.description
         if let parsedCategory = parsed.category.flatMap(TransactionCategory.init(rawValue:)) {
-            category = parsedCategory
+            category = .builtIn(parsedCategory)
+            userPickedCategory = true
         }
         isVoiceMode = false
     }
@@ -396,7 +488,10 @@ struct QuickAddView: View {
         movementType = transaction.movementType
         amountText = NSDecimalNumber(decimal: abs(transaction.amount)).stringValue
         description = transaction.description ?? ""
-        category = transaction.category.flatMap(TransactionCategory.init(rawValue:))
+        // Una categoria propia (o ya borrada) se carga como propia, no se
+        // pierde por no ser una de las fijas.
+        category = CategoryChoice(stored: transaction.category)
+        userPickedCategory = category != nil
     }
 
     private func save() async {
@@ -415,6 +510,13 @@ struct QuickAddView: View {
         else { return }
 
         isSaving = true
+        // Que el teclado no tape el recibo / carrito de la animacion.
+        descriptionFocused = false
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil, from: nil, for: nil
+        )
+        suggestionTask?.cancel()
         showingSavingAnimation = true
         defer { isSaving = false }
 
@@ -425,7 +527,7 @@ struct QuickAddView: View {
                 magnitude: magnitude,
                 description: description,
                 movementType: movementType,
-                category: category?.rawValue
+                category: category?.storedValue
             )
             async let minDelay: Void = Task.sleep(nanoseconds: MovementSavingOverlay.minDisplayNanoseconds(for: movementType))
             _ = try await (saved, minDelay)
@@ -455,7 +557,7 @@ struct QuickAddView: View {
                 transaction,
                 magnitude: magnitude,
                 movementType: movementType,
-                category: category?.rawValue,
+                category: category?.storedValue,
                 description: description.isEmpty ? nil : description
             )
             dismiss()

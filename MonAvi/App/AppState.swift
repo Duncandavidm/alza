@@ -69,7 +69,9 @@ final class AppState: ObservableObject {
                     await self.refreshSubscriptionStatus()
                     await self.refreshOnboardingStatus()
                     await self.subscriptionStore.loadProduct()
+                    await UserCategoriesStore.shared.refresh()
                 } else {
+                    UserCategoriesStore.shared.clear()
                     self.subscriptionStatus = .none
                     self.onboardingStatus = .unknown
                     self.mfaStatus = .unknown

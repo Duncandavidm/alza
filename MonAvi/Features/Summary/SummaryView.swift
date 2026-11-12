@@ -15,6 +15,8 @@ struct SummaryView: View {
     /// Reusa la logica de "Anotar movimiento" del cuaderno del dia (cuenta
     /// por default, guardar, editar) para el boton "+" y para editar.
     @StateObject private var journalViewModel = DayJournalViewModel()
+    /// Para repintar emojis de categorias propias cuando terminan de cargar.
+    @ObservedObject private var userCategories = UserCategoriesStore.shared
 
     @State private var mode: SummaryChartMode = .donut
     /// Seleccion "en vivo" mientras el dedo esta sobre la grafica de barras.
@@ -308,7 +310,7 @@ struct SummaryView: View {
     }
 
     private func color(for item: SummaryCategoryTotal) -> Color {
-        item.category?.color ?? Color.gray
+        CategoryDisplay.color(for: item.key) ?? Color.gray
     }
 
     // MARK: - Filtros
@@ -520,7 +522,8 @@ struct SummaryView: View {
     }
 
     private func transactionRow(_ transaction: FinanceTransaction, kind: SummaryKind) -> some View {
-        let category = TransactionCategory(rawValue: transaction.category ?? "")
+        let categoryEmoji = CategoryDisplay.emoji(for: transaction.category)
+        let categoryColor = CategoryDisplay.color(for: transaction.category)
         let description = transaction.description?.trimmingCharacters(in: .whitespaces) ?? ""
         let title = description.isEmpty
             ? (transaction.category ?? transaction.movementType.displayName)
@@ -530,8 +533,8 @@ struct SummaryView: View {
 
         return HStack(spacing: 12) {
             CategoryIcon(
-                emoji: category?.emoji ?? transaction.movementType.emoji,
-                color: category?.color ?? Color.gray
+                emoji: categoryEmoji ?? transaction.movementType.emoji,
+                color: categoryColor ?? Color.gray
             )
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)

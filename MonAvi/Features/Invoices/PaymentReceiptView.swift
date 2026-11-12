@@ -93,9 +93,16 @@ struct ReceiptDocumentView: View {
                     .foregroundStyle(.green)
             }
 
-            Text("Generado con MonAvi")
-                .font(.system(.caption2, design: font))
-                .foregroundStyle(.gray)
+            HStack(spacing: 6) {
+                EmbeddedLogo.monAviMark
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 16, height: 16)
+                    .accessibilityHidden(true)
+                Text("Generado con MonAvi")
+                    .font(.system(.caption2, design: font))
+                    .foregroundStyle(.gray)
+            }
         }
         .padding(24)
         .frame(width: 320)

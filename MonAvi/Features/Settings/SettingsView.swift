@@ -131,6 +131,12 @@ struct SettingsView: View {
                     }
 
                     NavigationLink {
+                        CategoriesView()
+                    } label: {
+                        Label("Categorías", systemImage: "square.grid.2x2.fill")
+                    }
+
+                    NavigationLink {
                         RecurringTransactionsView()
                     } label: {
                         Label("Recurrentes", systemImage: "arrow.trianglehead.2.clockwise")

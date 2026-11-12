@@ -76,7 +76,8 @@ struct SummaryCategoryTotal: Identifiable, Equatable {
     var id: String { key }
 
     var category: TransactionCategory? { TransactionCategory(rawValue: key) }
-    var emoji: String { category?.emoji ?? "🏷️" }
+    /// Las propias del usuario (Ajustes > Categorías) muestran su emoji.
+    var emoji: String { CategoryDisplay.emoji(for: key) ?? "🏷️" }
 
     var deltaPercent: Decimal? {
         SummarySnapshot.percentChange(from: previousTotal, to: total)

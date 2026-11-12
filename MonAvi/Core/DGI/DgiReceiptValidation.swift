@@ -21,7 +21,11 @@ enum DgiReceiptValidation {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.timeZone = TimeZone(identifier: "UTC")
+        // La fecha de la factura es un dia calendario de Panama: se lee en la
+        // misma zona horaria del calendario con el que se compara. Antes se
+        // leia en UTC y, en Panama (UTC-5), caia en el dia anterior: la
+        // factura "envejecia" un dia y el limite real quedaba en 2 dias.
+        formatter.timeZone = calendar.timeZone
 
         guard let fecha = formatter.date(from: fechaISO) else { return .invalidDate }
 

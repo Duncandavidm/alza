@@ -47,4 +47,24 @@ final class DgiReceiptValidationTests: XCTestCase {
         let result = DgiReceiptValidation.checkFreshness(fechaISO: "no-es-una-fecha", now: Date(), calendar: utcCalendar)
         XCTAssertEqual(result, .invalidDate)
     }
+
+    /// En Panama (UTC-5) una factura de hace exactamente 3 dias calendario
+    /// se acepta, y una de hace 4 no — sin importar la hora del dia.
+    func testPanamaTimeZoneAcceptsThreeFullDays() {
+        var panama = Calendar(identifier: .gregorian)
+        panama.timeZone = TimeZone(identifier: "America/Panama")!
+        let formatter = DateFormatter()
+        formatter.calendar = panama
+        formatter.timeZone = panama.timeZone
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        let lateNight = formatter.date(from: "2026-11-13 23:30")!
+        let earlyMorning = formatter.date(from: "2026-11-13 00:30")!
+
+        for now in [lateNight, earlyMorning] {
+            XCTAssertEqual(DgiReceiptValidation.checkFreshness(fechaISO: "2026-11-10", now: now, calendar: panama), .ok)
+            XCTAssertEqual(DgiReceiptValidation.checkFreshness(fechaISO: "2026-11-13", now: now, calendar: panama), .ok)
+            XCTAssertEqual(DgiReceiptValidation.checkFreshness(fechaISO: "2026-11-09", now: now, calendar: panama), .tooOld)
+            XCTAssertEqual(DgiReceiptValidation.checkFreshness(fechaISO: "2026-11-14", now: now, calendar: panama), .future)
+        }
+    }
 }

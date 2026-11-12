@@ -146,7 +146,13 @@ struct DayJournalView: View {
                     isShowingInvoiceScanner = true
                 }
             }
-            .sheet(isPresented: $isShowingInvoiceScanner) {
+            .sheet(isPresented: $isShowingInvoiceScanner, onDismiss: {
+                // La factura se registra como gasto: que aparezca de una vez.
+                Task {
+                    await refresh()
+                    await refreshBudgets()
+                }
+            }) {
                 ScanInvoiceView(viewModel: dgiViewModel, accounts: viewModel.accounts)
             }
             .sheet(item: $editingTransaction) { transaction in

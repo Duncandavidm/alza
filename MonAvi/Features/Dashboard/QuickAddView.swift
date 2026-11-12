@@ -55,22 +55,6 @@ struct QuickAddView: View {
 
                     amountDisplay
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("¿Qué fue?")
-                            .font(.headline)
-                        TextField("ej. Compra de harina", text: $description)
-                            .font(.title3)
-                            .focused($descriptionFocused)
-                            .submitLabel(.done)
-                            .onSubmit { descriptionFocused = false }
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color(.secondarySystemBackground))
-                            )
-                    }
-
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Categoría")
                             .font(.headline)
@@ -100,6 +84,10 @@ struct QuickAddView: View {
             .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .bottom) {
                 VStack(spacing: 10) {
+                    // "¿Qué fue?" va pegado al teclado: siempre a la vista,
+                    // sin tener que hacer scroll para encontrarlo.
+                    descriptionField
+
                     // El teclado propio se esconde mientras se escribe la
                     // descripcion, para no apilarlo con el del sistema.
                     if !descriptionFocused {
@@ -191,6 +179,30 @@ struct QuickAddView: View {
 
     /// El monto en grande, con el signo del tipo de movimiento — se llena
     /// con el teclado propio de abajo.
+    private var descriptionField: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "pencil")
+                .foregroundStyle(.secondary)
+            TextField("¿Qué fue? ej. Almuerzo", text: $description)
+                .font(.title3)
+                .focused($descriptionFocused)
+                .submitLabel(.done)
+                .onSubmit { descriptionFocused = false }
+            if descriptionFocused {
+                Button("Listo") { descriptionFocused = false }
+                    .font(.subheadline.weight(.semibold))
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.secondarySystemBackground))
+        )
+        .contentShape(Rectangle())
+        .onTapGesture { descriptionFocused = true }
+    }
+
     private var amountDisplay: some View {
         VStack(spacing: 4) {
             Text("¿Cuánto?")

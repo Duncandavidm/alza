@@ -222,6 +222,9 @@ final class DgiReceiptsViewModel: ObservableObject {
         amount: Decimal
     ) async throws {
         let occurredAt = draft.authorizedAt ?? draft.parsed.fields.fechaISODate
+        // Sin monto (la DGI aun no la publica) tambien se guarda: el gasto
+        // queda en $0 y el servidor lo actualiza con el valor de la DGI al
+        // verificar la factura.
         let merchantName = draft.merchantDisplayName ?? "Factura \(draft.parsed.fields.ruc)"
         let splitLines: [DgiCategorySplitLine] = (draft.splitByCategory && draft.canSplitByCategory)
             ? DgiInvoiceLookupLogic.splitLines(breakdown: draft.invoiceDetails?.breakdown ?? [], total: amount)

@@ -120,7 +120,7 @@ struct ScanReviewView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Aceptar") { Task { await save() } }
-                        .disabled(amount <= 0 || selectedAccountId == nil || isSaving || draft.isDuplicate)
+                        .disabled(selectedAccountId == nil || isSaving || draft.isDuplicate)
                 }
             }
             .onAppear {
@@ -172,14 +172,14 @@ struct ScanReviewView: View {
             }
         case .rateLimited:
             Section {
-                Text("No pudimos leer tu factura ahorita. Escribe el monto y la verificamos después.")
+                Text("No pudimos leer tu factura ahorita. Puedes guardarla sin monto: la verificamos después y el gasto toma el valor que diga la DGI.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
         case .manual:
             Section {
                 Label {
-                    Text("Tu factura aún no aparece publicada. Escribe el monto: la guardamos, la volvemos a revisar en 24 horas y tu cashback queda pendiente hasta confirmarla.")
+                    Text("Tu factura aún no aparece publicada. Puedes guardarla sin escribir el monto: la volvemos a revisar en 24 horas y el gasto se actualiza solo con el valor que diga la DGI. Tu cashback queda pendiente hasta confirmarla.")
                         .font(.footnote)
                         .fixedSize(horizontal: false, vertical: true)
                 } icon: {

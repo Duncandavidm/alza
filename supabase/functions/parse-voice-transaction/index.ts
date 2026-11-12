@@ -75,12 +75,12 @@ async function checkRateLimit(
   return data === true;
 }
 
-const MOVEMENT_TYPES = ["ingreso", "gasto", "pago_proveedor", "inversion", "transferencia"] as const;
+const MOVEMENT_TYPES = ["ingreso", "gasto", "inversion"] as const;
 // Mismos rawValue que TransactionCategory en la app (Transaction.swift).
 const CATEGORIES = [
   "Ingreso", "Vivienda", "Comida", "Supermercado", "Servicios", "Transporte",
   "Compras", "Ropa", "Salir", "Entretenimiento", "Suscripciones", "Salud",
-  "Educación", "Mascotas", "Regalos", "Viajes", "Ahorro", "Otro",
+  "Educación", "Mascotas", "Regalos", "Viajes", "Ahorro", "Proveedores", "Transferencias", "Otro",
 ];
 const MAX_TRANSCRIPT_LENGTH = 500;
 
@@ -176,11 +176,9 @@ Responde UNICAMENTE con un JSON (sin texto extra, sin markdown) con esta forma:
 }
 
 Reglas:
-- Si la frase describe dinero que entra (una venta, un cobro, un pago que te hicieron), movementType es "ingreso".
-- Si describe dinero que sale para pagarle a un proveedor de insumos/mercancia, movementType es "pago_proveedor".
-- Si describe comprar algo que va a durar (equipo, mejora), movementType es "inversion".
-- Si describe mover dinero entre sus propias cuentas, movementType es "transferencia".
-- Cualquier otro gasto normal es "gasto".
+- Si la frase describe dinero que entra (salario, quincena, una venta, un cobro, un pago que te hicieron), movementType es "ingreso".
+- Si describe invertir dinero (acciones, plazo fijo, equipo o mejora que va a durar), movementType es "inversion".
+- Cualquier otra salida de dinero es "gasto": si es un pago a un proveedor de insumos o mercancia, category "Proveedores"; si es una transferencia o envio de dinero (Yappy, ACH, a otra persona), category "Transferencias".
 - Si no se menciona un monto claro, usa 0.`;
 
   const result = await callClaude(supabase, userId, "parse-voice-transaction", { prompt, maxTokens: 4000 });

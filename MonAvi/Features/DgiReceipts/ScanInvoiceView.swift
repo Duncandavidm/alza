@@ -1,23 +1,15 @@
 import SwiftUI
 import PhotosUI
 
-/// Hoja principal de "Facturas que suman": camara en vivo, pegar el
-/// link/CUFE a mano, o elegir una foto de la galeria — las tres formas
-/// que pidio el modulo, todas desembocan en `ScanReviewView`.
+/// Hoja principal de "Facturas que suman": camara en vivo (lo normal) o,
+/// si la factura llego como captura de pantalla, una foto de la galeria.
+/// Ambas desembocan en `ScanReviewView`.
 struct ScanInvoiceView: View {
     @EnvironmentObject private var appState: AppState
     @ObservedObject var viewModel: DgiReceiptsViewModel
     let accounts: [Account]
     @Environment(\.dismiss) private var dismiss
 
-    private enum Mode: String, CaseIterable, Identifiable {
-        case camera = "Camara"
-        case manual = "Pegar código"
-        var id: String { rawValue }
-    }
-
-    @State private var mode: Mode = .camera
-    @State private var manualText = ""
     @State private var isProcessing = false
     @State private var progressText = "Validando..."
     @State private var invalidMessage: String?
@@ -27,20 +19,8 @@ struct ScanInvoiceView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                Picker("Modo", selection: $mode) {
-                    ForEach(Mode.allCases) { option in
-                        Text(option.rawValue).tag(option)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .padding()
-
-                switch mode {
-                case .camera:
-                    cameraSection
-                case .manual:
-                    manualSection
-                }
+                cameraSection
+                    .overlay(alignment: .bottom) { photoButton }
 
                 if let invalidMessage {
                     Text(invalidMessage)
@@ -82,38 +62,20 @@ struct ScanInvoiceView: View {
         .background(Color.black)
     }
 
-    private var manualSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Pega el link completo del código QR, o solo el CUFE de 66 caracteres.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-
-            TextField("https://dgi-fep.mef.gob.pa/...", text: $manualText, axis: .vertical)
-                .textFieldStyle(.roundedBorder)
-                .lineLimit(3...6)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
-
-            Button {
-                handleScan(manualText)
-            } label: {
-                Text("Procesar").frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .disabled(manualText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isProcessing)
-
-            Divider().padding(.vertical, 4)
-
-            PhotosPicker(selection: $galleryItem, matching: .images) {
-                Label("Elegir una foto de la galeria", systemImage: "photo.on.rectangle")
-            }
-            .onChange(of: galleryItem) { _, newItem in
-                Task { await handleGalleryPick(newItem) }
-            }
-
-            Spacer()
+    /// Para facturas que llegaron como captura (correo, WhatsApp).
+    private var photoButton: some View {
+        PhotosPicker(selection: $galleryItem, matching: .images) {
+            Label("Desde una foto", systemImage: "photo.on.rectangle")
+                .font(.subheadline.weight(.semibold))
+                .padding(.horizontal, 18)
+                .padding(.vertical, 12)
+                .background(.ultraThinMaterial, in: Capsule())
+                .foregroundStyle(.white)
         }
-        .padding()
+        .padding(.bottom, 28)
+        .onChange(of: galleryItem) { _, newItem in
+            Task { await handleGalleryPick(newItem) }
+        }
     }
 
     private func handleScan(_ raw: String) {

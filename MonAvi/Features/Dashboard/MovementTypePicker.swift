@@ -18,12 +18,54 @@ struct MovementTypePicker: View {
     /// segunda fila cuando no caben — mas intuitivo en pantallas chicas.
     private let columns = [GridItem(.adaptive(minimum: 104), spacing: 10)]
 
+    @Namespace private var segmentNamespace
+
     var body: some View {
-        if compact {
+        if compact && types.count <= 3 {
+            segmented
+        } else if compact {
             compactRow
         } else {
             grid
         }
+    }
+
+    /// Control segmentado de ancho completo (hasta 3 tipos): centrado, con
+    /// la opcion elegida resaltada en su color y una transicion suave.
+    private var segmented: some View {
+        HStack(spacing: 4) {
+            ForEach(types) { type in
+                let isSelected = selection == type
+                Button {
+                    withAnimation(.snappy(duration: 0.25)) { selection = type }
+                } label: {
+                    HStack(spacing: 6) {
+                        Text(type.emoji).font(.system(size: 17))
+                        Text(type.displayName)
+                            .font(.subheadline.weight(isSelected ? .semibold : .medium))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .foregroundStyle(isSelected ? type.tintColor : .primary)
+                    .background {
+                        if isSelected {
+                            Capsule()
+                                .fill(Color(.systemBackground))
+                                .overlay(Capsule().strokeBorder(type.tintColor.opacity(0.6), lineWidth: 1.5))
+                                .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
+                                .matchedGeometryEffect(id: "selected", in: segmentNamespace)
+                        }
+                    }
+                    .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(isSelected ? .isSelected : [])
+            }
+        }
+        .padding(4)
+        .background(Capsule().fill(Color(.secondarySystemBackground)))
     }
 
     private var grid: some View {

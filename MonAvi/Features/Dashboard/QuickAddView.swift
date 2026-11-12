@@ -59,35 +59,39 @@ struct QuickAddView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                // Compacto a proposito: tipo (una fila) + monto arriba,
-                // siempre visibles sobre el panel de abajo (categorias,
-                // "¿Qué fue?", teclado y Guardar). Cuentas en un iPhone Pro
-                // de 852 pt: barra ~100, tipo ~44, monto ~82, panel ~424
-                // (con el indicador de inicio) — sobra espacio.
-                VStack(spacing: 12) {
-                    MovementTypePicker(selection: $movementType, types: MovementType.quickAddTypes, compact: true)
-                        .padding(.top, 4)
+            // Arriba: tipo de movimiento (centrado, ancho completo) y el
+            // monto en grande, centrado en el espacio libre sobre el panel de
+            // abajo (categorias, "¿Qué fue?", teclado y Guardar).
+            VStack(spacing: 0) {
+                MovementTypePicker(selection: $movementType, types: MovementType.quickAddTypes, compact: true)
+                    .padding(.top, 6)
 
+                Spacer(minLength: 8)
+
+                VStack(spacing: 10) {
                     amountDisplay
-
+                    entrySummary
                     budgetHint
-
 
                     if viewModel.defaultAccountId == nil {
                         Text("Necesitas una cuenta para guardar movimientos — crea una en Ajustes > Cuentas.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
                     }
 
                     if let errorMessage {
                         Text(errorMessage).foregroundStyle(.red).font(.footnote)
+                            .multilineTextAlignment(.center)
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 12)
+
+                Spacer(minLength: 8)
             }
-            .scrollDismissesKeyboard(.interactively)
+            .padding(.horizontal, 20)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .onTapGesture { descriptionFocused = false }
             .navigationTitle(existingTransaction == nil ? "Anotar movimiento" : "Editar movimiento")
             .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .bottom) {
@@ -239,6 +243,32 @@ struct QuickAddView: View {
         .onTapGesture { descriptionFocused = true }
     }
 
+    /// Debajo del monto: la categoria elegida (o sugerida) y lo que se
+    /// escribio, para confirmar de un vistazo antes de guardar.
+    private var entrySummary: some View {
+        HStack(spacing: 6) {
+            if let category {
+                Text(category.emoji)
+                Text(category.title)
+                    .fontWeight(.semibold)
+            } else {
+                Image(systemName: "tag")
+                Text("Sin categoría")
+            }
+            if !description.trimmingCharacters(in: .whitespaces).isEmpty {
+                Text("·")
+                Text(description)
+                    .lineLimit(1)
+            }
+        }
+        .font(.subheadline)
+        .foregroundStyle(category == nil ? Color.secondary : Color.primary)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(Capsule().fill(Color(.secondarySystemBackground)))
+        .animation(.snappy, value: category?.storedValue)
+    }
+
     private var amountDisplay: some View {
         VStack(spacing: 2) {
             Text("¿Cuánto?")
@@ -253,7 +283,7 @@ struct QuickAddView: View {
                     .foregroundStyle(amountText.isEmpty ? Color.secondary : Color.primary)
                     .contentTransition(.numericText())
             }
-            .font(.system(size: 52, weight: .bold, design: MonAviBrand.fontDesign))
+            .font(.system(size: 64, weight: .bold, design: MonAviBrand.fontDesign))
             .lineLimit(1)
             .minimumScaleFactor(0.5)
             .animation(.snappy, value: amountText)

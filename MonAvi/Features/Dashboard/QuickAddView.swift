@@ -41,6 +41,10 @@ struct QuickAddView: View {
     /// Espera ~0.4 s sin escribir antes de sugerir categoria.
     @State private var suggestionTask: Task<Void, Never>?
     @ObservedObject private var userCategories = UserCategoriesStore.shared
+    /// Lo que el usuario suele anotar (ultimos ~300 movimientos): la mejor
+    /// señal para sugerir categoria. Se carga una vez al abrir.
+    @State private var historyLearner = CategoryHistoryLearner(entries: [])
+    @State private var historyLoaded = false
     @State private var sortedCategories: [TransactionCategory] = TransactionCategory.allCases
     @State private var isSaving = false
     @State private var showingSavingAnimation = false
@@ -56,9 +60,14 @@ struct QuickAddView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
-                    MovementTypePicker(selection: $movementType)
-                        .padding(.top, 8)
+                // Compacto a proposito: tipo (una fila) + monto arriba,
+                // siempre visibles sobre el panel de abajo (categorias,
+                // "¿Qué fue?", teclado y Guardar). Cuentas en un iPhone Pro
+                // de 852 pt: barra ~100, tipo ~44, monto ~82, panel ~424
+                // (con el indicador de inicio) — sobra espacio.
+                VStack(spacing: 12) {
+                    MovementTypePicker(selection: $movementType, types: MovementType.quickAddTypes, compact: true)
+                        .padding(.top, 4)
 
                     amountDisplay
 
@@ -78,13 +87,14 @@ struct QuickAddView: View {
                         Text(errorMessage).foregroundStyle(.red).font(.footnote)
                     }
                 }
-                .padding(20)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 12)
             }
             .scrollDismissesKeyboard(.interactively)
             .navigationTitle(existingTransaction == nil ? "Anotar movimiento" : "Editar movimiento")
             .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .bottom) {
-                VStack(spacing: 10) {
+                VStack(spacing: 8) {
                     // Categorias y "¿Qué fue?" van pegados al teclado:
                     // siempre a la vista (tambien con el teclado del
                     // sistema arriba), sin tener que hacer scroll.
@@ -103,8 +113,8 @@ struct QuickAddView: View {
                     saveButton
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 10)
-                .padding(.bottom, 8)
+                .padding(.top, 8)
+                .padding(.bottom, 6)
                 .frame(maxWidth: .infinity)
                 .background(.bar)
             }
@@ -156,6 +166,7 @@ struct QuickAddView: View {
             .task { await refreshBudgets() }
             .task { await refreshSortedCategories() }
             .task { await userCategories.refresh() }
+            .task { await loadCategoryHistory() }
             .overlay {
                 if showingSavingAnimation {
                     MovementSavingOverlay(
@@ -183,7 +194,7 @@ struct QuickAddView: View {
             Text(existingTransaction == nil ? "Guardar" : "Guardar cambios")
                 .font(.headline)
                 .frame(maxWidth: .infinity)
-                .frame(height: 50)
+                .frame(height: 48)
         }
         .buttonStyle(.borderedProminent)
         .tint(movementType.tintColor)
@@ -197,7 +208,7 @@ struct QuickAddView: View {
             Image(systemName: "pencil")
                 .foregroundStyle(.secondary)
             TextField("¿Qué fue? ej. Almuerzo", text: $description)
-                .font(.title3)
+                .font(.body)
                 .focused($descriptionFocused)
                 .submitLabel(.done)
                 .onSubmit { descriptionFocused = false }
@@ -207,7 +218,7 @@ struct QuickAddView: View {
             }
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color(.secondarySystemBackground))
@@ -217,7 +228,7 @@ struct QuickAddView: View {
     }
 
     private var amountDisplay: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 2) {
             Text("¿Cuánto?")
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(.secondary)
@@ -236,7 +247,6 @@ struct QuickAddView: View {
             .animation(.snappy, value: amountText)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 4)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Monto: \(amountText.isEmpty ? "0" : amountText) dólares")
     }
@@ -261,7 +271,7 @@ struct QuickAddView: View {
                 Spacer()
             }
             .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.vertical, 10)
             .background(
                 RoundedRectangle(cornerRadius: 14)
                     .fill(Color(.secondarySystemBackground))
@@ -384,9 +394,16 @@ struct QuickAddView: View {
         }
     }
 
-    /// Primero una categoria propia cuyo nombre aparezca en el texto, luego
-    /// las palabras clave de las fijas.
+    /// En orden: 1) lo que el usuario suele usar para esa descripcion o
+    /// primera palabra (historial), 2) una categoria propia cuyo nombre
+    /// aparezca en el texto, 3) las palabras clave de las fijas, y 4) (dentro
+    /// del mismo CategoryKeywordGuesser) el adivinador de comercios.
     private func suggestedCategory(for text: String, isInflow: Bool) -> CategoryChoice? {
+        if let stored = historyLearner.category(for: text, isInflow: isInflow),
+           let choice = CategoryChoice(stored: stored),
+           isStillAvailable(choice) {
+            return choice
+        }
         let padded = CategoryKeywordGuesser.normalizedPadded(text)
         for custom in userCategories.applicable(isInflow: isInflow) {
             let name = CategoryKeywordGuesser.normalizedPadded(custom.name).trimmingCharacters(in: .whitespaces)
@@ -395,6 +412,27 @@ struct QuickAddView: View {
             }
         }
         return CategoryKeywordGuesser.category(for: text, isInflow: isInflow).map { CategoryChoice.builtIn($0) }
+    }
+
+    /// Una categoria propia que el usuario ya borro no se vuelve a sugerir.
+    private func isStillAvailable(_ choice: CategoryChoice) -> Bool {
+        guard case .custom(let name, _) = choice else { return true }
+        let key = CategoryKeywordGuesser.normalizedPadded(name)
+        return userCategories.categories.contains {
+            CategoryKeywordGuesser.normalizedPadded($0.name) == key
+        }
+    }
+
+    /// Carga una sola vez los ultimos movimientos para aprender de ellos.
+    private func loadCategoryHistory() async {
+        guard !historyLoaded, let userId = appState.currentUserId else { return }
+        historyLoaded = true
+        let recent = (try? await TransactionsRepository.shared.fetchRecent(userId: userId, limit: 300)) ?? []
+        historyLearner = CategoryHistoryLearner(transactions: recent)
+        // Si ya habia texto escrito (o dictado), re-sugerir con el historial.
+        if !description.isEmpty {
+            scheduleCategorySuggestion(delayNanoseconds: 0)
+        }
     }
 
     /// "Ve el presupuesto restante al agregar gastos" tambien en el camino
@@ -448,7 +486,7 @@ struct QuickAddView: View {
         silenceTask?.cancel()
         silenceTask = nil
         guard voiceRecognizer.isRecording else { return }
-        guard let parsed = await voiceRecognizer.toggleRecording() else { return }
+        guard let parsed = await voiceRecognizer.toggleRecording()?.normalizedForQuickAdd() else { return }
 
         movementType = parsed.movementType
         if parsed.amount > 0 {
@@ -485,12 +523,15 @@ struct QuickAddView: View {
     }
 
     private func loadExistingTransaction(_ transaction: FinanceTransaction) {
-        movementType = transaction.movementType
+        // "Pago a proveedor" / "Transferencia" (datos viejos) se cargan como
+        // gasto con categoria Proveedores / Transferencias, y asi se guardan.
+        let mapping = transaction.movementType.quickAddMapping
+        movementType = mapping.movementType
         amountText = NSDecimalNumber(decimal: abs(transaction.amount)).stringValue
         description = transaction.description ?? ""
         // Una categoria propia (o ya borrada) se carga como propia, no se
         // pierde por no ser una de las fijas.
-        category = CategoryChoice(stored: transaction.category)
+        category = mapping.category.map { CategoryChoice.builtIn($0) } ?? CategoryChoice(stored: transaction.category)
         userPickedCategory = category != nil
     }
 

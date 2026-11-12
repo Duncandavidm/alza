@@ -31,7 +31,8 @@ final class TransactionsRepository {
             .select()
             .eq("user_id", value: userId)
             .or("and(occurred_at.gte.\(from),occurred_at.lt.\(to)),and(created_at.gte.\(from),created_at.lt.\(to))")
-            .order("created_at", ascending: true)
+            // Lo mas nuevo primero: asi se lista en Hoy (arriba lo ultimo).
+            .order("created_at", ascending: false)
             .execute()
             .value
     }

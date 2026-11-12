@@ -416,14 +416,16 @@ struct VoiceCaptureView: View {
         silenceTask = nil
         guard phase == .listening, recognizer.isRecording else { return }
 
-        guard let parsed = await recognizer.toggleRecording() else {
+        guard let parsed = await recognizer.toggleRecording()?.normalizedForQuickAdd() else {
             phase = .failed(recognizer.errorMessage ?? VoiceRecognitionError.parseFailed.errorDescription ?? "")
             return
         }
         await save(parsed)
     }
 
-    private func save(_ parsed: ParsedVoiceTransaction) async {
+    private func save(_ rawParsed: ParsedVoiceTransaction) async {
+        // pago_proveedor / transferencia → gasto + Proveedores / Transferencias.
+        let parsed = rawParsed.normalizedForQuickAdd()
         guard parsed.amount > 0 else {
             phase = .failed("No escuché el monto. Intenta de nuevo, por ejemplo: «gasté 12 dólares en almuerzo».")
             return
@@ -462,8 +464,9 @@ struct VoiceCaptureView: View {
                 movementType: parsed.movementType,
                 category: category?.rawValue
             )
-            // quickAdd agrega el movimiento recien creado al final del dia.
-            guard let created = viewModel.todayTransactions.last else {
+            // quickAdd agrega el movimiento recien creado al inicio del dia
+            // (la lista va de lo mas nuevo a lo mas viejo).
+            guard let created = viewModel.todayTransactions.first else {
                 close()
                 return
             }

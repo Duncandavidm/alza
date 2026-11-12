@@ -236,6 +236,11 @@ enum NotificationManager {
             .sorted { $0.dueDate < $1.dueDate }
             .prefix(maxRecurring)
 
+        // Un "Recordarme más tarde" sigue vivo mientras el pago siga
+        // pendiente; si ya se registro (o se desactivo/borro), se cancela.
+        let pendingIds = Set(candidates.map(\.item.id))
+        removePending(ids: items.filter { !pendingIds.contains($0.id) }.map { recurringSnoozeId($0.id) })
+
         for candidate in candidates {
             let item = candidate.item
             let amountText = formattedAmount(item.amount)
@@ -257,13 +262,131 @@ enum NotificationManager {
                     id: "recurring-due-\(item.id)",
                     title: isIncome ? "¿Ya recibiste \(item.name)?" : "Hoy toca pagar \(item.name)",
                     body: isIncome
-                        ? "Hoy es el día de \(item.name) (\(amountText)). Cuando lo recibas, regístralo en MonAvi."
-                        : "\(item.name) por \(amountText). Cuando lo pagues, regístralo en MonAvi para llevar tus cuentas al día.",
+                        ? "Hoy es el día de \(item.name) (\(amountText)). ¿Ya lo recibiste? Mantén presionado para registrarlo."
+                        : "\(item.name) por \(amountText). ¿Ya lo pagaste? Mantén presionado para registrarlo de una vez.",
                     date: atReminderHour(candidate.dueDate),
-                    timeSensitive: !isIncome
+                    timeSensitive: !isIncome,
+                    categoryIdentifier: isIncome ? recurringIncomeCategory : recurringExpenseCategory,
+                    userInfo: [recurringIdKey: item.id.uuidString]
                 )
             }
         }
+    }
+
+    // MARK: - Acciones del aviso de recurrente ("Sí, ya lo pagué")
+
+    /// Categorias de notificacion con botones: una para gastos ("Sí, ya lo
+    /// pagué") y otra para ingresos ("Sí, ya lo recibí"), las dos con
+    /// "Recordarme más tarde" (+2 h).
+    static let recurringExpenseCategory = "RECURRING_DUE_EXPENSE"
+    static let recurringIncomeCategory = "RECURRING_DUE_INCOME"
+    static let recurringConfirmAction = "RECURRING_CONFIRM"
+    static let recurringSnoozeAction = "RECURRING_SNOOZE"
+    static let recurringIdKey = "recurringId"
+    static let recurringSnoozeInterval: TimeInterval = 2 * 60 * 60
+
+    static func recurringSnoozeId(_ id: UUID) -> String { "recurring-snooze-\(id)" }
+
+    /// Se registra una vez al arrancar (NotificationPresenter.install).
+    /// Sin opciones en "Sí": iOS corre la accion en segundo plano, sin
+    /// abrir la app (la sesion de Supabase vive en el llavero).
+    static func registerNotificationCategories() {
+        let snooze = UNNotificationAction(
+            identifier: recurringSnoozeAction,
+            title: "Recordarme más tarde",
+            options: []
+        )
+        let paid = UNNotificationAction(
+            identifier: recurringConfirmAction,
+            title: "Sí, ya lo pagué",
+            options: []
+        )
+        let received = UNNotificationAction(
+            identifier: recurringConfirmAction,
+            title: "Sí, ya lo recibí",
+            options: []
+        )
+        let expense = UNNotificationCategory(
+            identifier: recurringExpenseCategory,
+            actions: [paid, snooze],
+            intentIdentifiers: [],
+            options: []
+        )
+        let income = UNNotificationCategory(
+            identifier: recurringIncomeCategory,
+            actions: [received, snooze],
+            intentIdentifiers: [],
+            options: []
+        )
+        UNUserNotificationCenter.current().setNotificationCategories([expense, income])
+    }
+
+    /// "Sí, ya lo pagué/recibí": registra el movimiento igual que el boton
+    /// de Hoy (RecurringTransactionsViewModel.logPayment) y avisa con una
+    /// notificacion local "Listo: registramos ...".
+    @MainActor
+    static func confirmRecurringFromNotification(idString: String?) async {
+        guard let idString, let id = UUID(uuidString: idString) else { return }
+        do {
+            let session = try await SupabaseManager.shared.client.auth.session
+            let item = try await RecurringTransactionsViewModel.fetchItem(id: id)
+            removePending(ids: [recurringSnoozeId(id), "recurring-due-\(id)"])
+
+            if let lastLoggedOn = item.lastLoggedOn,
+               Calendar.current.isDate(lastLoggedOn, equalTo: Date(), toGranularity: .month) {
+                sendImmediate(
+                    id: "recurring-done-\(id)",
+                    title: "Ya estaba registrado",
+                    body: "\(item.name) ya está anotado este mes en MonAvi."
+                )
+                return
+            }
+
+            try await RecurringTransactionsViewModel.logPayment(for: item, userId: session.user.id)
+            sendImmediate(
+                id: "recurring-done-\(id)",
+                title: "Listo",
+                body: "Listo: registramos \(item.name) por \(formattedAmount(item.amount))."
+            )
+            // Si la app esta abierta, Hoy se recarga (DayJournalView).
+            NotificationCenter.default.post(name: .recurringLoggedFromNotification, object: nil)
+        } catch {
+            sendImmediate(
+                id: "recurring-failed-\(id)",
+                title: "No se pudo registrar",
+                body: "Abre MonAvi para registrar este pago fijo. Revisa tu conexión a internet.",
+                userInfo: ["screen": "home"]
+            )
+        }
+    }
+
+    /// "Recordarme más tarde": el mismo aviso (con sus botones) en 2 horas.
+    static func snoozeRecurring(_ content: UNNotificationContent) {
+        guard let idString = content.userInfo[recurringIdKey] as? String,
+              let id = UUID(uuidString: idString),
+              let copy = content.mutableCopy() as? UNMutableNotificationContent
+        else { return }
+        let request = UNNotificationRequest(
+            identifier: recurringSnoozeId(id),
+            content: copy,
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: recurringSnoozeInterval, repeats: false)
+        )
+        UNUserNotificationCenter.current().add(request)
+    }
+
+    private static func sendImmediate(id: String, title: String, body: String, userInfo: [AnyHashable: Any] = [:]) {
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = brandSound
+        content.threadIdentifier = "monavi-recordatorios"
+        content.userInfo = userInfo
+        let request = UNNotificationRequest(
+            identifier: id,
+            content: content,
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        )
+        UNUserNotificationCenter.current().add(request)
     }
 
     // MARK: - Recordatorio diario de anotar
@@ -451,13 +574,25 @@ enum NotificationManager {
     /// `timeSensitive`: para los avisos del dia de pago (o de un pago
     /// vencido) — iOS los deja sonar y vibrar aunque el usuario tenga
     /// activado un modo de concentracion. El resto son avisos normales.
-    private static func schedule(id: String, title: String, body: String, date: Date, timeSensitive: Bool = false) {
+    private static func schedule(
+        id: String,
+        title: String,
+        body: String,
+        date: Date,
+        timeSensitive: Bool = false,
+        categoryIdentifier: String? = nil,
+        userInfo: [AnyHashable: Any] = [:]
+    ) {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
         content.sound = brandSound
         content.interruptionLevel = timeSensitive ? .timeSensitive : .active
         content.threadIdentifier = "monavi-recordatorios"
+        if let categoryIdentifier {
+            content.categoryIdentifier = categoryIdentifier
+        }
+        content.userInfo = userInfo
 
         let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: date)
         let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
@@ -478,6 +613,7 @@ final class NotificationPresenter: NSObject, UNUserNotificationCenterDelegate {
 
     func install() {
         UNUserNotificationCenter.current().delegate = self
+        NotificationManager.registerNotificationCategories()
     }
 
     func userNotificationCenter(
@@ -493,14 +629,37 @@ final class NotificationPresenter: NSObject, UNUserNotificationCenterDelegate {
     }
 
     /// El usuario toco la notificacion: si trae un destino ("screen"),
-    /// la app abre esa pantalla (ej. Puntos al sumar puntos).
+    /// la app abre esa pantalla (ej. Puntos al sumar puntos). Los botones
+    /// del aviso de un pago fijo ("Sí, ya lo pagué" / "Recordarme más
+    /// tarde") se resuelven aqui; la version async del delegado le avisa a
+    /// iOS que termino (el completion handler) solo cuando este metodo
+    /// retorna, o sea despues de registrar el movimiento.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse
     ) async {
-        let screen = response.notification.request.content.userInfo["screen"] as? String
+        let content = response.notification.request.content
+        switch response.actionIdentifier {
+        case NotificationManager.recurringConfirmAction:
+            let idString = content.userInfo[NotificationManager.recurringIdKey] as? String
+            await NotificationManager.confirmRecurringFromNotification(idString: idString)
+            return
+        case NotificationManager.recurringSnoozeAction:
+            NotificationManager.snoozeRecurring(content)
+            return
+        default:
+            break
+        }
+
+        let screen = content.userInfo["screen"] as? String
         await MainActor.run {
             NotificationRouter.shared.open(screen: screen)
         }
     }
+}
+
+extension Notification.Name {
+    /// Se registro un pago fijo desde el boton de la notificacion: Hoy se
+    /// recarga si esta abierta.
+    static let recurringLoggedFromNotification = Notification.Name("MonAviRecurringLoggedFromNotification")
 }

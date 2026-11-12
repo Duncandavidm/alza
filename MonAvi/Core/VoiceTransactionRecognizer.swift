@@ -13,6 +13,21 @@ struct ParsedVoiceTransaction: Decodable {
     let category: String?
 }
 
+extension ParsedVoiceTransaction {
+    /// pago_proveedor → gasto + Proveedores, transferencia → gasto +
+    /// Transferencias (ver MovementType.quickAddMapping). Idempotente.
+    func normalizedForQuickAdd() -> ParsedVoiceTransaction {
+        let mapping = movementType.quickAddMapping
+        guard let forced = mapping.category else { return self }
+        return ParsedVoiceTransaction(
+            amount: amount,
+            description: description,
+            movementType: mapping.movementType,
+            category: forced.rawValue
+        )
+    }
+}
+
 enum VoiceRecognitionError: LocalizedError {
     case permissionDenied
     case recognizerUnavailable

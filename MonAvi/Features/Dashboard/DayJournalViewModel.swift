@@ -65,8 +65,10 @@ final class DayJournalViewModel: ObservableObject {
 
     /// Cuenta a usar por default en el ingreso ultra-rapido: la ultima que
     /// se uso hoy, o la primera del negocio si todavia no hay movimientos.
+    /// `todayTransactions` va de lo mas nuevo a lo mas viejo, asi que la
+    /// ultima usada es `.first`.
     var defaultAccountId: UUID? {
-        todayTransactions.last?.accountId ?? accounts.first?.id
+        todayTransactions.first?.accountId ?? accounts.first?.id
     }
 
     var todayIncome: Decimal {
@@ -144,7 +146,8 @@ final class DayJournalViewModel: ObservableObject {
                 occurredAt: Date()
             )
         )
-        todayTransactions.append(created)
+        // Lo mas nuevo arriba (mismo orden que fetchDay).
+        todayTransactions.insert(created, at: 0)
 
         if let index = accounts.firstIndex(where: { $0.id == accountId }) {
             accounts[index].balance += created.amount

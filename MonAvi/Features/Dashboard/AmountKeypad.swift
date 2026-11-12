@@ -6,6 +6,9 @@ struct AmountKeypad: View {
     @Binding var text: String
     let isInflow: Bool
     let onToggleSign: () -> Void
+    /// Alto de cada tecla. 44 pt (minimo tactil de Apple) deja ver el monto
+    /// y el resto del panel en un iPhone Pro sin tapar nada.
+    var keyHeight: CGFloat = 44
 
     enum Key: Hashable {
         case digit(Int)
@@ -21,7 +24,7 @@ struct AmountKeypad: View {
     ]
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             Button(action: onToggleSign) {
                 HStack(spacing: 6) {
                     Image(systemName: "plusminus")
@@ -29,13 +32,13 @@ struct AmountKeypad: View {
                 }
                 .font(.subheadline.weight(.semibold))
                 .padding(.horizontal, 16)
-                .padding(.vertical, 7)
+                .padding(.vertical, 5)
                 .background(Capsule().fill(Color(.tertiarySystemFill)))
             }
             .buttonStyle(.plain)
             .accessibilityLabel(isInflow ? "Cambiar a gasto" : "Cambiar a ingreso")
 
-            Grid(horizontalSpacing: 8, verticalSpacing: 8) {
+            Grid(horizontalSpacing: 8, verticalSpacing: 6) {
                 ForEach(Self.rows, id: \.self) { row in
                     GridRow {
                         ForEach(row, id: \.self) { key in
@@ -64,7 +67,7 @@ struct AmountKeypad: View {
             }
             .font(.title2.weight(.medium))
             .frame(maxWidth: .infinity)
-            .frame(height: 50)
+            .frame(height: keyHeight)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(key == .delete || key == .dot ? Color.clear : Color(.secondarySystemBackground))

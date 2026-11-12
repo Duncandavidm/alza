@@ -35,6 +35,22 @@ enum MovementType: String, Codable, CaseIterable, Identifiable, Hashable {
     /// true = entra dinero, false = sale dinero de la cuenta.
     var isInflow: Bool { self == .ingreso }
 
+    /// Los unicos tipos que ofrece "Anotar movimiento". "Pago a proveedor"
+    /// y "Transferencia" se siguen pudiendo leer (datos viejos), pero ahora
+    /// se anotan como gasto con categoria Proveedores / Transferencias.
+    static let quickAddTypes: [MovementType] = [.ingreso, .gasto, .inversion]
+
+    /// Tipo + categoria con que se muestra/guarda en "Anotar movimiento":
+    /// pago_proveedor → gasto + Proveedores, transferencia → gasto +
+    /// Transferencias; los demas quedan igual (sin categoria forzada).
+    var quickAddMapping: (movementType: MovementType, category: TransactionCategory?) {
+        switch self {
+        case .pagoProveedor: return (.gasto, .suppliers)
+        case .transferencia: return (.gasto, .transfers)
+        case .ingreso, .gasto, .inversion: return (self, nil)
+        }
+    }
+
     var tintColor: Color {
         isInflow ? MonAviBrand.primary : MonAviBrand.alert
     }
@@ -128,6 +144,12 @@ enum TransactionCategory: String, CaseIterable, Identifiable, Hashable {
     case gifts = "Regalos"
     case travel = "Viajes"
     case savings = "Ahorro"
+    /// Antes era el tipo de movimiento "Pago a proveedor"; ahora es un
+    /// gasto con esta categoria (ver MovementType.quickAddMapping).
+    case suppliers = "Proveedores"
+    /// Antes era el tipo de movimiento "Transferencia"; ahora es un gasto
+    /// con esta categoria.
+    case transfers = "Transferencias"
     case other = "Otro"
 
     var id: String { rawValue }
@@ -153,6 +175,8 @@ enum TransactionCategory: String, CaseIterable, Identifiable, Hashable {
         case .gifts: return "🎁"
         case .travel: return "✈️"
         case .savings: return "💵"
+        case .suppliers: return "🏭"
+        case .transfers: return "🔁"
         case .other: return "📦"
         }
     }
@@ -180,6 +204,8 @@ enum TransactionCategory: String, CaseIterable, Identifiable, Hashable {
         case .gifts: hex = "#F28AB2"
         case .travel: hex = "#36B5D8"
         case .savings: hex = "#027A64"
+        case .suppliers: hex = "#8D6E63"
+        case .transfers: hex = "#5C7CFA"
         case .other: hex = "#9AA5A1"
         }
         return Color(hex: hex) ?? .gray

@@ -252,7 +252,7 @@ enum SimpleVoiceParser {
             description: description,
             movementType: movementType,
             category: category
-        )
+        ).normalizedForQuickAdd()
     }
 
     // MARK: - Helpers

@@ -124,6 +124,14 @@ struct DayJournalView: View {
             .task { await refreshFeaturedRewards() }
             .task { await appState.subscriptionStore.refreshRenewalInfo() }
             .task { await showPreviousDayIfNeeded() }
+            // "Sí, ya lo pagué" desde la notificacion con la app abierta:
+            // el movimiento nuevo y el recordatorio se actualizan solos.
+            .onReceive(NotificationCenter.default.publisher(for: .recurringLoggedFromNotification)) { _ in
+                Task {
+                    await refresh()
+                    await refreshRecurring()
+                }
+            }
             .onChange(of: scenePhase) { _, phase in
                 guard phase == .active else { return }
                 Task { await handleDayChangeIfNeeded() }

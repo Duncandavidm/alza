@@ -83,7 +83,7 @@ struct AuthView: View {
                         .scaledToFit()
                         .frame(width: 52, height: 52)
 
-                    Text("Tu asesor financiero con IA")
+                    Text("Ordena. Ahorra. Avanza.")
                         .font(.system(.subheadline, design: MonAviBrand.fontDesign))
                         .foregroundStyle(MonAviBrand.onDarkSurface.opacity(0.75))
                 }

@@ -1,16 +1,31 @@
 import "server-only";
 import { formatInt } from "./format";
+import { supabaseAdmin } from "./supabase-admin";
 
 // Llamadas a las Edge Functions de Supabase con el header x-admin-secret
 // (ADMIN_JOB_SECRET), igual que lib/edge-functions.ts. Solo desde el
 // servidor del panel: el secreto nunca llega al navegador.
+
+/// El mismo secreto que tienen las Edge Functions, leido del Vault con la
+/// service role (migracion 0056). Si no se puede leer, usa la variable de
+/// entorno (sin espacios ni saltos de linea pegados por error).
+let cachedSecret: string | null = null;
+async function adminEdgeSecret(): Promise<string | null> {
+  if (cachedSecret) return cachedSecret;
+  const { data, error } = await supabaseAdmin().rpc("admin_edge_secret");
+  if (!error && typeof data === "string" && data.length > 0) {
+    cachedSecret = data;
+    return data;
+  }
+  return process.env.ADMIN_JOB_SECRET?.trim() || null;
+}
 
 export async function callAdminEdgeFunction(
   functionName: string,
   body: Record<string, unknown>
 ): Promise<{ ok: boolean; status: number; data: unknown }> {
   const url = process.env.SUPABASE_URL;
-  const adminSecret = process.env.ADMIN_JOB_SECRET;
+  const adminSecret = await adminEdgeSecret();
   if (!url || !adminSecret) {
     throw new Error("Faltan las variables de entorno SUPABASE_URL o ADMIN_JOB_SECRET");
   }

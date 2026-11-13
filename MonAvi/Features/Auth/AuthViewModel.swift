@@ -138,7 +138,13 @@ final class AuthViewModel: ObservableObject {
             }
         } catch {
             await hideSignInOverlay()
-            errorMessage = "No se pudo \(emailAuthMode == .signIn ? "iniciar sesion" : "crear la cuenta"): \(error.localizedDescription)"
+            let detail = error.localizedDescription.lowercased()
+            if detail.contains("weak") || detail.contains("pwned") || detail.contains("leaked") || detail.contains("easy to guess") {
+                // Supabase rechazo una contraseña muy comun o filtrada.
+                errorMessage = "Esa contraseña es muy común o apareció en filtraciones de otros sitios. Elige otra (por ejemplo, una frase con números)."
+            } else {
+                errorMessage = "No se pudo \(emailAuthMode == .signIn ? "iniciar sesion" : "crear la cuenta"): \(error.localizedDescription)"
+            }
         }
     }
 

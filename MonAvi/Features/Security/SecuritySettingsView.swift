@@ -31,7 +31,7 @@ struct SecuritySettingsView: View {
                 Text("Acceso rápido y seguro")
             } footer: {
                 if isAvailable {
-                    Text("Al abrir MonAvi, o al volver después de 30 segundos, te pide \(BiometricLock.methodName). Si no funciona, puedes usar el código de tu iPhone. Mientras cambias de app, tu información queda oculta.")
+                    Text("Cada vez que abres MonAvi o vuelves a ella, te pide \(BiometricLock.methodName). Si no funciona, puedes usar el código de tu iPhone. Mientras cambias de app, tu información queda oculta.")
                 } else {
                     Text("Configura Face ID, Touch ID o un código en los Ajustes de tu iPhone para usar esta opción.")
                 }

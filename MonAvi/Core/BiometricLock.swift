@@ -4,14 +4,14 @@ import LocalAuthentication
 /// Bloqueo de la app con Face ID / Touch ID (o el código del iPhone si la
 /// biometría falla). Es opcional: se activa en Ajustes > Seguridad.
 /// - Al abrir la app con sesión iniciada, pide desbloquear.
-/// - Al volver a la app después de más de 30 segundos fuera, también.
+/// - Al volver a la app desde otra app o la pantalla de inicio, también.
 /// - Mientras la app no está activa (selector de apps), tapa el contenido.
 @MainActor
 final class BiometricLock: ObservableObject {
     static let shared = BiometricLock()
 
     private static let enabledKey = "monavi.biometricLock.enabled"
-    private static let graceSeconds: TimeInterval = 30
+    private static let graceSeconds: TimeInterval = 0
 
     @Published private(set) var isEnabled: Bool
     @Published private(set) var isLocked: Bool
@@ -91,7 +91,7 @@ final class BiometricLock: ObservableObject {
         case .background:
             if backgroundedAt == nil { backgroundedAt = Date() }
         case .active:
-            if let since = backgroundedAt, Date().timeIntervalSince(since) > Self.graceSeconds {
+            if let since = backgroundedAt, Date().timeIntervalSince(since) >= Self.graceSeconds {
                 isLocked = true
             }
             backgroundedAt = nil

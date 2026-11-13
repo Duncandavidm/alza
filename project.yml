@@ -27,6 +27,9 @@ targets:
       properties:
         CFBundleDisplayName: MonAvi
         CFBundleIconName: AppIcon
+        # Version y build salen de MARKETING_VERSION / CURRENT_PROJECT_VERSION.
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         # La app esta en espanol: fechas, meses y numeros en espanol aunque
         # el iPhone este en otro idioma.
         CFBundleDevelopmentRegion: es
@@ -84,6 +87,8 @@ targets:
       path: MonAviWidget/Info.plist
       properties:
         CFBundleDisplayName: MonAvi
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleDevelopmentRegion: es
         CFBundleLocalizations:
           - es

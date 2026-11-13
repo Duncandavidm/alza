@@ -1,50 +1,40 @@
 import SwiftUI
-import Supabase
 
-/// Ajustes > Seguridad: activar/desactivar verificacion en 2 pasos.
-/// Opcional (el usuario decide activarla), pero una vez activa, el login
-/// SIEMPRE pide el codigo — no hay manera de que la app lo salte.
+/// Ajustes > Seguridad: desbloqueo con Face ID / Touch ID.
 struct SecuritySettingsView: View {
-    @EnvironmentObject private var appState: AppState
-    @State private var factors: [Factor] = []
-    @State private var isLoading = true
-    @State private var showingEnroll = false
+    @ObservedObject private var lock = BiometricLock.shared
+    @State private var isSaving = false
     @State private var errorMessage: String?
+
+    private var isAvailable: Bool { BiometricLock.availableKind != .none }
 
     var body: some View {
         List {
             Section {
-                if isLoading {
-                    ProgressView()
-                } else if factors.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Verificación en 2 pasos: desactivada")
-                            .font(.subheadline.weight(.medium))
-                        Text("Agrega una capa extra: además de tu contraseña (o Apple), te va a pedir un código de una app de autenticación cada vez que inicies sesión.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 4)
-
-                    Button("Activar verificación en 2 pasos") {
-                        showingEnroll = true
-                    }
-                } else {
-                    Label("Verificación en 2 pasos: activada", systemImage: "checkmark.shield.fill")
-                        .foregroundStyle(.green)
-
-                    ForEach(factors, id: \.id) { factor in
-                        Button(role: .destructive) {
-                            Task { await unenroll(factor) }
-                        } label: {
-                            Text("Desactivar")
+                Toggle(isOn: Binding(
+                    get: { lock.isEnabled },
+                    set: { newValue in
+                        Task {
+                            isSaving = true
+                            errorMessage = nil
+                            let ok = await lock.setEnabled(newValue)
+                            isSaving = false
+                            if !ok { errorMessage = "No se pudo verificar tu identidad. Intenta de nuevo." }
                         }
                     }
+                )) {
+                    Label("Desbloquear con \(BiometricLock.methodName)", systemImage: BiometricLock.systemImage)
                 }
+                .tint(MonAviBrand.primary)
+                .disabled(!isAvailable || isSaving)
             } header: {
-                Text("Verificación en 2 pasos")
+                Text("Acceso rápido y seguro")
             } footer: {
-                Text("Si pierdes acceso a tu app de autenticación y no puedes iniciar sesión, contáctanos para verificar tu identidad y desactivarla.")
+                if isAvailable {
+                    Text("Al abrir MonAvi, o al volver después de 30 segundos, te pide \(BiometricLock.methodName). Si no funciona, puedes usar el código de tu iPhone. Mientras cambias de app, tu información queda oculta.")
+                } else {
+                    Text("Configura Face ID, Touch ID o un código en los Ajustes de tu iPhone para usar esta opción.")
+                }
             }
 
             if let errorMessage {
@@ -54,30 +44,5 @@ struct SecuritySettingsView: View {
             }
         }
         .navigationTitle("Seguridad")
-        .task { await refresh() }
-        .sheet(isPresented: $showingEnroll) {
-            MFAEnrollView {
-                Task { await refresh() }
-            }
-        }
-    }
-
-    private func refresh() async {
-        isLoading = true
-        defer { isLoading = false }
-        do {
-            factors = try await MFAService.listVerifiedFactors()
-        } catch {
-            errorMessage = "No se pudo cargar el estado de verificación: \(error.localizedDescription)"
-        }
-    }
-
-    private func unenroll(_ factor: Factor) async {
-        do {
-            try await MFAService.unenroll(factorId: factor.id)
-            await refresh()
-        } catch {
-            errorMessage = "No se pudo desactivar: \(error.localizedDescription)"
-        }
     }
 }

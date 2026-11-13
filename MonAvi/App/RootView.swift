@@ -2,6 +2,8 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject private var appState: AppState
+    @Environment(\.scenePhase) private var scenePhase
+    @ObservedObject private var lock = BiometricLock.shared
 
     /// Que pantalla toca mostrar. Todos los estados de "todavia no se
     /// sabe" caen en `.loading`, asi la misma BrandLoadingView se queda
@@ -57,5 +59,24 @@ struct RootView: View {
             }
         }
         .animation(.easeInOut(duration: 0.35), value: screen)
+        .overlay {
+            // Bloqueo con Face ID (opcional, Ajustes > Seguridad).
+            if lock.isEnabled && screen != .auth && screen != .loading {
+                if lock.isLocked {
+                    BiometricLockView(lock: lock, interactive: true)
+                        .transition(.opacity)
+                } else if scenePhase != .active {
+                    BiometricLockView(lock: lock, interactive: false)
+                }
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: lock.isLocked)
+        .onChange(of: scenePhase) { _, phase in
+            lock.handleScenePhase(phase)
+        }
+        .onChange(of: screen) { old, new in
+            // Recien inicio sesion con su clave o Apple: no pedir Face ID encima.
+            if old == .auth && new != .auth { lock.clearAfterSignIn() }
+        }
     }
 }

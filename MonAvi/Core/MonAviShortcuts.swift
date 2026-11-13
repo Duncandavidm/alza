@@ -50,7 +50,7 @@ struct RecordByVoiceIntent: AppIntent {
 struct AddMonAviExpenseIntent: AppIntent {
     static var title: LocalizedStringResource = "Anotar un gasto en MonAvi"
     static var description = IntentDescription(
-        "Registra un gasto en MonAvi, adivinando la categoria por el nombre del comercio. Pensado para usarse desde un Atajo, por ejemplo disparado por una transaccion de Apple Pay/Wallet."
+        "Registra un gasto en MonAvi, adivinando la categoria por el nombre del comercio. Pensado para usarse desde un Atajo, por ejemplo cuando pagas con tu tarjeta."
     )
 
     @Parameter(title: "Monto")

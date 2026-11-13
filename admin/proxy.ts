@@ -12,7 +12,7 @@ import { SESSION_COOKIE_NAME, isValidSessionToken } from "./lib/auth";
 // el codigo de canje del cliente con el PIN de su comercio: su server
 // action solo llama a la RPC merchant_redeem (que verifica el PIN y
 // limita los intentos fallidos por IP).
-const PUBLIC_PATHS = ["/login", "/privacy", "/terms", "/support", "/aliados", "/canjear", "/canjear-sw.js", "/canjear-offline.html", "/email"];
+const PUBLIC_PATHS = ["/login", "/privacy", "/terms", "/legal", "/support", "/aliados", "/canjear", "/canjear-sw.js", "/canjear-offline.html", "/email"];
 
 const SUPABASE_ORIGIN = (() => {
   try {

@@ -21,16 +21,21 @@
   ul { padding-left: 20px; }
   a { color: var(--teal-dark); }
   .footer-note { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--muted); font-size: 13px; }
+  nav.legal { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); }
+  nav.legal ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 16px; }
+  nav.legal a { font-size: 14px; }
 </style>
 </head>
 <body>
 <header><div class="wrap" style="padding:0"><div class="brand"><img src="/monavi-mark.svg" alt="" width="24" height="28">MonAvi</div></div></header>
 <div class="wrap">
   <h1>Política de Privacidad</h1>
-  <p class="updated">Última actualización: 6 de noviembre de 2026</p>
+  <p class="updated">Última actualización: 13 de noviembre de 2026</p>
 
   <p>MonAvi («nosotros», «la app») es una aplicación de finanzas personales y de negocio
-  desarrollada y operada por David Muñoz Duncan, en Panamá. Esta política explica qué datos
+  desarrollada y operada por David Muñoz Duncan, persona natural, RUC 8-NT-2-793713 DV 95, en
+  la República de Panamá, quien es el responsable del tratamiento de tus datos personales conforme a la
+  Ley 81 de 2019 (contacto: <a href="mailto:hola@maday.app">hola@maday.app</a>). Esta política explica qué datos
   recopilamos, para qué los usamos, con quién los compartimos y qué control tienes sobre ellos.</p>
 
   <h2>1. Qué datos recopilamos</h2>
@@ -103,6 +108,8 @@
       un movimiento dictado). Solo se envía si nos das permiso en la app (puedes retirarlo en
       Ajustes &gt; Privacidad). No la usa para entrenar sus modelos, según su política de API
       comercial.</li>
+    <li><strong>Vercel</strong> — aloja nuestras páginas web (esta política, la página de soporte
+      y la página de canje que usan los comercios aliados).</li>
     <li><strong>Apple</strong> — inicio de sesión con Apple, compras dentro de la app y entrega de
       notificaciones.</li>
     <li><strong>Dirección General de Ingresos (DGI) de Panamá</strong> — consultamos el CUFE de las
@@ -142,6 +149,12 @@
   modificar sus propios datos: está impuesto en la base de datos (Row Level Security), no solo en la
   app. Ofrecemos verificación en dos pasos en Ajustes &gt; Seguridad.</p>
 
+  <h2>Conservación de tus datos</h2>
+  <p>Guardamos tus datos mientras tengas tu cuenta. Si la eliminas, se borran de inmediato de nuestra base de
+  datos, salvo la información que una ley nos obligue a conservar. Las copias de seguridad cifradas de nuestro
+  proveedor de base de datos se sobrescriben de forma periódica. Nuestros servidores están en Estados Unidos;
+  ver <a href="/legal/ley-81">Ley 81 de 2019</a> y <a href="/legal/proteccion-de-datos">Protección de datos</a>.</p>
+
   <h2>7. Tus derechos</h2>
   <p>Puedes pedirnos en cualquier momento, escribiendo a
   <a href="mailto:hola@maday.app">hola@maday.app</a>:</p>
@@ -153,12 +166,14 @@
       Eliminar cuenta).</li>
     <li>Que tus datos no se incluyan en los estudios de mercado anónimos.</li>
   </ul>
-  <p>Respondemos en un plazo razonable, generalmente dentro de 30 días, conforme a la Ley 81 de 2019
-  de Protección de Datos Personales de Panamá.</p>
+  <p>Respondemos dentro de los plazos que establecen la Ley 81 de 2019 de Protección de Datos Personales de
+  Panamá y su reglamento. Más detalles en <a href="/legal/ley-81">Ley 81 de 2019</a>.</p>
 
   <h2>8. Menores de edad</h2>
-  <p>MonAvi no está dirigida a menores de 13 años y no recopilamos a sabiendas datos de menores de
-  esa edad.</p>
+  <p>MonAvi tiene clasificación 4+ en la App Store. Las personas menores de 18 años deben usarla con la
+  autorización y supervisión de su padre, madre o tutor, quien acepta esta política en su nombre y puede ejercer
+  sus derechos o pedir la eliminación de la cuenta en cualquier momento escribiendo a hola@maday.app. Las
+  compras quedan sujetas a los controles parentales de Apple.</p>
 
   <h2>9. Cambios a esta política</h2>
   <p>Si hacemos cambios importantes, actualizaremos la fecha de «Última actualización» en esta
@@ -168,7 +183,8 @@
   <p>Para cualquier pregunta sobre privacidad, escríbenos a
   <a href="mailto:hola@maday.app">hola@maday.app</a>.</p>
 
-  <div class="footer-note">MonAvi — Panamá.</div>
+  <nav class="legal" aria-label="Documentos legales"><strong>Documentos legales de MonAvi</strong><ul><li><a href="/legal/guia-del-consumidor">Guía del consumidor</a></li><li><a href="/privacy" aria-current="page">Política de privacidad</a></li><li><a href="/terms">Términos y condiciones</a></li><li><a href="/legal/politica-de-compras">Política de compras</a></li><li><a href="/legal/cancelaciones-y-reembolsos">Cancelaciones, devoluciones y reembolsos</a></li><li><a href="/legal/ley-81">Ley 81 de 2019 – Datos personales</a></li><li><a href="/legal/proteccion-de-datos">Protección de datos</a></li><li><a href="/legal">Todos</a></li></ul></nav>
+  <div class="footer-note">MonAvi — operada por David Muñoz Duncan, RUC 8-NT-2-793713 DV 95, Panamá.</div>
 </div>
 </body>
 </html>

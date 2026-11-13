@@ -1,5 +1,7 @@
 "use server";
 
+import { requireAdminSession, assertUuid } from "@/lib/admin-session";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -9,6 +11,8 @@ import { optionalText, parseMapsUrl, text } from "@/lib/validation";
 import type { ActionState } from "@/components/ActionForm";
 
 export async function updateApplication(applicationId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
+  await requireAdminSession();
+  assertUuid(applicationId);
   const status = text(formData, "status", 20);
   if (!isApplicationStatus(status)) return { error: "Estado inválido." };
 
@@ -40,6 +44,8 @@ export async function createMerchantFromApplication(
   _prev: ActionState,
   formData: FormData
 ): Promise<ActionState> {
+  await requireAdminSession();
+  assertUuid(applicationId);
   const supabase = supabaseAdmin();
   const { data: application } = await supabase
     .from("merchant_applications")

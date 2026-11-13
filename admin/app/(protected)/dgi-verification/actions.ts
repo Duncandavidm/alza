@@ -1,10 +1,13 @@
 "use server";
 
+import { requireAdminSession } from "@/lib/admin-session";
+
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { callReconcileFunction } from "@/lib/edge-functions";
 
 export async function setDgiVerificationEnabled(enabled: boolean) {
+  await requireAdminSession();
   const supabase = supabaseAdmin();
   const { error } = await supabase
     .from("app_config")
@@ -16,6 +19,7 @@ export async function setDgiVerificationEnabled(enabled: boolean) {
 }
 
 export async function updateDgiRules(formData: FormData) {
+  await requireAdminSession();
   const pointsPerDollar = Number(formData.get("points_per_dollar"));
   const dailyCap = Number(formData.get("daily_cap_points_per_user"));
   const expireAfterDays = Number(formData.get("expire_after_days"));
@@ -52,6 +56,7 @@ export async function updateDgiRules(formData: FormData) {
 }
 
 export async function runDgiVerificationNow(): Promise<{ error?: string; summary?: string }> {
+  await requireAdminSession();
   try {
     const result = await callReconcileFunction("verify-dgi-receipt", {});
     if (!result.ok) {

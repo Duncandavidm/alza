@@ -1,5 +1,7 @@
 "use server";
 
+import { requireAdminSession, assertUuid } from "@/lib/admin-session";
+
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import type { ActionState } from "@/components/ActionForm";
@@ -8,6 +10,8 @@ import type { ActionState } from "@/components/ActionForm";
 /// pero se marca desde el panel (delivered_via = 'panel'); lo normal es
 /// que el comercio lo valide en /canjear (delivered_via = 'comercio').
 export async function markRedemptionDelivered(redemptionId: string): Promise<ActionState> {
+  await requireAdminSession();
+  assertUuid(redemptionId);
   const { data, error } = await supabaseAdmin()
     .from("reward_redemptions")
     .update({ status: "entregado", delivered_at: new Date().toISOString(), delivered_via: "panel" })
@@ -27,6 +31,8 @@ export async function markRedemptionDelivered(redemptionId: string): Promise<Act
 /// Cancela un canje emitido y devuelve el cashback o los puntos al cliente
 /// (rpc release_redemption, solo service role).
 export async function cancelRedemption(redemptionId: string): Promise<ActionState> {
+  await requireAdminSession();
+  assertUuid(redemptionId);
   const { data, error } = await supabaseAdmin().rpc("release_redemption", {
     p_redemption_id: redemptionId,
     p_status: "cancelado",

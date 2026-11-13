@@ -23,6 +23,7 @@ async function loadUser(rawId: unknown) {
 /// Suspende (suspend=1) o reactiva (suspend=0) la cuenta. Un usuario con
 /// ban no puede iniciar sesion ni renovar su sesion.
 export async function setCustomerSuspended(formData: FormData) {
+  await requireAdminSession();
   const { id, user } = await loadUser(formData.get("id"));
   const suspend = formData.get("suspend") === "1";
   if (isProtectedEmail(user.email)) {
@@ -40,6 +41,7 @@ export async function setCustomerSuspended(formData: FormData) {
 /// Borra la cuenta para siempre. Exige que el admin escriba el correo
 /// exacto; los datos de la app se borran por ON DELETE CASCADE.
 export async function deleteCustomer(formData: FormData) {
+  await requireAdminSession();
   const { id, user } = await loadUser(formData.get("id"));
   if (isProtectedEmail(user.email)) {
     back(id, "err", "Esta es una cuenta protegida (demo / revisión de Apple): no se puede suspender ni eliminar desde el panel.");

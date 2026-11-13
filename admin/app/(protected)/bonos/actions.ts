@@ -1,5 +1,7 @@
 "use server";
 
+import { requireAdminSession } from "@/lib/admin-session";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -13,6 +15,7 @@ import type { ActionState } from "@/components/ActionForm";
 /// send-push ({ bonus_id }): grant_bonus() lo da a cada persona del
 /// segmento una sola vez y, si notify, les avisa por push.
 export async function grantBonus(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  await requireAdminSession();
   const parsed = parseBonusInput((key) => formData.get(key)?.toString());
   if (!parsed.input) return { error: parsed.error ?? "Datos inválidos." };
   const segment = parseSegment((key) => formData.get(key)?.toString());
@@ -46,6 +49,7 @@ export async function grantBonus(_prev: ActionState, formData: FormData): Promis
 /// Reintenta la entrega de un bono que quedo en borrador (grant_bonus es
 /// idempotente por persona: nadie lo recibe dos veces).
 export async function retryBonus(bonusId: string) {
+  await requireAdminSession();
   const id = parseUuid(bonusId);
   if (!id) throw new Error("Bono inválido.");
   const { data: bonus } = await supabaseAdmin()

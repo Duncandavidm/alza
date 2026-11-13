@@ -12,3 +12,12 @@ export async function requireAdminSession(): Promise<void> {
     throw new Error("Sesión de administrador inválida o vencida. Vuelve a iniciar sesión.");
   }
 }
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/// Rechaza ids que no sean UUID antes de tocar la base.
+export function assertUuid(...ids: string[]): void {
+  for (const id of ids) {
+    if (typeof id !== "string" || !UUID_RE.test(id)) throw new Error("Identificador inválido.");
+  }
+}

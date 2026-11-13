@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { SESSION_COOKIE_NAME, isValidSessionToken } from "@/lib/auth";
 import {
   CSV_SECTIONS,
   fetchMarketInsights,
@@ -16,6 +18,10 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  // Ademas del proxy, la ruta comprueba la sesion por su cuenta.
+  if (!(await isValidSessionToken((await cookies()).get(SESSION_COOKIE_NAME)?.value))) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
   const params = request.nextUrl.searchParams;
   const format = params.get("format") === "json" ? "json" : "csv";
   const section = params.get("section") ?? "summary";

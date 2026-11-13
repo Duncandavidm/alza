@@ -46,7 +46,7 @@ export async function isValidSessionToken(token: string | undefined): Promise<bo
   if (!Number.isFinite(expiresAt) || expiresAt < Date.now()) return false;
 
   const expectedSignature = await hmac(getSessionSecret(), payload);
-  return expectedSignature === signature;
+  return constantTimeEqual(expectedSignature, signature);
 }
 
 export function checkAdminPassword(candidate: string): boolean {

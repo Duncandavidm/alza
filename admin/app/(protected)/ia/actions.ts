@@ -1,5 +1,7 @@
 "use server";
 
+import { requireAdminSession } from "@/lib/admin-session";
+
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import type { ActionState } from "@/components/ActionForm";
@@ -11,6 +13,7 @@ type Quota = { limit?: number; period?: string };
 /// cada cuota (app_config.ai_quotas). El periodo (dia o mes) de cada
 /// cuota se conserva tal como esta.
 export async function updateAiSettings(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  await requireAdminSession();
   const budgetRaw = (formData.get("budget_usd")?.toString() ?? "").trim().replace(/^\$/, "").replace(",", ".");
   const budget = Number(budgetRaw);
   if (!budgetRaw || !Number.isFinite(budget) || budget < 0.5 || budget > 1000) {

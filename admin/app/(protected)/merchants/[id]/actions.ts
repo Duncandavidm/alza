@@ -1,5 +1,7 @@
 "use server";
 
+import { requireAdminSession, assertUuid } from "@/lib/admin-session";
+
 import { randomInt } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -20,6 +22,8 @@ function revalidateMerchant(merchantId: string) {
 // ---------------------------------------------------------------------------
 
 export async function updateMerchant(merchantId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
+  await requireAdminSession();
+  assertUuid(merchantId);
   const parsed = parseMerchantFields(formData);
   if (!parsed.fields) return { error: parsed.error };
 
@@ -68,6 +72,8 @@ export type RedeemPinState = { error?: string; pin?: string; generatedAt?: numbe
 /// vez para mostrarlo en pantalla. No se guarda en ningun otro lado: si se
 /// pierde, se genera otro (y el anterior deja de funcionar).
 export async function generateRedeemPin(merchantId: string, _prev: RedeemPinState): Promise<RedeemPinState> {
+  await requireAdminSession();
+  assertUuid(merchantId);
   const pin = String(randomInt(0, 1_000_000)).padStart(6, "0");
   const { error } = await supabaseAdmin().rpc("set_merchant_redeem_pin", {
     p_merchant_id: merchantId,
@@ -86,6 +92,8 @@ export async function generateRedeemPin(merchantId: string, _prev: RedeemPinStat
 // ---------------------------------------------------------------------------
 
 export async function createOffer(merchantId: string, formData: FormData) {
+  await requireAdminSession();
+  assertUuid(merchantId);
   const offerType = String(formData.get("offer_type") ?? "percent");
   const value = Number(formData.get("value"));
   const minAmountRaw = String(formData.get("min_amount") ?? "").trim();
@@ -112,6 +120,9 @@ export async function createOffer(merchantId: string, formData: FormData) {
 }
 
 export async function updateOfferStatus(merchantId: string, offerId: string, status: "active" | "paused") {
+  await requireAdminSession();
+  assertUuid(merchantId, offerId);
+  if (status !== "active" && status !== "paused") throw new Error("Estado inválido.");
   const supabase = supabaseAdmin();
   const { error } = await supabase.from("partner_merchant_offers").update({ status }).eq("id", offerId);
   if (error) throw new Error(error.message);
@@ -184,6 +195,8 @@ function parseRewardItemFields(
 }
 
 export async function createRewardItem(merchantId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
+  await requireAdminSession();
+  assertUuid(merchantId);
   const currency = await merchantCurrency(merchantId);
   if (!currency) return { error: "No se encontró el comercio." };
   const parsed = parseRewardItemFields(formData, currency);
@@ -211,6 +224,8 @@ export async function updateRewardItem(
   _prev: ActionState,
   formData: FormData
 ): Promise<ActionState> {
+  await requireAdminSession();
+  assertUuid(merchantId, itemId);
   const currency = await merchantCurrency(merchantId);
   if (!currency) return { error: "No se encontró el comercio." };
   const parsed = parseRewardItemFields(formData, currency);
@@ -235,6 +250,9 @@ export async function updateRewardItem(
 }
 
 export async function setRewardItemStatus(merchantId: string, itemId: string, status: "active" | "paused") {
+  await requireAdminSession();
+  assertUuid(merchantId, itemId);
+  if (status !== "active" && status !== "paused") throw new Error("Estado inválido.");
   const supabase = supabaseAdmin();
   const { error } = await supabase.from("reward_items").update({ status }).eq("id", itemId).eq("merchant_id", merchantId);
   if (error) throw new Error(error.message);
@@ -243,6 +261,8 @@ export async function setRewardItemStatus(merchantId: string, itemId: string, st
 }
 
 export async function deleteRewardItem(merchantId: string, itemId: string): Promise<ActionState> {
+  await requireAdminSession();
+  assertUuid(merchantId, itemId);
   const supabase = supabaseAdmin();
   const { count } = await supabase
     .from("reward_redemptions")

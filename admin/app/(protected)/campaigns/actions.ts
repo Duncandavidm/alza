@@ -1,5 +1,7 @@
 "use server";
 
+import { requireAdminSession, assertUuid } from "@/lib/admin-session";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -14,6 +16,7 @@ function revalidateCampaign(campaignId: string) {
 /// Crea la campaña en borrador: no aplica a ninguna factura hasta que se
 /// activa desde su ficha.
 export async function createCampaign(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  await requireAdminSession();
   const parsed = parseCampaignFields(formData);
   if (!parsed.fields) return { error: parsed.error };
 
@@ -29,6 +32,8 @@ export async function createCampaign(_prev: ActionState, formData: FormData): Pr
 }
 
 export async function updateCampaign(campaignId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
+  await requireAdminSession();
+  assertUuid(campaignId);
   const parsed = parseCampaignFields(formData);
   if (!parsed.fields) return { error: parsed.error };
 
@@ -55,6 +60,8 @@ export async function updateCampaign(campaignId: string, _prev: ActionState, for
 
 /// Activar, pausar o terminar. Solo acepta estados validos.
 export async function setCampaignStatus(campaignId: string, status: CampaignStatus) {
+  await requireAdminSession();
+  assertUuid(campaignId);
   if (!(CAMPAIGN_STATUSES as readonly string[]).includes(status) || status === "budget_exhausted") {
     throw new Error("Estado inválido.");
   }

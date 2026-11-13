@@ -1,4 +1,4 @@
-import Link from "next/link";
+import NavTabs from "@/components/NavTabs";
 import { logout } from "../login/actions";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -35,21 +35,23 @@ export default async function ProtectedLayout({ children }: { children: React.Re
           <img className="brand-mark" src="/monavi-mark.svg" alt="" aria-hidden="true" />
           MonAvi Admin
         </span>
-        <Link href="/">Resumen</Link>
-        <Link href="/merchants">Comercios y productos</Link>
-        <Link href="/applications">
-          Solicitudes
-          {newApplications > 0 && <span className="nav-badge">{newApplications}</span>}
-        </Link>
-        <Link href="/redemptions">Canjes</Link>
-        <Link href="/clientes">Clientes</Link>
-        <Link href="/notificaciones">Notificaciones</Link>
-        <Link href="/bonos">Bonos y regalos</Link>
-        <Link href="/campaigns">Campañas de marcas</Link>
-        <Link href="/insights">Estudio de mercado</Link>
-        <Link href="/dgi-verification">Facturas DGI</Link>
-        <Link href="/ia">Costo de IA</Link>
-        <Link href="/alerts">Alertas</Link>
+        <NavTabs
+          tabs={[
+            { href: "/", label: "Resumen" },
+            { href: "/merchants", label: "Comercios y productos" },
+            { href: "/applications", label: "Solicitudes", badge: newApplications },
+            { href: "/redemptions", label: "Canjes" },
+            { href: "/clientes", label: "Clientes" },
+            { href: "/notificaciones", label: "Notificaciones" },
+            { href: "/bonos", label: "Bonos y regalos" },
+            { href: "/campaigns", label: "Campañas de marcas" },
+            { href: "/insights", label: "Estudio de mercado" },
+            { href: "/dgi-verification", label: "Facturas DGI" },
+            { href: "/ia", label: "Costo de IA" },
+            { href: "/alerts", label: "Alertas" },
+            { href: "/seguridad", label: "Seguridad" },
+          ]}
+        />
         <form action={logout}>
           <button type="submit" className="secondary">
             Salir

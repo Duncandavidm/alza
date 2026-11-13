@@ -1,5 +1,7 @@
 "use server";
 
+import { requireAdminSession, assertUuid } from "@/lib/admin-session";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -8,6 +10,7 @@ import { fileFromForm, uploadRewardImage, validateImage } from "@/lib/uploads";
 import type { ActionState } from "@/components/ActionForm";
 
 export async function createMerchant(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  await requireAdminSession();
   const parsed = parseMerchantFields(formData);
   if (!parsed.fields) return { error: parsed.error };
 
@@ -37,6 +40,9 @@ export async function createMerchant(_prev: ActionState, formData: FormData): Pr
 }
 
 export async function updateMerchantStatus(merchantId: string, status: "active" | "paused") {
+  await requireAdminSession();
+  assertUuid(merchantId);
+  if (status !== "active" && status !== "paused") throw new Error("Estado inválido.");
   const supabase = supabaseAdmin();
   const { error } = await supabase.from("partner_merchants").update({ status }).eq("id", merchantId);
   if (error) throw new Error(error.message);

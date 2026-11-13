@@ -1,5 +1,7 @@
 "use server";
 
+import { requireAdminSession, assertUuid } from "@/lib/admin-session";
+
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -12,6 +14,7 @@ import type { ActionState } from "@/components/ActionForm";
 /// Function send-push. La Edge Function vuelve a calcular el segmento al
 /// enviar y solo incluye a quienes aceptaron 'ofertas'.
 export async function sendPushCampaign(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  await requireAdminSession();
   const title = cleanLine(formData.get("title"), PUSH_TITLE_MAX);
   const body = cleanLine(formData.get("body"), PUSH_BODY_MAX);
   const screen = toPushScreen(formData.get("screen"));
@@ -40,6 +43,8 @@ export async function sendPushCampaign(_prev: ActionState, formData: FormData): 
 
 /// Reintenta una notificacion que quedo sin enviar o fallo.
 export async function retryPushCampaign(campaignId: string) {
+  await requireAdminSession();
+  assertUuid(campaignId);
   const id = parseUuid(campaignId);
   if (!id) throw new Error("Notificación inválida.");
   // send-push rechaza las que ya estan 'sending'/'sent'; una fallida se

@@ -616,44 +616,47 @@ final class NotificationPresenter: NSObject, UNUserNotificationCenterDelegate {
         NotificationManager.registerNotificationCategories()
     }
 
+    // Se usan las versiones con completionHandler (no las async): iOS llama
+    // a las async fuera del hilo principal y su completion tambien queda
+    // fuera, lo que cierra la app con "Call must be made on main thread"
+    // al tocar una notificacion. Aqui todo se resuelve en el hilo principal.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
-        willPresent notification: UNNotification
-    ) async -> UNNotificationPresentationOptions {
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
         // Con la app abierta iOS reproduce el sonido pero no siempre vibra:
         // se agrega la vibracion a mano para que se sienta igual.
-        await MainActor.run {
+        Task { @MainActor in
             UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            completionHandler([.banner, .list, .sound])
         }
-        return [.banner, .list, .sound]
     }
 
     /// El usuario toco la notificacion: si trae un destino ("screen"),
     /// la app abre esa pantalla (ej. Puntos al sumar puntos). Los botones
     /// del aviso de un pago fijo ("Sí, ya lo pagué" / "Recordarme más
-    /// tarde") se resuelven aqui; la version async del delegado le avisa a
-    /// iOS que termino (el completion handler) solo cuando este metodo
-    /// retorna, o sea despues de registrar el movimiento.
+    /// tarde") se resuelven aqui; se le avisa a iOS que termino solo
+    /// despues de registrar el movimiento.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
-        didReceive response: UNNotificationResponse
-    ) async {
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
         let content = response.notification.request.content
-        switch response.actionIdentifier {
-        case NotificationManager.recurringConfirmAction:
-            let idString = content.userInfo[NotificationManager.recurringIdKey] as? String
-            await NotificationManager.confirmRecurringFromNotification(idString: idString)
-            return
-        case NotificationManager.recurringSnoozeAction:
-            NotificationManager.snoozeRecurring(content)
-            return
-        default:
-            break
-        }
-
-        let screen = content.userInfo["screen"] as? String
-        await MainActor.run {
-            NotificationRouter.shared.open(screen: screen)
+        let action = response.actionIdentifier
+        Task { @MainActor in
+            switch action {
+            case NotificationManager.recurringConfirmAction:
+                let idString = content.userInfo[NotificationManager.recurringIdKey] as? String
+                await NotificationManager.confirmRecurringFromNotification(idString: idString)
+            case NotificationManager.recurringSnoozeAction:
+                NotificationManager.snoozeRecurring(content)
+            default:
+                let screen = content.userInfo["screen"] as? String
+                NotificationRouter.shared.open(screen: screen)
+            }
+            completionHandler()
         }
     }
 }

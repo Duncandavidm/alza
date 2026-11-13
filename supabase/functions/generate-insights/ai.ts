@@ -2,7 +2,7 @@
 // ai.ts dentro de cada funcion que lo usa al desplegar).
 //
 // - Modelo: Claude Opus 5.5 con esfuerzo alto (calidad maxima).
-// - Antes de cada llamada: cuota de la persona + tope diario global
+// - Antes de cada llamada: permiso de IA de la persona (0055), cuota de la persona + tope diario global
 //   (ai_guard, migracion 0050). Despues: tokens y costo (ai_record_usage).
 // - Respaldo del lado del servidor si el modelo rechaza (fallbacks).
 
@@ -21,14 +21,14 @@ const PRICES: Record<string, [number, number, number, number]> = {
 };
 
 export class AiLimitError extends Error {
-  constructor(public code: "ai_quota" | "ai_budget", message: string) {
+  constructor(public code: "ai_quota" | "ai_budget" | "ai_consent", message: string) {
     super(message);
   }
 }
 
 interface Guard {
   allowed: boolean;
-  reason?: "quota" | "budget";
+  reason?: "quota" | "budget" | "consent";
   used?: number;
   limit?: number;
   period?: string;
@@ -45,6 +45,9 @@ const NOUN: Record<string, string> = {
 };
 
 function limitMessage(fn: string, guard: Guard): string {
+  if (guard.reason === "consent") {
+    return "Para usar esta función necesitas permitir el uso de IA. Puedes activarlo en Ajustes > Privacidad.";
+  }
   if (guard.reason === "budget") {
     return "Las funciones de IA están en pausa por hoy por alta demanda. Vuelven mañana. Puedes seguir anotando a mano.";
   }
@@ -75,7 +78,8 @@ export async function ensureAiAllowed(supabase: SupabaseClient, userId: string, 
   const guard = data as Guard;
   if (!guard.allowed) {
     if (guard.reason === "budget") console.error("AI: tope diario alcanzado, funciones de IA en pausa");
-    throw new AiLimitError(guard.reason === "budget" ? "ai_budget" : "ai_quota", limitMessage(fn, guard));
+    const code = guard.reason === "budget" ? "ai_budget" : guard.reason === "consent" ? "ai_consent" : "ai_quota";
+    throw new AiLimitError(code, limitMessage(fn, guard));
   }
   return guard;
 }

@@ -37,6 +37,10 @@ final class InsightsViewModel: ObservableObject {
     /// movimientos del usuario, se lo manda a un LLM, y guarda el resultado
     /// en ai_insights (con la service role key, no con la sesion del usuario).
     func generateInsights(userId: UUID) async {
+        guard await AIConsentCenter.shared.requestIfNeeded() else {
+            errorMessage = AIConsentCenter.declinedMessage
+            return
+        }
         isGenerating = true
         defer { isGenerating = false }
 
@@ -63,6 +67,10 @@ final class InsightsViewModel: ObservableObject {
     /// (Edge Function ask-finances). No guarda nada, solo responde.
     func ask(userId: UUID, question: String) async {
         guard !question.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        guard await AIConsentCenter.shared.requestIfNeeded() else {
+            errorMessage = AIConsentCenter.declinedMessage
+            return
+        }
         isAsking = true
         defer { isAsking = false }
 

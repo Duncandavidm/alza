@@ -11,6 +11,8 @@ enum ConsentPurpose: String, Codable {
     /// Push de promociones de comercios y marcas + bonos y regalos
     /// personalizados (cashback, productos gratis). Migracion 0040.
     case ofertas
+    /// Enviar datos a la IA de terceros (Claude, de Anthropic). Migracion 0055.
+    case ia
 }
 
 struct ConsentDecision: Decodable, Hashable {

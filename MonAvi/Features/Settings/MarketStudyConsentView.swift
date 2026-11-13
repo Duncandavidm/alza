@@ -220,7 +220,18 @@ struct PrivacySettingsSection: View {
         } footer: {
             Text(Self.offersFooter)
         }
+
+        Section {
+            ConsentToggleRow(
+                title: "Usar funciones con IA",
+                purpose: .ia
+            )
+        } footer: {
+            Text(Self.aiFooter)
+        }
     }
+
+    static let aiFooter = "Las preguntas, el análisis y las notas por voz usan Claude, la IA de Anthropic. Solo se envían los datos necesarios para responder y no se usan para entrenar modelos. Si lo desactivas, no se envía nada."
 }
 
 /// Un interruptor de consentimiento: lee la ultima decision y guarda una
@@ -282,6 +293,9 @@ private struct ConsentToggleRow: View {
             try await ConsentRepository.shared.record(userId: userId, purpose: purpose, granted: newValue)
             if purpose == .estudioMercado {
                 MarketStudyConsentPrompt.markShown(userId: userId)
+            }
+            if purpose == .ia {
+                AIConsentCenter.shared.setCached(newValue, userId: userId)
             }
             errorMessage = nil
         } catch {

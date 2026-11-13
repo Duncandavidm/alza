@@ -306,6 +306,12 @@ final class VoiceTransactionRecognizer: NSObject, ObservableObject {
             return local
         }
 
+        // Frase que el telefono no entiende: hace falta la IA (con permiso).
+        guard await AIConsentCenter.shared.requestIfNeeded() else {
+            errorMessage = "Sin permiso de IA solo entiendo frases simples, como \"gasté 12 en almuerzo\". Puedes activarlo en Ajustes > Privacidad."
+            return nil
+        }
+
         isProcessing = true
         defer { isProcessing = false }
 

@@ -121,23 +121,18 @@ struct BiometricLockView: View {
 
     var body: some View {
         ZStack {
-            MonAviBrand.primary.ignoresSafeArea()
-            VStack(spacing: 22) {
-                Spacer()
-                EmbeddedLogo.monAviMarkWhite
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 72, height: 72)
-                Text("MonAvi")
-                    .font(.system(.title, design: MonAviBrand.fontDesign, weight: .bold))
-                    .foregroundStyle(.white)
-                Spacer()
-                if interactive {
+            // Mismo fondo que al abrir la app: verde oscuro de marca con
+            // billetes flotando y el logo al centro.
+            BrandLoadingView()
+
+            if interactive {
+                VStack {
+                    Spacer()
                     Button {
                         Task { await lock.unlock() }
                     } label: {
                         Label("Desbloquear con \(BiometricLock.methodName)", systemImage: BiometricLock.systemImage)
-                            .font(.headline)
+                            .font(.system(.headline, design: MonAviBrand.fontDesign))
                             .frame(maxWidth: .infinity)
                             .frame(height: 52)
                     }
@@ -146,7 +141,7 @@ struct BiometricLockView: View {
                     .foregroundStyle(MonAviBrand.primary)
                     .disabled(lock.isAuthenticating)
                     .padding(.horizontal, 32)
-                    .padding(.bottom, 40)
+                    .padding(.bottom, 48)
                 }
             }
         }

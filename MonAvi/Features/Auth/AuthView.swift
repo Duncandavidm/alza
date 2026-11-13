@@ -151,11 +151,11 @@ struct AuthView: View {
                 .frame(height: 50)
                 .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemBackground)))
 
-            SecureField("Contraseña", text: $viewModel.password)
-                .textContentType(viewModel.emailAuthMode == .signUp ? .newPassword : .password)
-                .padding(.horizontal, 16)
-                .frame(height: 50)
-                .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemBackground)))
+            RevealablePasswordField(
+                title: "Contraseña",
+                text: $viewModel.password,
+                contentType: viewModel.emailAuthMode == .signUp ? .newPassword : .password
+            )
 
             if viewModel.emailAuthMode == .signUp {
                 Text(PasswordPolicy.requirementsText)
@@ -165,11 +165,11 @@ struct AuthView: View {
             }
 
             if viewModel.emailAuthMode == .signUp {
-                SecureField("Confirma tu contraseña", text: $viewModel.confirmPassword)
-                    .textContentType(.newPassword)
-                    .padding(.horizontal, 16)
-                    .frame(height: 50)
-                    .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemBackground)))
+                RevealablePasswordField(
+                    title: "Confirma tu contraseña",
+                    text: $viewModel.confirmPassword,
+                    contentType: .newPassword
+                )
             }
 
             Button {

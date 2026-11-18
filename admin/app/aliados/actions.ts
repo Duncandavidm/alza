@@ -3,6 +3,7 @@
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { MERCHANT_CATEGORIES } from "@/lib/merchant-categories";
 import { isValidEmail, optionalText, parseHttpUrl, parseMapsUrl, text } from "@/lib/validation";
+import { allowIp } from "@/lib/ip-rate-limit";
 
 export type ApplicationFormState = { ok?: boolean; error?: string };
 
@@ -65,6 +66,11 @@ export async function submitMerchantApplication(
 
   const message = optionalText(formData, "message", 1200);
   if (message && message.length > 1000) return { error: "El mensaje es muy largo (máximo 1000 caracteres)." };
+
+  // Limite por IP: maximo 5 solicitudes por hora desde la misma conexion.
+  if (!(await allowIp("aliados", 5, 3600))) {
+    return { error: "Recibimos varias solicitudes desde tu conexión. Intenta de nuevo en una hora o escríbenos a hola@maday.app." };
+  }
 
   try {
     const supabase = supabaseAdmin();

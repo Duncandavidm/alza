@@ -69,8 +69,9 @@ async function checkRateLimit(
     p_window_seconds: windowSeconds,
   });
   if (error) {
+    // Si no se puede comprobar el limite, NO se deja pasar (falla cerrado).
     console.error("rate limit check failed", error);
-    return true;
+    throw new Error("No se pudo verificar el limite de uso");
   }
   return data === true;
 }
@@ -192,7 +193,8 @@ Deno.serve(async (req) => {
   } catch (error) {
     if (error instanceof AiLimitError) return limitResponse(error, CORS_HEADERS);
     console.error(error);
-    return jsonResponse({ error: String(error) }, 500);
+    // El detalle queda en los logs; al cliente nunca se le muestran internos.
+    return jsonResponse({ error: "Error interno" }, 500);
   }
 });
 

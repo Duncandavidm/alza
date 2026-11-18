@@ -71,9 +71,10 @@ function limitMessage(fn: string, guard: Guard): string {
 export async function ensureAiAllowed(supabase: SupabaseClient, userId: string, fn: string): Promise<Guard> {
   const { data, error } = await supabase.rpc("ai_guard", { p_user_id: userId, p_function: fn });
   if (error) {
-    // Si el control falla, no se bloquea a la persona (se registra el error).
+    // Si no se puede comprobar el permiso de IA, la cuota o el tope, NO se
+    // llama a Claude (falla cerrado): sin permiso verificado no se envia nada.
     console.error("ai_guard", error.message);
-    return { allowed: true };
+    throw new Error("No se pudo verificar el permiso de IA");
   }
   const guard = data as Guard;
   if (!guard.allowed) {

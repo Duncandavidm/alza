@@ -78,7 +78,12 @@ Deno.serve(async (req) => {
     p_max_requests: 30,
     p_window_seconds: 600,
   });
-  if (!limitError && allowed === false) {
+  if (limitError) {
+    // Si no se puede comprobar el limite, NO se deja pasar (falla cerrado).
+    console.error("rate limit check failed", limitError.message);
+    return jsonResponse({ error: "No pudimos verificar la factura ahora. Intenta de nuevo en un momento." }, 503);
+  }
+  if (allowed === false) {
     return jsonResponse({ error: "Demasiadas consultas seguidas. Espera unos minutos." }, 429);
   }
 

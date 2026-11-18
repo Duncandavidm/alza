@@ -3,8 +3,8 @@ import { notFound } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { parseUuid, cleanLine } from "@/lib/push";
 import { formatCashback, formatDate, formatDateTime, formatInt } from "@/lib/format";
-import { isBanned, isProtectedEmail } from "@/lib/customer-accounts";
-import { LIFETIME_PRODUCT_ID, deleteCustomer, setCustomerSuspended, setLifetimeAccess } from "./actions";
+import { LIFETIME_PRODUCT_ID, isBanned, isProtectedEmail } from "@/lib/customer-accounts";
+import { deleteCustomer, setCustomerSuspended, setLifetimeAccess } from "./actions";
 
 export const dynamic = "force-dynamic";
 

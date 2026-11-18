@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdminSession } from "@/lib/admin-session";
 import { parseUuid } from "@/lib/push";
-import { SUSPEND_BAN_DURATION, isProtectedEmail } from "@/lib/customer-accounts";
+import { LIFETIME_PRODUCT_ID, SUSPEND_BAN_DURATION, isProtectedEmail } from "@/lib/customer-accounts";
 
 function back(id: string, key: "msg" | "err", text: string): never {
   redirect(`/clientes/${id}?${key}=${encodeURIComponent(text)}`);
@@ -56,10 +56,6 @@ export async function deleteCustomer(formData: FormData) {
   revalidatePath("/clientes");
   redirect(`/clientes?msg=${encodeURIComponent(`Cuenta ${user.email} eliminada para siempre.`)}`);
 }
-
-/// Producto interno para acceso Pro de por vida otorgado desde el panel
-/// (no es una compra de Apple: sin ids de transaccion, sin vencimiento).
-export const LIFETIME_PRODUCT_ID = "app.monavi.lifetime.grant";
 
 /// Da (grant=1) o quita (grant=0) el acceso Pro de por vida.
 export async function setLifetimeAccess(formData: FormData) {

@@ -39,3 +39,7 @@ export async function bannedUntilByIds(supabase: SupabaseClient, ids: string[]):
   }
   return result;
 }
+
+/// Producto interno para acceso Pro de por vida otorgado desde el panel
+/// (no es una compra de Apple: sin ids de transaccion, sin vencimiento).
+export const LIFETIME_PRODUCT_ID = "app.monavi.lifetime.grant";

@@ -2489,3 +2489,161 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 @keyframes al-wa-pulse { 0%, 100% { box-shadow: 0 12px 30px rgba(37, 211, 102, .45); } 50% { box-shadow: 0 12px 30px rgba(37, 211, 102, .45), 0 0 0 10px rgba(37, 211, 102, .15); } }
 @media (max-width: 560px) { .al-wa-float span { display: none; } .al-wa-float { padding: 14px; right: 16px; bottom: 16px; } }
 @media (prefers-reduced-motion: reduce) { .al-wa-float { animation: none; } }
+
+/* ================================================================== */
+/* MonAvi Caja v2: mas vida, estilo de la app + celebracion de canje   */
+/* ================================================================== */
+.caja {
+  background:
+    radial-gradient(120% 60% at 50% -10%, rgba(2, 122, 100, 0.14), transparent 60%),
+    var(--bg);
+}
+.caja-header {
+  background: linear-gradient(135deg, #014d40, #027a64 60%, #0a9b7f);
+  border-bottom: 0;
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(1, 77, 64, 0.25);
+}
+.caja-header-id { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.caja-avatar {
+  flex: none; width: 42px; height: 42px; border-radius: 13px;
+  display: grid; place-items: center; font-weight: 800; font-size: 16px;
+  background: rgba(255, 255, 255, 0.18); border: 1px solid rgba(255, 255, 255, 0.35); color: #fff;
+}
+.caja-header .caja-header-text { color: rgba(255, 255, 255, 0.85); font-size: 12px; }
+.caja-header .caja-header-text strong { color: #fff; font-size: 17px; }
+.caja-live { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.caja-live i {
+  width: 8px; height: 8px; border-radius: 50%; background: #5df2c4;
+  box-shadow: 0 0 0 0 rgba(93, 242, 196, 0.7); animation: caja-live 1.8s infinite;
+}
+@keyframes caja-live { 70% { box-shadow: 0 0 0 8px rgba(93, 242, 196, 0); } 100% { box-shadow: 0 0 0 0 rgba(93, 242, 196, 0); } }
+.caja-header-actions { display: flex; align-items: center; gap: 8px; flex: none; }
+.caja-icon-btn, .caja-close {
+  min-height: 40px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.14); color: #fff; font: inherit; font-weight: 700; cursor: pointer;
+}
+.caja-icon-btn { width: 40px; font-size: 18px; }
+.caja-close { padding: 0 12px; font-size: 14px; }
+.caja-icon-btn:focus-visible, .caja-close:focus-visible, .caja-tile:focus-visible, .caja-scan-btn:focus-visible {
+  outline: 3px solid #5df2c4; outline-offset: 2px;
+}
+
+/* Inicio */
+.caja-home { gap: 16px; padding-top: 4px; }
+.caja-hero {
+  position: relative; overflow: hidden; border-radius: 24px; padding: 22px 20px 20px; color: #fff;
+  background: linear-gradient(140deg, #014d40 0%, #027a64 55%, #12b08f 100%);
+  box-shadow: 0 14px 34px rgba(2, 122, 100, 0.3);
+  animation: caja-rise 0.5s ease both;
+}
+.caja-hero h1 { margin: 4px 0 4px; font-size: 26px; font-weight: 800; line-height: 1.15; }
+.caja-hero p { margin: 0; font-size: 15px; color: rgba(255, 255, 255, 0.88); max-width: 26ch; }
+.caja-hero-kicker {
+  display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.16);
+}
+.caja-hero-stat {
+  display: inline-flex; align-items: baseline; gap: 8px; margin-top: 16px; padding: 10px 14px;
+  border-radius: 14px; background: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.22);
+}
+.caja-hero-stat strong { font-size: 26px; font-weight: 800; }
+.caja-hero-stat span { font-size: 14px; color: rgba(255, 255, 255, 0.9); }
+.caja-hero-bills { position: absolute; inset: 0; pointer-events: none; }
+.caja-hero-bills span { position: absolute; font-size: 30px; opacity: 0.9; animation: caja-float 5s ease-in-out infinite; }
+.caja-hero-bills span:nth-child(1) { right: 16px; top: 12px; }
+.caja-hero-bills span:nth-child(2) { right: 74px; bottom: 26px; font-size: 24px; animation-delay: -1.2s; }
+.caja-hero-bills span:nth-child(3) { right: 20px; bottom: 20px; font-size: 26px; animation-delay: -2.4s; }
+.caja-hero-bills span:nth-child(4) { right: 58px; top: 14px; font-size: 18px; animation-delay: -3.3s; }
+.caja-hero h1, .caja-hero-kicker, .caja-hero p, .caja-hero-stat { position: relative; z-index: 1; }
+.caja-hero h1 { padding-right: 44px; }
+@keyframes caja-float { 0%, 100% { translate: 0 0; rotate: -8deg; } 50% { translate: 0 -10px; rotate: 8deg; } }
+@keyframes caja-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+.caja-scan-btn {
+  display: flex; align-items: center; gap: 16px; width: 100%; padding: 18px; text-align: left;
+  border: 0; border-radius: 22px; cursor: pointer; font: inherit; color: var(--text);
+  background: var(--surface); box-shadow: 0 10px 28px rgba(15, 31, 27, 0.08), inset 0 0 0 2px rgba(2, 122, 100, 0.25);
+  animation: caja-rise 0.5s 0.08s ease both; transition: transform 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.caja-scan-btn:active { transform: scale(0.98); }
+.caja-scan-icon {
+  position: relative; flex: none; width: 72px; height: 72px; border-radius: 20px; overflow: hidden;
+  display: grid; place-items: center; color: #fff; background: linear-gradient(140deg, #027a64, #12b08f);
+  box-shadow: 0 0 0 0 rgba(2, 122, 100, 0.45); animation: caja-pulse 2.2s infinite;
+}
+.caja-scan-line {
+  position: absolute; left: 10px; right: 10px; height: 3px; border-radius: 3px; top: 14px;
+  background: #5df2c4; box-shadow: 0 0 10px #5df2c4; animation: caja-sweep 1.8s ease-in-out infinite;
+}
+@keyframes caja-sweep { 0%, 100% { top: 14px; } 50% { top: 55px; } }
+@keyframes caja-pulse { 70% { box-shadow: 0 0 0 14px rgba(2, 122, 100, 0); } 100% { box-shadow: 0 0 0 0 rgba(2, 122, 100, 0); } }
+.caja-scan-text { display: flex; flex-direction: column; gap: 3px; }
+.caja-scan-text strong { font-size: 21px; font-weight: 800; color: var(--primary); }
+.caja-scan-text small { font-size: 14px; color: var(--text-dim); }
+
+.caja-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; animation: caja-rise 0.5s 0.16s ease both; }
+.caja-tile {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 16px 14px; min-height: 112px;
+  border-radius: 20px; border: 2px solid var(--border); background: var(--surface); color: var(--text);
+  font: inherit; text-align: left; cursor: pointer; transition: transform 0.1s ease, border-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.caja-tile:active { transform: scale(0.97); }
+.caja-tile.on { border-color: var(--primary); }
+.caja-tile span { font-size: 26px; margin-bottom: 4px; }
+.caja-tile strong { font-size: 16px; font-weight: 800; }
+.caja-tile small { font-size: 13px; color: var(--text-dim); }
+.caja-type { padding: 16px; border-radius: 20px; background: var(--surface); border: 2px solid var(--primary); margin-top: 0; }
+
+.caja-steps {
+  list-style: none; margin: 4px 0 0; padding: 14px 16px; display: grid; gap: 10px; border-radius: 18px;
+  background: rgba(2, 122, 100, 0.06); color: var(--text); font-size: 14px; animation: caja-rise 0.5s 0.24s ease both;
+}
+.caja-steps li { display: flex; align-items: center; gap: 10px; }
+.caja-steps b {
+  flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--primary); color: #fff; font-size: 13px;
+}
+
+/* Iniciar turno */
+.caja-login .caja-logo { animation: caja-float 5s ease-in-out infinite; }
+
+/* Confirmacion */
+.caja-card { border-radius: 24px; animation: caja-rise 0.35s ease both; }
+.caja-btn-deliver {
+  background: linear-gradient(140deg, #027a64, #12b08f); box-shadow: 0 10px 24px rgba(2, 122, 100, 0.3);
+}
+
+/* Celebracion */
+.caja-done { position: relative; overflow: visible; }
+.caja-check {
+  background: linear-gradient(140deg, #027a64, #12b08f);
+  box-shadow: 0 0 0 10px rgba(18, 176, 143, 0.15), 0 0 0 22px rgba(18, 176, 143, 0.07);
+  animation: caja-pop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+@keyframes caja-pop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+.caja-done-kicker {
+  font-weight: 800; color: var(--primary); font-size: 18px; animation: caja-rise 0.4s 0.25s ease both;
+}
+.caja-done h2 { animation: caja-rise 0.4s 0.35s ease both; }
+.caja-burst { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 60; }
+.caja-burst span {
+  position: absolute; left: 50%; top: 42%; line-height: 1; opacity: 0;
+  animation-name: caja-confetti; animation-timing-function: cubic-bezier(0.15, 0.7, 0.4, 1); animation-fill-mode: forwards;
+}
+@keyframes caja-confetti {
+  0% { opacity: 0; transform: translate(-50%, 0) scale(0.3) rotate(0deg); }
+  12% { opacity: 1; }
+  80% { opacity: 1; }
+  45% { transform: translate(calc(-50% + var(--x) * 0.8), calc(var(--rise) * -1)) scale(1) rotate(calc(var(--rot) * 0.5)); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--x)), 60vh) scale(0.9) rotate(var(--rot)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caja-hero, .caja-scan-btn, .caja-actions, .caja-steps, .caja-card, .caja-check,
+  .caja-done-kicker, .caja-done h2, .caja-login .caja-logo { animation: none; }
+  .caja-hero-bills span, .caja-scan-line, .caja-scan-icon, .caja-live i { animation: none; }
+  .caja-burst span { animation-duration: 1ms !important; }
+}

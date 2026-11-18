@@ -10,12 +10,21 @@ import {
   type RedeemResult,
 } from "./actions";
 import Scanner from "./Scanner";
+import {
+  EmojiBurst,
+  bumpTodayCount,
+  playCelebration,
+  primeAudio,
+  setSoundEnabled,
+  soundEnabled,
+  todayCount,
+} from "./celebrate";
 
 // "MonAvi Caja": app del cajero. Sin turno -> "Iniciar turno" (RUC + PIN).
 // Con turno -> Escanear / Buscar cliente / Escribir codigo -> tarjeta de
 // confirmacion -> "Entregar". Todas las RPC van por server actions.
 
-const AUTO_RETURN_MS = 2500;
+const AUTO_RETURN_MS = 3800;
 const SEARCH_DEBOUNCE_MS = 300;
 const CAMERA_ERROR = "No pudimos acceder a la cámara. Revisa los permisos del navegador.";
 
@@ -176,25 +185,60 @@ export default function CajaApp({ initialCode, initialMerchant }: Props) {
 
 function ShiftHeader({ merchant, onClosed }: { merchant: string; onClosed: () => void }) {
   const [isPending, startTransition] = useTransition();
+  const [sound, setSound] = useState(true);
+  useEffect(() => setSound(soundEnabled()), []);
+  const initials = merchant
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
   return (
     <header className="caja-header">
-      <div className="caja-header-text">
-        <span>Has iniciado sesión como:</span>
-        <strong>{merchant}</strong>
+      <div className="caja-header-id">
+        <span className="caja-avatar" aria-hidden="true">
+          {initials || "M"}
+        </span>
+        <div className="caja-header-text">
+          <span className="caja-live">
+            <i aria-hidden="true" /> Turno abierto
+          </span>
+          <strong>{merchant}</strong>
+        </div>
       </div>
-      <button
-        type="button"
-        className="caja-link"
-        disabled={isPending}
-        onClick={() =>
-          startTransition(async () => {
-            await endShift();
-            onClosed();
-          })
-        }
-      >
-        {isPending ? "Cerrando…" : "Cerrar turno"}
-      </button>
+      <div className="caja-header-actions">
+        <button
+          type="button"
+          className="caja-icon-btn"
+          aria-pressed={sound}
+          aria-label={sound ? "Silenciar sonido de canje" : "Activar sonido de canje"}
+          title={sound ? "Sonido activado" : "Sonido apagado"}
+          onClick={() => {
+            const next = !sound;
+            setSound(next);
+            setSoundEnabled(next);
+            if (next) {
+              primeAudio();
+              playCelebration();
+            }
+          }}
+        >
+          {sound ? "🔊" : "🔇"}
+        </button>
+        <button
+          type="button"
+          className="caja-close"
+          disabled={isPending}
+          onClick={() =>
+            startTransition(async () => {
+              await endShift();
+              onClosed();
+            })
+          }
+        >
+          {isPending ? "Cerrando…" : "Cerrar turno"}
+        </button>
+      </div>
     </header>
   );
 }
@@ -322,7 +366,10 @@ function HomeScreen({
 }) {
   const [typing, setTyping] = useState(false);
   const [code, setCode] = useState("");
+  const [count, setCount] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => setCount(todayCount()), []);
 
   useEffect(() => {
     if (typing) inputRef.current?.focus();
@@ -335,12 +382,51 @@ function HomeScreen({
           {notice}
         </p>
       )}
-      <button type="button" className="caja-btn caja-btn-primary caja-btn-xl" onClick={onScan}>
-        ESCANEAR
+      <div className="caja-hero">
+        <div className="caja-hero-bills" aria-hidden="true">
+          <span>💵</span>
+          <span>🪙</span>
+          <span>💵</span>
+          <span>✨</span>
+        </div>
+        <span className="caja-hero-kicker">MonAvi Caja</span>
+        <h1>¡Listo para canjear!</h1>
+        <p>Escanea el código del cliente y entrégale su premio.</p>
+        <div className="caja-hero-stat">
+          <strong>{count}</strong>
+          <span>{count === 1 ? "premio entregado hoy" : "premios entregados hoy"}</span>
+        </div>
+      </div>
+
+      <button type="button" className="caja-scan-btn" onClick={onScan}>
+        <span className="caja-scan-icon" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round">
+            <path d="M6 16V9a3 3 0 0 1 3-3h7M32 6h7a3 3 0 0 1 3 3v7M42 32v7a3 3 0 0 1-3 3h-7M16 42H9a3 3 0 0 1-3-3v-7" />
+            <rect x="15" y="15" width="7" height="7" rx="1.5" fill="currentColor" stroke="none" />
+            <rect x="26" y="15" width="7" height="7" rx="1.5" fill="currentColor" stroke="none" />
+            <rect x="15" y="26" width="7" height="7" rx="1.5" fill="currentColor" stroke="none" />
+            <rect x="27.5" y="27.5" width="4" height="4" rx="1" fill="currentColor" stroke="none" />
+          </svg>
+          <i className="caja-scan-line" />
+        </span>
+        <span className="caja-scan-text">
+          <strong>Escanear código</strong>
+          <small>Apunta la cámara al QR del cliente</small>
+        </span>
       </button>
-      <button type="button" className="caja-btn caja-btn-secondary caja-btn-lg" onClick={onSearch}>
-        BUSCAR CLIENTE
-      </button>
+
+      <div className="caja-actions">
+        <button type="button" className="caja-tile" onClick={onSearch}>
+          <span aria-hidden="true">🔎</span>
+          <strong>Buscar cliente</strong>
+          <small>Por nombre o teléfono</small>
+        </button>
+        <button type="button" className={typing ? "caja-tile on" : "caja-tile"} onClick={() => setTyping(true)}>
+          <span aria-hidden="true">⌨️</span>
+          <strong>Escribir código</strong>
+          <small>6 letras y números</small>
+        </button>
+      </div>
 
       {typing ? (
         <form
@@ -383,9 +469,11 @@ function HomeScreen({
           </button>
         </form>
       ) : (
-        <button type="button" className="caja-link caja-type-link" onClick={() => setTyping(true)}>
-          Escribir código
-        </button>
+        <ol className="caja-steps">
+          <li><b>1</b> El cliente abre su canje en la app</li>
+          <li><b>2</b> Escaneas su código</li>
+          <li><b>3</b> Tocas “Entregar” y le das su premio 🎉</li>
+        </ol>
       )}
     </section>
   );
@@ -563,6 +651,7 @@ function ConfirmScreen({
   }, [state.kind]);
 
   async function deliver(data: Verified) {
+    primeAudio();
     setState({ kind: "delivering", data });
     const result = await redeemCode({ code: data.code, confirm: true, requireSession: true });
     if (!result.ok) {
@@ -571,10 +660,12 @@ function ConfirmScreen({
       return;
     }
     try {
-      navigator.vibrate?.(60);
+      navigator.vibrate?.([60, 40, 120]);
     } catch {
       // sin vibracion
     }
+    playCelebration();
+    bumpTodayCount();
     setState({ kind: "done", data: result });
   }
 
@@ -607,14 +698,19 @@ function ConfirmScreen({
   if (state.kind === "done") {
     return (
       <section className="caja-card caja-center caja-done" role="status" aria-live="polite">
+        <EmojiBurst />
         <div className="caja-check" aria-hidden="true">
           ✓
         </div>
+        <span className="caja-done-kicker">🎉 ¡Canje exitoso! 🎉</span>
         <h2>¡Entregado!</h2>
         <p>
           Ya puedes darle <strong>{state.data.product}</strong> al cliente.
         </p>
         <p className="caja-fine">Código {state.data.code}</p>
+        <button type="button" className="caja-btn caja-btn-primary" onClick={() => onDoneRef.current()}>
+          Siguiente cliente
+        </button>
       </section>
     );
   }
@@ -695,6 +791,7 @@ function PinFallback({
   }, [done]);
 
   function run(confirm: boolean) {
+    if (confirm) primeAudio();
     setError(null);
     startTransition(async () => {
       const result = await redeemCode({ code, pin, confirm });
@@ -703,7 +800,11 @@ function PinFallback({
         setVerified(null);
         return;
       }
-      if (result.delivered) setDone(result);
+      if (result.delivered) {
+        playCelebration();
+        bumpTodayCount();
+        setDone(result);
+      }
       else setVerified(result);
     });
   }
@@ -711,9 +812,11 @@ function PinFallback({
   if (done) {
     return (
       <section className="caja-card caja-center caja-done" role="status" aria-live="polite">
+        <EmojiBurst />
         <div className="caja-check" aria-hidden="true">
           ✓
         </div>
+        <span className="caja-done-kicker">🎉 ¡Canje exitoso! 🎉</span>
         <h2>¡Entregado!</h2>
         <p>
           Ya puedes darle <strong>{done.product}</strong> al cliente.

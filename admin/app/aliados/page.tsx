@@ -34,8 +34,21 @@ const FAQ = [
   { q: "¿Necesito instalar algo o un equipo especial?", a: "No. Solo un celular con navegador para abrir la página de canje y tu PIN." },
   { q: "¿Qué datos del cliente veo?", a: "Su nombre de pila con la inicial del apellido, los últimos 4 dígitos de su teléfono, el código y el producto. Nunca su correo, saldo ni movimientos." },
   { q: "¿Qué pasa si el cliente no usa su código?", a: "Vence a los 7 días y el saldo se le devuelve automáticamente. Tú no pierdes nada." },
+  { q: "¿Puedo hablar con alguien antes de inscribirme?", a: "Claro. Escríbenos por WhatsApp al +507 6738-9720 o a hola@maday.app y te explicamos todo." },
   { q: "¿Cómo ganan cashback y puntos los clientes?", a: "Cashback: 1% de sus facturas electrónicas de Panamá verificadas por la DGI. Puntos: por buenos hábitos, como anotar sus gastos, ahorrar y cumplir sus presupuestos." },
 ];
+
+const WHATSAPP_URL =
+  "https://wa.me/50767389720?text=" +
+  encodeURIComponent("Hola, tengo un negocio y quiero ser comercio aliado de MonAvi.");
+
+function WhatsAppIcon({ size = 22 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
+      <path fill="currentColor" d="M19.05 4.91A9.82 9.82 0 0 0 12.04 2C6.6 2 2.17 6.43 2.17 11.87c0 1.74.46 3.44 1.32 4.94L2.08 22l5.33-1.4a9.86 9.86 0 0 0 4.63 1.18h.01c5.44 0 9.87-4.43 9.87-9.87 0-2.64-1.03-5.12-2.87-7Zm-7.01 15.2h-.01a8.2 8.2 0 0 1-4.18-1.15l-.3-.18-3.16.83.84-3.08-.2-.32a8.2 8.2 0 0 1-1.26-4.37c0-4.53 3.69-8.21 8.23-8.21 2.2 0 4.26.86 5.82 2.41a8.16 8.16 0 0 1 2.4 5.81c0 4.53-3.69 8.22-8.18 8.26Zm4.5-6.15c-.25-.12-1.46-.72-1.69-.8-.23-.08-.39-.12-.56.12-.16.25-.64.8-.78.97-.14.16-.29.18-.53.06-.25-.12-1.04-.38-1.98-1.22-.73-.65-1.23-1.46-1.37-1.7-.14-.25-.02-.38.11-.5.11-.11.25-.29.37-.43.12-.14.16-.25.25-.41.08-.16.04-.31-.02-.43-.06-.12-.56-1.35-.76-1.85-.2-.48-.41-.42-.56-.43h-.48a.92.92 0 0 0-.66.31c-.23.25-.86.84-.86 2.06 0 1.21.88 2.38 1 2.55.12.16 1.74 2.65 4.21 3.72.59.25 1.05.4 1.4.52.59.19 1.13.16 1.55.1.47-.07 1.46-.6 1.66-1.18.21-.58.21-1.07.14-1.18-.06-.1-.22-.16-.47-.29Z" />
+    </svg>
+  );
+}
 
 function AppleIcon() {
   return (
@@ -205,6 +218,9 @@ export default function AliadosPage() {
           <span className="al-kicker">Súmate</span>
           <h2>Solicita ser comercio aliado</h2>
           <p className="al-lead">Cuéntanos de tu negocio. Te respondemos en pocos días hábiles, sin compromiso.</p>
+          <a className="al-wa-inline" href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">
+            <WhatsAppIcon size={20} /> ¿Prefieres hablar? Escríbenos por WhatsApp: +507 6738-9720
+          </a>
         </Reveal>
         <Reveal delay={0.1}>
           <ApplicationForm />
@@ -221,9 +237,15 @@ export default function AliadosPage() {
           <AppleIcon /> MonAvi en la App Store
         </a>
         <span className="al-footer-links">
+          <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">WhatsApp +507 6738-9720</a> ·{" "}
           <a href="/legal">Documentos legales</a> · <a href="/support">Soporte</a> · <a href="mailto:hola@maday.app">hola@maday.app</a>
         </span>
       </footer>
+
+      <a className="al-wa-float" href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" aria-label="Escríbenos por WhatsApp">
+        <WhatsAppIcon size={30} />
+        <span>¿Dudas? Escríbenos</span>
+      </a>
     </div>
   );
 }

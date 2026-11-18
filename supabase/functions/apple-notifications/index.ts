@@ -122,8 +122,34 @@ async function fetchLastTransaction(originalTransactionId: string): Promise<Last
   return null;
 }
 
+/// Convierte la IP en un UUID estable (SHA-256) para reutilizar el limite
+/// de solicitudes que ya existe en la base (check_and_increment_rate_limit).
+async function ipKey(ip: string): Promise<string> {
+  const h = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode("ip:" + ip)));
+  const x = [...h.slice(0, 16)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  return `${x.slice(0, 8)}-${x.slice(8, 12)}-4${x.slice(13, 16)}-8${x.slice(17, 20)}-${x.slice(20, 32)}`;
+}
+
 Deno.serve(async (req) => {
   if (req.method !== "POST") return ok({ ok: true, info: "MonAvi App Store notifications" });
+
+  // Ruta publica (Apple no manda JWT): limite de 60 avisos por IP cada 10
+  // minutos. Si se excede, 429 y Apple reintenta mas tarde.
+  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "desconocida";
+  try {
+    const limiter = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    const { data: allowed } = await limiter.rpc("check_and_increment_rate_limit", {
+      p_user_id: await ipKey(ip),
+      p_function_name: "apple-notifications",
+      p_max_requests: 60,
+      p_window_seconds: 600,
+    });
+    if (allowed === false) {
+      return new Response(JSON.stringify({ error: "Demasiadas solicitudes" }), { status: 429 });
+    }
+  } catch (error) {
+    console.error("rate limit apple-notifications", String(error));
+  }
 
   let originalTransactionId: string | null = null;
   let notificationType = "";

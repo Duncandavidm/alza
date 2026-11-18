@@ -56,3 +56,51 @@ export async function deleteCustomer(formData: FormData) {
   revalidatePath("/clientes");
   redirect(`/clientes?msg=${encodeURIComponent(`Cuenta ${user.email} eliminada para siempre.`)}`);
 }
+
+/// Producto interno para acceso Pro de por vida otorgado desde el panel
+/// (no es una compra de Apple: sin ids de transaccion, sin vencimiento).
+export const LIFETIME_PRODUCT_ID = "app.monavi.lifetime.grant";
+
+/// Da (grant=1) o quita (grant=0) el acceso Pro de por vida.
+export async function setLifetimeAccess(formData: FormData) {
+  await requireAdminSession();
+  const { id } = await loadUser(formData.get("id"));
+  const grant = formData.get("grant") === "1";
+  const supabase = supabaseAdmin();
+
+  const { data: current } = await supabase
+    .from("subscriptions")
+    .select("product_id, status, apple_original_transaction_id")
+    .eq("user_id", id)
+    .maybeSingle();
+
+  if (grant) {
+    // Si ya paga por Apple, no se pisa su suscripcion (se perderia el
+    // vinculo con Apple para renovaciones y reembolsos).
+    if (current?.apple_original_transaction_id && current.status === "active") {
+      back(id, "err", "Esta persona ya tiene una suscripción activa pagada por Apple. No se cambió nada.");
+    }
+    const { error } = await supabase.from("subscriptions").upsert({
+      user_id: id,
+      product_id: LIFETIME_PRODUCT_ID,
+      status: "active",
+      apple_transaction_id: null,
+      apple_original_transaction_id: null,
+      expires_at: null,
+    });
+    if (error) back(id, "err", `No se pudo dar el acceso: ${error.message}`);
+  } else {
+    if (current?.product_id !== LIFETIME_PRODUCT_ID) {
+      back(id, "err", "Esta cuenta no tiene acceso de por vida otorgado desde el panel.");
+    }
+    const { error } = await supabase
+      .from("subscriptions")
+      .delete()
+      .eq("user_id", id)
+      .eq("product_id", LIFETIME_PRODUCT_ID);
+    if (error) back(id, "err", `No se pudo quitar el acceso: ${error.message}`);
+  }
+  revalidatePath("/clientes");
+  revalidatePath(`/clientes/${id}`);
+  back(id, "msg", grant ? "Acceso Pro de por vida activado." : "Acceso Pro de por vida quitado.");
+}

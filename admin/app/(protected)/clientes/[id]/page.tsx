@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { parseUuid, cleanLine } from "@/lib/push";
 import { formatCashback, formatDate, formatDateTime, formatInt } from "@/lib/format";
 import { isBanned, isProtectedEmail } from "@/lib/customer-accounts";
-import { deleteCustomer, setCustomerSuspended } from "./actions";
+import { LIFETIME_PRODUCT_ID, deleteCustomer, setCustomerSuspended, setLifetimeAccess } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +53,14 @@ export default async function ClienteDetailPage({
     const { data } = await supabase.rpc("admin_customers", { p_search: user.email, p_limit: 50, p_offset: 0 });
     row = ((data ?? {}) as { rows?: CustomerRow[] }).rows?.find((r) => r.id === id);
   }
+
+  const { data: sub } = await supabase
+    .from("subscriptions")
+    .select("product_id, status, expires_at, apple_original_transaction_id")
+    .eq("user_id", id)
+    .maybeSingle();
+  const hasLifetime = sub?.product_id === LIFETIME_PRODUCT_ID && sub.status === "active";
+  const paysWithApple = Boolean(sub?.apple_original_transaction_id) && sub?.status === "active";
 
   const banned = isBanned(user.banned_until);
   const isProtected = isProtectedEmail(user.email);
@@ -109,6 +117,41 @@ export default async function ClienteDetailPage({
             <span className="badge active">Activa</span>
           )}
         </p>
+      </div>
+
+      <div className="card">
+        <h2 style={{ marginTop: 0 }}>Acceso Pro de por vida</h2>
+        {hasLifetime ? (
+          <>
+            <p>
+              <span className="badge active">Activo</span> Tiene MonAvi Pro sin pagar y sin vencimiento.
+            </p>
+            {!isProtected && (
+              <form action={setLifetimeAccess}>
+                <input type="hidden" name="id" value={id} />
+                <input type="hidden" name="grant" value="0" />
+                <button type="submit" className="secondary">Quitar acceso de por vida</button>
+              </form>
+            )}
+          </>
+        ) : paysWithApple ? (
+          <p className="text-dim" style={{ margin: 0 }}>
+            Ya tiene una suscripción activa pagada por Apple ({sub?.product_id}). Para darle acceso de por vida, primero
+            debe cancelarla en su iPhone y esperar a que venza.
+          </p>
+        ) : (
+          <>
+            <p className="text-dim">
+              Le da MonAvi Pro gratis y sin vencimiento (por ejemplo, a tu equipo, aliados o ganadores de un concurso). No
+              es una compra de Apple y se puede quitar cuando quieras.
+            </p>
+            <form action={setLifetimeAccess}>
+              <input type="hidden" name="id" value={id} />
+              <input type="hidden" name="grant" value="1" />
+              <button type="submit">Dar acceso de por vida</button>
+            </form>
+          </>
+        )}
       </div>
 
       {isProtected ? (

@@ -34,7 +34,8 @@ struct PercentField: View {
     }
 }
 
-/// Dia del mes (1-28) que se puede escribir directo o ajustar con +/-.
+/// Dia del mes (1-31) que se puede escribir directo o ajustar con +/-.
+/// En meses mas cortos, 29/30/31 cuentan como el ultimo dia del mes.
 /// Antes era solo un Stepper — habia que tocar + o - uno por uno para
 /// llegar, por ejemplo, del 1 al 25.
 struct DayOfMonthField: View {
@@ -44,7 +45,7 @@ struct DayOfMonthField: View {
     private var clampedBinding: Binding<Int> {
         Binding(
             get: { day },
-            set: { day = min(max($0, 1), 28) }
+            set: { day = min(max($0, 1), 31) }
         )
     }
 
@@ -56,7 +57,7 @@ struct DayOfMonthField: View {
                 .keyboardType(.numberPad)
                 .multilineTextAlignment(.trailing)
                 .frame(width: 36)
-            Stepper("", value: clampedBinding, in: 1...28)
+            Stepper("", value: clampedBinding, in: 1...31)
                 .labelsHidden()
         }
     }

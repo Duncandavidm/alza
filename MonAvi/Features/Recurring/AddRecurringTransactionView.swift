@@ -41,7 +41,7 @@ struct AddRecurringTransactionView: View {
                     }
                 }
 
-                Stepper("Día del mes: \(dayOfMonth)", value: $dayOfMonth, in: 1...28)
+                Stepper("Día del mes: \(dayOfMonth)", value: $dayOfMonth, in: 1...31)
 
                 if let errorMessage {
                     Text(errorMessage).foregroundStyle(.red)

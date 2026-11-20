@@ -121,7 +121,7 @@ struct OnboardingView: View {
                 case .biweekly:
                     DayOfMonthField(label: "Primera quincena", day: $viewModel.fixedIncomeDay)
                     DayOfMonthField(label: "Segunda quincena", day: $viewModel.fixedIncomeSecondDay)
-                    Text("Si te pagan el 30 o el último día, pon 28.")
+                    Text("Si el mes tiene menos días, contamos el último día del mes.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 case .weekly:

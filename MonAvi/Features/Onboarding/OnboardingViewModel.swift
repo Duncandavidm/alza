@@ -28,8 +28,8 @@ final class OnboardingViewModel: ObservableObject {
     @Published var fixedIncomeAmountText = ""
     /// Mensual: el dia de pago. Quincenal: el primer dia.
     @Published var fixedIncomeDay = 15
-    /// Quincenal: el segundo dia (28 = fin de mes; el esquema topa en 28).
-    @Published var fixedIncomeSecondDay = 28
+    /// Quincenal: el segundo dia. 30/31 en un mes mas corto = ultimo dia.
+    @Published var fixedIncomeSecondDay = 30
     /// Semanal: 1 = domingo ... 7 = sabado. Viernes por defecto.
     @Published var fixedIncomeWeekday = 6
 
@@ -78,7 +78,7 @@ final class OnboardingViewModel: ObservableObject {
                 amount: amount,
                 movementType: .ingreso,
                 category: TransactionCategory.income.rawValue,
-                dayOfMonth: min(max(day, 1), 28),
+                dayOfMonth: min(max(day, 1), 31),
                 frequency: frequency,
                 weekday: weekday
             )
@@ -88,9 +88,9 @@ final class OnboardingViewModel: ObservableObject {
         case .monthly:
             return [income("Salario / ingreso fijo", day: fixedIncomeDay)]
         case .biweekly:
-            let days = [fixedIncomeDay, fixedIncomeSecondDay].map { min(max($0, 1), 28) }
+            let days = [fixedIncomeDay, fixedIncomeSecondDay].map { min(max($0, 1), 31) }
             let first = days.min() ?? 15
-            let second = days.max() ?? 28
+            let second = days.max() ?? 30
             // Mismo dia dos veces no es quincenal: una sola fila mensual.
             guard first != second else { return [income("Salario / ingreso fijo", day: first)] }
             return [

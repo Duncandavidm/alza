@@ -5,7 +5,7 @@
 --              Calendar de iOS); day_of_month queda en 1 como relleno.
 --   - daily:   todos los dias; day_of_month queda en 1 como relleno.
 -- Quincenal NO es una frecuencia: se guarda como dos filas mensuales (p.ej.
--- dias 15 y 28), asi funciona igual en todo lo que ya existe.
+-- dias 15 y 30), asi funciona igual en todo lo que ya existe.
 --
 -- Aditivo y con default 'monthly': las versiones 1.0 / 1.0.1 de la app
 -- ignoran las columnas nuevas y siguen funcionando igual.

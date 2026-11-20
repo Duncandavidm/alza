@@ -1,7 +1,7 @@
 import Foundation
 
 /// Cada cuanto se repite una recurrente. Quincenal no esta aqui a proposito:
-/// se guarda como dos recurrentes mensuales (p.ej. dias 15 y 28), asi todo lo
+/// se guarda como dos recurrentes mensuales (p.ej. dias 15 y 30), asi todo lo
 /// que ya entiende "dia del mes" (recordatorios, plan de pagos) sigue igual.
 enum RecurrenceFrequency: String, Codable, CaseIterable, Hashable {
     case monthly
@@ -83,7 +83,9 @@ struct RecurringTransaction: Codable, Identifiable, Hashable {
         guard active else { return false }
         switch frequency {
         case .monthly:
-            guard calendar.component(.day, from: today) == dayOfMonth else { return false }
+            // "30" o "31" en un mes mas corto toca el ultimo dia del mes.
+            let daysInMonth = calendar.range(of: .day, in: .month, for: today)?.count ?? 28
+            guard calendar.component(.day, from: today) == min(dayOfMonth, daysInMonth) else { return false }
         case .weekly:
             guard let weekday, calendar.component(.weekday, from: today) == weekday else { return false }
         case .daily:

@@ -82,6 +82,14 @@ final class RecurringFrequencyTests: XCTestCase {
         XCTAssertTrue(item.isDueToday(calendar: calendar, today: date(2026, 11, 23)))
     }
 
+    func testMonthlyDay30IsDueOnLastDayOfFebruary() throws {
+        let item = try decode("").withDay(30)
+        // 2027-02-28 es el ultimo dia de febrero.
+        XCTAssertTrue(item.isDueToday(calendar: calendar, today: date(2027, 2, 28)))
+        XCTAssertFalse(item.isDueToday(calendar: calendar, today: date(2027, 2, 27)))
+        XCTAssertTrue(item.isDueToday(calendar: calendar, today: date(2026, 11, 30)))
+    }
+
     // MARK: - nextOccurrence(weekday:)
 
     func testNextWeekdayIsTodayWhenItMatches() {
@@ -101,10 +109,10 @@ final class RecurringFrequencyTests: XCTestCase {
     func testBiweeklyCreatesTwoMonthlyRowsSorted() {
         let viewModel = OnboardingViewModel()
         viewModel.fixedIncomeFrequency = .biweekly
-        viewModel.fixedIncomeDay = 30 // se topa en 28
+        viewModel.fixedIncomeDay = 30 // el orden no importa
         viewModel.fixedIncomeSecondDay = 15
         let rows = viewModel.fixedIncomeRecurrences(userId: UUID(), accountId: UUID(), amount: 400)
-        XCTAssertEqual(rows.map(\.dayOfMonth), [15, 28])
+        XCTAssertEqual(rows.map(\.dayOfMonth), [15, 30])
         XCTAssertEqual(rows.map(\.frequency), [.monthly, .monthly])
         XCTAssertEqual(rows.map(\.amount), [400, 400])
     }
@@ -151,5 +159,13 @@ final class RecurringFrequencyTests: XCTestCase {
         let weeklyJSON = try JSONSerialization.jsonObject(with: JSONEncoder().encode(weekly)) as? [String: Any]
         XCTAssertEqual(weeklyJSON?["frequency"] as? String, "weekly")
         XCTAssertEqual(weeklyJSON?["weekday"] as? Int, 3)
+    }
+}
+
+private extension RecurringTransaction {
+    func withDay(_ day: Int) -> RecurringTransaction {
+        var copy = self
+        copy.dayOfMonth = day
+        return copy
     }
 }

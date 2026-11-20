@@ -5,14 +5,18 @@ import ActionForm, { type ActionState } from "@/components/ActionForm";
 import RewardPreviewCard from "@/components/RewardPreviewCard";
 import { centsToDollarInput } from "@/lib/format";
 import type { RewardCurrency } from "@/lib/currency";
+import { REWARD_TYPES, type RewardType, defaultRewardName, toRewardType } from "@/lib/reward-type";
 
 type Item = {
   name: string;
   description: string | null;
   photo_url: string | null;
   points_cost: number;
-  status: "active" | "paused";
+  status: "active" | "paused" | "agotado";
   sort_order: number;
+  reward_type?: string | null;
+  discount_value?: number | string | null;
+  max_redemptions?: number | null;
 };
 
 type Props = {
@@ -31,7 +35,15 @@ type Props = {
 /// en la app) que se actualiza mientras se escribe o se elige la foto.
 export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps, currency, item, submitLabel }: Props) {
   const isPoints = currency === "puntos";
-  const [name, setName] = useState(item?.name ?? "");
+  const initialType = toRewardType(item?.reward_type);
+  const initialDiscount = item?.discount_value != null ? String(Number(item.discount_value)) : "";
+  const [rewardType, setRewardType] = useState<RewardType>(initialType);
+  const [discountValue, setDiscountValue] = useState(initialDiscount);
+  // Si el nombre guardado es el automatico ("10% de descuento"), se deja
+  // vacio para que siga al valor cuando se edite.
+  const [name, setName] = useState(
+    item && item.name !== defaultRewardName(initialType, Number(initialDiscount)) ? item.name : ""
+  );
   const [description, setDescription] = useState(item?.description ?? "");
   // Cashback: US$ (ej. "3.50"), el servidor lo guarda en centavos.
   // Puntos: entero (ej. "150"), se guarda tal cual.
@@ -49,6 +61,8 @@ export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps,
   }, [localPhoto]);
 
   const photoUrl = localPhoto ?? (removePhoto ? null : (item?.photo_url ?? null));
+  const isDiscount = rewardType !== "producto";
+  const autoName = defaultRewardName(rewardType, Number(discountValue));
 
   return (
     <div className="reward-form-layout">
@@ -60,6 +74,8 @@ export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps,
         onSuccess={() => {
           if (item) return;
           setName("");
+          setRewardType("producto");
+          setDiscountValue("");
           setDescription("");
           setRewardValue("");
           setPaused(false);
@@ -67,15 +83,46 @@ export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps,
         }}
       >
         <div className="field">
-          <label>Producto</label>
+          <label>Qué se canjea</label>
+          <select
+            name="reward_type"
+            value={rewardType}
+            onChange={(event) => setRewardType(toRewardType(event.target.value))}
+          >
+            {REWARD_TYPES.map((type) => (
+              <option key={type.value} value={type.value}>
+                {type.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        {isDiscount && (
+          <div className="field">
+            <label>{rewardType === "porcentaje" ? "Descuento (%)" : "Valor del cupón (US$)"}</label>
+            <input
+              type="number"
+              name="discount_value"
+              required
+              min={rewardType === "porcentaje" ? 1 : 0.01}
+              max={rewardType === "porcentaje" ? 100 : undefined}
+              step={rewardType === "porcentaje" ? 1 : 0.01}
+              inputMode="decimal"
+              placeholder={rewardType === "porcentaje" ? "10" : "20"}
+              value={discountValue}
+              onChange={(event) => setDiscountValue(event.target.value)}
+            />
+          </div>
+        )}
+        <div className="field">
+          <label>{isDiscount ? "Nombre (opcional)" : "Producto"}</label>
           <input
             type="text"
             name="name"
-            required
+            required={!isDiscount}
             maxLength={120}
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="Café latte grande"
+            placeholder={isDiscount ? autoName || (rewardType === "porcentaje" ? "10% de descuento" : "Cupón de $20") : "Café latte grande"}
           />
         </div>
         <div className="field">
@@ -93,6 +140,18 @@ export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps,
           />
         </div>
         <div className="field">
+          <label>Límite de canjes (vacío = sin límite)</label>
+          <input
+            type="number"
+            name="max_redemptions"
+            min={1}
+            step={1}
+            inputMode="numeric"
+            placeholder="Sin límite"
+            defaultValue={item?.max_redemptions ?? ""}
+          />
+        </div>
+        <div className="field">
           <label>Orden (menor primero)</label>
           <input type="number" name="sort_order" step={1} defaultValue={item?.sort_order ?? 0} />
         </div>
@@ -100,7 +159,7 @@ export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps,
           <label>Estado</label>
           <select
             name="status"
-            defaultValue={item?.status ?? "active"}
+            defaultValue={item?.status === "paused" ? "paused" : "active"}
             onChange={(event) => setPaused(event.target.value === "paused")}
           >
             <option value="active">Activo (visible en la app)</option>
@@ -108,7 +167,9 @@ export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps,
           </select>
         </div>
         <div className="field" style={{ gridColumn: "1 / -1" }}>
-          <label>Descripción (opcional)</label>
+          <label>
+            Descripción (opcional){isDiscount ? " — condiciones, ej. “En compras desde $50. No acumulable.”" : ""}
+          </label>
           <textarea
             name="description"
             maxLength={500}
@@ -149,7 +210,7 @@ export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps,
         <RewardPreviewCard
           merchantName={merchantName}
           logoUrl={logoUrl}
-          productName={name}
+          productName={name || autoName}
           photoUrl={photoUrl}
           value={(isPoints ? Math.round(Number(rewardValue)) : Math.round(Number(rewardValue) * 100)) || null}
           currency={currency}

@@ -705,7 +705,15 @@ function ConfirmScreen({
         <span className="caja-done-kicker">🎉 ¡Canje exitoso! 🎉</span>
         <h2>¡Entregado!</h2>
         <p>
-          Ya puedes darle <strong>{state.data.product}</strong> al cliente.
+          {state.data.isDiscount ? (
+            <>
+              Aplícale <strong>{state.data.product}</strong> en su cuenta.
+            </>
+          ) : (
+            <>
+              Ya puedes darle <strong>{state.data.product}</strong> al cliente.
+            </>
+          )}
         </p>
         <p className="caja-fine">Código {state.data.code}</p>
         <button type="button" className="caja-btn caja-btn-primary" onClick={() => onDoneRef.current()}>
@@ -751,12 +759,16 @@ function ConfirmScreen({
           disabled={delivering}
           onClick={() => deliver(data)}
         >
-          {delivering ? "Entregando…" : `Entregar ${data.product}`}
+          {delivering ? "Confirmando…" : `${data.isDiscount ? "Aplicar" : "Entregar"} ${data.product}`}
         </button>
         <button type="button" className="caja-btn caja-btn-secondary" disabled={delivering} onClick={onBack}>
           Volver
         </button>
-        <p className="caja-fine">Toca “Entregar” solo cuando le des el producto: el código ya no se podrá usar.</p>
+        <p className="caja-fine">
+          {data.isDiscount
+            ? "Toca “Aplicar” solo cuando apliques el descuento en la cuenta: el código ya no se podrá usar."
+            : "Toca “Entregar” solo cuando le des el producto: el código ya no se podrá usar."}
+        </p>
       </div>
     </section>
   );
@@ -819,7 +831,15 @@ function PinFallback({
         <span className="caja-done-kicker">🎉 ¡Canje exitoso! 🎉</span>
         <h2>¡Entregado!</h2>
         <p>
-          Ya puedes darle <strong>{done.product}</strong> al cliente.
+          {done.isDiscount ? (
+            <>
+              Aplícale <strong>{done.product}</strong> en su cuenta.
+            </>
+          ) : (
+            <>
+              Ya puedes darle <strong>{done.product}</strong> al cliente.
+            </>
+          )}
         </p>
       </section>
     );
@@ -851,7 +871,7 @@ function PinFallback({
             </p>
           )}
           <button type="button" className="caja-btn caja-btn-deliver" disabled={isPending} onClick={() => run(true)}>
-            {isPending ? "Entregando…" : `Entregar ${verified.product}`}
+            {isPending ? "Confirmando…" : `${verified.isDiscount ? "Aplicar" : "Entregar"} ${verified.product}`}
           </button>
           <button
             type="button"

@@ -17,6 +17,7 @@ type Props = {
   description?: string | null;
   hasMaps?: boolean;
   paused?: boolean;
+  pausedLabel?: string;
 };
 
 export default function RewardPreviewCard({
@@ -29,6 +30,7 @@ export default function RewardPreviewCard({
   description,
   hasMaps = true,
   paused,
+  pausedLabel,
 }: Props) {
   return (
     <div className={`reward-preview${paused ? " is-paused" : ""}`}>
@@ -60,7 +62,7 @@ export default function RewardPreviewCard({
         <span className={`reward-preview-button outline${hasMaps ? "" : " disabled"}`}>Cómo llegar</span>
         <span className="reward-preview-button filled">Canjear</span>
       </div>
-      {paused && <div className="reward-preview-paused">Pausado — no se ve en la app</div>}
+      {paused && <div className="reward-preview-paused">{pausedLabel ?? "Pausado — no se ve en la app"}</div>}
     </div>
   );
 }

@@ -4,7 +4,8 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import ActionForm from "@/components/ActionForm";
 import MerchantFieldsInputs from "@/components/MerchantFieldsInputs";
 import RewardPreviewCard from "@/components/RewardPreviewCard";
-import { formatCashback, formatDateTime, formatMoney } from "@/lib/format";
+import { formatCashback, formatDateTime, formatInt, formatMoney } from "@/lib/format";
+import { rewardTypeLabel, toRewardType } from "@/lib/reward-type";
 import { formatRewardValue, REWARD_CURRENCY_LABELS, type RewardCurrency, toRewardCurrency } from "@/lib/currency";
 import {
   createOffer,
@@ -48,8 +49,11 @@ type RewardItem = {
   description: string | null;
   photo_url: string | null;
   points_cost: number;
-  status: "active" | "paused";
+  status: "active" | "paused" | "agotado";
   sort_order: number;
+  reward_type: string | null;
+  discount_value: number | string | null;
+  max_redemptions: number | null;
 };
 
 export default async function MerchantDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -63,7 +67,7 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
     .maybeSingle<Merchant>();
   if (!merchant) notFound();
 
-  const [{ data: offers }, { data: items }, { data: delivered }] = await Promise.all([
+  const [{ data: offers }, { data: items }, { data: delivered }, { data: usedRows }] = await Promise.all([
     supabase
       .from("partner_merchant_offers")
       .select("id, offer_type, value, min_amount, starts_at, ends_at, budget_total_points, budget_spent_points, status")
@@ -72,7 +76,7 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
       .returns<Offer[]>(),
     supabase
       .from("reward_items")
-      .select("id, name, description, photo_url, points_cost, status, sort_order")
+      .select("id, name, description, photo_url, points_cost, status, sort_order, reward_type, discount_value, max_redemptions")
       .eq("merchant_id", id)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true })
@@ -83,7 +87,19 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
       .eq("merchant_id", id)
       .eq("status", "entregado")
       .returns<{ delivered_via: string | null }[]>(),
+    // Codigos que gastan cupo (igual que reward_item_used en 0065):
+    // emitidos o entregados, sin contar los regalos de MonAvi.
+    supabase
+      .from("reward_redemptions")
+      .select("reward_item_id")
+      .eq("merchant_id", id)
+      .neq("source", "regalo")
+      .in("status", ["emitido", "entregado"])
+      .limit(100000)
+      .returns<{ reward_item_id: string }[]>(),
   ]);
+  const usedByItem = new Map<string, number>();
+  for (const row of usedRows ?? []) usedByItem.set(row.reward_item_id, (usedByItem.get(row.reward_item_id) ?? 0) + 1);
   const deliveredCount = (delivered ?? []).length;
   const deliveredAtCounter = (delivered ?? []).filter((row) => row.delivered_via === "comercio").length;
 
@@ -173,6 +189,7 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
                 <th>Foto</th>
                 <th>Producto</th>
                 <th>{currency === "puntos" ? "Puntos" : "Valor en cashback"}</th>
+                <th>Canjes</th>
                 <th>Estado</th>
                 <th>Orden</th>
                 <th></th>
@@ -191,11 +208,21 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
                   </td>
                   <td>
                     {item.name}
+                    {item.reward_type && item.reward_type !== "producto" && (
+                      <div className="text-dim">{rewardTypeLabel(toRewardType(item.reward_type))}</div>
+                    )}
                     {item.description && <div className="text-dim">{item.description}</div>}
                   </td>
                   <td>{formatRewardValue(item.points_cost, currency)}</td>
                   <td>
-                    <span className={`badge ${item.status}`}>{item.status === "active" ? "activo" : "pausado"}</span>
+                    {item.max_redemptions
+                      ? `${formatInt(usedByItem.get(item.id) ?? 0)} de ${formatInt(item.max_redemptions)}`
+                      : `${formatInt(usedByItem.get(item.id) ?? 0)} · sin límite`}
+                  </td>
+                  <td>
+                    <span className={`badge ${item.status}`}>
+                      {item.status === "active" ? "activo" : item.status === "agotado" ? "agotado" : "pausado"}
+                    </span>
                   </td>
                   <td>{item.sort_order}</td>
                   <td>
@@ -205,11 +232,11 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
                           null,
                           merchant.id,
                           item.id,
-                          item.status === "active" ? "paused" : "active"
+                          item.status === "paused" ? "active" : "paused"
                         )}
                       >
                         <button type="submit" className="secondary">
-                          {item.status === "active" ? "Pausar" : "Reactivar"}
+                          {item.status === "paused" ? "Reactivar" : "Pausar"}
                         </button>
                       </form>
                       <ActionForm
@@ -228,7 +255,7 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
               ))}
               {rewardItems.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="text-dim">
+                  <td colSpan={7} className="text-dim">
                     Este comercio todavía no tiene productos canjeables.
                   </td>
                 </tr>
@@ -277,7 +304,8 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
                   currency={currency}
                   description={item.description}
                   hasMaps={hasMaps}
-                  paused={item.status === "paused" || merchant.status === "paused"}
+                  paused={item.status !== "active" || merchant.status === "paused"}
+                  pausedLabel={item.status === "agotado" ? "Agotado — se llegó al límite, no se ve en la app" : undefined}
                 />
               ))}
             </div>

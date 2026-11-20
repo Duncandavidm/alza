@@ -10,6 +10,7 @@ import { fileFromForm, uploadRewardImage } from "@/lib/uploads";
 import { parseDollarsToCents } from "@/lib/format";
 import { optionalText, text } from "@/lib/validation";
 import { type RewardCurrency, toRewardCurrency } from "@/lib/currency";
+import { type RewardType, defaultRewardName, toRewardType } from "@/lib/reward-type";
 import type { ActionState } from "@/components/ActionForm";
 
 function revalidateMerchant(merchantId: string) {
@@ -140,6 +141,9 @@ type RewardItemFields = {
   points_cost: number;
   sort_order: number;
   status: "active" | "paused";
+  reward_type: RewardType;
+  discount_value: number | null;
+  max_redemptions: number | null;
 };
 
 /// Moneda de canje del comercio leida de la base (no se confia en el
@@ -157,8 +161,30 @@ function parseRewardItemFields(
   formData: FormData,
   currency: RewardCurrency
 ): { fields?: RewardItemFields; error?: string } {
-  const name = text(formData, "name", 120);
+  const rewardType = toRewardType(text(formData, "reward_type", 12));
+  let discountValue: number | null = null;
+  if (rewardType !== "producto") {
+    const rawDiscount = text(formData, "discount_value", 12);
+    discountValue = /^\d{1,6}(\.\d{1,2})?$/.test(rawDiscount) ? Number(rawDiscount) : NaN;
+    if (rewardType === "porcentaje" && !(discountValue > 0 && discountValue <= 100)) {
+      return { error: "El descuento debe ser un porcentaje entre 1 y 100 (por ejemplo 10)." };
+    }
+    if (rewardType === "monto" && !(discountValue > 0 && discountValue <= 100_000)) {
+      return { error: "El cupón debe ser un monto mayor que $0 con máximo 2 decimales (por ejemplo 20)." };
+    }
+  }
+
+  const name = text(formData, "name", 120) || defaultRewardName(rewardType, discountValue);
   if (!name) return { error: "El nombre del producto es obligatorio." };
+
+  const maxRaw = text(formData, "max_redemptions", 9);
+  let maxRedemptions: number | null = null;
+  if (maxRaw) {
+    maxRedemptions = /^\d{1,7}$/.test(maxRaw) ? Number(maxRaw) : NaN;
+    if (!Number.isInteger(maxRedemptions) || maxRedemptions < 1 || maxRedemptions > 1_000_000) {
+      return { error: "El límite de canjes debe ser un número entero mayor o igual a 1, o dejarse vacío para que no tenga límite." };
+    }
+  }
 
   const rawValue = text(formData, "reward_value", 16);
   let pointsCost: number | null;
@@ -190,6 +216,9 @@ function parseRewardItemFields(
       points_cost: pointsCost,
       sort_order: sortOrder,
       status,
+      reward_type: rewardType,
+      discount_value: discountValue,
+      max_redemptions: maxRedemptions,
     },
   };
 }

@@ -5,6 +5,7 @@ import { cookies, headers } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { formatDateTime } from "@/lib/format";
 import { formatRewardValueLong, toRewardCurrency } from "@/lib/currency";
+import { isDiscountType } from "@/lib/reward-type";
 import {
   REDEEM_SESSION_COOKIE,
   REDEEM_SESSION_COOKIE_OPTIONS,
@@ -21,6 +22,8 @@ export type RedeemResult =
       photoUrl: string | null;
       merchant: string;
       isGift: boolean;
+      /// Descuento en % o cupon en US$ (0065): en caja se "aplica", no se entrega.
+      isDiscount: boolean;
       valueLabel: string;
       expiresLabel: string;
       deliveredLabel: string | null;
@@ -47,6 +50,7 @@ type RpcResponse = {
   merchant?: string | null;
   merchant_id?: string | null;
   is_gift?: boolean | null;
+  reward_type?: string | null;
   value_cents?: number | null;
   currency?: string | null;
   value?: number | null;
@@ -147,6 +151,7 @@ export async function redeemCode(input: {
       photoUrl: result.photo_url ?? null,
       merchant: result.merchant ?? "",
       isGift: result.is_gift === true,
+      isDiscount: isDiscountType(result.reward_type),
       // "$3.50 de cashback" o "150 puntos". Si la RPC no trae currency/value
       // (version anterior), se asume cashback en centavos (value_cents).
       valueLabel: result.currency

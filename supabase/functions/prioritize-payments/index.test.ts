@@ -14,6 +14,7 @@ import {
   computeRanking,
   fallbackReason,
   isBillOverdue,
+  isDueOrOverdue,
   liquidityNote,
   proximityScore,
   tierBase,
@@ -187,4 +188,12 @@ Deno.test("liquidityNote: ingreso exacto al centavo cuenta como que si alcanza",
 Deno.test("liquidityNote: plan vacio no truena (total 0, siempre alcanza)", () => {
   const note = liquidityNote([], 100);
   assert(note.includes("alcanza"));
+});
+
+Deno.test("isDueOrOverdue: semanales y diarias (1.0.2) no entran al plan mensual", () => {
+  assertEquals(isDueOrOverdue({ day_of_month: 1, last_logged_on: null, frequency: "weekly", weekday: 6 }), false);
+  assertEquals(isDueOrOverdue({ day_of_month: 1, last_logged_on: null, frequency: "daily" }), false);
+  // Sin columna (filas viejas) o mensual: dia 1 siempre esta vencido o al dia.
+  assertEquals(isDueOrOverdue({ day_of_month: 1, last_logged_on: null }), true);
+  assertEquals(isDueOrOverdue({ day_of_month: 1, last_logged_on: null, frequency: "monthly" }), true);
 });

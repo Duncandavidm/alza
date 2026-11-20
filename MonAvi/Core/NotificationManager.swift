@@ -225,11 +225,21 @@ enum NotificationManager {
         let calendar = Calendar.current
         let candidates = items
             .filter(\.active)
+            // Las diarias no llevan aviso: uno cada dia seria ruido y se
+            // comeria el tope de 64 avisos pendientes de iOS.
+            .filter { $0.frequency != .daily }
             .compactMap { item -> (item: RecurringTransaction, dueDate: Date)? in
-                guard let dueDate = nextOccurrence(dayOfMonth: item.dayOfMonth) else { return nil }
+                let next: Date?
+                switch item.frequency {
+                case .weekly:
+                    next = nextOccurrence(weekday: item.weekday ?? 2)
+                case .monthly, .daily:
+                    next = nextOccurrence(dayOfMonth: item.dayOfMonth)
+                }
+                guard let dueDate = next else { return nil }
                 if let lastLoggedOn = item.lastLoggedOn,
-                   calendar.isDate(lastLoggedOn, equalTo: dueDate, toGranularity: .month) {
-                    return nil // ya registrado este mes
+                   calendar.isDate(lastLoggedOn, equalTo: dueDate, toGranularity: item.loggingGranularity) {
+                    return nil // ya registrado en este periodo
                 }
                 return (item, dueDate)
             }
@@ -333,11 +343,17 @@ enum NotificationManager {
             removePending(ids: [recurringSnoozeId(id), "recurring-due-\(id)"])
 
             if let lastLoggedOn = item.lastLoggedOn,
-               Calendar.current.isDate(lastLoggedOn, equalTo: Date(), toGranularity: .month) {
+               Calendar.current.isDate(lastLoggedOn, equalTo: Date(), toGranularity: item.loggingGranularity) {
+                let period: String
+                switch item.frequency {
+                case .monthly: period = "este mes"
+                case .weekly: period = "esta semana"
+                case .daily: period = "hoy"
+                }
                 sendImmediate(
                     id: "recurring-done-\(id)",
                     title: "Ya estaba registrado",
-                    body: "\(item.name) ya está anotado este mes en MonAvi."
+                    body: "\(item.name) ya está anotado \(period) en MonAvi."
                 )
                 return
             }
@@ -561,6 +577,16 @@ enum NotificationManager {
         }
         guard let nextMonthStart = calendar.date(byAdding: .month, value: 1, to: monthStart) else { return nil }
         return occurrence(inMonthStarting: nextMonthStart)
+    }
+
+    /// El proximo `weekday` (1 = domingo ... 7 = sabado) — hoy mismo si hoy
+    /// es ese dia, si no el de la semana que viene.
+    static func nextOccurrence(weekday: Int, now: Date = Date(), calendar: Calendar = .current) -> Date? {
+        let today = calendar.startOfDay(for: now)
+        let target = min(max(weekday, 1), 7)
+        let current = calendar.component(.weekday, from: today)
+        let offset = (target - current + 7) % 7
+        return calendar.date(byAdding: .day, value: offset, to: today)
     }
 
     private static func atReminderHour(_ date: Date) -> Date {

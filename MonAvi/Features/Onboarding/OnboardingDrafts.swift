@@ -47,3 +47,33 @@ struct GoalDraft: Identifiable {
     let id = UUID()
     var text: String = ""
 }
+
+/// "¿Cada cuánto te pagan?" en el paso de ingreso fijo del onboarding.
+/// Quincenal se guarda como dos recurrentes mensuales (ver
+/// OnboardingViewModel.fixedIncomeRecurrences).
+enum PayFrequency: String, CaseIterable, Identifiable {
+    case monthly
+    case biweekly
+    case weekly
+    case daily
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .monthly: return "Mensual"
+        case .biweekly: return "Quincenal"
+        case .weekly: return "Semanal"
+        case .daily: return "Diario"
+        }
+    }
+
+    var amountPlaceholder: String {
+        switch self {
+        case .monthly: return "¿Cuánto te pagan al mes?"
+        case .biweekly: return "¿Cuánto te pagan cada quincena?"
+        case .weekly: return "¿Cuánto te pagan cada semana?"
+        case .daily: return "¿Cuánto ganas por día, más o menos?"
+        }
+    }
+}

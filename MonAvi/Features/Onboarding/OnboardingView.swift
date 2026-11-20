@@ -104,8 +104,37 @@ struct OnboardingView: View {
         Section("¿Tienes un salario u otro ingreso fijo?") {
             Toggle("Si, tengo un ingreso fijo", isOn: $viewModel.hasFixedIncome)
             if viewModel.hasFixedIncome {
-                AmountField(placeholder: "¿Cuánto? (por mes)", text: $viewModel.fixedIncomeAmountText)
-                DayOfMonthField(label: "Día de pago", day: $viewModel.fixedIncomeDay)
+                Text("¿Cada cuánto te pagan?")
+                    .font(.subheadline)
+                Picker("¿Cada cuánto te pagan?", selection: $viewModel.fixedIncomeFrequency) {
+                    ForEach(PayFrequency.allCases) { frequency in
+                        Text(frequency.displayName).tag(frequency)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                AmountField(placeholder: viewModel.fixedIncomeFrequency.amountPlaceholder, text: $viewModel.fixedIncomeAmountText)
+
+                switch viewModel.fixedIncomeFrequency {
+                case .monthly:
+                    DayOfMonthField(label: "Día de pago", day: $viewModel.fixedIncomeDay)
+                case .biweekly:
+                    DayOfMonthField(label: "Primera quincena", day: $viewModel.fixedIncomeDay)
+                    DayOfMonthField(label: "Segunda quincena", day: $viewModel.fixedIncomeSecondDay)
+                    Text("Si te pagan el 30 o el último día, pon 28.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                case .weekly:
+                    Picker("Día de pago", selection: $viewModel.fixedIncomeWeekday) {
+                        ForEach([2, 3, 4, 5, 6, 7, 1], id: \.self) { weekday in
+                            Text(RecurringTransaction.weekdayName(weekday).capitalized).tag(weekday)
+                        }
+                    }
+                case .daily:
+                    Text("Te preguntaremos cada día en Hoy si ya lo recibiste, sin enviarte notificaciones.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
     }

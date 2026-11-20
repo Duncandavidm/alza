@@ -36,7 +36,7 @@ struct RecurringTransactionsView: View {
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(item.name).font(.body)
-                        Text("\(item.category ?? item.movementType.displayName) · día \(item.dayOfMonth)")
+                        Text("\(item.category ?? item.movementType.displayName) · \(item.scheduleDescription)")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

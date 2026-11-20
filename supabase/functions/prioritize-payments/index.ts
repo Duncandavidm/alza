@@ -173,6 +173,11 @@ export function isDueOrOverdue(recurringItem: Record<string, unknown>): boolean 
   const dayOfMonth = recurringItem.day_of_month as number;
   const lastLoggedOn = recurringItem.last_logged_on as string | null;
 
+  // Semanales/diarias (1.0.2+) no tienen un "dia del mes": el plan de pagos
+  // solo razona por mes, asi que no entran (hoy solo son ingresos).
+  const frequency = (recurringItem.frequency as string | undefined) ?? "monthly";
+  if (frequency !== "monthly") return false;
+
   if (lastLoggedOn) {
     const last = new Date(lastLoggedOn);
     const sameMonth = last.getUTCFullYear() === today.getUTCFullYear() && last.getUTCMonth() === today.getUTCMonth();

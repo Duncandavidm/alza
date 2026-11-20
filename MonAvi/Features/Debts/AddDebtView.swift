@@ -43,14 +43,14 @@ struct AddDebtView: View {
 
             Section("Pago") {
                 HStack {
-                    Text("Interes mensual (%)")
+                    Text("Interés mensual (%)")
                     Spacer()
                     TextField("0.0", text: $interestRateText)
                         .keyboardType(.decimalPad)
                         .multilineTextAlignment(.trailing)
                 }
                 HStack {
-                    Text("Pago minimo")
+                    Text("Pago mínimo")
                     Spacer()
                     TextField("0.00", text: $minimumPaymentText)
                         .keyboardType(.decimalPad)

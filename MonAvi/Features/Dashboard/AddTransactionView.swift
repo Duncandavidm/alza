@@ -4,6 +4,9 @@ struct AddTransactionView: View {
     @EnvironmentObject private var appState: AppState
     @ObservedObject var viewModel: DashboardViewModel
     let accounts: [Account]
+    /// Para abrir el formulario ya en "ingreso" (ej. desde el aviso de
+    /// cashback al escanear una factura). nil = gasto, como siempre.
+    var initialMovementType: MovementType? = nil
     @Environment(\.dismiss) private var dismiss
     @AppStorage("isAdvancedMode") private var isAdvancedMode = false
     @StateObject private var budgetsViewModel = BudgetsViewModel()
@@ -63,10 +66,10 @@ struct AddTransactionView: View {
                 TextField("Monto", text: $amountText)
                     .keyboardType(.decimalPad)
 
-                TextField("Descripcion (opcional)", text: $description)
+                TextField("Descripción (opcional)", text: $description)
 
                 if isAdvancedMode {
-                    Picker("Categoria (opcional)", selection: $category) {
+                    Picker("Categoría (opcional)", selection: $category) {
                         ForEach(sortedCategories) { category in
                             Text("\(category.emoji) \(category.rawValue)").tag(category)
                         }
@@ -95,6 +98,9 @@ struct AddTransactionView: View {
             }
             .navigationTitle("Nuevo movimiento")
             .onAppear {
+                if let initialMovementType, amountText.isEmpty {
+                    movementType = initialMovementType
+                }
                 selectedAccountId = selectedAccountId ?? accounts.first?.id
                 selectedCurrency = selectedAccount?.currency ?? "USD"
             }
@@ -194,6 +200,11 @@ struct AddTransactionView: View {
         }
 
         isSaving = true
+        // Que el teclado no tape la animacion de guardado.
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil, from: nil, for: nil
+        )
         showingSavingAnimation = true
         defer { isSaving = false }
 

@@ -23,7 +23,7 @@ struct PaymentAdviceView: View {
                     .padding(.vertical, 4)
                 }
 
-                Section("En que orden pagar") {
+                Section("En qué orden pagar") {
                     ForEach(items) { item in
                         row(item)
                     }

@@ -21,10 +21,28 @@ enum DgiReceiptStatus: String, Codable, CaseIterable, Identifiable, Hashable {
     /// significa el estado o cuanto tiene que esperar.
     var statusExplanation: String {
         switch self {
-        case .pendiente: return "Pendiente: la revisamos contra la DGI varias veces al dia."
-        case .confirmada: return "Confirmada por la DGI — puntos acreditados."
-        case .rechazada: return "Rechazada — el codigo no es valido o ya fue usado por otra cuenta."
-        case .expirada: return "La DGI no la reconocio a tiempo. El gasto queda registrado, sin puntos."
+        case .pendiente: return "Pendiente: la estamos verificando."
+        case .confirmada: return "Verificada — cashback acreditado."
+        case .rechazada: return "Rechazada — el código no es válido o ya fue usado por otra cuenta."
+        case .expirada: return "No se pudo verificar a tiempo. El gasto queda registrado, sin cashback."
+        }
+    }
+}
+
+/// Estado del cashback de una factura ya verificada (columna
+/// `dgi_receipts.cashback_status`, nil mientras no se verifica). El
+/// cashback solo se acredita si los ingresos registrados del usuario
+/// respaldan sus compras con cashback.
+enum DgiCashbackStatus: String, Codable, CaseIterable, Hashable {
+    case acreditado
+    case sinIngreso = "sin_ingreso"
+    case vencido
+
+    var explanation: String {
+        switch self {
+        case .acreditado: return "Cashback acreditado"
+        case .sinIngreso: return "Cashback pendiente: registra tus ingresos para recibirlo"
+        case .vencido: return "Cashback vencido (sin ingresos registrados)"
         }
     }
 }
@@ -85,6 +103,13 @@ struct DgiReceipt: Codable, Identifiable, Hashable {
     /// Crédito") — nil hasta que se confirma. Si incluye "tarjeta", ya
     /// se evaluo el bono de comercio aliado (ver verify-dgi-receipt).
     var paymentMethod: String?
+    /// Nombre del comercio segun la DGI (migracion 0031) — nil hasta que
+    /// el verificador lo llena.
+    var merchantName: String?
+    /// Fecha y hora real de la compra (autorizacion DGI), si se conoce.
+    var authorizedAt: Date?
+    /// Estado del cashback (migracion 0045) — nil mientras no se verifica.
+    var cashbackStatus: DgiCashbackStatus?
 
     let scannedAt: Date
     var dgiCheckedAt: Date?
@@ -116,6 +141,9 @@ struct DgiReceipt: Codable, Identifiable, Hashable {
         case status
         case confirmedAmount = "confirmed_amount"
         case paymentMethod = "payment_method"
+        case merchantName = "merchant_name"
+        case authorizedAt = "authorized_at"
+        case cashbackStatus = "cashback_status"
         case scannedAt = "scanned_at"
         case dgiCheckedAt = "dgi_checked_at"
         case dgiCheckCount = "dgi_check_count"
@@ -124,6 +152,29 @@ struct DgiReceipt: Codable, Identifiable, Hashable {
     }
 
     var fechaFacturaValue: Date { DgiReceiptDateFormat.date(from: fechaFactura) }
+
+    /// Texto de estado para la lista: en facturas confirmadas, el estado
+    /// real del cashback (si ya se conoce); si no, el texto de siempre.
+    var statusExplanationText: String {
+        if status == .confirmada, let cashbackStatus {
+            return cashbackStatus.explanation
+        }
+        return status.statusExplanation
+    }
+
+    /// Titulo para la lista: el nombre del comercio si ya lo tenemos;
+    /// si no, el RUC.
+    var displayTitle: String {
+        if let name = merchantName?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty {
+            return name
+        }
+        return "RUC \(ruc)"
+    }
+
+    var hasMerchantName: Bool {
+        guard let name = merchantName?.trimmingCharacters(in: .whitespacesAndNewlines) else { return false }
+        return !name.isEmpty
+    }
 }
 
 struct NewDgiReceipt: Encodable {

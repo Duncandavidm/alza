@@ -9,8 +9,6 @@ struct DeleteAccountView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var confirmationText = ""
-    @State private var familyGroup: FamilyGroup?
-    @State private var isLoadingFamilyGroup = true
     @State private var isDeleting = false
     @State private var errorMessage: String?
 
@@ -25,19 +23,11 @@ struct DeleteAccountView: View {
                     Text("⚠️").font(.largeTitle)
                     Text("Esto no se puede deshacer")
                         .font(.title3.weight(.bold))
-                    Text("Se borran para siempre tus cuentas, movimientos, presupuestos, deudas, metas de ahorro, facturas, puntos y todo lo demas que hayas registrado en MonAvi. No hay forma de recuperarlo despues.")
+                    Text("Se borran para siempre tus cuentas, movimientos, presupuestos, deudas, metas de ahorro, facturas, cashback y todo lo demás que hayas registrado en MonAvi. No hay forma de recuperarlo después.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
                 .padding(.vertical, 6)
-            }
-
-            if let familyGroup, familyGroup.isOwner, !familyGroup.members.isEmpty {
-                Section {
-                    Text("Eres dueño de un grupo familiar con \(familyGroup.members.count) persona\(familyGroup.members.count == 1 ? "" : "s"). Si eliminas tu cuenta, \(familyGroup.members.count == 1 ? "esa persona pierde" : "esas personas pierden") su acceso Pro de inmediato.")
-                        .font(.subheadline)
-                        .foregroundStyle(MonAviBrand.alert)
-                }
             }
 
             Section {
@@ -70,18 +60,6 @@ struct DeleteAccountView: View {
         }
         .navigationTitle("Eliminar cuenta")
         .navigationBarTitleDisplayMode(.inline)
-        .overlay {
-            if isLoadingFamilyGroup {
-                ProgressView()
-            }
-        }
-        .task { await loadFamilyGroup() }
-    }
-
-    private func loadFamilyGroup() async {
-        isLoadingFamilyGroup = true
-        defer { isLoadingFamilyGroup = false }
-        familyGroup = try? await FamilyGroupService.shared.fetchMyGroup()
     }
 
     private func delete() async {

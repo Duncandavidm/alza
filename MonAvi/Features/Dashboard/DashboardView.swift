@@ -56,7 +56,7 @@ struct DashboardView: View {
 
                 Section("Movimientos recientes") {
                     if viewModel.recentTransactions.isEmpty {
-                        Text("Sin movimientos todavia")
+                        Text("Sin movimientos todavía")
                             .foregroundStyle(.secondary)
                     }
                     ForEach(viewModel.recentTransactions) { transaction in
@@ -85,7 +85,7 @@ struct DashboardView: View {
         .sheet(isPresented: $isAddingTransaction) {
             AddTransactionView(viewModel: viewModel, accounts: viewModel.accounts)
         }
-        .alert("Algo salio mal", isPresented: .constant(viewModel.errorMessage != nil)) {
+        .alert("Algo salió mal", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") { viewModel.clearError() }
         } message: {
             Text(viewModel.errorMessage ?? "")

@@ -52,7 +52,7 @@ struct DayOfMonthField: View {
         HStack {
             Text(label)
             Spacer()
-            TextField("Dia", value: clampedBinding, format: .number)
+            TextField("Día", value: clampedBinding, format: .number)
                 .keyboardType(.numberPad)
                 .multilineTextAlignment(.trailing)
                 .frame(width: 36)

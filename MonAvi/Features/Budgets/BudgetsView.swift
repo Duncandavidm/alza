@@ -11,9 +11,9 @@ struct BudgetsView: View {
             List {
                 if viewModel.progresses.isEmpty && !viewModel.isLoading {
                     ContentUnavailableView(
-                        "Sin presupuestos todavia",
+                        "Sin presupuestos todavía",
                         systemImage: "chart.bar.fill",
-                        description: Text("Ponle un limite semanal o mensual a una categoria para no pasarte.")
+                        description: Text("Ponle un límite semanal o mensual a una categoría para no pasarte.")
                     )
                 }
 
@@ -34,6 +34,7 @@ struct BudgetsView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
+                    .accessibilityLabel("Agregar presupuesto")
                 }
             }
             .refreshable { await refresh() }
@@ -44,7 +45,7 @@ struct BudgetsView: View {
             .sheet(item: $selectedProgress) { progress in
                 BudgetDetailSheet(viewModel: viewModel, progress: progress)
             }
-            .alert("Algo salio mal", isPresented: .constant(viewModel.errorMessage != nil)) {
+            .alert("Algo salió mal", isPresented: .constant(viewModel.errorMessage != nil)) {
                 Button("OK") { viewModel.errorMessage = nil }
             } message: {
                 Text(viewModel.errorMessage ?? "")

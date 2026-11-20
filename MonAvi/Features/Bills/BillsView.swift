@@ -34,6 +34,7 @@ struct BillsView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("Agregar cuenta por pagar")
             }
         }
         .refreshable { await refresh() }
@@ -41,7 +42,7 @@ struct BillsView: View {
         .sheet(isPresented: $isAdding) {
             AddBillView(viewModel: viewModel, accounts: accountsViewModel.accounts)
         }
-        .alert("Algo salio mal", isPresented: .constant(viewModel.errorMessage != nil)) {
+        .alert("Algo salió mal", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") { viewModel.errorMessage = nil }
         } message: {
             Text(viewModel.errorMessage ?? "")
@@ -54,7 +55,7 @@ struct BillsView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(bill.name).font(.body)
                 HStack(spacing: 6) {
-                    Text(bill.dueDateValue.formatted(date: .abbreviated, time: .omitted))
+                    Text(bill.dueDateValue.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi)))
                     if bill.isOverdue {
                         Text("Vencida").foregroundStyle(.red).fontWeight(.semibold)
                     }
@@ -83,6 +84,7 @@ struct BillsView: View {
                     .foregroundStyle(.green)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Marcar como pagada")
         }
         .padding(.vertical, 2)
     }

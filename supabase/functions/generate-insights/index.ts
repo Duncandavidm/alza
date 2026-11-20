@@ -22,10 +22,10 @@
 //   ANTHROPIC_API_KEY
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { AiLimitError, callClaude, ensureAiAllowed, extractJsonFromText, limitResponse, recordCachedHit } from "./ai.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY")!;
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -69,10 +69,32 @@ async function checkRateLimit(
     p_window_seconds: windowSeconds,
   });
   if (error) {
+    // Si no se puede comprobar el limite, NO se deja pasar (falla cerrado).
     console.error("rate limit check failed", error);
-    return true;
+    throw new Error("No se pudo verificar el limite de uso");
   }
   return data === true;
+}
+
+/** Claude a veces envuelve el JSON en un bloque ```json ... ``` o agrega
+ * una frase antes o despues, aunque se le pida que no. Junta los bloques
+ * de texto de la respuesta y toma desde el primer `open` hasta el ultimo
+ * cierre correspondiente. Lanza si no hay JSON valido. */
+function extractJson(data: unknown, open: "[" | "{"): unknown {
+  const blocks = Array.isArray((data as { content?: unknown })?.content)
+    ? (data as { content: { type?: string; text?: string }[] }).content
+    : [];
+  const text = blocks
+    .filter((block) => block?.type === "text" && typeof block.text === "string")
+    .map((block) => block.text)
+    .join("\n");
+  const close = open === "[" ? "]" : "}";
+  const start = text.indexOf(open);
+  const end = text.lastIndexOf(close);
+  if (start === -1 || end <= start) {
+    throw new Error(`La respuesta de Claude no trae JSON (stop_reason: ${(data as { stop_reason?: string })?.stop_reason})`);
+  }
+  return JSON.parse(text.slice(start, end + 1));
 }
 
 interface InsightSuggestion {
@@ -98,6 +120,23 @@ Deno.serve(async (req) => {
     if (!allowed) {
       return jsonResponse({ error: "Demasiadas solicitudes, intenta en unos minutos." }, 429);
     }
+
+    // Un analisis al dia: si ya se generaron hoy (hora de Panama), se
+    // devuelven esos sin volver a llamar a Claude.
+    const todayStart = new Date(Date.now() - 5 * 3600_000);
+    todayStart.setUTCHours(0, 0, 0, 0);
+    const todayStartUtc = new Date(todayStart.getTime() + 5 * 3600_000).toISOString();
+    const { count: todayCount } = await supabase
+      .from("ai_insights")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .gte("created_at", todayStartUtc);
+    if ((todayCount ?? 0) > 0) {
+      await recordCachedHit(supabase, userId, "generate-insights");
+      return jsonResponse({ inserted: 0, cached: true });
+    }
+
+    await ensureAiAllowed(supabase, userId, "generate-insights");
 
     const [
       { data: profile, error: profileError },
@@ -128,6 +167,8 @@ Deno.serve(async (req) => {
     if (debtsError) throw debtsError;
 
     const suggestions = await requestInsightsFromClaude(
+      supabase,
+      userId,
       profile,
       accounts ?? [],
       transactions ?? [],
@@ -150,12 +191,22 @@ Deno.serve(async (req) => {
 
     return jsonResponse({ inserted: suggestions.length });
   } catch (error) {
+    if (error instanceof AiLimitError) return limitResponse(error, CORS_HEADERS);
     console.error(error);
-    return jsonResponse({ error: String(error) }, 500);
+    // El detalle queda en los logs; al cliente nunca se le muestran internos.
+    return jsonResponse({ error: "Error interno" }, 500);
   }
 });
 
+/// Quita ids internos y fechas de sistema: misma informacion, menos tokens.
+function compact(rows: Record<string, unknown>[]): Record<string, unknown>[] {
+  const drop = new Set(["id", "user_id", "created_at", "updated_at"]);
+  return rows.map((row) => Object.fromEntries(Object.entries(row).filter(([k, v]) => !drop.has(k) && v !== null)));
+}
+
 async function requestInsightsFromClaude(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
   profile: Record<string, unknown> | null,
   accounts: Record<string, unknown>[],
   transactions: Record<string, unknown>[],
@@ -186,58 +237,39 @@ array de objetos {"kind": "general"|"spending"|"saving"|"alert", \
 "title": string, "body": string}, sin texto extra ni markdown.
 
 Perfil:
-${JSON.stringify(profile)}
+${JSON.stringify(profile ? compact([profile])[0] : null)}
 
 Cuentas:
-${JSON.stringify(accounts)}
+${JSON.stringify(compact(accounts))}
 
 Movimientos recientes:
-${JSON.stringify(transactions)}
+${JSON.stringify(compact(transactions))}
 
 Ingresos y gastos fijos recurrentes:
-${JSON.stringify(recurring)}
+${JSON.stringify(compact(recurring))}
 
 Cuentas por pagar pendientes:
-${JSON.stringify(bills)}
+${JSON.stringify(compact(bills))}
 
 Deudas activas:
-${JSON.stringify(debts)}`;
+${JSON.stringify(compact(debts))}`;
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-5-5",
-      max_tokens: 1024,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
+  const result = await callClaude(supabase, userId, "generate-insights", { prompt, maxTokens: 16000 });
 
-  if (!response.ok) {
-    throw new Error(`Anthropic API error: ${response.status} ${await response.text()}`);
+  // Si no se puede interpretar, se lanza (500) en vez de responder 200 con
+  // 0 insights: asi la app avisa y el error queda en los logs.
+  const parsed = extractJsonFromText(result.text, "[");
+  if (!Array.isArray(parsed)) {
+    throw new Error("La respuesta de Claude no es una lista de insights");
   }
-
-  const data = await response.json();
-  const text = data.content?.[0]?.text ?? "[]";
-
-  try {
-    const parsed = JSON.parse(text);
-    if (!Array.isArray(parsed)) return [];
-    return parsed
-      .filter(
-        (item): item is InsightSuggestion =>
-          typeof item?.title === "string" && typeof item?.body === "string",
-      )
-      .map((item) => ({
-        ...item,
-        title: item.title.slice(0, 200),
-        body: item.body.slice(0, 2000),
-      }));
-  } catch {
-    return [];
-  }
+  return parsed
+    .filter(
+      (item): item is InsightSuggestion =>
+        typeof item?.title === "string" && typeof item?.body === "string",
+    )
+    .map((item) => ({
+      kind: ["general", "spending", "saving", "alert"].includes(item.kind) ? item.kind : "general",
+      title: item.title.slice(0, 200),
+      body: item.body.slice(0, 2000),
+    }));
 }

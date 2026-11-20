@@ -23,7 +23,7 @@
 // userId que mandara el cliente y lo usaba con la service role key (que
 // salta RLS) para hacer upsert en subscriptions; cualquier usuario
 // autenticado podia pisar la suscripcion de otro con su propio
-// originalTransactionId. Rate limit: 10 llamadas / 10 minutos.
+// originalTransactionId. Rate limit: 30 llamadas / 10 minutos (restaurar compras manda cada renovacion).
 //
 // Secrets necesarios (supabase secrets set ...):
 //   APPLE_BUNDLE_ID              -> ej. app.monavi
@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-    const allowed = await checkRateLimit(supabase, userId, "verify-apple-receipt", 10, 600);
+    const allowed = await checkRateLimit(supabase, userId, "verify-apple-receipt", 30, 600);
     if (!allowed) {
       return jsonResponse({ error: "Demasiadas solicitudes, intenta en unos minutos." }, 429);
     }
@@ -193,7 +193,13 @@ async function fetchSubscriptionStatus(originalTransactionId: string, jwt: strin
       return await response.json();
     }
     lastError = new Error(`${base} -> ${response.status} ${await response.text()}`);
+    // 401 en produccion es normal mientras la app no este publicada; 404 es
+    // una compra de otro entorno. En ambos casos se prueba el siguiente.
+    if (![400, 401, 404].includes(response.status)) break;
   }
+  // 404 al final: la compra no existe en Apple (por ejemplo una compra de
+  // prueba local de Xcode, que nunca llega a los servidores).
+  if (/-> (400|404)/.test(String(lastError))) return { data: [] };
   throw lastError;
 }
 
@@ -230,14 +236,14 @@ function decodeJWSPayload(jws: string): {
 
 /** Firma un JWT ES256 para autenticarse contra el App Store Server API. */
 async function createAppleServerJWT(): Promise<string> {
-  const header = { alg: "ES256", kid: APPLE_KEY_ID, typ: "JWT" };
+  const header = { alg: "ES256", kid: APPLE_KEY_ID.trim(), typ: "JWT" };
   const now = Math.floor(Date.now() / 1000);
   const payload = {
-    iss: APPLE_ISSUER_ID,
+    iss: APPLE_ISSUER_ID.trim(),
     iat: now,
     exp: now + 60 * 20,
     aud: "appstoreconnect-v1",
-    bid: APPLE_BUNDLE_ID,
+    bid: APPLE_BUNDLE_ID.trim(),
   };
 
   const encoder = new TextEncoder();
@@ -256,10 +262,13 @@ async function createAppleServerJWT(): Promise<string> {
 }
 
 async function importApplePrivateKey(pem: string): Promise<CryptoKey> {
+  // El secret puede venir pegado con "\n" literales, comillas o espacios:
+  // se queda solo con el base64 entre los encabezados.
   const pkcs8 = pem
-    .replace("-----BEGIN PRIVATE KEY-----", "")
-    .replace("-----END PRIVATE KEY-----", "")
-    .replace(/\s/g, "");
+    .replace(/\\n/g, "\n")
+    .replace(/-----[A-Z ]+-----/g, "")
+    .replace(/[^A-Za-z0-9+/=]/g, "");
+  if (pkcs8.length < 100) throw new Error("APPLE_PRIVATE_KEY vacia o mal pegada");
   const binary = Uint8Array.from(atob(pkcs8), (c) => c.charCodeAt(0));
 
   return await crypto.subtle.importKey(

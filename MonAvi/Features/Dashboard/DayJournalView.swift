@@ -7,6 +7,13 @@ import SwiftUI
 struct DayJournalView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = DayJournalViewModel()
+    @ObservedObject private var router = NotificationRouter.shared
+    /// Para repintar emojis de categorias propias cuando terminan de cargar.
+    @ObservedObject private var userCategories = UserCategoriesStore.shared
+    @Environment(\.scenePhase) private var scenePhase
+    /// Dia en que se vio Hoy por ultima vez, para detectar que paso la
+    /// medianoche con la app abierta o en segundo plano.
+    @State private var lastActiveDay = Calendar.current.startOfDay(for: Date())
     @StateObject private var budgetsViewModel = BudgetsViewModel()
     @StateObject private var recurringViewModel = RecurringTransactionsViewModel()
     @StateObject private var billsViewModel = BillsViewModel()
@@ -24,6 +31,8 @@ struct DayJournalView: View {
     @State private var isSearching = false
     @State private var selectedBudgetProgress: BudgetProgress?
     @State private var pointsByTransaction: [UUID: Int] = [:]
+    @State private var activeGiftsCount = 0
+    @StateObject private var savingsViewModel = SavingsGoalsViewModel()
 
     var body: some View {
         NavigationStack {
@@ -42,6 +51,8 @@ struct DayJournalView: View {
 
                         totalsCard
 
+                        savingsCard
+
                         if !budgetsViewModel.progresses.isEmpty {
                             BudgetCandyBarRow(progresses: budgetsViewModel.progresses) { progress in
                                 selectedBudgetProgress = progress
@@ -51,8 +62,6 @@ struct DayJournalView: View {
                         if !billsViewModel.pending.isEmpty {
                             billsStrip
                         }
-
-                        pointsStrip
 
                         ForEach(recurringViewModel.dueToday) { item in
                             recurringReminderRow(item)
@@ -67,11 +76,31 @@ struct DayJournalView: View {
                 .refreshable {
                     await refresh()
                     await refreshBudgets()
+                    await refreshFeaturedRewards()
                 }
 
                 fabRow
             }
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    // Los premios viven detras de este boton, no en la
+                    // pantalla principal: Hoy es para tus gastos y tu ahorro.
+                    NavigationLink {
+                        PointsHubView()
+                    } label: {
+                        Image(systemName: "gift.fill")
+                            .foregroundStyle(MonAviBrand.primary)
+                            .overlay(alignment: .topTrailing) {
+                                if activeGiftsCount > 0 {
+                                    Circle()
+                                        .fill(MonAviBrand.alert)
+                                        .frame(width: 9, height: 9)
+                                        .offset(x: 4, y: -3)
+                                }
+                            }
+                    }
+                    .accessibilityLabel(activeGiftsCount > 0 ? "Canjear premios. Tienes regalos sin usar" : "Canjear premios")
+                }
                 ToolbarItem(placement: .primaryAction) {
                     if viewModel.isViewingToday {
                         Button {
@@ -80,7 +109,7 @@ struct DayJournalView: View {
                             if isClosingDay {
                                 ProgressView()
                             } else {
-                                Text("Cerrar el dia")
+                                Text("Cerrar el día")
                             }
                         }
                         .disabled(isClosingDay || viewModel.todayTransactions.isEmpty)
@@ -92,7 +121,30 @@ struct DayJournalView: View {
             .task { await refreshRecurring() }
             .task { await refreshBills() }
             .task { await refreshDgiConsent() }
+            .task { await refreshFeaturedRewards() }
             .task { await appState.subscriptionStore.refreshRenewalInfo() }
+            .task { await showPreviousDayIfNeeded() }
+            // "Sí, ya lo pagué" desde la notificacion con la app abierta:
+            // el movimiento nuevo y el recordatorio se actualizan solos.
+            .onReceive(NotificationCenter.default.publisher(for: .recurringLoggedFromNotification)) { _ in
+                Task {
+                    await refresh()
+                    await refreshRecurring()
+                }
+            }
+            .onChange(of: scenePhase) { _, phase in
+                guard phase == .active else { return }
+                Task { await handleDayChangeIfNeeded() }
+            }
+            // Al cerrar "Registrar con voz" (Atajo / Tocar atrás) puede haber
+            // un movimiento nuevo (o uno deshecho): recargar el dia.
+            .onChange(of: router.isVoiceCapturePresented) { _, isPresented in
+                guard !isPresented else { return }
+                Task {
+                    await refresh()
+                    await refreshBudgets()
+                }
+            }
             .sheet(isPresented: $isQuickAdding) {
                 QuickAddView(viewModel: viewModel)
             }
@@ -104,7 +156,13 @@ struct DayJournalView: View {
                     isShowingInvoiceScanner = true
                 }
             }
-            .sheet(isPresented: $isShowingInvoiceScanner) {
+            .sheet(isPresented: $isShowingInvoiceScanner, onDismiss: {
+                // La factura se registra como gasto: que aparezca de una vez.
+                Task {
+                    await refresh()
+                    await refreshBudgets()
+                }
+            }) {
                 ScanInvoiceView(viewModel: dgiViewModel, accounts: viewModel.accounts)
             }
             .sheet(item: $editingTransaction) { transaction in
@@ -125,7 +183,7 @@ struct DayJournalView: View {
             .sheet(isPresented: $isShowingDatePicker) {
                 datePickerSheet
             }
-            .alert("Algo salio mal", isPresented: .constant(viewModel.errorMessage != nil)) {
+            .alert("Algo salió mal", isPresented: .constant(viewModel.errorMessage != nil)) {
                 Button("OK") { viewModel.errorMessage = nil }
             } message: {
                 Text(viewModel.errorMessage ?? "")
@@ -158,7 +216,7 @@ struct DayJournalView: View {
                     .frame(width: 38, height: 38)
             }
             .background(Circle().fill(Color(.secondarySystemBackground)))
-            .accessibilityLabel("Ver otro dia")
+            .accessibilityLabel("Ver otro día")
 
             NavigationLink {
                 SettingsView()
@@ -175,7 +233,7 @@ struct DayJournalView: View {
     }
 
     private var dateLabel: String {
-        viewModel.selectedDate.formatted(date: .abbreviated, time: .omitted)
+        viewModel.selectedDate.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi))
     }
 
     private var searchField: some View {
@@ -269,10 +327,10 @@ struct DayJournalView: View {
             HStack(spacing: 10) {
                 Text("⏳")
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Tu suscripcion no se va a renovar")
+                    Text("Tu suscripción no se va a renovar")
                         .font(.subheadline.weight(.medium))
                     if let endDate = appState.subscriptionStore.currentPeriodEndDate {
-                        Text("Finaliza el \(endDate.formatted(date: .long, time: .omitted)) — hasta ahi tienes acceso completo.")
+                        Text("Finaliza el \(endDate.formatted(Date.FormatStyle(date: .long, time: .omitted, locale: .monavi))) — hasta ahí tienes acceso completo.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -300,7 +358,7 @@ struct DayJournalView: View {
                     Text("\(billsViewModel.pending.count) cuenta(s) por pagar")
                         .font(.subheadline.weight(.medium))
                     if let next = billsViewModel.pending.first {
-                        Text("\(next.name) — \(next.dueDateValue.formatted(date: .abbreviated, time: .omitted))\(next.isOverdue ? " (vencida)" : "")")
+                        Text("\(next.name) — \(next.dueDateValue.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi)))\(next.isOverdue ? " (vencida)" : "")")
                             .font(.caption)
                             .foregroundStyle(next.isOverdue ? MonAviBrand.alert : .secondary)
                     }
@@ -316,31 +374,63 @@ struct DayJournalView: View {
         .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemBackground)))
     }
 
-    /// Entrada al hub de "Puntos" — siempre visible (es la puerta de
-    /// descubrimiento de todas las formas de ganar: facturas, tarjeta,
-    /// y lo que venga despues), no solo cuando ya hay algo acumulado.
-    private var pointsStrip: some View {
+    /// "Tu ahorro": lo primero despues del dia. Total apartado en metas y
+    /// el avance de las mas cercanas; invita a crear la primera meta.
+    private var savingsCard: some View {
         NavigationLink {
-            PointsHubView()
+            SavingsGoalsView()
         } label: {
-            HStack(spacing: 10) {
-                Text("⭐️")
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Puntos")
-                        .font(.subheadline.weight(.medium))
-                    Text("Escanea facturas o paga en aliados y gana puntos")
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Label("Tu ahorro", systemImage: "banknote.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(MonAviBrand.primary)
+                    Spacer()
+                    Image(systemName: "chevron.right")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+
+                if savingsViewModel.goals.isEmpty {
+                    Text("Crea tu primera meta y aparta algo cada semana. Ahorrar con constancia también te da puntos.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
+                } else {
+                    Text(totalSaved, format: .currency(code: "USD"))
+                        .font(.system(size: 30, weight: .heavy, design: MonAviBrand.fontDesign))
+                        .foregroundStyle(.primary)
+                    Text(savingsViewModel.goals.count == 1 ? "ahorrado en tu meta" : "ahorrado en \(savingsViewModel.goals.count) metas")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    ForEach(savingsViewModel.goals.prefix(2)) { goal in
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text("\(goal.emoji) \(goal.name)")
+                                    .font(.subheadline.weight(.medium))
+                                    .lineLimit(1)
+                                Spacer()
+                                Text("\(Int((goal.progress * 100).rounded()))%")
+                                    .font(.caption.weight(.semibold).monospacedDigit())
+                                    .foregroundStyle(.secondary)
+                            }
+                            ProgressView(value: goal.progress)
+                                .tint(MonAviBrand.primary)
+                        }
+                        .foregroundStyle(.primary)
+                    }
+                }
             }
-            .padding(12)
-            .foregroundStyle(.primary)
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Color(.secondarySystemBackground)))
         }
-        .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemBackground)))
+        .buttonStyle(.plain)
+    }
+
+    private var totalSaved: Decimal {
+        savingsViewModel.goals.reduce(Decimal(0)) { $0 + $1.currentAmount }
     }
 
     /// "¿Pagaste el Gimnasio hoy?" — recordatorio de una recurrente que le
@@ -361,7 +451,7 @@ struct DayJournalView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(.orange)
 
-                Button("Recordarme despues") {
+                Button("Recordarme después") {
                     recurringViewModel.dismissReminder(for: item)
                 }
                 .buttonStyle(.bordered)
@@ -383,7 +473,7 @@ struct DayJournalView: View {
                     .foregroundStyle(.secondary)
 
                 if results.isEmpty && !viewModel.isSearching {
-                    Text("Nada por ahi.")
+                    Text("Nada por ahí.")
                         .foregroundStyle(.secondary)
                         .padding(.vertical, 8)
                 } else {
@@ -396,7 +486,7 @@ struct DayJournalView: View {
         } else {
             VStack(alignment: .leading, spacing: 4) {
                 if viewModel.todayTransactions.isEmpty && !viewModel.isLoading {
-                    Text(viewModel.isViewingToday ? "Todavia no has anotado nada hoy. Toca el + para empezar." : "No hay movimientos ese dia.")
+                    Text(viewModel.isViewingToday ? "Todavía no has anotado nada hoy. Toca el + para empezar." : "No hay movimientos ese día.")
                         .foregroundStyle(.secondary)
                         .padding(.vertical, 8)
                 } else {
@@ -436,18 +526,24 @@ struct DayJournalView: View {
     @ViewBuilder
     private func journalRowContent(_ transaction: FinanceTransaction) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            Text(transaction.movementType.emoji)
+            Text(CategoryDisplay.emoji(for: transaction.category) ?? transaction.movementType.emoji)
                 .font(.title2)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(transaction.description ?? transaction.movementType.displayName)
+                Text(transaction.description ?? CategoryDisplay.name(for: transaction.category) ?? transaction.movementType.displayName)
                     .font(.body)
                 HStack(spacing: 6) {
-                    Text(transaction.occurredAt.formatted(date: .omitted, time: .shortened))
+                    Text(transaction.occurredAt.formatted(Date.FormatStyle(date: .omitted, time: .shortened, locale: .monavi)))
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                    if transaction.description != nil, let categoryName = CategoryDisplay.name(for: transaction.category) {
+                        Text("· \(categoryName)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
                     if let points = pointsByTransaction[transaction.id] {
-                        Text("+\(points) puntos")
+                        Text("+\(Cashback.format(cents: points)) de cashback")
                             .font(.caption2.weight(.semibold))
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
@@ -550,7 +646,7 @@ struct DayJournalView: View {
     private var datePickerSheet: some View {
         NavigationStack {
             DatePicker(
-                "Elige un dia",
+                "Elige un día",
                 selection: Binding(
                     get: { viewModel.selectedDate },
                     set: { newValue in
@@ -564,7 +660,7 @@ struct DayJournalView: View {
             )
             .datePickerStyle(.graphical)
             .padding()
-            .navigationTitle("Ver otro dia")
+            .navigationTitle("Ver otro día")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -605,6 +701,15 @@ struct DayJournalView: View {
         await billsViewModel.refresh(userId: userId)
     }
 
+    /// "Premios para ti": si falla o no hay productos, se esconde.
+    /// Solo el aviso discreto (punto en el boton de regalo) y las metas de
+    /// ahorro: los premios no se muestran en Hoy.
+    private func refreshFeaturedRewards() async {
+        guard let userId = appState.currentUserId else { return }
+        await savingsViewModel.refresh(userId: userId)
+        activeGiftsCount = await RewardsRepository.shared.fetchActiveGiftsOrEmpty(userId: userId).count
+    }
+
     private func refreshDgiConsent() async {
         guard let userId = appState.currentUserId else { return }
         await dgiViewModel.refresh(userId: userId)
@@ -632,6 +737,29 @@ struct DayJournalView: View {
         await refresh()
     }
 
+    /// Paso la medianoche: Hoy pasa al dia nuevo y se muestra el resumen
+    /// del dia que se cerro solo.
+    private func handleDayChangeIfNeeded() async {
+        let today = Calendar.current.startOfDay(for: Date())
+        guard today != lastActiveDay else { return }
+        let wasViewingThatDay = Calendar.current.isDate(viewModel.selectedDate, inSameDayAs: lastActiveDay)
+        lastActiveDay = today
+        if wasViewingThatDay {
+            viewModel.selectedDate = Date()
+            await refresh()
+        }
+        await showPreviousDayIfNeeded()
+    }
+
+    private func showPreviousDayIfNeeded() async {
+        guard let userId = appState.currentUserId, daySummary == nil else { return }
+        guard let summary = await viewModel.previousDaySummaryIfNeeded(userId: userId) else { return }
+        // Un momento para que termine de abrir la pantalla.
+        try? await Task.sleep(nanoseconds: 700_000_000)
+        guard !router.isVoiceCapturePresented else { return }
+        daySummary = summary
+    }
+
     private func closeDay() async {
         guard let userId = appState.currentUserId else { return }
         isClosingDay = true
@@ -641,5 +769,5 @@ struct DayJournalView: View {
 }
 
 extension DaySummary: Identifiable {
-    var id: String { "\(income)-\(expense)-\(mood.title)" }
+    var id: String { "\(income)-\(expense)-\(mood.title)-\(dayLabel ?? "hoy")" }
 }

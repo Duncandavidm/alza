@@ -51,7 +51,7 @@ final class DashboardViewModel: ObservableObject {
             accounts = try await accountsTask
             recentTransactions = try await transactionsTask
         } catch {
-            errorMessage = "No se pudo cargar tu informacion: \(error.localizedDescription)"
+            errorMessage = "No se pudo cargar tu información: \(error.localizedDescription)"
         }
     }
 

@@ -10,7 +10,7 @@ export default function SupportPage() {
       <h1>Soporte de MonAvi</h1>
       <p className="text-dim">
         ¿Tienes un problema, una pregunta, o una idea para MonAvi? Escríbenos a{" "}
-        <a href="mailto:soporte@monavi.app">soporte@monavi.app</a> y te respondemos lo antes posible. También
+        <a href="mailto:hola@maday.app">hola@maday.app</a> y te respondemos lo antes posible. También
         puedes escribirnos directo desde la app en Ajustes.
       </p>
 
@@ -45,7 +45,7 @@ export default function SupportPage() {
         <div style={{ marginBottom: 18 }}>
           <strong>¿Cómo elimino mi cuenta y mis datos?</strong>
           <p className="text-dim">
-            Escríbenos a <a href="mailto:soporte@monavi.app">soporte@monavi.app</a> pidiendo la eliminación de tu
+            Escríbenos a <a href="mailto:hola@maday.app">hola@maday.app</a> pidiendo la eliminación de tu
             cuenta y la procesamos — se borra toda tu información financiera de nuestros servidores. Esta acción
             no se puede deshacer.
           </p>
@@ -54,8 +54,8 @@ export default function SupportPage() {
         <div style={{ marginBottom: 18 }}>
           <strong>¿Qué es &quot;Facturas que suman&quot;?</strong>
           <p className="text-dim">
-            Escaneas el código QR de una factura electrónica verificada por la DGI (Panamá) y, una vez que la DGI
-            la confirma, ganas puntos. Cada factura solo se puede registrar una vez en toda la app.
+            Escaneas el código QR de tu factura electrónica y, una vez que la verificamos, ganas 1% de
+            cashback. Cada factura solo se puede registrar una vez en toda la app.
           </p>
         </div>
 
@@ -63,7 +63,7 @@ export default function SupportPage() {
           <strong>Encontré un error o algo no funciona como esperaba</strong>
           <p className="text-dim">
             Cuéntanos qué pasó (qué pantalla, qué esperabas que pasara, qué pasó en realidad) a{" "}
-            <a href="mailto:soporte@monavi.app">soporte@monavi.app</a> — entre más detalle, más rápido lo
+            <a href="mailto:hola@maday.app">hola@maday.app</a> — entre más detalle, más rápido lo
             resolvemos.
           </p>
         </div>
@@ -72,7 +72,7 @@ export default function SupportPage() {
       <div className="card">
         <h3>Política de privacidad</h3>
         <p className="text-dim">
-          Puedes leerla completa en <a href="/privacy">monavi.vercel.app/privacy</a>.
+          Puedes leerla completa en <a href="/privacy">monavi.maday.app/privacy</a>.
         </p>
       </div>
     </div>

@@ -9,7 +9,7 @@ struct ProductsView: View {
         List {
             if viewModel.products.isEmpty && !viewModel.isLoading {
                 ContentUnavailableView(
-                    "Sin productos todavia",
+                    "Sin productos todavía",
                     systemImage: "tag",
                     description: Text("Agrega tus productos o servicios con su precio costo y calcula el precio de venta.")
                 )
@@ -45,6 +45,7 @@ struct ProductsView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("Agregar producto")
             }
         }
         .sheet(isPresented: $showingAdd) {
@@ -56,7 +57,7 @@ struct ProductsView: View {
             guard let userId = appState.currentUserId else { return }
             await viewModel.refresh(userId: userId)
         }
-        .alert("Algo salio mal", isPresented: .constant(viewModel.errorMessage != nil)) {
+        .alert("Algo salió mal", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") { viewModel.errorMessage = nil }
         } message: {
             Text(viewModel.errorMessage ?? "")

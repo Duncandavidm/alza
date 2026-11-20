@@ -8,17 +8,36 @@ struct PartnerMerchant: Codable, Identifiable, Hashable {
     var name: String
     var ruc: String
     var status: String
+    /// Ficha publica del comercio (migracion 0031): logo, enlace de
+    /// mapas, categoria y direccion. Opcionales — el panel las llena
+    /// cuando el comercio entra al catalogo de canje.
+    var logoUrl: String?
+    var mapsUrl: String?
+    var category: String?
+    var address: String?
     let createdAt: Date
     let updatedAt: Date
+    /// En que moneda canjea sus premios (migracion 0036): `cashback` o
+    /// `puntos`. Opcional por si llega en null o un select no la trae —
+    /// usa `currency`, que cae en `.cashback`.
+    var rewardCurrency: RewardCurrency? = nil
 
     enum CodingKeys: String, CodingKey {
         case id
         case name
         case ruc
         case status
+        case logoUrl = "logo_url"
+        case mapsUrl = "maps_url"
+        case category
+        case address
         case createdAt = "created_at"
         case updatedAt = "updated_at"
+        case rewardCurrency = "reward_currency"
     }
+
+    /// Moneda de canje del comercio (cashback si no viene).
+    var currency: RewardCurrency { rewardCurrency ?? .cashback }
 }
 
 enum PartnerOfferType: String, Codable {
@@ -51,14 +70,15 @@ struct PartnerMerchantOffer: Codable, Identifiable, Hashable {
         case status
     }
 
-    /// Texto corto para la tarjeta de la oferta ("5% en puntos" / "80
-    /// puntos fijos por compra").
+    /// Texto corto para la tarjeta de la oferta ("5% de cashback" /
+    /// "$0.80 de cashback por compra"). En ofertas fijas `value` son
+    /// puntos = centavos de cashback.
     var summaryText: String {
         switch offerType {
         case .percent:
-            return "\(value.formatted(.number.precision(.fractionLength(0))))% en puntos"
+            return "\(value.formatted(.number.precision(.fractionLength(0))))% de cashback"
         case .fixed:
-            return "\(value.formatted(.number.precision(.fractionLength(0)))) puntos fijos por compra"
+            return "\(Cashback.format(cents: NSDecimalNumber(decimal: value).intValue)) de cashback por compra"
         }
     }
 }

@@ -3,10 +3,40 @@ import UIKit
 import AuthenticationServices
 
 struct AuthView: View {
+    @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = AuthViewModel()
     @State private var appeared = false
+    @State private var showsPasswordReset = false
 
     var body: some View {
+        ZStack {
+            form
+                .opacity(viewModel.showsSignInOverlay ? 0 : 1)
+
+            if viewModel.showsSignInOverlay {
+                BrandLoadingView(message: viewModel.signInOverlayMessage)
+                    .transition(.opacity)
+                    .zIndex(1)
+            }
+        }
+        .animation(.easeInOut(duration: 0.35), value: viewModel.showsSignInOverlay)
+        .sheet(isPresented: $showsPasswordReset) {
+            PasswordResetSheet(initialEmail: viewModel.email) { hold in
+                appState.setHoldingAuthScreen(hold)
+            }
+        }
+        .onChange(of: viewModel.showsSignInOverlay) { _, isShowing in
+            if isShowing {
+                // Que el teclado no se quede encima de la pantalla de carga.
+                UIApplication.shared.sendAction(
+                    #selector(UIResponder.resignFirstResponder),
+                    to: nil, from: nil, for: nil
+                )
+            }
+        }
+    }
+
+    private var form: some View {
         VStack(spacing: 0) {
             header
                 .frame(height: 280)
@@ -18,7 +48,9 @@ struct AuthView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Bienvenido")
                             .font(.system(.largeTitle, design: MonAviBrand.fontDesign, weight: .bold))
-                        Text("Inicia sesion para ver como va tu negocio.")
+                        Text(viewModel.emailAuthMode == .signUp
+                             ? "Crea tu cuenta en segundos."
+                             : "Tus gastos, tu ahorro y tus premios, en un solo lugar.")
                             .font(.system(.subheadline, design: MonAviBrand.fontDesign))
                             .foregroundStyle(.secondary)
                     }
@@ -51,7 +83,7 @@ struct AuthView: View {
                         .scaledToFit()
                         .frame(width: 52, height: 52)
 
-                    Text("Tu asesor financiero con IA")
+                    Text("Ordena. Ahorra. Avanza.")
                         .font(.system(.subheadline, design: MonAviBrand.fontDesign))
                         .foregroundStyle(MonAviBrand.onDarkSurface.opacity(0.75))
                 }
@@ -75,7 +107,7 @@ struct AuthView: View {
 
             emailForm
 
-            if viewModel.isSigningIn {
+            if viewModel.isSigningIn && !viewModel.showsSignInOverlay {
                 ProgressView()
                     .padding(.top, 4)
             }
@@ -119,11 +151,11 @@ struct AuthView: View {
                 .frame(height: 50)
                 .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemBackground)))
 
-            SecureField("Contraseña", text: $viewModel.password)
-                .textContentType(viewModel.emailAuthMode == .signUp ? .newPassword : .password)
-                .padding(.horizontal, 16)
-                .frame(height: 50)
-                .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemBackground)))
+            RevealablePasswordField(
+                title: "Contraseña",
+                text: $viewModel.password,
+                contentType: viewModel.emailAuthMode == .signUp ? .newPassword : .password
+            )
 
             if viewModel.emailAuthMode == .signUp {
                 Text(PasswordPolicy.requirementsText)
@@ -133,17 +165,17 @@ struct AuthView: View {
             }
 
             if viewModel.emailAuthMode == .signUp {
-                SecureField("Confirma tu contraseña", text: $viewModel.confirmPassword)
-                    .textContentType(.newPassword)
-                    .padding(.horizontal, 16)
-                    .frame(height: 50)
-                    .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemBackground)))
+                RevealablePasswordField(
+                    title: "Confirma tu contraseña",
+                    text: $viewModel.confirmPassword,
+                    contentType: .newPassword
+                )
             }
 
             Button {
                 Task { await viewModel.submitEmailForm() }
             } label: {
-                Text(viewModel.emailAuthMode == .signIn ? "Iniciar sesion" : "Crear cuenta")
+                Text(viewModel.emailAuthMode == .signIn ? "Iniciar sesión" : "Crear cuenta")
                     .font(.system(.headline, design: MonAviBrand.fontDesign))
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
@@ -159,7 +191,7 @@ struct AuthView: View {
                     viewModel.errorMessage = nil
                     viewModel.infoMessage = nil
                 } label: {
-                    Text(viewModel.emailAuthMode == .signIn ? "¿No tienes cuenta? Creala" : "¿Ya tienes cuenta? Inicia sesion")
+                    Text(viewModel.emailAuthMode == .signIn ? "¿No tienes cuenta? Créala" : "¿Ya tienes cuenta? Inicia sesión")
                         .font(.footnote)
                 }
 
@@ -167,9 +199,11 @@ struct AuthView: View {
 
                 if viewModel.emailAuthMode == .signIn {
                     Button {
-                        Task { await viewModel.sendPasswordReset() }
+                        viewModel.errorMessage = nil
+                        viewModel.infoMessage = nil
+                        showsPasswordReset = true
                     } label: {
-                        Text("Olvidaste tu contraseña?")
+                        Text("¿Olvidaste tu contraseña?")
                             .font(.footnote)
                     }
                 }

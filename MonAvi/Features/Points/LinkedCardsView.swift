@@ -14,7 +14,7 @@ struct LinkedCardsView: View {
                 ContentUnavailableView(
                     "Sin tarjetas vinculadas",
                     systemImage: "creditcard",
-                    description: Text("Vincula una tarjeta para ganar puntos automaticamente cuando pagues en un comercio aliado.")
+                    description: Text("Vincula una tarjeta para ganar cashback automáticamente cuando pagues en un comercio aliado.")
                 )
             } else {
                 ForEach(viewModel.linkedCards) { card in
@@ -30,6 +30,7 @@ struct LinkedCardsView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("Agregar tarjeta")
             }
         }
         .sheet(isPresented: $isAdding) {
@@ -96,7 +97,7 @@ private struct AddLinkedCardView: View {
                         }
                     }
 
-                    TextField("Ultimos 4 digitos", text: $last4)
+                    TextField("Últimos 4 dígitos", text: $last4)
                         .keyboardType(.numberPad)
                         .onChange(of: last4) { _, newValue in
                             last4 = String(newValue.filter(\.isNumber).prefix(4))
@@ -104,12 +105,12 @@ private struct AddLinkedCardView: View {
 
                     TextField("Alias (ej. \"Visa del banco\")", text: $alias)
                 } footer: {
-                    Text("Nunca pedimos el numero completo, el CVV ni la fecha de vencimiento — con esto basta para identificar tus compras.")
+                    Text("Nunca pedimos el número completo, el CVV ni la fecha de vencimiento — con esto basta para identificar tus compras.")
                 }
 
                 Section {
                     Toggle(isOn: $hasConsented) {
-                        Text("Autorizo a MonAvi a identificar mis compras con esta tarjeta en comercios aliados para acreditarme puntos.")
+                        Text("Autorizo a MonAvi a identificar mis compras con esta tarjeta en comercios aliados para acreditarme cashback.")
                             .font(.footnote)
                     }
                 }

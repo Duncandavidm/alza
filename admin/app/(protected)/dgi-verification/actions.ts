@@ -1,10 +1,13 @@
 "use server";
 
+import { requireAdminSession } from "@/lib/admin-session";
+
 import { revalidatePath } from "next/cache";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { callReconcileFunction } from "@/lib/edge-functions";
 
 export async function setDgiVerificationEnabled(enabled: boolean) {
+  await requireAdminSession();
   const supabase = supabaseAdmin();
   const { error } = await supabase
     .from("app_config")
@@ -16,18 +19,19 @@ export async function setDgiVerificationEnabled(enabled: boolean) {
 }
 
 export async function updateDgiRules(formData: FormData) {
+  await requireAdminSession();
   const pointsPerDollar = Number(formData.get("points_per_dollar"));
   const dailyCap = Number(formData.get("daily_cap_points_per_user"));
   const expireAfterDays = Number(formData.get("expire_after_days"));
 
   if (!Number.isFinite(pointsPerDollar) || pointsPerDollar < 0) {
-    throw new Error("Puntos por dolar invalido.");
+    throw new Error("El cashback por factura (puntos por dólar) no es válido.");
   }
   if (!Number.isFinite(dailyCap) || dailyCap < 0) {
-    throw new Error("Tope diario invalido.");
+    throw new Error("Tope diario inválido.");
   }
   if (!Number.isFinite(expireAfterDays) || expireAfterDays < 1) {
-    throw new Error("Dias para expirar invalido.");
+    throw new Error("Días para expirar inválido.");
   }
 
   const supabase = supabaseAdmin();
@@ -52,6 +56,7 @@ export async function updateDgiRules(formData: FormData) {
 }
 
 export async function runDgiVerificationNow(): Promise<{ error?: string; summary?: string }> {
+  await requireAdminSession();
   try {
     const result = await callReconcileFunction("verify-dgi-receipt", {});
     if (!result.ok) {

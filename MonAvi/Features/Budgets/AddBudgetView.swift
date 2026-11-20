@@ -14,7 +14,7 @@ struct AddBudgetView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Picker("Categoria", selection: $category) {
+                Picker("Categoría", selection: $category) {
                     ForEach(TransactionCategory.allCases) { category in
                         Text("\(category.emoji) \(category.rawValue)").tag(category)
                     }
@@ -27,7 +27,7 @@ struct AddBudgetView: View {
                 }
                 .pickerStyle(.segmented)
 
-                TextField("Limite", text: $limitText)
+                TextField("Límite", text: $limitText)
                     .keyboardType(.decimalPad)
 
                 if let errorMessage {
@@ -62,7 +62,7 @@ struct AddBudgetView: View {
             )
             dismiss()
         } catch {
-            errorMessage = "Ya existe un presupuesto \(period.displayName.lowercased()) para esta categoria, o algo salio mal."
+            errorMessage = "Ya existe un presupuesto \(period.displayName.lowercased()) para esta categoría, o algo salió mal."
         }
     }
 }

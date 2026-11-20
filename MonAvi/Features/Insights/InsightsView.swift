@@ -13,13 +13,13 @@ struct InsightsView: View {
                     NavigationLink {
                         SpendingInsightsView()
                     } label: {
-                        Label("Gastos por categoria", systemImage: "chart.pie.fill")
+                        Label("Gastos por categoría", systemImage: "chart.pie.fill")
                     }
                 }
 
                 Section("Pregunta lo que sea") {
                     HStack(spacing: 8) {
-                        TextField("ej. ¿Cuanto gaste en comida este mes?", text: $question)
+                        TextField("ej. ¿Cuánto gasté en comida este mes?", text: $question)
                             .focused($questionFocused)
                             .onSubmit { Task { await ask() } }
 
@@ -33,6 +33,7 @@ struct InsightsView: View {
                                     .font(.title2)
                             }
                         }
+                        .accessibilityLabel("Enviar pregunta")
                         .disabled(question.trimmingCharacters(in: .whitespaces).isEmpty || viewModel.isAsking)
                     }
 
@@ -83,7 +84,7 @@ struct InsightsView: View {
             }
             .refreshable { await refresh() }
             .task { await refresh() }
-            .alert("Algo salio mal", isPresented: .constant(viewModel.errorMessage != nil)) {
+            .alert("Algo salió mal", isPresented: .constant(viewModel.errorMessage != nil)) {
                 Button("OK") { viewModel.errorMessage = nil }
             } message: {
                 Text(viewModel.errorMessage ?? "")

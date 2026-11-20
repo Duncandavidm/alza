@@ -12,7 +12,7 @@ struct RecurringTransactionsView: View {
         List {
             if viewModel.items.isEmpty && !viewModel.isLoading {
                 ContentUnavailableView(
-                    "Sin recurrentes todavia",
+                    "Sin recurrentes todavía",
                     systemImage: "arrow.trianglehead.2.clockwise",
                     description: Text("Agrega tus pagos fijos (renta, suscripciones) y te los recordamos cada mes.")
                 )
@@ -36,7 +36,7 @@ struct RecurringTransactionsView: View {
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text(item.name).font(.body)
-                        Text("\(item.category ?? item.movementType.displayName) · dia \(item.dayOfMonth)")
+                        Text("\(item.category ?? item.movementType.displayName) · día \(item.dayOfMonth)")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -60,6 +60,7 @@ struct RecurringTransactionsView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("Agregar movimiento recurrente")
             }
         }
         .task {
@@ -68,7 +69,7 @@ struct RecurringTransactionsView: View {
         .sheet(isPresented: $isAdding) {
             AddRecurringTransactionView(viewModel: viewModel, accounts: accountsViewModel.accounts)
         }
-        .alert("Algo salio mal", isPresented: .constant(viewModel.errorMessage != nil)) {
+        .alert("Algo salió mal", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") { viewModel.errorMessage = nil }
         } message: {
             Text(viewModel.errorMessage ?? "")
@@ -76,7 +77,7 @@ struct RecurringTransactionsView: View {
     }
 
     private func iconEmoji(for item: RecurringTransaction) -> String {
-        TransactionCategory(rawValue: item.category ?? "")?.emoji ?? item.movementType.emoji
+        CategoryDisplay.emoji(for: item.category) ?? item.movementType.emoji
     }
 
     private func refresh() async {

@@ -16,7 +16,7 @@ struct SavingsGoalsView: View {
                 ContentUnavailableView(
                     "Sin metas de ahorro",
                     systemImage: "target",
-                    description: Text("Crea una meta — un carro, un TV, un viaje — y MonAvi te dice cuanto ahorrar cada mes para llegar a tiempo.")
+                    description: Text("Crea una meta — un carro, un TV, un viaje — y MonAvi te dice cuánto ahorrar cada mes para llegar a tiempo.")
                 )
             }
 
@@ -37,6 +37,7 @@ struct SavingsGoalsView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("Agregar meta de ahorro")
             }
         }
         .refreshable { await refresh() }
@@ -50,7 +51,7 @@ struct SavingsGoalsView: View {
         .sheet(item: $contributingGoal) { goal in
             ContributeToGoalView(viewModel: viewModel, goal: goal)
         }
-        .alert("Algo salio mal", isPresented: .constant(viewModel.errorMessage != nil)) {
+        .alert("Algo salió mal", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") { viewModel.errorMessage = nil }
         } message: {
             Text(viewModel.errorMessage ?? "")
@@ -64,7 +65,7 @@ struct SavingsGoalsView: View {
                 Text(goal.emoji).font(.title2)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(goal.name).font(.body)
-                    Text(goal.targetDateValue.formatted(date: .abbreviated, time: .omitted))
+                    Text(goal.targetDateValue.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi)))
                         .font(.caption)
                         .foregroundStyle(goal.isPastDue ? MonAviBrand.alert : .secondary)
                 }
@@ -79,6 +80,7 @@ struct SavingsGoalsView: View {
                         .foregroundStyle(MonAviBrand.primary)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Abonar a la meta")
                 .disabled(goal.isAchieved)
             }
 
@@ -119,13 +121,17 @@ struct SavingsGoalsView: View {
     }
 }
 
-/// Hoja chica para registrar un aporte — monto y listo, sin tocar nombre/fecha.
+/// Hoja chica para registrar un aporte o un retiro — monto y listo, sin
+/// tocar nombre/fecha.
 private struct ContributeToGoalView: View {
+    enum Mode: Hashable { case deposit, withdraw }
+
     @EnvironmentObject private var appState: AppState
     @ObservedObject var viewModel: SavingsGoalsViewModel
     let goal: SavingsGoal
     @Environment(\.dismiss) private var dismiss
 
+    @State private var mode: Mode = .deposit
     @State private var amountText = ""
     @State private var isSaving = false
     @State private var errorMessage: String?
@@ -138,12 +144,27 @@ private struct ContributeToGoalView: View {
         NavigationStack {
             Form {
                 Section {
-                    AmountField(placeholder: "Monto del aporte", text: $amountText)
+                    Picker("Tipo", selection: $mode) {
+                        Text("Aportar").tag(Mode.deposit)
+                        Text("Retirar").tag(Mode.withdraw)
+                    }
+                    .pickerStyle(.segmented)
+                    .disabled(goal.currentAmount <= 0)
+
+                    AmountField(
+                        placeholder: mode == .deposit ? "Monto del aporte" : "Monto a retirar",
+                        text: $amountText
+                    )
                 } header: {
-                    Text("Aporte a \"\(goal.name)\"")
+                    Text("\(goal.emoji) \(goal.name) — llevas \(goal.currentAmount, format: .currency(code: "USD"))")
                 } footer: {
-                    if goal.accountId != nil {
-                        Text("Se registrara tambien como movimiento en la cuenta vinculada.")
+                    VStack(alignment: .leading, spacing: 4) {
+                        if goal.accountId != nil {
+                            Text("Se registrará también como movimiento en la cuenta vinculada.")
+                        }
+                        if mode == .withdraw {
+                            Text("Retirar hace que los aportes de los últimos 30 días de esta meta no cuenten para tu nivel.")
+                        }
                     }
                 }
 
@@ -151,7 +172,7 @@ private struct ContributeToGoalView: View {
                     Text(errorMessage).foregroundStyle(MonAviBrand.alert)
                 }
             }
-            .navigationTitle("Agregar aporte")
+            .navigationTitle(mode == .deposit ? "Agregar aporte" : "Retirar")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") { dismiss() }
@@ -170,7 +191,8 @@ private struct ContributeToGoalView: View {
         defer { isSaving = false }
 
         do {
-            try await viewModel.contribute(to: goal, amount: amount, userId: userId)
+            let signed = mode == .deposit ? amount : -amount
+            try await viewModel.contribute(to: goal, amount: signed, userId: userId)
             dismiss()
         } catch {
             errorMessage = error.localizedDescription

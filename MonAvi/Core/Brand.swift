@@ -27,6 +27,14 @@ enum MonAviBrand {
     /// rojo neon generico.
     static let alert = Color(hex: "#B5453A") ?? .red
 
+    /// Teal claro para resaltar sobre el degradado oscuro de marca
+    /// (barras de la grafica, variaciones a favor).
+    static let accentOnDark = Color(hex: "#5FE3C4") ?? primary
+
+    /// Coral suave para variaciones en contra sobre fondo oscuro — el rojo
+    /// ladrillo de `alert` no se lee bien sobre el degradado.
+    static let alertOnDark = Color(hex: "#FF9A8B") ?? alert
+
     /// Bordes/separadores neutros con tinte de marca.
     static let border = Color(hex: "#E4E9E7") ?? Color(.separator)
 

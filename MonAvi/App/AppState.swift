@@ -23,17 +23,20 @@ final class AppState: ObservableObject {
     @Published private(set) var session: Session?
     @Published private(set) var isLoadingSession = true
     @Published private(set) var subscriptionStatus: SubscriptionStatus = .unknown
-    /// product_id de la suscripcion que da el acceso actual — la propia, o
-    /// si isFamilyMember es true, la del dueno del grupo familiar al que
-    /// pertenece. nil si no hay ninguna. Lo usan Settings/Paywall para
-    /// saber que mostrar (ej. "Mi familia" solo si es un product_id de
-    /// familia, propio o heredado).
+    /// true mientras refreshSubscriptionStatus() esta consultando. RootView
+    /// lo usa para mostrar la pantalla de carga (en vez del paywall)
+    /// mientras el estado todavia es .unknown.
+    @Published private(set) var isCheckingSubscription = false
+    /// product_id de la suscripcion que da el acceso actual (mensual o
+    /// anual). nil si no hay ninguna.
     @Published private(set) var entitlementProductId: String?
-    /// true si el acceso viene heredado de un grupo familiar ajeno (no de
-    /// una suscripcion propia) — ver get_entitlement_status.
-    @Published private(set) var isFamilyMember = false
     @Published private(set) var onboardingStatus: OnboardingStatus = .unknown
     @Published private(set) var mfaStatus: MFAChallengeStatus = .unknown
+    /// true mientras PasswordResetSheet esta abierta: verifyOTP(.recovery)
+    /// crea la sesion antes de guardar la nueva contraseña, y RootView
+    /// tiene que seguir mostrando AuthView (con la hoja encima) hasta que
+    /// termine o se cancele.
+    @Published private(set) var isHoldingAuthScreen = false
 
     let subscriptionStore = SubscriptionStore()
     private let supabase = SupabaseManager.shared.client
@@ -50,7 +53,15 @@ final class AppState: ObservableObject {
 
         authTask = Task {
             for await state in supabase.auth.authStateChanges {
-                self.session = state.session
+                var currentSession = state.session
+                if state.event == .initialSession, let stored = currentSession, stored.isExpired {
+                    // La sesion guardada llego vencida: se renueva antes de
+                    // entrar. Si no se puede renovar (refresh token invalido),
+                    // el SDK emite signedOut y el siguiente evento la limpia;
+                    // sin conexion se sigue con la guardada, como antes.
+                    currentSession = (try? await supabase.auth.session) ?? stored
+                }
+                self.session = currentSession
                 self.isLoadingSession = false
 
                 if state.session != nil {
@@ -58,7 +69,9 @@ final class AppState: ObservableObject {
                     await self.refreshSubscriptionStatus()
                     await self.refreshOnboardingStatus()
                     await self.subscriptionStore.loadProduct()
+                    await UserCategoriesStore.shared.refresh()
                 } else {
+                    UserCategoriesStore.shared.clear()
                     self.subscriptionStatus = .none
                     self.onboardingStatus = .unknown
                     self.mfaStatus = .unknown
@@ -67,7 +80,14 @@ final class AppState: ObservableObject {
         }
     }
 
+    func setHoldingAuthScreen(_ hold: Bool) {
+        isHoldingAuthScreen = hold
+    }
+
     func signOut() async {
+        // Antes de cerrar la sesion (la RLS pide al dueno): que este
+        // dispositivo deje de recibir push de esta cuenta.
+        await PushTokenService.shared.removeCurrentToken()
         try? await supabase.auth.signOut()
     }
 
@@ -87,17 +107,17 @@ final class AppState: ObservableObject {
         await signOut()
     }
 
-    /// Lee el acceso efectivo del usuario via la RPC get_entitlement_status
-    /// (propia suscripcion, o heredada de un grupo familiar) en vez de leer
-    /// directo la tabla subscriptions — ver
-    /// supabase/migrations/0017_family_groups.sql para el porque.
+    /// Lee el acceso efectivo del usuario (su propia suscripcion) via la
+    /// RPC get_entitlement_status en vez de leer directo la tabla
+    /// subscriptions.
     func refreshSubscriptionStatus() async {
         guard session?.user.id != nil else {
             subscriptionStatus = .none
             entitlementProductId = nil
-            isFamilyMember = false
             return
         }
+        isCheckingSubscription = true
+        defer { isCheckingSubscription = false }
         do {
             let rows: [EntitlementRow] = try await supabase
                 .rpc("get_entitlement_status")
@@ -106,11 +126,9 @@ final class AppState: ObservableObject {
             if let row = rows.first {
                 subscriptionStatus = SubscriptionStatus(status: row.status, expiresAt: row.expiresAt)
                 entitlementProductId = row.productId
-                isFamilyMember = row.viaFamily
             } else {
                 subscriptionStatus = .none
                 entitlementProductId = nil
-                isFamilyMember = false
             }
         } catch {
             subscriptionStatus = .unknown

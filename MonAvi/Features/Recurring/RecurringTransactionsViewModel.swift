@@ -53,6 +53,24 @@ final class RecurringTransactionsViewModel: ObservableObject {
     /// Registra el pago de hoy: crea el movimiento real y marca la
     /// recurrente como pagada este mes.
     func confirmPayment(for item: RecurringTransaction, userId: UUID) async throws {
+        let today = try await Self.logPayment(for: item, userId: userId)
+
+        if let index = items.firstIndex(where: { $0.id == item.id }) {
+            items[index].lastLoggedOn = today
+        }
+        // Ya registrado este mes: se cancelan sus avisos pendientes (el del
+        // dia y un "recordarme mas tarde" que hubiera).
+        NotificationManager.scheduleRecurringReminders(items)
+    }
+
+    /// La logica de "confirmar" sin depender de la pantalla: la usan el
+    /// boton de Hoy (via `confirmPayment`) y la accion "Sí, ya lo pagué" /
+    /// "Sí, ya lo recibí" de la notificacion (NotificationPresenter), para
+    /// que ambos caminos registren exactamente igual. Devuelve la fecha con
+    /// que quedo marcada.
+    @discardableResult
+    static func logPayment(for item: RecurringTransaction, userId: UUID) async throws -> Date {
+        let supabase = SupabaseManager.shared.client
         try await TransactionsRepository.shared.add(
             NewTransaction(
                 userId: userId,
@@ -71,10 +89,19 @@ final class RecurringTransactionsViewModel: ObservableObject {
             .update(["last_logged_on": ISO8601DateFormatter().string(from: today)])
             .eq("id", value: item.id)
             .execute()
+        return today
+    }
 
-        if let index = items.firstIndex(where: { $0.id == item.id }) {
-            items[index].lastLoggedOn = today
-        }
+    /// Una recurrente por id (para la accion de la notificacion, que solo
+    /// trae el id en userInfo).
+    static func fetchItem(id: UUID) async throws -> RecurringTransaction {
+        try await SupabaseManager.shared.client
+            .from("recurring_transactions")
+            .select()
+            .eq("id", value: id)
+            .single()
+            .execute()
+            .value
     }
 
     /// El usuario dice "todavia no", asi que no se registra nada, solo

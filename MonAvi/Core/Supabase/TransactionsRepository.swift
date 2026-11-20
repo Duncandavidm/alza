@@ -20,13 +20,19 @@ final class TransactionsRepository {
         let start = Calendar.current.startOfDay(for: date)
         guard let end = Calendar.current.date(byAdding: .day, value: 1, to: start) else { return [] }
 
+        // Movimientos de ese dia: los que ocurrieron ese dia y tambien los
+        // que se registraron ese dia con otra fecha (ej. una factura de ayer
+        // escaneada hoy), para que se vean en Hoy y cuenten al cerrar el dia.
+        let iso = ISO8601DateFormatter()
+        let from = iso.string(from: start)
+        let to = iso.string(from: end)
         return try await supabase
             .from("transactions")
             .select()
             .eq("user_id", value: userId)
-            .gte("occurred_at", value: start)
-            .lt("occurred_at", value: end)
-            .order("created_at", ascending: true)
+            .or("and(occurred_at.gte.\(from),occurred_at.lt.\(to)),and(created_at.gte.\(from),created_at.lt.\(to))")
+            // Lo mas nuevo primero: asi se lista en Hoy (arriba lo ultimo).
+            .order("created_at", ascending: false)
             .execute()
             .value
     }
@@ -85,8 +91,8 @@ final class TransactionsRepository {
     /// Neto (entradas - salidas) de cada uno de los `days` dias anteriores a
     /// hoy. Se usa para comparar el dia de hoy contra "como te ha ido" al
     /// cerrarlo (mejora #5, resumen al cerrar el dia).
-    func fetchPastDailyNets(userId: UUID, days: Int) async throws -> [Decimal] {
-        let today = Calendar.current.startOfDay(for: Date())
+    func fetchPastDailyNets(userId: UUID, days: Int, before referenceDay: Date = Date()) async throws -> [Decimal] {
+        let today = Calendar.current.startOfDay(for: referenceDay)
         guard let start = Calendar.current.date(byAdding: .day, value: -days, to: today) else { return [] }
 
         let rows: [FinanceTransaction] = try await supabase
@@ -113,6 +119,9 @@ final class TransactionsRepository {
             .value
 
         try await applyToAccountBalance(accountId: new.accountId, delta: new.amount)
+        // Ya anoto algo hoy: el "¿Anotaste tus gastos de hoy?" de esta
+        // noche ya no hace falta.
+        NotificationManager.scheduleDailyLogReminders(loggedToday: true)
         return created
     }
 

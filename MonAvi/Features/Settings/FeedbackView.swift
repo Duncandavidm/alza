@@ -13,7 +13,7 @@ struct FeedbackView: View {
     var body: some View {
         List {
             Section {
-                TextField("¿Que te gustaria ver en MonAvi?", text: $draft, axis: .vertical)
+                TextField("¿Qué te gustaría ver en MonAvi?", text: $draft, axis: .vertical)
                     .lineLimit(3...6)
                     .focused($isDraftFocused)
 
@@ -28,7 +28,7 @@ struct FeedbackView: View {
                 }
                 .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSending)
             } footer: {
-                Text("Leemos cada sugerencia — nos ayuda a decidir que construir despues.")
+                Text("Leemos cada sugerencia — nos ayuda a decidir qué construir después.")
             }
 
             if !viewModel.suggestions.isEmpty {
@@ -36,7 +36,7 @@ struct FeedbackView: View {
                     ForEach(viewModel.suggestions) { suggestion in
                         VStack(alignment: .leading, spacing: 4) {
                             Text(suggestion.message)
-                            Text(suggestion.createdAt.formatted(date: .abbreviated, time: .shortened))
+                            Text(suggestion.createdAt.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, locale: .monavi)))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -50,7 +50,7 @@ struct FeedbackView: View {
         .navigationTitle("Sugerencias")
         .task { await refresh() }
         .refreshable { await refresh() }
-        .alert("Algo salio mal", isPresented: .constant(viewModel.errorMessage != nil)) {
+        .alert("Algo salió mal", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") { viewModel.errorMessage = nil }
         } message: {
             Text(viewModel.errorMessage ?? "")

@@ -77,7 +77,7 @@ struct ReceiptDocumentView: View {
 
             VStack(spacing: 6) {
                 row("Recibo", receipt.receiptNumber)
-                row("Fecha", receipt.paidAt.formatted(date: .abbreviated, time: .shortened))
+                row("Fecha", receipt.paidAt.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, locale: .monavi)))
                 row("Cliente", invoice.customerName)
                 row("Referencia", "\(invoice.docType.displayName) \(invoice.number ?? "")")
             }
@@ -93,9 +93,16 @@ struct ReceiptDocumentView: View {
                     .foregroundStyle(.green)
             }
 
-            Text("Generado con MonAvi")
-                .font(.system(.caption2, design: font))
-                .foregroundStyle(.gray)
+            HStack(spacing: 6) {
+                EmbeddedLogo.monAviMark
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 16, height: 16)
+                    .accessibilityHidden(true)
+                Text("Generado con MonAvi")
+                    .font(.system(.caption2, design: font))
+                    .foregroundStyle(.gray)
+            }
         }
         .padding(24)
         .frame(width: 320)

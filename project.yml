@@ -1,6 +1,7 @@
 name: MonAvi
 options:
   bundleIdPrefix: app.monavi
+  developmentLanguage: es
   deploymentTarget:
     iOS: "17.0"
   createIntermediateGroups: true
@@ -26,10 +27,25 @@ targets:
       properties:
         CFBundleDisplayName: MonAvi
         CFBundleIconName: AppIcon
-        UILaunchScreen: {}
+        # Version y build salen de MARKETING_VERSION / CURRENT_PROJECT_VERSION.
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        # La app esta en espanol: fechas, meses y numeros en espanol aunque
+        # el iPhone este en otro idioma.
+        CFBundleDevelopmentRegion: es
+        CFBundleLocalizations:
+          - es
+        # Pantalla de arranque oscura con el mark de MonAvi (nunca blanca):
+        # mismo color que el fondo de BrandLoadingView para que el paso
+        # launch -> carga sea continuo.
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+          UIImageName: LaunchLogo
+          UIImageRespectsSafeAreaInsets: false
         ITSAppUsesNonExemptEncryption: false
         NSMicrophoneUsageDescription: MonAvi usa el microfono para que anotes un ingreso o gasto diciendolo en voz alta.
         NSSpeechRecognitionUsageDescription: MonAvi transcribe lo que dices para llenar el monto, la descripcion y la categoria del movimiento por ti.
+        NSFaceIDUsageDescription: MonAvi usa Face ID para que desbloquees la app de forma rapida y segura.
         NSCameraUsageDescription: MonAvi usa la camara para escanear el codigo QR de tus facturas electronicas y registrar el gasto automaticamente.
     entitlements:
       path: MonAvi/Resources/MonAvi.entitlements
@@ -38,6 +54,11 @@ targets:
           - Default
         com.apple.security.application-groups:
           - group.app.monavi.shared
+        # Avisos del dia de pago que suenan aun con un modo de concentracion.
+        com.apple.developer.usernotifications.time-sensitive: true
+        # Notificaciones push del servidor (ej. "sumaste puntos"). Xcode lo
+        # cambia solo a "production" al archivar para TestFlight/App Store.
+        aps-environment: development
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.monavi
@@ -45,7 +66,7 @@ targets:
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: "5"
+        CURRENT_PROJECT_VERSION: "15"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: S7ZS3G5284
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -67,6 +88,11 @@ targets:
       path: MonAviWidget/Info.plist
       properties:
         CFBundleDisplayName: MonAvi
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleDevelopmentRegion: es
+        CFBundleLocalizations:
+          - es
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     entitlements:
@@ -81,7 +107,7 @@ targets:
         SWIFT_VERSION: "5.9"
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "1.0"
-        CURRENT_PROJECT_VERSION: "5"
+        CURRENT_PROJECT_VERSION: "15"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: S7ZS3G5284
   MonAviTests:
@@ -96,6 +122,7 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: S7ZS3G5284
+        GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: MonAvi
 schemes:
@@ -106,7 +133,6 @@ schemes:
         MonAviTests: [test]
     run:
       config: Debug
-      storeKitConfiguration: MonAvi.storekit
     test:
       config: Debug
       targets:

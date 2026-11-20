@@ -8,6 +8,9 @@ final class InsightsViewModel: ObservableObject {
     @Published private(set) var isGenerating = false
     @Published private(set) var isAsking = false
     @Published private(set) var lastAnswer: String?
+    /// Preguntas de "Pregúntale" que le quedan este mes (RPC my_ai_quota);
+    /// nil mientras no se sepa o si la RPC falla (no se muestra nada).
+    @Published private(set) var askQuota: AIQuotaEntry?
     @Published var errorMessage: String?
 
     private let supabase = SupabaseManager.shared.client
@@ -34,6 +37,10 @@ final class InsightsViewModel: ObservableObject {
     /// movimientos del usuario, se lo manda a un LLM, y guarda el resultado
     /// en ai_insights (con la service role key, no con la sesion del usuario).
     func generateInsights(userId: UUID) async {
+        guard await AIConsentCenter.shared.requestIfNeeded() else {
+            errorMessage = AIConsentCenter.declinedMessage
+            return
+        }
         isGenerating = true
         defer { isGenerating = false }
 
@@ -42,13 +49,16 @@ final class InsightsViewModel: ObservableObject {
         }
 
         do {
+            // Si ya se generaron hoy (1 por dia), la funcion responde
+            // {inserted: 0, cached: true}: no es error, solo se recarga la
+            // lista que ya existe.
             _ = try await supabase.functions.invoke(
                 "generate-insights",
                 options: FunctionInvokeOptions(body: Payload(userId: userId.uuidString))
             )
             await refresh(userId: userId)
         } catch {
-            errorMessage = "No se pudieron generar insights nuevos: \(error.localizedDescription)"
+            errorMessage = Self.friendlyAIError(error, action: "generar tus insights")
         }
     }
 
@@ -57,6 +67,10 @@ final class InsightsViewModel: ObservableObject {
     /// (Edge Function ask-finances). No guarda nada, solo responde.
     func ask(userId: UUID, question: String) async {
         guard !question.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        guard await AIConsentCenter.shared.requestIfNeeded() else {
+            errorMessage = AIConsentCenter.declinedMessage
+            return
+        }
         isAsking = true
         defer { isAsking = false }
 
@@ -70,8 +84,44 @@ final class InsightsViewModel: ObservableObject {
             )
             lastAnswer = response.answer
         } catch {
-            errorMessage = "No se pudo responder tu pregunta: \(error.localizedDescription)"
+            errorMessage = Self.friendlyAIError(error, action: "responder tu pregunta")
         }
+    }
+
+    /// Lee cuantas preguntas de ask-finances le quedan al usuario.
+    func refreshAskQuota() async {
+        do {
+            let quotas: [String: AIQuotaEntry] = try await supabase
+                .rpc("my_ai_quota")
+                .execute()
+                .value
+            askQuota = quotas["ask-finances"]
+        } catch {
+            askQuota = nil
+        }
+    }
+
+    /// El cliente no debe ver "Edge Function returned a non-2xx status
+    /// code: 500": un error del servidor de IA se explica en palabras
+    /// normales; el detalle tecnico queda en los logs de Supabase.
+    static func friendlyAIError(_ error: Error, action: String) -> String {
+        // Cupo de uso justo / presupuesto diario: el servidor ya manda el
+        // mensaje en español ("Usaste tus 100 preguntas de este mes...").
+        if let serverMessage = AIErrorMessage.userMessage(from: error) {
+            return serverMessage
+        }
+        if let functionsError = error as? FunctionsError, case .httpError(let code, _) = functionsError {
+            if code == 429 {
+                return "Hiciste muchas consultas seguidas. Espera un momento e intenta de nuevo."
+            }
+            if code >= 500 {
+                return "El asistente de IA no está disponible en este momento. Intenta de nuevo más tarde."
+            }
+        }
+        if (error as? URLError) != nil {
+            return "No hay conexión a internet. Revisa tu conexión e intenta de nuevo."
+        }
+        return "No se pudo \(action). Intenta de nuevo más tarde."
     }
 
     func clearAnswer() {

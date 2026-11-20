@@ -13,7 +13,11 @@ final class SupabaseManager {
             supabaseKey: Config.supabaseAnonKey,
             options: SupabaseClientOptions(
                 auth: SupabaseClientOptions.AuthOptions(
-                    storage: KeychainAuthLocalStorage()
+                    storage: KeychainAuthLocalStorage(),
+                    // Comportamiento nuevo del SDK: la sesion guardada se
+                    // entrega siempre al abrir la app, aunque este vencida;
+                    // AppState la renueva antes de usarla (ver start()).
+                    emitLocalSessionAsInitialSession: true
                 )
             )
         )

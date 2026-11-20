@@ -1,0 +1,48 @@
+# Configuracion de las Edge Functions (deja fijo en el repo quien puede
+# llamar a cada una; si alguien despliega con la CLI, se respeta esto).
+#
+# verify_jwt = true  -> el gateway de Supabase exige y VERIFICA la firma del
+#                       token de sesion del usuario antes de ejecutar la funcion.
+# verify_jwt = false -> la funcion se protege sola (x-admin-secret, Apple o
+#                       es contenido publico). Nunca cambiar a false una
+#                       funcion que lea el usuario del token.
+
+project_id = "jfhevxztsvnlsuwkwtmd"
+
+# --- Llamadas desde la app (sesion del usuario) ---
+[functions.ask-finances]
+verify_jwt = true
+[functions.generate-insights]
+verify_jwt = true
+[functions.parse-voice-transaction]
+verify_jwt = true
+[functions.prioritize-payments]
+verify_jwt = true
+[functions.exchange-rate]
+verify_jwt = true
+[functions.lookup-dgi-receipt]
+verify_jwt = true
+[functions.verify-apple-receipt]
+verify_jwt = true
+[functions.delete-account]
+verify_jwt = true
+
+# --- Trabajos del servidor (exigen x-admin-secret) ---
+[functions.award-habit-points]
+verify_jwt = false
+[functions.push-check]
+verify_jwt = false
+[functions.reconcile-card-transactions]
+verify_jwt = false
+[functions.reconcile-savings-reports]
+verify_jwt = false
+[functions.send-push]
+verify_jwt = false
+[functions.verify-dgi-receipt]
+verify_jwt = false
+
+# --- Publicas a proposito ---
+# Apple App Store Server Notifications: no confia en el contenido, re-consulta
+# a Apple, y tiene limite por IP.
+[functions.apple-notifications]
+verify_jwt = false

@@ -1,4 +1,5 @@
 import SwiftUI
+import StoreKit
 import UIKit
 import UserNotifications
 
@@ -7,32 +8,101 @@ struct SettingsView: View {
     @State private var isSigningOut = false
     @AppStorage("isAdvancedMode") private var isAdvancedMode = false
     @AppStorage(NotificationManager.reminderLeadDaysKey) private var reminderLeadDays = NotificationManager.defaultLeadDays
+    @AppStorage(NotificationManager.dailyLogReminderKey) private var dailyLogReminder = true
+    @AppStorage(NotificationManager.dailyLogTimeKey) private var dailyLogMinutes = NotificationManager.defaultDailyLogMinutes
+    @State private var testNotificationSent = false
+    /// Hoja de App Store para canjear un codigo de oferta de suscripcion.
+    @State private var isRedeemingOfferCode = false
+
+    private var isNotificationAuthorized: Bool {
+        notificationStatus == .authorized || notificationStatus == .provisional || notificationStatus == .ephemeral
+    }
     @State private var notificationStatus: UNAuthorizationStatus = .notDetermined
 
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    NavigationLink {
+                        ProfileSettingsView()
+                    } label: {
+                        Label("Mi perfil", systemImage: "person.crop.circle.fill")
+                    }
+
+                    NavigationLink {
+                        ReferralView()
+                    } label: {
+                        Label("Invita amigos", systemImage: "gift.fill")
+                    }
+                }
+
                 Section("Preferencias") {
                     Toggle("Modo avanzado", isOn: $isAdvancedMode)
                     Text(isAdvancedMode
-                        ? "Ves categoria y etiquetas al anotar un movimiento detallado."
+                        ? "Ves categoría y etiquetas al anotar un movimiento detallado."
                         : "Solo lo esencial al anotar: cuenta, tipo y monto.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 Section {
+                    NavigationLink {
+                        VoiceBackTapGuideView()
+                    } label: {
+                        Label("Registra con doble toque", systemImage: "hand.tap.fill")
+                    }
+                } header: {
+                    Text("Atajos y Siri")
+                } footer: {
+                    Text("Toca dos veces la parte de atrás de tu iPhone o di «Oye Siri, anota en MonAvi» y anota un gasto o ingreso con tu voz.")
+                }
+
+                Section {
                     notificationStatusRow
 
                     Stepper(
-                        "Avisar \(reminderLeadDays) dia\(reminderLeadDays == 1 ? "" : "s") antes",
+                        "Avisar \(reminderLeadDays) día\(reminderLeadDays == 1 ? "" : "s") antes",
                         value: $reminderLeadDays,
                         in: NotificationManager.leadDaysRange
                     )
+                    .onChange(of: reminderLeadDays) { _, _ in
+                        Task { await refreshReminders() }
+                    }
+
+                    Toggle("Recordarme anotar mis gastos", isOn: $dailyLogReminder)
+                        .onChange(of: dailyLogReminder) { _, _ in
+                            Task { await refreshReminders() }
+                        }
+
+                    if dailyLogReminder {
+                        DatePicker(
+                            "Hora del recordatorio",
+                            selection: dailyLogTimeBinding,
+                            displayedComponents: .hourAndMinute
+                        )
+                        .onChange(of: dailyLogMinutes) { _, _ in
+                            Task { await refreshReminders() }
+                        }
+                    }
+
+                    Button {
+                        NotificationManager.sendTestNotification()
+                        testNotificationSent = true
+                        Task {
+                            try? await Task.sleep(nanoseconds: 6_000_000_000)
+                            testNotificationSent = false
+                        }
+                    } label: {
+                        Label(
+                            testNotificationSent ? "Llega en 5 segundos…" : "Probar sonido y vibración",
+                            systemImage: "speaker.wave.2.fill"
+                        )
+                    }
+                    .disabled(!isNotificationAuthorized)
                 } header: {
                     Text("Notificaciones")
                 } footer: {
-                    Text("Te avisamos cuando una cuenta por pagar o una factura esta por vencer (y el dia que vence), cuando te toca un pago fijo del mes, y que pagar primero cada vez que anotas un ingreso.")
+                    Text("Te avisamos antes de que venza una cuenta por pagar o una factura, el día que vence y si se pasó. Para tus pagos fijos, unos días antes y el mismo día, para que no olvides registrarlos. También te decimos qué pagar primero cuando anotas un ingreso y, si quieres, te recordamos anotar tus gastos a la hora que elijas (solo si ese día no anotaste nada).")
                 }
 
                 Section {
@@ -57,7 +127,13 @@ struct SettingsView: View {
                     NavigationLink {
                         PointsHubView()
                     } label: {
-                        Label("Puntos", systemImage: "star.fill")
+                        Label("Cashback", systemImage: "star.fill")
+                    }
+
+                    NavigationLink {
+                        CategoriesView()
+                    } label: {
+                        Label("Categorías", systemImage: "square.grid.2x2.fill")
                     }
 
                     NavigationLink {
@@ -83,12 +159,6 @@ struct SettingsView: View {
                     } label: {
                         Label("Sugerencias", systemImage: "lightbulb")
                     }
-
-                    NavigationLink {
-                        FamilyGroupView()
-                    } label: {
-                        Label("Mi familia", systemImage: "person.2.fill")
-                    }
                 }
 
                 Section {
@@ -99,6 +169,8 @@ struct SettingsView: View {
                     }
                 }
 
+                PrivacySettingsSection()
+
                 /// Antes solo se veian estos enlaces en el paywall — alguien
                 /// que ya es cliente Pro no vuelve a esa pantalla, asi que
                 /// se quedaba sin forma de encontrarlos despues de suscribirse.
@@ -107,10 +179,10 @@ struct SettingsView: View {
                         Label("Ayuda y preguntas frecuentes", systemImage: "questionmark.circle.fill")
                     }
                     Link(destination: Config.privacyPolicyURL) {
-                        Label("Politica de privacidad", systemImage: "hand.raised.fill")
+                        Label("Política de privacidad", systemImage: "hand.raised.fill")
                     }
                     Link(destination: Config.termsOfUseURL) {
-                        Label("Terminos de uso", systemImage: "doc.text.fill")
+                        Label("Términos de uso", systemImage: "doc.text.fill")
                     }
                     if let mailURL = URL(string: "mailto:\(Config.supportEmail)") {
                         Link(destination: mailURL) {
@@ -140,19 +212,19 @@ struct SettingsView: View {
                     }
                 }
 
-                Section("Suscripcion") {
+                Section("Suscripción") {
                     switch appState.subscriptionStatus {
                     case .active(let expiresAt):
                         LabeledContent("Estado", value: "Activa")
                         let periodEndDate = appState.subscriptionStore.currentPeriodEndDate ?? expiresAt
                         if appState.subscriptionStore.willAutoRenew == false {
                             if let periodEndDate {
-                                Text("Tu suscripcion no se va a renovar. Finaliza el \(periodEndDate.formatted(date: .long, time: .omitted)) — hasta esa fecha sigues con acceso completo.")
+                                Text("Tu suscripción no se va a renovar. Finaliza el \(periodEndDate.formatted(Date.FormatStyle(date: .long, time: .omitted, locale: .monavi))) — hasta esa fecha sigues con acceso completo.")
                                     .font(.footnote)
                                     .foregroundStyle(MonAviBrand.alert)
                             }
                         } else if let periodEndDate {
-                            LabeledContent("Renueva", value: periodEndDate.formatted(date: .abbreviated, time: .omitted))
+                            LabeledContent("Renueva", value: periodEndDate.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi)))
                         }
                     case .inGracePeriod:
                         LabeledContent("Estado", value: "En periodo de gracia")
@@ -161,10 +233,10 @@ struct SettingsView: View {
                     case .revoked:
                         LabeledContent("Estado", value: "Revocada")
                     case .none, .unknown:
-                        LabeledContent("Estado", value: "Sin suscripcion")
+                        LabeledContent("Estado", value: "Sin suscripción")
                     }
 
-                    Button("Administrar suscripcion") {
+                    Button("Administrar suscripción") {
                         Task { await appState.subscriptionStore.openManageSubscriptions() }
                     }
 
@@ -173,6 +245,10 @@ struct SettingsView: View {
                             await appState.subscriptionStore.restore()
                             await appState.refreshSubscriptionStatus()
                         }
+                    }
+
+                    Button("Canjear código") {
+                        isRedeemingOfferCode = true
                     }
                 }
 
@@ -187,7 +263,7 @@ struct SettingsView: View {
                         if isSigningOut {
                             ProgressView()
                         } else {
-                            Label("Cerrar sesion", systemImage: "rectangle.portrait.and.arrow.right")
+                            Label("Cerrar sesión", systemImage: "rectangle.portrait.and.arrow.right")
                         }
                     }
                     .disabled(isSigningOut)
@@ -203,6 +279,12 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Ajustes")
+            .offerCodeRedemption(isPresented: $isRedeemingOfferCode) { _ in
+                Task {
+                    await appState.subscriptionStore.syncCurrentEntitlements()
+                    await appState.refreshSubscriptionStatus()
+                }
+            }
             .task {
                 await appState.subscriptionStore.refreshRenewalInfo()
             }
@@ -231,6 +313,7 @@ struct SettingsView: View {
                 Task {
                     await NotificationManager.requestAuthorization()
                     notificationStatus = await NotificationManager.authorizationStatus()
+                    await refreshReminders()
                 }
             } label: {
                 Label("Activar notificaciones", systemImage: "bell.fill")
@@ -238,5 +321,30 @@ struct SettingsView: View {
         @unknown default:
             EmptyView()
         }
+    }
+
+    /// El DatePicker trabaja con fechas; aqui se guarda solo la hora del
+    /// dia (minutos desde la medianoche).
+    private var dailyLogTimeBinding: Binding<Date> {
+        Binding(
+            get: {
+                let minutes = NotificationManager.clampedDailyLogMinutes(dailyLogMinutes)
+                return Calendar.current.date(
+                    bySettingHour: minutes / 60,
+                    minute: minutes % 60,
+                    second: 0,
+                    of: Date()
+                ) ?? Date()
+            },
+            set: { newValue in
+                let components = Calendar.current.dateComponents([.hour, .minute], from: newValue)
+                dailyLogMinutes = (components.hour ?? 20) * 60 + (components.minute ?? 0)
+            }
+        )
+    }
+
+    private func refreshReminders() async {
+        guard let userId = appState.currentUserId else { return }
+        await ReminderScheduler.refreshAll(userId: userId)
     }
 }

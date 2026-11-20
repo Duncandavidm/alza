@@ -17,14 +17,18 @@ struct BusinessSettingsView: View {
                     VStack(spacing: 12) {
                         logoPreview
 
+                        // El label de PhotosPicker es un closure Sendable: se
+                        // leen los valores del view model (MainActor) antes.
+                        let isUploading = viewModel.isUploadingLogo
+                        let pickerTitle = viewModel.logoPath == nil ? "Subir logo" : "Cambiar logo"
                         PhotosPicker(selection: $logoItem, matching: .images) {
-                            if viewModel.isUploadingLogo {
+                            if isUploading {
                                 ProgressView()
                             } else {
-                                Text(viewModel.logoPath == nil ? "Subir logo" : "Cambiar logo")
+                                Text(pickerTitle)
                             }
                         }
-                        .disabled(viewModel.isUploadingLogo)
+                        .disabled(isUploading)
                     }
                     Spacer()
                 }
@@ -35,7 +39,7 @@ struct BusinessSettingsView: View {
                 TextField("Nombre del negocio", text: $viewModel.businessName)
                 TextField("NIT / identificacion fiscal", text: $viewModel.taxId)
                 TextField("Direccion", text: $viewModel.address)
-                TextField("Telefono", text: $viewModel.phone)
+                TextField("Teléfono", text: $viewModel.phone)
                     .keyboardType(.phonePad)
             }
 
@@ -54,7 +58,7 @@ struct BusinessSettingsView: View {
             Section {
                 brandPreview
             } header: {
-                Text("Asi se va a ver en tus facturas")
+                Text("Así se va a ver en tus facturas")
             }
 
             if let errorMessage = viewModel.errorMessage {

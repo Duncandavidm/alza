@@ -104,3 +104,33 @@ struct NewSavingsGoal: Encodable {
         case accountId = "account_id"
     }
 }
+
+/// Un aporte (+) o retiro (-) a una meta — historial inmutable; la fecha
+/// la pone el servidor (ver migracion 0030).
+struct SavingsContribution: Codable, Identifiable, Hashable {
+    let id: UUID
+    let userId: UUID
+    let goalId: UUID
+    let amount: Decimal
+    let createdAt: Date
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case userId = "user_id"
+        case goalId = "goal_id"
+        case amount
+        case createdAt = "created_at"
+    }
+}
+
+struct NewSavingsContribution: Encodable {
+    let userId: UUID
+    let goalId: UUID
+    let amount: Decimal
+
+    enum CodingKeys: String, CodingKey {
+        case userId = "user_id"
+        case goalId = "goal_id"
+        case amount
+    }
+}

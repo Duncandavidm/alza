@@ -9,7 +9,7 @@ struct InvoicesView: View {
         List {
             if viewModel.invoices.isEmpty && !viewModel.isLoading {
                 ContentUnavailableView(
-                    "Sin facturas todavia",
+                    "Sin facturas todavía",
                     systemImage: "doc.text",
                     description: Text("Crea una factura, remision o cuenta por cobrar para tus clientes.")
                 )
@@ -37,6 +37,7 @@ struct InvoicesView: View {
                 } label: {
                     Image(systemName: "building.2.fill")
                 }
+                .accessibilityLabel("Datos de la empresa")
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button {
@@ -44,6 +45,7 @@ struct InvoicesView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("Crear factura")
             }
         }
         .sheet(isPresented: $showingAdd) {
@@ -59,7 +61,7 @@ struct InvoicesView: View {
             guard let userId = appState.currentUserId else { return }
             await viewModel.refresh(userId: userId)
         }
-        .alert("Algo salio mal", isPresented: .constant(viewModel.errorMessage != nil)) {
+        .alert("Algo salió mal", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") { viewModel.errorMessage = nil }
         } message: {
             Text(viewModel.errorMessage ?? "")

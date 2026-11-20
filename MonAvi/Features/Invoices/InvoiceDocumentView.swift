@@ -75,7 +75,7 @@ struct InvoiceDocumentView: View {
                         .font(.system(.subheadline, design: font, weight: .bold))
                         .foregroundStyle(.black)
                 }
-                Text(invoice.issueDateValue.formatted(date: .abbreviated, time: .omitted))
+                Text(invoice.issueDateValue.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi)))
                     .font(.system(.caption, design: font))
                     .foregroundStyle(.gray)
             }
@@ -94,7 +94,7 @@ struct InvoiceDocumentView: View {
                 Text(contact).font(.system(.caption, design: font)).foregroundStyle(.gray)
             }
             if let due = invoice.dueDateValue {
-                Text("Vence: \(due.formatted(date: .abbreviated, time: .omitted))")
+                Text("Vence: \(due.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi)))")
                     .font(.system(.caption, design: font))
                     .foregroundStyle(.gray)
             }
@@ -104,7 +104,7 @@ struct InvoiceDocumentView: View {
     private var itemsTable: some View {
         VStack(spacing: 6) {
             HStack {
-                Text("Descripcion").font(.system(.caption, design: font, weight: .bold))
+                Text("Descripción").font(.system(.caption, design: font, weight: .bold))
                 Spacer()
                 Text("Cant.").font(.system(.caption, design: font, weight: .bold)).frame(width: 36)
                 Text("Total").font(.system(.caption, design: font, weight: .bold)).frame(width: 64, alignment: .trailing)

@@ -16,7 +16,7 @@ struct DgiReceiptsListView: View {
                 ContentUnavailableView(
                     "Sin facturas escaneadas",
                     systemImage: "qrcode.viewfinder",
-                    description: Text("Escanea el QR de una factura electronica y la registramos como gasto de una vez.")
+                    description: Text("Escanea el QR de una factura electrónica y la registramos como gasto de una vez. Ganas 1% de cashback de cada factura verificada.")
                 )
             } else {
                 Section("Tus facturas") {
@@ -37,6 +37,7 @@ struct DgiReceiptsListView: View {
                 } label: {
                     Image(systemName: "qrcode.viewfinder")
                 }
+                .accessibilityLabel("Escanear factura")
             }
         }
         .refreshable { await refresh() }
@@ -49,7 +50,7 @@ struct DgiReceiptsListView: View {
         .sheet(isPresented: $isShowingScanner) {
             ScanInvoiceView(viewModel: viewModel, accounts: accountsViewModel.accounts)
         }
-        .alert("Algo salio mal", isPresented: .constant(viewModel.errorMessage != nil)) {
+        .alert("Algo salió mal", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") { viewModel.errorMessage = nil }
         } message: {
             Text(viewModel.errorMessage ?? "")
@@ -60,23 +61,39 @@ struct DgiReceiptsListView: View {
     private func receiptRow(_ receipt: DgiReceipt) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text("RUC \(receipt.ruc)").font(.body)
+                Text(receipt.displayTitle)
+                    .font(.body.weight(receipt.hasMerchantName ? .semibold : .regular))
+                    .lineLimit(1)
                 Spacer()
                 statusBadge(receipt.status)
             }
-            Text(receipt.fechaFacturaValue.formatted(date: .abbreviated, time: .omitted))
+            if receipt.hasMerchantName {
+                Text("RUC \(receipt.ruc)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Text(receiptDateText(receipt))
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Text(receipt.status.statusExplanation)
+            Text(receipt.statusExplanationText)
                 .font(.caption)
                 .foregroundStyle(.secondary)
             if let paymentMethod = receipt.paymentMethod, !paymentMethod.isEmpty {
-                Text("Forma de pago (DGI): \(paymentMethod)")
+                Text("Forma de pago: \(paymentMethod)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
         }
         .padding(.vertical, 4)
+    }
+
+    /// Con la hora real de la compra (DGI) si ya la tenemos; si no, solo
+    /// la fecha del QR.
+    private func receiptDateText(_ receipt: DgiReceipt) -> String {
+        if let authorizedAt = receipt.authorizedAt {
+            return authorizedAt.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened, locale: .monavi))
+        }
+        return receipt.fechaFacturaValue.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi))
     }
 
     private func statusBadge(_ status: DgiReceiptStatus) -> some View {

@@ -1,41 +1,26 @@
 import SwiftUI
 import StoreKit
 
-private enum PaywallAudience: String, CaseIterable, Identifiable, Equatable {
-    case personal = "Personal"
-    case negocio = "Negocio"
-
-    var id: String { rawValue }
-
-    var description: String {
-        switch self {
-        case .personal:
-            return "Dashboard financiero completo, metas y consejos de IA para tus finanzas personales."
-        case .negocio:
-            return "Factura, controla cuentas por cobrar y recibe insights de IA para tu negocio."
-        }
-    }
-}
-
 struct PaywallView: View {
     @EnvironmentObject private var appState: AppState
     @ObservedObject var subscriptionStore: SubscriptionStore
     @State private var isSigningOut = false
-    @State private var audience: PaywallAudience = .personal
     @State private var appeared = false
+    /// Hoja de App Store para canjear un codigo de oferta de suscripcion.
+    @State private var isRedeemingOfferCode = false
 
     private static let topChips = [
         MarqueeChip(icon: "💬", text: "Pregunta lo que sea sobre tu dinero"),
         MarqueeChip(icon: "🔔", text: "Alertas antes de que venza una cuenta"),
-        MarqueeChip(icon: "📈", text: "Prioriza que deuda pagar primero"),
-        MarqueeChip(icon: "🧾", text: "Factura a tus clientes desde la app"),
+        MarqueeChip(icon: "📈", text: "Prioriza qué deuda pagar primero"),
+        MarqueeChip(icon: "🎁", text: "Cashback por tus facturas"),
     ]
 
     private static let bottomChips = [
         MarqueeChip(icon: "♾️", text: "Transacciones y cuentas ilimitadas"),
         MarqueeChip(icon: "🤖", text: "Insights de IA sobre tus gastos"),
         MarqueeChip(icon: "🎙️", text: "Anota gastos con tu voz"),
-        MarqueeChip(icon: "📊", text: "Reportes de tu negocio al dia"),
+        MarqueeChip(icon: "🎯", text: "Metas de ahorro que sí se cumplen"),
     ]
 
     var body: some View {
@@ -50,22 +35,15 @@ struct PaywallView: View {
                 }
 
                 VStack(spacing: 20) {
-                    audienceToggle
-
-                    Text(audience.description)
+                    Text("Todo tu dinero bajo control: dashboard completo, metas, consejos de IA y cashback por tus compras. Realiza cotizaciones.")
                         .font(.system(.subheadline, design: MonAviBrand.fontDesign))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)
-                        .animation(.easeInOut(duration: 0.2), value: audience)
-                        .id(audience)
-                        .transition(.opacity)
-
-                    tierToggle
 
                     pricingCard
 
-                    Text("Menos de lo que cuesta un ☕ cafe a la semana.")
+                    Text("Menos de lo que cuesta un ☕ café a la semana.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
 
@@ -98,6 +76,12 @@ struct PaywallView: View {
         .task {
             await subscriptionStore.loadProduct()
         }
+        .offerCodeRedemption(isPresented: $isRedeemingOfferCode) { _ in
+            Task {
+                await subscriptionStore.syncCurrentEntitlements()
+                await appState.refreshSubscriptionStatus()
+            }
+        }
     }
 
     private var header: some View {
@@ -117,101 +101,23 @@ struct PaywallView: View {
         }
     }
 
-    private var audienceToggle: some View {
-        HStack(spacing: 4) {
-            ForEach(PaywallAudience.allCases) { option in
-                Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                        audience = option
-                    }
-                } label: {
-                    Text(option.rawValue)
-                        .font(.system(.subheadline, design: MonAviBrand.fontDesign, weight: .semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                .fill(audience == option ? MonAviBrand.primary : .clear)
-                        )
-                        .foregroundStyle(audience == option ? .white : .primary)
-                }
-                .buttonStyle(.plain)
-                .pressable()
-            }
-        }
-        .padding(4)
-        .background(Capsule().fill(Color(.secondarySystemBackground)))
-    }
-
-    /// Individual / Familia — independiente del audienceToggle de arriba
-    /// (ese es solo texto descriptivo). Familia es un producto propio mas
-    /// caro (no Apple Family Sharing, ver Config.swift), por eso vive aqui
-    /// junto a la eleccion de precio, no junto al toggle de audiencia.
-    private var tierToggle: some View {
-        HStack(spacing: 4) {
-            ForEach(SubscriptionTier.allCases) { tier in
-                Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                        selectTier(tier)
-                    }
-                } label: {
-                    Text(tier == .individual ? "Individual" : "Familia")
-                        .font(.system(.subheadline, design: MonAviBrand.fontDesign, weight: .semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                .fill(subscriptionStore.selectedPlan.tier == tier ? MonAviBrand.primary : .clear)
-                        )
-                        .foregroundStyle(subscriptionStore.selectedPlan.tier == tier ? .white : .primary)
-                }
-                .buttonStyle(.plain)
-                .pressable()
-            }
-        }
-        .padding(4)
-        .background(Capsule().fill(Color(.secondarySystemBackground)))
-    }
-
-    /// Cambia de tier conservando el ciclo (mensual/anual) elegido si ese
-    /// producto ya cargo; si no, cae al otro ciclo del mismo tier que si
-    /// haya cargado, para no dejar el tier nuevo sin nada que comprar.
-    private func selectTier(_ tier: SubscriptionTier) {
-        let billing = subscriptionStore.selectedPlan.billing
-        if subscriptionStore.product(tier: tier, billing: billing) != nil {
-            subscriptionStore.selectPlan(.plan(tier: tier, billing: billing))
-        } else if let fallback = SubscriptionBilling.allCases.first(where: { subscriptionStore.product(tier: tier, billing: $0) != nil }) {
-            subscriptionStore.selectPlan(.plan(tier: tier, billing: fallback))
-        }
-    }
-
     @ViewBuilder
     private var pricingCard: some View {
-        let tier = subscriptionStore.selectedPlan.tier
-        let annual = subscriptionStore.product(tier: tier, billing: .annual)
-        let monthly = subscriptionStore.product(tier: tier, billing: .monthly)
+        let annual = subscriptionStore.product(for: .annual)
+        let monthly = subscriptionStore.product(for: .monthly)
 
         if annual != nil || monthly != nil {
             VStack(spacing: 14) {
                 HStack(spacing: 12) {
                     if let annual {
-                        planOption(plan: .plan(tier: tier, billing: .annual), product: annual, badge: "Mejor precio")
+                        planOption(plan: .annual, product: annual, badge: "Mejor precio")
                     }
                     if let monthly {
-                        planOption(plan: .plan(tier: tier, billing: .monthly), product: monthly, badge: nil)
+                        planOption(plan: .monthly, product: monthly, badge: nil)
                     }
                 }
 
                 commitmentCaption
-
-                // Solo el tier Familia anuncia compartir — el Individual no
-                // usa Apple Family Sharing nativo a proposito (competiria
-                // gratis con el plan Familia de pago, ver Config.swift).
-                if tier == .familia {
-                    Label("Invita hasta 5 personas con tu codigo (Ajustes > Mi familia)", systemImage: "person.3.fill")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
             }
         } else if subscriptionStore.isLoadingProduct {
             RoundedRectangle(cornerRadius: 20)
@@ -255,7 +161,7 @@ struct PaywallView: View {
                     .foregroundStyle(.white)
                     .opacity(badge == nil ? 0 : 1)
 
-                Text(plan.billing == .annual ? "12 meses" : "Mensual")
+                Text(plan == .annual ? "12 meses" : "Mensual")
                     .font(.system(.subheadline, design: MonAviBrand.fontDesign, weight: .semibold))
                     .foregroundStyle(.primary)
 
@@ -289,7 +195,7 @@ struct PaywallView: View {
     private var commitmentCaption: some View {
         if let product = subscriptionStore.selectedProduct {
             Group {
-                if subscriptionStore.selectedPlan.billing == .annual {
+                if subscriptionStore.selectedPlan == .annual {
                     Text("Cobro anual — compromiso de 12 meses, \(product.displayPrice) en total")
                 } else {
                     Text("Cobro mensual, cancela cuando quieras")
@@ -336,12 +242,12 @@ struct PaywallView: View {
     private var confirmationNote: some View {
         if let price = subscriptionStore.selectedProduct?.displayPrice,
            subscriptionStore.freeTrialDurationText != nil {
-            let cadence = subscriptionStore.selectedPlan.billing == .annual ? "al año" : "al mes"
+            let cadence = subscriptionStore.selectedPlan == .annual ? "al año" : "al mes"
             VStack(spacing: 4) {
                 Label("Hoy no pagas nada.", systemImage: "checkmark.seal.fill")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(MonAviBrand.primary)
-                Text("Se renueva automaticamente a \(price) \(cadence) despues de la prueba. Cancela cuando quieras.")
+                Text("Se renueva automáticamente a \(price) \(cadence) después de la prueba. Cancela cuando quieras.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -355,7 +261,7 @@ struct PaywallView: View {
         VStack(spacing: 14) {
             HStack(spacing: 16) {
                 Link("Privacidad", destination: Config.privacyPolicyURL)
-                Link("Terminos", destination: Config.termsOfUseURL)
+                Link("Términos", destination: Config.termsOfUseURL)
                 if let url = URL(string: "mailto:\(Config.supportEmail)") {
                     Link("Contacto", destination: url)
                 }
@@ -366,10 +272,16 @@ struct PaywallView: View {
             .lineLimit(1)
             .frame(maxWidth: .infinity)
 
-            Button("Restaurar compras") {
-                Task {
-                    await subscriptionStore.restore()
-                    await appState.refreshSubscriptionStatus()
+            HStack(spacing: 20) {
+                Button("Restaurar compras") {
+                    Task {
+                        await subscriptionStore.restore()
+                        await appState.refreshSubscriptionStatus()
+                    }
+                }
+
+                Button("Canjear código") {
+                    isRedeemingOfferCode = true
                 }
             }
             .font(.footnote)
@@ -384,7 +296,7 @@ struct PaywallView: View {
                 if isSigningOut {
                     ProgressView()
                 } else {
-                    Label("Cerrar sesion", systemImage: "rectangle.portrait.and.arrow.right")
+                    Label("Cerrar sesión", systemImage: "rectangle.portrait.and.arrow.right")
                 }
             }
             .font(.footnote)
@@ -393,3 +305,4 @@ struct PaywallView: View {
         }
     }
 }
+

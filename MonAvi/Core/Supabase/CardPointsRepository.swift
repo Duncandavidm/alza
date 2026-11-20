@@ -1,20 +1,53 @@
 import Foundation
 import Supabase
 
-/// Saldo de puntos confirmados/pendientes (vista `points_balances`,
-/// `security_invoker=true` — cada quien solo ve el suyo).
+/// Saldos del usuario (vista `points_balances`, `security_invoker=true`
+/// — cada quien solo ve el suyo). Dos monedas (migracion 0036):
+/// - Cashback en centavos (1 = US$0.01): `confirmed_points` (canjeable)
+///   y `pending_points` (por confirmar), de facturas verificadas por la DGI.
+/// - Puntos por buenos habitos: `habit_points` (saldo canjeable) y
+///   `habit_points_earned` (total historico ganado, define el nivel).
 struct PointsBalance: Codable {
     let userId: UUID
+    /// Cashback disponible, en centavos.
     let confirmedPoints: Int
+    /// Cashback por confirmar, en centavos.
     let pendingPoints: Int
+    /// Puntos por habitos disponibles para canjear.
+    var habitPoints: Int = 0
+    /// Puntos por habitos ganados en total (para el nivel).
+    var habitPointsEarned: Int = 0
 
     enum CodingKeys: String, CodingKey {
         case userId = "user_id"
         case confirmedPoints = "confirmed_points"
         case pendingPoints = "pending_points"
+        case habitPoints = "habit_points"
+        case habitPointsEarned = "habit_points_earned"
     }
 
     static let zero = PointsBalance(userId: UUID(), confirmedPoints: 0, pendingPoints: 0)
+
+    /// Saldo canjeable en la moneda de un comercio.
+    func spendable(in currency: RewardCurrency) -> Int {
+        switch currency {
+        case .cashback: return confirmedPoints
+        case .puntos: return habitPoints
+        }
+    }
+}
+
+extension PointsBalance {
+    /// Decodificado tolerante: las columnas nuevas pueden faltar (vista
+    /// vieja) o llegar en null -> 0.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        userId = try container.decode(UUID.self, forKey: .userId)
+        confirmedPoints = try container.decodeIfPresent(Int.self, forKey: .confirmedPoints) ?? 0
+        pendingPoints = try container.decodeIfPresent(Int.self, forKey: .pendingPoints) ?? 0
+        habitPoints = try container.decodeIfPresent(Int.self, forKey: .habitPoints) ?? 0
+        habitPointsEarned = try container.decodeIfPresent(Int.self, forKey: .habitPointsEarned) ?? 0
+    }
 }
 
 /// Datos de "Mis tarjetas" + "Ofertas cerca" + el saldo de puntos
@@ -82,8 +115,17 @@ final class CardPointsRepository {
     }
 
     func fetchBalance(userId: UUID) async -> PointsBalance {
-        let row: PointsBalance? = try? await supabase
+        (try? await fetchBalanceOrThrow(userId: userId))
+            ?? PointsBalance(userId: userId, confirmedPoints: 0, pendingPoints: 0)
+    }
+
+    /// Igual que `fetchBalance` pero distingue un error de red (lanza)
+    /// de un usuario sin movimientos en el ledger (saldo en cero).
+    func fetchBalanceOrThrow(userId: UUID) async throws -> PointsBalance {
+        let row: PointsBalance? = try await supabase
             .from("points_balances")
+            // `*`: trae confirmed/pending (cashback) y habit_points /
+            // habit_points_earned (puntos); si alguna falta, decodifica 0.
             .select()
             .eq("user_id", value: userId)
             .maybeSingle()
@@ -200,113 +242,4 @@ final class CardPointsRepository {
         return streak
     }
 
-    // MARK: - Ahorro verificado (Fase 3)
-
-    func fetchActiveBankPartners() async throws -> [BankPartner] {
-        try await supabase
-            .from("bank_partners")
-            .select()
-            .eq("status", value: BankPartnerStatus.active.rawValue)
-            .order("name", ascending: true)
-            .execute()
-            .value
-    }
-
-    /// Todos los bancos (activos o pausados) — para mostrar el nombre
-    /// de un banco con el que el usuario ya esta inscrito, aunque se
-    /// haya pausado despues. Para elegir un banco NUEVO se usa
-    /// `fetchActiveBankPartners`.
-    func fetchAllBankPartners() async throws -> [BankPartner] {
-        try await supabase
-            .from("bank_partners")
-            .select()
-            .order("name", ascending: true)
-            .execute()
-            .value
-    }
-
-    /// Inscripciones activas del usuario — normalmente una sola, pero el
-    /// esquema permite mas de un banco patrocinador a la vez.
-    func fetchActiveSavingsEnrollments(userId: UUID) async throws -> [SponsoredSavingsEnrollment] {
-        try await supabase
-            .from("sponsored_savings_enrollments")
-            .select()
-            .eq("user_id", value: userId)
-            .eq("status", value: SavingsEnrollmentStatus.active.rawValue)
-            .order("created_at", ascending: true)
-            .execute()
-            .value
-    }
-
-    @discardableResult
-    func enroll(_ new: NewSponsoredSavingsEnrollment) async throws -> SponsoredSavingsEnrollment {
-        try await supabase
-            .from("sponsored_savings_enrollments")
-            .insert(new)
-            .select()
-            .single()
-            .execute()
-            .value
-    }
-
-    /// Revocar solo cambia el estado — nunca borra las metas o puntos ya
-    /// otorgados. El reporte del banco deja de procesarse para esta
-    /// inscripcion (ver reconcile-savings-reports, filtra por status
-    /// 'active').
-    func revokeConsent(_ enrollment: SponsoredSavingsEnrollment) async throws {
-        try await supabase
-            .from("sponsored_savings_enrollments")
-            .update(SponsoredSavingsEnrollmentRevoke(status: .revoked, consentRevokedAt: Date()))
-            .eq("id", value: enrollment.id)
-            .execute()
-    }
-
-    func fetchSavingsGoals(enrollmentId: UUID) async throws -> [SponsoredSavingsGoal] {
-        try await supabase
-            .from("sponsored_savings_goals")
-            .select()
-            .eq("enrollment_id", value: enrollmentId)
-            .order("period_month", ascending: false)
-            .execute()
-            .value
-    }
-
-    @discardableResult
-    func createSavingsGoal(_ new: NewSponsoredSavingsGoal) async throws -> SponsoredSavingsGoal {
-        try await supabase
-            .from("sponsored_savings_goals")
-            .insert(new)
-            .select()
-            .single()
-            .execute()
-            .value
-    }
-
-    /// Puntos de ahorro pendientes vs confirmados — a diferencia de
-    /// `fetchBalance` (que suma TODAS las fuentes), esto filtra solo
-    /// source='ahorro' para mostrarlo por separado en "Mis metas".
-    func savingsPointsBreakdown(userId: UUID) async -> (pending: Int, confirmed: Int) {
-        struct Row: Decodable {
-            let points: Int
-            let status: String
-        }
-        let rows: [Row] = (try? await supabase
-            .from("points_ledger")
-            .select("points, status")
-            .eq("user_id", value: userId)
-            .eq("source", value: "ahorro")
-            .execute()
-            .value) ?? []
-
-        var pending = 0
-        var confirmed = 0
-        for row in rows {
-            switch row.status {
-            case "pendiente": pending += row.points
-            case "confirmado": confirmed += row.points
-            default: break
-            }
-        }
-        return (pending: pending, confirmed: confirmed)
-    }
 }

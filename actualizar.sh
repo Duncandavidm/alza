@@ -32,7 +32,7 @@ if [ "$1" = "--probar" ]; then
   xcodebuild test \
     -project MonAvi.xcodeproj \
     -scheme MonAvi \
-    -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' \
+    -destination 'platform=iOS Simulator,name=iPhone 17' \
     -quiet
   echo "==> Compila y pasan los tests."
 fi

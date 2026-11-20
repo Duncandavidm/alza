@@ -514,17 +514,11 @@ Deno.serve(async (req) => {
         .select("id, user_id, cufe, ruc, scanned_at, dgi_check_count")
         .eq("id", body.receipt_id).eq("status", "pendiente").maybeSingle();
       if (!row) return jsonResponse({ immediate: true, skipped: "no pendiente" });
+      // Sin push: la persona acaba de escanear y esta viendo la factura en
+      // la app. Los avisos quedan para la corrida periodica (facturas que
+      // la DGI confirma despues, con la app cerrada).
       const result = await processReceipt(supabase, row as PendingReceipt, pointsPerDollar, dailyCapFactura, expireAfterDays);
-      let pushesSent = 0;
-      if (result) {
-        pushesSent = await notifyUser(supabase, row.user_id as string, {
-          points: result.held ? 0 : result.points,
-          held: result.held ? result.points : 0,
-          receipts: 1,
-          merchants: new Set(result.merchantName ? [result.merchantName] : []),
-        });
-      }
-      return jsonResponse({ immediate: true, confirmed: result !== null, pushesSent });
+      return jsonResponse({ immediate: true, confirmed: result !== null });
     }
 
     // Corrida periodica (cada hora): solo las facturas cuya ultima consulta

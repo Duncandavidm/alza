@@ -10,11 +10,17 @@
 //    podia canjear (puntos o cashback, segun el comercio). Cada premio se
 //    avisa una sola vez por persona (reward_unlock_notifications).
 //
+// 4. Anuncia los comercios aliados nuevos (una vez, a quien acepto
+//    recibir ofertas) y recuerda escanear la factura a quien uso un
+//    descuento de aliado hace 1 a 24 horas (migracion 0067).
+//
 // Corre despues de verify-dgi-receipt (8:00), para que el cashback recien
-// confirmado tambien cuente. Exige x-admin-secret; verify_jwt: false.
+// confirmado tambien cuente. Ademas corre cada hora con {"mode":"hourly"},
+// que solo manda los recordatorios de factura. Exige x-admin-secret;
+// verify_jwt: false.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { sendPushToUser } from "./apns.ts";
+import { sendPushToUser, sendPushToUsers } from "./apns.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -56,6 +62,90 @@ function unlockMessage(items: UnlockedItem[]): { title: string; body: string } {
   };
 }
 
+type Supabase = ReturnType<typeof createClient>;
+
+/// "¿Pediste tu factura en Café X?" una sola vez por uso de descuento.
+async function sendBenefitInvoiceReminders(supabase: Supabase): Promise<number> {
+  const { data, error } = await supabase.rpc("benefit_invoice_reminders_pending");
+  if (error) {
+    console.error("benefit_invoice_reminders_pending", error.message);
+    return 0;
+  }
+  let sent = 0;
+  for (const row of (data ?? []) as { redemption_id: string; user_id: string; merchant: string }[]) {
+    // Se marca antes de enviar: si el push falla no se reintenta (es un extra).
+    const { error: markError } = await supabase
+      .from("reward_redemptions")
+      .update({ invoice_reminder_sent_at: new Date().toISOString() })
+      .eq("id", row.redemption_id)
+      .is("invoice_reminder_sent_at", null);
+    if (markError) {
+      console.error("No se pudo marcar el recordatorio", markError.message);
+      continue;
+    }
+    const result = await sendPushToUser(supabase, row.user_id, {
+      title: `¿Pediste tu factura en ${row.merchant}? 🧾`,
+      body: "Escanéala en MonAvi y gana cashback, además del descuento que ya usaste.",
+      data: { screen: "home" },
+      threadId: "monavi-facturas",
+    });
+    if (result.sent > 0) sent++;
+  }
+  return sent;
+}
+
+/// Comercio aliado nuevo: un solo aviso a quien acepto recibir ofertas.
+async function announceNewPartners(supabase: Supabase): Promise<number> {
+  const { data, error } = await supabase.rpc("partner_announcements_pending");
+  if (error) {
+    console.error("partner_announcements_pending", error.message);
+    return 0;
+  }
+  const pending = (data ?? []) as { merchant_id: string; name: string; benefit: string | null }[];
+  if (pending.length === 0) return 0;
+
+  const { data: audience, error: audienceError } = await supabase.rpc("segment_user_ids", { p_segment: {} });
+  if (audienceError) {
+    console.error("segment_user_ids", audienceError.message);
+    return 0;
+  }
+  const userIds = ((audience ?? []) as { user_id: string }[]).map((row) => row.user_id);
+
+  let people = 0;
+  for (const merchant of pending) {
+    // Se marca primero: un aliado nunca se anuncia dos veces.
+    const { error: markError } = await supabase
+      .from("partner_merchants")
+      .update({ announced_at: new Date().toISOString() })
+      .eq("id", merchant.merchant_id)
+      .is("announced_at", null);
+    if (markError) {
+      console.error("No se pudo marcar el anuncio", markError.message);
+      continue;
+    }
+    const message = merchant.benefit
+      ? {
+        title: `Nuevo aliado: ${merchant.name} 🎉`,
+        body: `${merchant.benefit} por ser de MonAvi. Pide tu factura fiscal y gana cashback también.`,
+      }
+      : {
+        title: `Nuevo aliado: ${merchant.name} 🎉`,
+        body: "Ya puedes canjear premios ahí con tu cashback. Pide siempre tu factura fiscal y escanéala.",
+      };
+    try {
+      const result = await sendPushToUsers(supabase, userIds, {
+        ...message,
+        data: { screen: "rewards" },
+        threadId: "monavi-aliados",
+      });
+      people += result.people;
+    } catch (pushError) {
+      console.error("Anuncio de aliado nuevo", String(pushError));
+    }
+  }
+  return people;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS_HEADERS });
   if (req.headers.get("x-admin-secret") !== ADMIN_JOB_SECRET) {
@@ -64,6 +154,13 @@ Deno.serve(async (req) => {
 
   try {
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+
+    let body: { mode?: string } = {};
+    try { body = await req.json(); } catch { /* corrida diaria sin body */ }
+    if (body.mode === "hourly") {
+      const invoiceReminders = await sendBenefitInvoiceReminders(supabase);
+      return jsonResponse({ mode: "hourly", invoice_reminders: invoiceReminders });
+    }
 
     const { data: awarded, error: awardError } = await supabase.rpc("award_habit_points");
     if (awardError) throw awardError;
@@ -115,7 +212,18 @@ Deno.serve(async (req) => {
       if (markError) console.error("No se pudo marcar el aviso", markError.message);
     }
 
-    return jsonResponse({ habit_events_awarded: awarded ?? 0, brand_bonuses: campaignsApplied ?? 0, cashback_released_users: releasedUsers, users_notified: usersNotified, push_sent: pushSent });
+    const partnerAnnouncementPeople = await announceNewPartners(supabase);
+    const invoiceReminders = await sendBenefitInvoiceReminders(supabase);
+
+    return jsonResponse({
+      habit_events_awarded: awarded ?? 0,
+      brand_bonuses: campaignsApplied ?? 0,
+      cashback_released_users: releasedUsers,
+      users_notified: usersNotified,
+      push_sent: pushSent,
+      partner_announcement_people: partnerAnnouncementPeople,
+      invoice_reminders: invoiceReminders,
+    });
   } catch (error) {
     console.error("award-habit-points fallo", error);
     return jsonResponse({ error: String((error as { message?: string })?.message ?? error) }, 500);

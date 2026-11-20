@@ -4,8 +4,9 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import ActionForm from "@/components/ActionForm";
 import MerchantFieldsInputs from "@/components/MerchantFieldsInputs";
 import RewardPreviewCard from "@/components/RewardPreviewCard";
-import { formatCashback, formatDateTime, formatInt, formatMoney } from "@/lib/format";
-import { rewardTypeLabel, toRewardType } from "@/lib/reward-type";
+import { formatCashback, formatDateTime, formatDecimal, formatInt, formatMoney } from "@/lib/format";
+import { benefitLimitLabel, rewardTypeLabel, toRewardType } from "@/lib/reward-type";
+import { Kpi } from "@/components/Charts";
 import { formatRewardValue, REWARD_CURRENCY_LABELS, type RewardCurrency, toRewardCurrency } from "@/lib/currency";
 import {
   createOffer,
@@ -54,6 +55,21 @@ type RewardItem = {
   reward_type: string | null;
   discount_value: number | string | null;
   max_redemptions: number | null;
+  free_benefit: boolean | null;
+  per_user_limit: number | null;
+  per_user_period: string | null;
+};
+
+type BenefitReport = {
+  days: number;
+  uses: number;
+  customers: number;
+  new_customers: number;
+  with_receipt: number;
+  receipt_rate: number | null;
+  avg_ticket: number | null;
+  total_sales: number;
+  by_item: { name: string; uses: number; customers: number; with_receipt: number; avg_ticket: number | null; total_sales: number }[];
 };
 
 export default async function MerchantDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -67,7 +83,7 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
     .maybeSingle<Merchant>();
   if (!merchant) notFound();
 
-  const [{ data: offers }, { data: items }, { data: delivered }, { data: usedRows }] = await Promise.all([
+  const [{ data: offers }, { data: items }, { data: delivered }, { data: usedRows }, { data: benefitReportData }] = await Promise.all([
     supabase
       .from("partner_merchant_offers")
       .select("id, offer_type, value, min_amount, starts_at, ends_at, budget_total_points, budget_spent_points, status")
@@ -76,7 +92,9 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
       .returns<Offer[]>(),
     supabase
       .from("reward_items")
-      .select("id, name, description, photo_url, points_cost, status, sort_order, reward_type, discount_value, max_redemptions")
+      .select(
+        "id, name, description, photo_url, points_cost, status, sort_order, reward_type, discount_value, max_redemptions, free_benefit, per_user_limit, per_user_period"
+      )
       .eq("merchant_id", id)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true })
@@ -87,17 +105,21 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
       .eq("merchant_id", id)
       .eq("status", "entregado")
       .returns<{ delivered_via: string | null }[]>(),
-    // Codigos que gastan cupo (igual que reward_item_used en 0065):
-    // emitidos o entregados, sin contar los regalos de MonAvi.
+    // Codigos que gastan cupo (igual que reward_item_used en 0067):
+    // entregados o emitidos sin vencer, sin contar los regalos de MonAvi.
     supabase
       .from("reward_redemptions")
       .select("reward_item_id")
       .eq("merchant_id", id)
       .neq("source", "regalo")
       .in("status", ["emitido", "entregado"])
+      .or(`status.eq.entregado,expires_at.gt.${new Date().toISOString()}`)
       .limit(100000)
       .returns<{ reward_item_id: string }[]>(),
+    // Visitas y ticket promedio que trajeron los descuentos (0067).
+    supabase.rpc("merchant_benefit_report", { p_merchant_id: id, p_days: 90 }),
   ]);
+  const benefitReport = (benefitReportData ?? null) as BenefitReport | null;
   const usedByItem = new Map<string, number>();
   for (const row of usedRows ?? []) usedByItem.set(row.reward_item_id, (usedByItem.get(row.reward_item_id) ?? 0) + 1);
   const deliveredCount = (delivered ?? []).length;
@@ -213,7 +235,11 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
                     )}
                     {item.description && <div className="text-dim">{item.description}</div>}
                   </td>
-                  <td>{formatRewardValue(item.points_cost, currency)}</td>
+                  <td>
+                    {item.free_benefit
+                      ? `Gratis · ${benefitLimitLabel(item.per_user_limit, item.per_user_period)}`
+                      : formatRewardValue(item.points_cost, currency)}
+                  </td>
                   <td>
                     {item.max_redemptions
                       ? `${formatInt(usedByItem.get(item.id) ?? 0)} de ${formatInt(item.max_redemptions)}`
@@ -305,11 +331,69 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
                   description={item.description}
                   hasMaps={hasMaps}
                   paused={item.status !== "active" || merchant.status === "paused"}
+                  isFree={Boolean(item.free_benefit)}
                   pausedLabel={item.status === "agotado" ? "Agotado — se llegó al límite, no se ve en la app" : undefined}
                 />
               ))}
             </div>
           </>
+        )}
+      </div>
+
+      <div className="card">
+        <h3>Resultados de los descuentos (últimos 90 días)</h3>
+        <p className="text-dim">
+          Cada uso en caja es una visita. Se le suma la factura que esa persona escaneó en este comercio cerca de esa hora
+          (de 3 h antes a 12 h después) para calcular el ticket promedio. &quot;Clientes nuevos&quot;: no habían escaneado
+          facturas aquí antes de su primer descuento.
+        </p>
+        {benefitReport && Number(benefitReport.uses) > 0 ? (
+          <>
+            <div className="kpi-grid">
+              <Kpi label="Visitas con descuento" value={formatInt(benefitReport.uses)} />
+              <Kpi label="Clientes" value={formatInt(benefitReport.customers)} hint={`${formatInt(benefitReport.new_customers)} nuevos`} />
+              <Kpi
+                label="Ticket promedio"
+                value={benefitReport.avg_ticket === null ? "—" : formatMoney(benefitReport.avg_ticket)}
+                hint={`${formatInt(benefitReport.with_receipt)} con factura escaneada`}
+              />
+              <Kpi label="Ventas con factura" value={formatMoney(benefitReport.total_sales)} />
+              <Kpi
+                label="Pidieron factura"
+                value={benefitReport.receipt_rate === null ? "—" : `${formatDecimal(benefitReport.receipt_rate, 1)}%`}
+              />
+            </div>
+            {benefitReport.by_item.length > 1 && (
+              <div className="table-scroll" style={{ marginTop: 12 }}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Descuento</th>
+                      <th>Visitas</th>
+                      <th>Clientes</th>
+                      <th>Con factura</th>
+                      <th>Ticket promedio</th>
+                      <th>Ventas</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {benefitReport.by_item.map((row) => (
+                      <tr key={row.name}>
+                        <td>{row.name}</td>
+                        <td>{formatInt(row.uses)}</td>
+                        <td>{formatInt(row.customers)}</td>
+                        <td>{formatInt(row.with_receipt)}</td>
+                        <td>{row.avg_ticket === null ? "—" : formatMoney(row.avg_ticket)}</td>
+                        <td>{formatMoney(row.total_sales)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        ) : (
+          <p className="text-dim">Todavía no hay descuentos usados en este comercio.</p>
         )}
       </div>
 

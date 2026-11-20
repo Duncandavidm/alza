@@ -42,6 +42,36 @@ final class RewardsRepository {
         return redemption
     }
 
+    // MARK: - Descuentos de aliados (0067)
+
+    /// Descuentos gratis "por ser de MonAvi" con el estado de esta persona
+    /// (desbloqueado, usos del periodo, codigo vigente). La RLS no los
+    /// muestra en `reward_items`: solo llegan por esta RPC.
+    func fetchBenefits() async throws -> BenefitsResponse {
+        try await supabase
+            .rpc("my_benefits")
+            .execute()
+            .value
+    }
+
+    /// Si falla (sin red o servidor viejo) no hay descuentos que mostrar.
+    func fetchBenefitsOrEmpty() async -> BenefitsResponse {
+        (try? await fetchBenefits()) ?? .empty
+    }
+
+    /// Genera el codigo de 15 minutos (o devuelve el que ya estaba
+    /// vigente). Lanza el mensaje en espanol de la RPC ("Escanea tu primera
+    /// factura...", "Ya usaste este descuento esta semana...").
+    func useBenefit(item: RewardItem) async throws -> RewardRedemption {
+        var redemption: RewardRedemption = try await supabase
+            .rpc("use_benefit", params: RedeemParams(pItemId: item.id))
+            .execute()
+            .value
+        redemption.item = item
+        redemption.merchant = item.merchant
+        return redemption
+    }
+
     /// Canjes propios, del mas nuevo al mas viejo.
     func fetchMyRedemptions(userId: UUID) async throws -> [RewardRedemption] {
         let rows: [RewardRedemption] = try await supabase
@@ -51,7 +81,7 @@ final class RewardsRepository {
             .order("created_at", ascending: false)
             .execute()
             .value
-        return await fillingMissingItems(rows)
+        return await fillingMissingItems(RewardsMath.historyRows(rows))
     }
 
     /// Si un producto se agoto o se pauso despues del canje, la RLS lo

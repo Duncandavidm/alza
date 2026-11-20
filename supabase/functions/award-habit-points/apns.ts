@@ -149,3 +149,76 @@ export async function sendPushToUser(
   }
   return { sent, failed };
 }
+
+/// Envio masivo: manda `message` a muchos usuarios a la vez (tokens en
+/// bloque y varios envios en paralelo). Devuelve cuantos iPhone lo
+/// recibieron y a cuantas personas les llego al menos uno.
+export async function sendPushToUsers(
+  supabase: SupabaseClient,
+  userIds: string[],
+  message: PushMessage,
+  concurrency = 20,
+): Promise<{ sent: number; failed: number; people: number; skipped?: string }> {
+  if (!apnsConfigured()) return { sent: 0, failed: 0, people: 0, skipped: "apns_not_configured" };
+  if (userIds.length === 0) return { sent: 0, failed: 0, people: 0 };
+
+  const rows: { token: string; environment: string; user_id: string }[] = [];
+  for (let i = 0; i < userIds.length; i += 300) {
+    const { data, error } = await supabase
+      .from("device_push_tokens")
+      .select("token, environment, user_id")
+      .in("user_id", userIds.slice(i, i + 300));
+    if (error) throw error;
+    rows.push(...((data ?? []) as typeof rows));
+  }
+  if (rows.length === 0) return { sent: 0, failed: 0, people: 0, skipped: "no_tokens" };
+
+  const jwt = await providerToken();
+  const payload = JSON.stringify({
+    aps: {
+      alert: { title: message.title, body: message.body },
+      sound: "monavi-alert.wav",
+      "thread-id": message.threadId ?? "monavi-ofertas",
+      "interruption-level": "active",
+    },
+    ...(message.data ?? {}),
+  });
+
+  let sent = 0;
+  let failed = 0;
+  const reached = new Set<string>();
+  let index = 0;
+  async function worker() {
+    while (index < rows.length) {
+      const row = rows[index++];
+      const host = row.environment === "production" ? "https://api.push.apple.com" : "https://api.sandbox.push.apple.com";
+      try {
+        const response = await fetch(`${host}/3/device/${row.token}`, {
+          method: "POST",
+          headers: {
+            authorization: `bearer ${jwt}`,
+            "apns-topic": APNS_BUNDLE_ID,
+            "apns-push-type": "alert",
+            "apns-priority": "10",
+            "content-type": "application/json",
+          },
+          body: payload,
+        });
+        if (response.ok) {
+          sent++;
+          reached.add(row.user_id);
+          continue;
+        }
+        failed++;
+        const reason = await response.text();
+        if (response.status === 410 || reason.includes("BadDeviceToken") || reason.includes("Unregistered")) {
+          await supabase.from("device_push_tokens").delete().eq("token", row.token);
+        }
+      } catch (_error) {
+        failed++;
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, rows.length) }, () => worker()));
+  return { sent, failed, people: reached.size };
+}

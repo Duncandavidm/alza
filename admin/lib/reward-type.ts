@@ -37,3 +37,27 @@ export function rewardTypeLabel(type: RewardType): string {
 export function isDiscountType(type: unknown): boolean {
   return type === "porcentaje" || type === "monto";
 }
+
+// ---------------------------------------------------------------------
+// Descuento gratis "por ser de MonAvi" (migracion 0067)
+// ---------------------------------------------------------------------
+
+export type BenefitPeriod = "dia" | "semana" | "mes" | "siempre";
+
+export const BENEFIT_PERIODS: { value: BenefitPeriod; label: string }[] = [
+  { value: "semana", label: "por semana" },
+  { value: "dia", label: "por día" },
+  { value: "mes", label: "por mes" },
+  { value: "siempre", label: "en total (una sola vez)" },
+];
+
+export function toBenefitPeriod(value: unknown): BenefitPeriod {
+  return value === "dia" || value === "mes" || value === "siempre" ? value : "semana";
+}
+
+/// "1 vez por semana", "2 veces por mes", "1 vez en total".
+export function benefitLimitLabel(limit: number | null | undefined, period: unknown): string {
+  const times = Math.max(1, Number(limit ?? 1));
+  const label = BENEFIT_PERIODS.find((entry) => entry.value === toBenefitPeriod(period))?.label ?? "por semana";
+  return `${times} ${times === 1 ? "vez" : "veces"} ${label.replace(" (una sola vez)", "")}`;
+}

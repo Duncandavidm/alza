@@ -45,6 +45,12 @@ struct PointsHubView: View {
                 }
 
                 NavigationLink {
+                    RewardsView(initialMode: .benefits)
+                } label: {
+                    Label("Descuentos por ser de MonAvi", systemImage: "percent")
+                }
+
+                NavigationLink {
                     RewardsView(initialMode: .merchants)
                 } label: {
                     Label("Dónde canjear: comercios aliados", systemImage: "storefront.fill")

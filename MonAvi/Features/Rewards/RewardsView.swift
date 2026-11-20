@@ -11,8 +11,10 @@ struct RewardsView: View {
     @Environment(\.openURL) private var openURL
     @StateObject private var viewModel = RewardsViewModel()
 
-    /// "Premios" (catalogo) o "Comercios" (donde canjear).
+    /// "Descuentos" (gratis por ser de MonAvi, 0067), "Premios" (catalogo
+    /// con cashback o puntos) o "Comercios" (donde canjear).
     enum Mode: String, CaseIterable, Identifiable {
+        case benefits = "Descuentos"
         case rewards = "Premios"
         case merchants = "Comercios"
         var id: String { rawValue }
@@ -36,6 +38,12 @@ struct RewardsView: View {
     @State private var itemAwaitingVerification: RewardItem?
     @State private var isVerifyingEmail = false
     @State private var didVerifyEmail = false
+    /// Descuento que se va a usar (dialogo de confirmacion) y el que pidio
+    /// verificar el correo.
+    @State private var pendingBenefit: RewardItem?
+    @State private var isConfirmingBenefit = false
+    @State private var benefitAwaitingVerification: RewardItem?
+    @State private var isScanningInvoice = false
 
     var body: some View {
         ScrollView {
@@ -61,7 +69,7 @@ struct RewardsView: View {
             .padding(.vertical, 12)
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle(mode == .rewards ? "Canjea tus premios" : "Dónde canjear")
+        .navigationTitle(navigationTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { toolbarContent }
         .refreshable { await refresh() }
@@ -78,8 +86,26 @@ struct RewardsView: View {
             }
             Button("Cancelar", role: .cancel) {}
         }
-        .sheet(item: $presentedRedemption) { (redemption: RewardRedemption) in
+        .confirmationDialog(
+            pendingBenefit.map(BenefitsMath.confirmationTitle(for:)) ?? "¿Usar este descuento?",
+            isPresented: $isConfirmingBenefit,
+            titleVisibility: .visible,
+            presenting: pendingBenefit
+        ) { (item: RewardItem) in
+            Button("Generar mi código") {
+                Task { await useBenefit(item) }
+            }
+            Button("Cancelar", role: .cancel) {}
+        } message: { _ in
+            Text("Úsalo en caja antes de pagar: el código dura 15 minutos. Pide tu factura fiscal para ganar cashback también.")
+        }
+        .sheet(item: $presentedRedemption, onDismiss: {
+            Task { await viewModel.refreshBenefits() }
+        }) { (redemption: RewardRedemption) in
             RedemptionCodeView(redemption: redemption)
+        }
+        .invoiceScanner(isPresented: $isScanningInvoice) {
+            await viewModel.refreshBenefits()
         }
         .sheet(isPresented: $isVerifyingEmail, onDismiss: retryAfterEmailVerification) {
             EmailVerificationSheet {
@@ -166,9 +192,94 @@ struct RewardsView: View {
         .buttonStyle(.plain)
     }
 
+    private var navigationTitle: String {
+        switch mode {
+        case .benefits: return "Descuentos para ti"
+        case .rewards: return "Canjea tus premios"
+        case .merchants: return "Dónde canjear"
+        }
+    }
+
+    // MARK: - Descuentos de aliados
+
+    @ViewBuilder
+    private var benefitsContent: some View {
+        let response = viewModel.benefits
+        if !viewModel.hasLoaded && response.benefits.isEmpty {
+            ProgressView("Cargando descuentos…")
+                .frame(maxWidth: .infinity)
+                .padding(.top, 40)
+        } else {
+            if !response.unlocked && !response.benefits.isEmpty {
+                BenefitsUnlockCard(bestDiscount: BenefitsMath.bestPercentText(response.benefits)) {
+                    isScanningInvoice = true
+                }
+            }
+            if response.benefits.isEmpty {
+                ContentUnavailableView(
+                    "Pronto habrá descuentos",
+                    systemImage: "percent",
+                    description: Text("Aquí verás los descuentos que te dan los comercios aliados por ser de MonAvi.")
+                )
+                .padding(.top, 12)
+            } else {
+                ForEach(response.benefits) { (entry: BenefitEntry) in
+                    BenefitCard(
+                        entry: entry,
+                        state: BenefitsMath.state(of: entry, unlocked: response.unlocked),
+                        isWorking: isRedeeming,
+                        onDirections: { openDirections(for: entry.item) },
+                        onPrimary: { primaryAction(for: entry, unlocked: response.unlocked) }
+                    )
+                }
+            }
+            AskForInvoiceTip()
+        }
+    }
+
+    private func primaryAction(for entry: BenefitEntry, unlocked: Bool) {
+        switch BenefitsMath.state(of: entry, unlocked: unlocked) {
+        case .locked:
+            isScanningInvoice = true
+        case .active(let redemption):
+            presentedRedemption = redemption
+        case .available:
+            pendingBenefit = entry.item
+            isConfirmingBenefit = true
+        case .cooldown, .usedUp:
+            break
+        }
+    }
+
+    private func useBenefit(_ item: RewardItem) async {
+        guard !isRedeeming else { return }
+        isRedeeming = true
+        do {
+            let redemption = try await RewardsRepository.shared.useBenefit(item: item)
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            isRedeeming = false
+            pendingBenefit = nil
+            presentedRedemption = redemption
+        } catch let error where RewardsRepository.requiresEmailVerification(error) {
+            isRedeeming = false
+            benefitAwaitingVerification = item
+            didVerifyEmail = false
+            isVerifyingEmail = true
+        } catch {
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            isRedeeming = false
+            redeemErrorMessage = RewardsRepository.userMessage(for: error)
+        }
+        await viewModel.refreshBenefits()
+    }
+
+    // MARK: - Contenido
+
     @ViewBuilder
     private var content: some View {
-        if !viewModel.hasLoaded && viewModel.items.isEmpty {
+        if mode == .benefits {
+            benefitsContent
+        } else if !viewModel.hasLoaded && viewModel.items.isEmpty {
             ProgressView("Cargando comercios…")
                 .frame(maxWidth: .infinity)
                 .padding(.top, 40)
@@ -354,11 +465,17 @@ struct RewardsView: View {
     /// codigo del canje sin chocar con la animacion de cierre).
     private func retryAfterEmailVerification() {
         let item = itemAwaitingVerification
+        let benefit = benefitAwaitingVerification
         let verified = didVerifyEmail
         itemAwaitingVerification = nil
+        benefitAwaitingVerification = nil
         didVerifyEmail = false
-        guard verified, let item else { return }
-        Task { await redeem(item) }
+        guard verified else { return }
+        if let item {
+            Task { await redeem(item) }
+        } else if let benefit {
+            Task { await useBenefit(benefit) }
+        }
     }
 
     private func refresh() async {

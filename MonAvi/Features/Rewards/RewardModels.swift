@@ -99,6 +99,12 @@ struct RewardItem: Codable, Identifiable, Hashable {
     var maxRedemptions: Int? = nil
     /// `used_count` (0066): codigos que ya gastaron cupo.
     var usedCount: Int? = nil
+    /// `free_benefit` (0067): descuento gratis por ser de MonAvi.
+    var freeBenefit: Bool? = nil
+    /// `per_user_limit` / `per_user_period` (0067): cuantas veces lo puede
+    /// usar cada persona y cada cuanto se renueva.
+    var perUserLimit: Int? = nil
+    var perUserPeriod: BenefitPeriod? = nil
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -113,7 +119,12 @@ struct RewardItem: Codable, Identifiable, Hashable {
         case rewardType = "reward_type"
         case maxRedemptions = "max_redemptions"
         case usedCount = "used_count"
+        case freeBenefit = "free_benefit"
+        case perUserLimit = "per_user_limit"
+        case perUserPeriod = "per_user_period"
     }
+
+    var isFreeBenefit: Bool { freeBenefit ?? false }
 
     var merchantName: String { merchant?.name ?? "Comercio aliado" }
 
@@ -162,6 +173,8 @@ enum RewardRedemptionStatus: String, Codable, CaseIterable, Identifiable, Hashab
 enum RewardRedemptionSource: String, Codable, Hashable {
     case canje
     case regalo
+    /// Descuento gratis de un aliado (0067): codigo de 15 minutos.
+    case beneficio
 
     /// Tolerante: un valor desconocido cae en `.canje`.
     init(from decoder: Decoder) throws {
@@ -221,6 +234,9 @@ struct RewardRedemption: Codable, Identifiable, Hashable {
     /// true si es un producto gratis que regalo MonAvi.
     var isGift: Bool { (source ?? .canje) == .regalo }
 
+    /// true si es un descuento gratis de un aliado (codigo de 15 minutos).
+    var isBenefit: Bool { (source ?? .canje) == .beneficio }
+
     /// El mensaje del regalo sin espacios, o nil si esta vacio.
     var displayGiftMessage: String? {
         guard let trimmed = giftMessage?.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -228,11 +244,11 @@ struct RewardRedemption: Codable, Identifiable, Hashable {
         return trimmed
     }
 
-    /// Lo que se muestra como costo: "Gratis" en los regalos.
-    var displayCostText: String { isGift ? "Gratis" : formattedCost }
+    /// Lo que se muestra como costo: "Gratis" en regalos y descuentos.
+    var displayCostText: String { isGift || isBenefit ? "Gratis" : formattedCost }
 
     /// Descuento o cupon (se "aplica" en caja en vez de "entregarse").
-    var isDiscount: Bool { item?.kind.isDiscount ?? false }
+    var isDiscount: Bool { isBenefit || (item?.kind.isDiscount ?? false) }
 
     /// Texto del badge de estado: "Aplicado" en vez de "Entregado" para
     /// descuentos y cupones.

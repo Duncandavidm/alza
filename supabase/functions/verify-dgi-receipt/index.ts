@@ -28,21 +28,21 @@
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { sendPushToUser } from "./apns.ts";
+import { fetchDgiPage } from "./dgi_guard.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ADMIN_JOB_SECRET = Deno.env.get("ADMIN_JOB_SECRET")!;
 
-const DGI_BASE = "https://dgi-fep.mef.gob.pa";
 const BATCH_SIZE = 20;
 // Cada corrida procesa lote tras lote hasta vaciar los pendientes, sin
 // pasar de este tiempo (el limite de una Edge
 // Function es mayor; esto deja margen para los avisos push del final).
 const TIME_BUDGET_MS = 110_000;
 // Pausa entre cada consulta — no hay razon para martillar un servidor
-// del gobierno mas rapido de lo que un usuario haria a mano.
-const DELAY_BETWEEN_REQUESTS_MS = 300;
-const CONFIRMATION_MARKER = "CÓDIGO ÚNICO DE FACTURA ELECTRÓNICA";
+// del gobierno mas rapido de lo que un usuario haria a mano. Ademas hay un
+// tope global por minuto y una pausa automatica (dgi_guard.ts, 0067).
+const DELAY_BETWEEN_REQUESTS_MS = 2000;
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "x-admin-secret, content-type",
@@ -73,10 +73,6 @@ function sleep(ms: number): Promise<void> {
 // patron "ETIQUETA: <div ...>VALOR</div>" es consistente y suficiente
 // para lo que necesitamos).
 // ---------------------------------------------------------------------
-
-function isConfirmed(html: string): boolean {
-  return html.includes(CONFIRMATION_MARKER);
-}
 
 function extractLabeledAmount(html: string, label: string): number | null {
   const pattern = new RegExp(`${label}:\\s*<div[^>]*>\\s*([0-9]+(?:\\.[0-9]+)?)\\s*</div>`, "i");
@@ -350,24 +346,18 @@ async function processReceipt(
   pointsPerDollar: number,
   dailyCapFactura: number,
   expireAfterDays: number,
-): Promise<ReceiptResult | null> {
+  source: string,
+): Promise<ReceiptResult | null | "unavailable"> {
   const now = new Date();
-  let response: Response;
-  try {
-    response = await fetch(`${DGI_BASE}/Consultas/FacturasPorCUFE/${receipt.cufe}`, {
-      signal: AbortSignal.timeout(15_000),
-    });
-  } catch {
-    return null;
+  const page = await fetchDgiPage(supabase, receipt.cufe, source, { timeoutMs: 15_000, useCache: true });
+  if (page.kind === "unavailable") {
+    // DGI en pausa, tope por minuto, caida o respuesta que no es su pagina
+    // (posible bloqueo): no cuenta como intento, se reintenta despues.
+    return "unavailable";
   }
-  if (!response.ok) {
-    // Fallo transitorio (servidor caido, etc.) — no se cuenta como un
-    // intento real, se reintenta en la proxima corrida.
-    return null;
-  }
-  const html = await response.text();
+  const html = page.html;
 
-  if (!isConfirmed(html)) {
+  if (page.kind === "not_found") {
     const scannedAt = new Date(receipt.scanned_at);
     const daysSinceScanned = (now.getTime() - scannedAt.getTime()) / (1000 * 60 * 60 * 24);
     const newStatus = daysSinceScanned >= expireAfterDays ? "expirada" : "pendiente";
@@ -517,8 +507,8 @@ Deno.serve(async (req) => {
       // Sin push: la persona acaba de escanear y esta viendo la factura en
       // la app. Los avisos quedan para la corrida periodica (facturas que
       // la DGI confirma despues, con la app cerrada).
-      const result = await processReceipt(supabase, row as PendingReceipt, pointsPerDollar, dailyCapFactura, expireAfterDays);
-      return jsonResponse({ immediate: true, confirmed: result !== null });
+      const result = await processReceipt(supabase, row as PendingReceipt, pointsPerDollar, dailyCapFactura, expireAfterDays, "verificar-al-escanear");
+      return jsonResponse({ immediate: true, confirmed: result !== null && result !== "unavailable", unavailable: result === "unavailable" });
     }
 
     // Corrida periodica (cada hora): solo las facturas cuya ultima consulta
@@ -533,11 +523,12 @@ Deno.serve(async (req) => {
     let processed = 0;
     let confirmed = 0;
     const errors: string[] = [];
+    let dgiUnavailable = false;
     // Por usuario: puntos sumados y facturas confirmadas en esta corrida,
     // para mandar UN solo aviso push por persona al final.
     const perUser = new Map<string, UserSummary>();
 
-    while (Date.now() - startedAt < TIME_BUDGET_MS) {
+    while (!dgiUnavailable && Date.now() - startedAt < TIME_BUDGET_MS) {
       const { data, error } = await supabase
         .from("dgi_receipts")
         .select("id, user_id, cufe, ruc, scanned_at, dgi_check_count")
@@ -566,7 +557,12 @@ Deno.serve(async (req) => {
         if (Date.now() - startedAt >= TIME_BUDGET_MS) break;
         seen.add(receipt.id);
         try {
-          const result = await processReceipt(supabase, receipt, pointsPerDollar, dailyCapFactura, expireAfterDays);
+          const result = await processReceipt(supabase, receipt, pointsPerDollar, dailyCapFactura, expireAfterDays, "verificar-cada-hora");
+          if (result === "unavailable") {
+            // Tope o pausa: se corta esta corrida, lo demas sigue la proxima.
+            dgiUnavailable = true;
+            break;
+          }
           processed++;
           if (result) {
             confirmed++;
@@ -589,7 +585,7 @@ Deno.serve(async (req) => {
       pushesSent += await notifyUser(supabase, userId, entry);
     }
 
-    return jsonResponse({ fetched, processed, confirmed, pushesSent, errors });
+    return jsonResponse({ fetched, processed, confirmed, pushesSent, dgiUnavailable, errors });
   } catch (error) {
     console.error(error);
     return jsonResponse({ error: String(error) }, 500);

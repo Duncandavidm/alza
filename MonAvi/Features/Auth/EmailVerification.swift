@@ -11,7 +11,9 @@ enum EmailVerificationLogic {
     static let resendCooldownSeconds = 60
     /// Texto exacto con el que la RPC `redeem_reward` rechaza el canje
     /// cuando el correo no esta verificado.
-    static let verificationRequiredMessage = "Verifica tu correo para canjear"
+    /// Sirve para "Verifica tu correo para canjear" (premios) y "...para
+    /// usar este descuento" (descuentos de aliados, 1.0.3).
+    static let verificationRequiredMessage = "Verifica tu correo para"
 
     /// Deja solo digitos (tambien los que pega o autocompleta iOS con
     /// espacios o guiones) y como maximo 6.

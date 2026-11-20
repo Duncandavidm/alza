@@ -715,6 +715,7 @@ function ConfirmScreen({
             </>
           )}
         </p>
+        <p className="caja-fine">🧾 No olvides entregarle su factura fiscal.</p>
         <p className="caja-fine">Código {state.data.code}</p>
         <button type="button" className="caja-btn caja-btn-primary" onClick={() => onDoneRef.current()}>
           Siguiente cliente
@@ -742,7 +743,7 @@ function ConfirmScreen({
         <dl className="caja-facts">
           <div>
             <dt>Valor</dt>
-            <dd>{data.isGift ? `Gratis (${data.valueLabel})` : data.valueLabel}</dd>
+            <dd>{data.isBenefit ? data.valueLabel : data.isGift ? `Gratis (${data.valueLabel})` : data.valueLabel}</dd>
           </div>
           <div>
             <dt>Vence el</dt>
@@ -764,6 +765,7 @@ function ConfirmScreen({
         <button type="button" className="caja-btn caja-btn-secondary" disabled={delivering} onClick={onBack}>
           Volver
         </button>
+        <p className="caja-fine caja-invoice-hint">🧾 Entrégale su factura fiscal: la escanea en MonAvi y gana cashback.</p>
         <p className="caja-fine">
           {data.isDiscount
             ? "Toca “Aplicar” solo cuando apliques el descuento en la cuenta: el código ya no se podrá usar."
@@ -841,6 +843,7 @@ function PinFallback({
             </>
           )}
         </p>
+        <p className="caja-fine">🧾 No olvides entregarle su factura fiscal.</p>
       </section>
     );
   }
@@ -858,7 +861,7 @@ function PinFallback({
           <dl className="caja-facts">
             <div>
               <dt>Valor</dt>
-              <dd>{verified.isGift ? `Gratis (${verified.valueLabel})` : verified.valueLabel}</dd>
+              <dd>{verified.isBenefit ? verified.valueLabel : verified.isGift ? `Gratis (${verified.valueLabel})` : verified.valueLabel}</dd>
             </div>
             <div>
               <dt>Vence el</dt>

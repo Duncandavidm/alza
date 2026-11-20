@@ -10,6 +10,7 @@ struct RedemptionCodeView: View {
     /// Brillo que tenia la pantalla antes de abrir el codigo, para
     /// devolverlo al cerrar (el brillo al maximo ayuda al lector de caja).
     @State private var previousBrightness: CGFloat?
+    @State private var isScanningInvoice = false
 
     var body: some View {
         NavigationStack {
@@ -19,6 +20,7 @@ struct RedemptionCodeView: View {
                     giftMessageCard
                     codeCard
                     instructions
+                    invoiceCard
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 16)
@@ -35,6 +37,7 @@ struct RedemptionCodeView: View {
             // visible sin tener que hacer scroll bajo el QR.
             .safeAreaInset(edge: .bottom) { directionsBar }
         }
+        .invoiceScanner(isPresented: $isScanningInvoice)
         .onAppear { raiseBrightness() }
         .onDisappear { restoreBrightness() }
     }
@@ -77,7 +80,7 @@ struct RedemptionCodeView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
-                if redemption.isGift {
+                if redemption.isGift || redemption.isBenefit {
                     Text("Gratis")
                         .font(.system(.subheadline, design: MonAviBrand.fontDesign, weight: .bold))
                         .padding(.horizontal, 10)
@@ -153,17 +156,73 @@ struct RedemptionCodeView: View {
         }
     }
 
+    @ViewBuilder
     private var instructions: some View {
-        VStack(spacing: 6) {
-            Text("Muéstralo en caja: el comercio escanea el código y te lo entrega.")
-                .font(.headline)
-                .multilineTextAlignment(.center)
-            Text("Vence el \(redemption.expiresAt.formatted(Date.FormatStyle(date: .long, time: .shortened, locale: .monavi)))")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+        if redemption.isBenefit {
+            // Codigo de 15 minutos: cuenta regresiva en vivo.
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                VStack(spacing: 6) {
+                    Text("Muéstralo en caja antes de pagar: te aplican el descuento.")
+                        .font(.headline)
+                        .multilineTextAlignment(.center)
+                    if let countdown = BenefitsMath.countdownText(until: redemption.expiresAt, now: context.date) {
+                        Label("Vence en \(countdown)", systemImage: "timer")
+                            .font(.subheadline.weight(.semibold).monospacedDigit())
+                            .foregroundStyle(MonAviBrand.primaryDark)
+                    } else {
+                        Text("Este código venció. Vuelve a Descuentos y genera uno nuevo.")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(MonAviBrand.alert)
+                            .multilineTextAlignment(.center)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+            }
+        } else {
+            VStack(spacing: 6) {
+                Text("Muéstralo en caja: el comercio escanea el código y te lo entrega.")
+                    .font(.headline)
+                    .multilineTextAlignment(.center)
+                Text("Vence el \(redemption.expiresAt.formatted(Date.FormatStyle(date: .long, time: .shortened, locale: .monavi)))")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity)
+    }
+
+    /// Pedir la factura fiscal: es la que da el cashback (y la que le
+    /// muestra al comercio cuanto le trajo el descuento).
+    private var invoiceCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
+                Text("🧾").font(.title2)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Pide tu factura fiscal")
+                        .font(.subheadline.weight(.bold))
+                    Text(redemption.isBenefit
+                         ? "Escanéala después de pagar y ganas cashback además del descuento."
+                         : "Si compras algo más, escanea la factura y gana cashback.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            Button {
+                isScanningInvoice = true
+            } label: {
+                Label("Escanear mi factura", systemImage: "qrcode.viewfinder")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .tint(MonAviBrand.primary)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(MonAviBrand.primary.opacity(0.10))
+        )
     }
 
     /// Barra de accion fija al fondo (safeAreaInset): solo aparece si el

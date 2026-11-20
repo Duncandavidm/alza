@@ -10,7 +10,7 @@ import { fileFromForm, uploadRewardImage } from "@/lib/uploads";
 import { parseDollarsToCents } from "@/lib/format";
 import { optionalText, text } from "@/lib/validation";
 import { type RewardCurrency, toRewardCurrency } from "@/lib/currency";
-import { type RewardType, defaultRewardName, toRewardType } from "@/lib/reward-type";
+import { type BenefitPeriod, type RewardType, defaultRewardName, toBenefitPeriod, toRewardType } from "@/lib/reward-type";
 import type { ActionState } from "@/components/ActionForm";
 
 function revalidateMerchant(merchantId: string) {
@@ -144,6 +144,10 @@ type RewardItemFields = {
   reward_type: RewardType;
   discount_value: number | null;
   max_redemptions: number | null;
+  /// Descuento gratis "por ser de MonAvi" (0067): no cuesta cashback.
+  free_benefit: boolean;
+  per_user_limit: number | null;
+  per_user_period: BenefitPeriod | null;
 };
 
 /// Moneda de canje del comercio leida de la base (no se confia en el
@@ -186,9 +190,24 @@ function parseRewardItemFields(
     }
   }
 
+  const freeBenefit = text(formData, "access", 12) === "beneficio";
+  let perUserLimit: number | null = null;
+  let perUserPeriod: BenefitPeriod | null = null;
+  if (freeBenefit) {
+    const limitRaw = text(formData, "per_user_limit", 4) || "1";
+    perUserLimit = /^\d{1,3}$/.test(limitRaw) ? Number(limitRaw) : NaN;
+    if (!Number.isInteger(perUserLimit) || perUserLimit < 1 || perUserLimit > 100) {
+      return { error: "Las veces por persona deben ser un número entero entre 1 y 100." };
+    }
+    perUserPeriod = toBenefitPeriod(text(formData, "per_user_period", 10));
+  }
+
   const rawValue = text(formData, "reward_value", 16);
   let pointsCost: number | null;
-  if (currency === "puntos") {
+  if (freeBenefit) {
+    // Gratis: lo pone el comercio por traerle clientes, no cuesta cashback.
+    pointsCost = 0;
+  } else if (currency === "puntos") {
     // Puntos por buenos habitos: entero >= 1, se guarda tal cual.
     const points = /^\d{1,9}$/.test(rawValue) ? Number(rawValue) : NaN;
     if (!Number.isInteger(points) || points < 1 || points > 10_000_000) {
@@ -219,6 +238,9 @@ function parseRewardItemFields(
       reward_type: rewardType,
       discount_value: discountValue,
       max_redemptions: maxRedemptions,
+      free_benefit: freeBenefit,
+      per_user_limit: perUserLimit,
+      per_user_period: perUserPeriod,
     },
   };
 }

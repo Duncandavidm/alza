@@ -5,6 +5,8 @@ import Foundation
 @MainActor
 final class RewardsViewModel: ObservableObject {
     @Published private(set) var items: [RewardItem] = []
+    /// Descuentos gratis de aliados (0067) y si ya los desbloqueo.
+    @Published private(set) var benefits: BenefitsResponse = .empty
     @Published private(set) var balance = PointsBalance.zero
     @Published private(set) var isLoading = false
     @Published private(set) var hasLoaded = false
@@ -38,6 +40,7 @@ final class RewardsViewModel: ObservableObject {
         }
 
         async let balanceTask: PointsBalance = CardPointsRepository.shared.fetchBalance(userId: userId)
+        async let benefitsTask: BenefitsResponse = repository.fetchBenefitsOrEmpty()
         do {
             let fetched = try await repository.fetchItems()
             items = fetched
@@ -49,6 +52,12 @@ final class RewardsViewModel: ObservableObject {
             errorMessage = "No pudimos cargar los comercios aliados. Desliza hacia abajo para intentar de nuevo."
         }
         balance = await balanceTask
+        benefits = await benefitsTask
+    }
+
+    /// Despues de escanear una factura o de usar un descuento.
+    func refreshBenefits() async {
+        benefits = await repository.fetchBenefitsOrEmpty()
     }
 
     func refreshBalance(userId: UUID) async {

@@ -18,6 +18,8 @@ type Props = {
   hasMaps?: boolean;
   paused?: boolean;
   pausedLabel?: string;
+  /// Descuento gratis por ser de MonAvi: en vez del costo dice "Gratis".
+  isFree?: boolean;
 };
 
 export default function RewardPreviewCard({
@@ -31,6 +33,7 @@ export default function RewardPreviewCard({
   hasMaps = true,
   paused,
   pausedLabel,
+  isFree,
 }: Props) {
   return (
     <div className={`reward-preview${paused ? " is-paused" : ""}`}>
@@ -54,13 +57,13 @@ export default function RewardPreviewCard({
       <div className="reward-preview-body">
         <span className="reward-preview-product">{productName || "Nombre del producto"}</span>
         <span className="reward-preview-points">
-          {value && value > 0 ? formatRewardValue(value, currency) : currency === "puntos" ? "— pts" : "$—"}
+          {isFree ? "Gratis" : value && value > 0 ? formatRewardValue(value, currency) : currency === "puntos" ? "— pts" : "$—"}
         </span>
       </div>
       {description && <p className="reward-preview-description">{description}</p>}
       <div className="reward-preview-actions">
         <span className={`reward-preview-button outline${hasMaps ? "" : " disabled"}`}>Cómo llegar</span>
-        <span className="reward-preview-button filled">Canjear</span>
+        <span className="reward-preview-button filled">{isFree ? "Usar descuento" : "Canjear"}</span>
       </div>
       {paused && <div className="reward-preview-paused">{pausedLabel ?? "Pausado — no se ve en la app"}</div>}
     </div>

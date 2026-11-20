@@ -4,8 +4,10 @@
 // consulta UNA vez la pagina publica de la factura (lo mismo que haria la
 // persona abriendo el enlace del QR) y devuelve comercio, monto, fecha,
 // forma de pago, productos y la categoria sugerida, para llenar el gasto
-// solo. No guarda nada: el registro y el cashback siguen su camino normal
-// (la factura queda pendiente y el job diario la verifica y acredita).
+// solo. El registro y el cashback siguen su camino normal; la pagina leida
+// se guarda unos minutos para que la verificacion inmediata no vuelva a
+// consultar la DGI (dgi_guard.ts). Si la DGI esta en pausa o se llego al
+// tope por minuto, responde "no_disponible" y la persona escribe el monto.
 //
 // Tambien dice si los ingresos registrados alcanzan para respaldar el
 // cashback de esta compra (ver migracion 0045), para avisarle a la persona.
@@ -19,14 +21,13 @@ import {
   extractLines,
   extractMerchantName,
   extractPaymentMethods,
-  isConfirmed,
   titleCase,
 } from "./dgi.ts";
 import { categorize } from "./categorize.ts";
+import { fetchDgiPage } from "./dgi_guard.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const DGI_BASE = "https://dgi-fep.mef.gob.pa";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -113,18 +114,13 @@ Deno.serve(async (req) => {
   const backedTotal = (backed ?? []).reduce(
     (sum: number, row: { confirmed_amount: number | null }) => sum + Number(row.confirmed_amount ?? 0), 0);
 
-  let html: string;
-  try {
-    const response = await fetch(`${DGI_BASE}/Consultas/FacturasPorCUFE/${cufe}`, {
-      signal: AbortSignal.timeout(12_000),
-    });
-    if (!response.ok) throw new Error(String(response.status));
-    html = await response.text();
-  } catch {
+  const page = await fetchDgiPage(supabase, cufe, "consultar-al-escanear", { timeoutMs: 12_000, saveCache: true });
+  if (page.kind === "unavailable") {
     return jsonResponse({ status: "no_disponible", income_total: incomeTotal, backed_total: backedTotal });
   }
+  const html = page.html;
 
-  if (!isConfirmed(html)) {
+  if (page.kind !== "confirmed") {
     // Aun no aparece (puede tardar): la app deja escribir el monto a mano.
     return jsonResponse({ status: "pendiente", income_total: incomeTotal, backed_total: backedTotal });
   }

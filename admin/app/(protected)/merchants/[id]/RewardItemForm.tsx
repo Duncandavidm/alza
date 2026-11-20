@@ -5,7 +5,14 @@ import ActionForm, { type ActionState } from "@/components/ActionForm";
 import RewardPreviewCard from "@/components/RewardPreviewCard";
 import { centsToDollarInput } from "@/lib/format";
 import type { RewardCurrency } from "@/lib/currency";
-import { REWARD_TYPES, type RewardType, defaultRewardName, toRewardType } from "@/lib/reward-type";
+import {
+  BENEFIT_PERIODS,
+  REWARD_TYPES,
+  type RewardType,
+  defaultRewardName,
+  toBenefitPeriod,
+  toRewardType,
+} from "@/lib/reward-type";
 
 type Item = {
   name: string;
@@ -17,6 +24,9 @@ type Item = {
   reward_type?: string | null;
   discount_value?: number | string | null;
   max_redemptions?: number | null;
+  free_benefit?: boolean | null;
+  per_user_limit?: number | null;
+  per_user_period?: string | null;
 };
 
 type Props = {
@@ -38,6 +48,10 @@ export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps,
   const initialType = toRewardType(item?.reward_type);
   const initialDiscount = item?.discount_value != null ? String(Number(item.discount_value)) : "";
   const [rewardType, setRewardType] = useState<RewardType>(initialType);
+  // "premio": cuesta cashback/puntos. "beneficio": descuento gratis por ser
+  // de MonAvi (se desbloquea con la primera factura, con limite por persona).
+  const [access, setAccess] = useState<"premio" | "beneficio">(item?.free_benefit ? "beneficio" : "premio");
+  const isFree = access === "beneficio";
   const [discountValue, setDiscountValue] = useState(initialDiscount);
   // Si el nombre guardado es el automatico ("10% de descuento"), se deja
   // vacio para que siga al valor cuando se edite.
@@ -75,6 +89,7 @@ export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps,
           if (item) return;
           setName("");
           setRewardType("producto");
+          setAccess("premio");
           setDiscountValue("");
           setDescription("");
           setRewardValue("");
@@ -82,6 +97,51 @@ export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps,
           setLocalPhoto(null);
         }}
       >
+        <div className="field">
+          <label>Cómo lo obtiene el cliente</label>
+          <select
+            name="access"
+            value={access}
+            onChange={(event) => {
+              const next = event.target.value === "beneficio" ? "beneficio" : "premio";
+              setAccess(next);
+              if (next === "beneficio" && rewardType === "producto") setRewardType("porcentaje");
+            }}
+          >
+            <option value="premio">Premio: lo canjea con su cashback o puntos</option>
+            <option value="beneficio">Descuento gratis por ser de MonAvi</option>
+          </select>
+        </div>
+        {isFree && (
+          <>
+            <div className="field">
+              <label>Veces por persona</label>
+              <input
+                type="number"
+                name="per_user_limit"
+                min={1}
+                max={100}
+                step={1}
+                inputMode="numeric"
+                defaultValue={item?.per_user_limit ?? 1}
+              />
+            </div>
+            <div className="field">
+              <label>Cada cuánto se renueva</label>
+              <select name="per_user_period" defaultValue={toBenefitPeriod(item?.per_user_period)}>
+                {BENEFIT_PERIODS.map((period) => (
+                  <option key={period.value} value={period.value}>
+                    {period.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <p className="text-dim" style={{ gridColumn: "1 / -1", margin: 0 }}>
+              El cliente lo desbloquea al escanear su primera factura fiscal, necesita correo verificado y en caja
+              muestra un código que dura 15 minutos. No le cuesta cashback.
+            </p>
+          </>
+        )}
         <div className="field">
           <label>Qué se canjea</label>
           <select
@@ -125,20 +185,22 @@ export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps,
             placeholder={isDiscount ? autoName || (rewardType === "porcentaje" ? "10% de descuento" : "Cupón de $20") : "Café latte grande"}
           />
         </div>
-        <div className="field">
-          <label>{isPoints ? "Puntos necesarios" : "Valor en cashback (US$)"}</label>
-          <input
-            type="number"
-            name="reward_value"
-            required
-            min={isPoints ? 1 : 0.01}
-            step={isPoints ? 1 : 0.01}
-            inputMode={isPoints ? "numeric" : "decimal"}
-            placeholder={isPoints ? "150" : "3.50"}
-            value={rewardValue}
-            onChange={(event) => setRewardValue(event.target.value)}
-          />
-        </div>
+        {!isFree && (
+          <div className="field">
+            <label>{isPoints ? "Puntos necesarios" : "Valor en cashback (US$)"}</label>
+            <input
+              type="number"
+              name="reward_value"
+              required
+              min={isPoints ? 1 : 0.01}
+              step={isPoints ? 1 : 0.01}
+              inputMode={isPoints ? "numeric" : "decimal"}
+              placeholder={isPoints ? "150" : "3.50"}
+              value={rewardValue}
+              onChange={(event) => setRewardValue(event.target.value)}
+            />
+          </div>
+        )}
         <div className="field">
           <label>Límite de canjes (vacío = sin límite)</label>
           <input
@@ -212,7 +274,8 @@ export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps,
           logoUrl={logoUrl}
           productName={name || autoName}
           photoUrl={photoUrl}
-          value={(isPoints ? Math.round(Number(rewardValue)) : Math.round(Number(rewardValue) * 100)) || null}
+          value={isFree ? null : (isPoints ? Math.round(Number(rewardValue)) : Math.round(Number(rewardValue) * 100)) || null}
+          isFree={isFree}
           currency={currency}
           description={description}
           hasMaps={hasMaps}

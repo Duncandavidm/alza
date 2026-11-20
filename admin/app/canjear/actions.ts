@@ -24,6 +24,8 @@ export type RedeemResult =
       isGift: boolean;
       /// Descuento en % o cupon en US$ (0065): en caja se "aplica", no se entrega.
       isDiscount: boolean;
+      /// Descuento gratis por ser de MonAvi (0067): no le costo cashback.
+      isBenefit: boolean;
       valueLabel: string;
       expiresLabel: string;
       deliveredLabel: string | null;
@@ -51,6 +53,7 @@ type RpcResponse = {
   merchant_id?: string | null;
   is_gift?: boolean | null;
   reward_type?: string | null;
+  is_benefit?: boolean | null;
   value_cents?: number | null;
   currency?: string | null;
   value?: number | null;
@@ -151,10 +154,13 @@ export async function redeemCode(input: {
       photoUrl: result.photo_url ?? null,
       merchant: result.merchant ?? "",
       isGift: result.is_gift === true,
-      isDiscount: isDiscountType(result.reward_type),
+      isDiscount: isDiscountType(result.reward_type) || result.is_benefit === true,
+      isBenefit: result.is_benefit === true,
       // "$3.50 de cashback" o "150 puntos". Si la RPC no trae currency/value
       // (version anterior), se asume cashback en centavos (value_cents).
-      valueLabel: result.currency
+      valueLabel: result.is_benefit === true
+        ? "Descuento por ser cliente de MonAvi"
+        : result.currency
         ? formatRewardValueLong(Number(result.value ?? result.value_cents ?? 0), toRewardCurrency(result.currency))
         : formatRewardValueLong(Number(result.value_cents ?? 0), "cashback"),
       expiresLabel: formatDateTime(result.expires_at),

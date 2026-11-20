@@ -55,4 +55,14 @@ final class NotificationManagerTests: XCTestCase {
         XCTAssertEqual(NotificationManager.clampedDailyLogMinutes(1440), NotificationManager.defaultDailyLogMinutes)
         XCTAssertEqual(NotificationManager.clampedDailyLogMinutes(-5), NotificationManager.defaultDailyLogMinutes)
     }
+
+    /// Con la app abierta solo el aviso de prueba suena y solo el sobrante
+    /// se ve como banner; lo demas queda callado en el centro de avisos.
+    func testForegroundPresentationIsQuiet() {
+        XCTAssertEqual(NotificationManager.foregroundPresentation(for: "test-ABC"), [.banner, .list, .sound])
+        XCTAssertEqual(NotificationManager.foregroundPresentation(for: "surplus-advice-ABC"), [.banner, .list])
+        for id in ["recurring-123", "bill-123", "daily-log-0", "partner-card-super-2026-11-20", "push-remoto"] {
+            XCTAssertEqual(NotificationManager.foregroundPresentation(for: id), [.list], id)
+        }
+    }
 }

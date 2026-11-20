@@ -339,7 +339,13 @@ struct RewardsView: View {
             redeemErrorMessage = RewardsRepository.userMessage(for: error)
         }
         if let userId = appState.currentUserId {
-            await viewModel.refreshBalance(userId: userId)
+            if redeemErrorMessage != nil || item.maxRedemptions != nil {
+                // "Se agotó" o un canje con cupo: se recarga el catalogo
+                // para que desaparezca o se actualice su "Quedan N".
+                await viewModel.refresh(userId: userId)
+            } else {
+                await viewModel.refreshBalance(userId: userId)
+            }
         }
     }
 

@@ -69,8 +69,19 @@ struct RewardsForYouCard: View {
         let missingText = RewardsMath.missingText(cost: item.pointsCost, balance: available, currency: item.currency)
 
         return VStack(alignment: .leading, spacing: 6) {
-            RewardPhotoView(urlString: item.photoUrl, cornerRadius: 12)
+            RewardPhotoView(urlString: item.photoUrl, cornerRadius: 12, placeholderSymbol: item.kind.placeholderSymbol)
                 .frame(width: 140)
+                .overlay(alignment: .topLeading) {
+                    if let remaining = RewardsMath.remainingText(item.remaining) {
+                        Text(remaining)
+                            .font(.caption2.weight(.bold))
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
+                            .background(.orange, in: Capsule())
+                            .foregroundStyle(.white)
+                            .padding(6)
+                    }
+                }
             Text(item.name)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)

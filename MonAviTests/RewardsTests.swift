@@ -465,4 +465,84 @@ final class RewardsTests: XCTestCase {
         XCTAssertEqual(RewardsMath.giftCountText(1), "Tienes 1 regalo")
         XCTAssertEqual(RewardsMath.giftCountText(3), "Tienes 3 regalos")
     }
+
+    // MARK: - Cupo y descuentos (0065/0066, app 1.0.3)
+
+    func testDecodesStockAndKindAndToleratesOldServer() throws {
+        let json = """
+        {
+          "id": "6F9619FF-8B86-D011-B42D-00C04FC964FF",
+          "merchant_id": "7F9619FF-8B86-D011-B42D-00C04FC964FF",
+          "name": "10% de descuento",
+          "description": null,
+          "photo_url": null,
+          "points_cost": 500,
+          "status": "active",
+          "sort_order": 0,
+          "reward_type": "porcentaje",
+          "discount_value": 10.00,
+          "max_redemptions": 20,
+          "used_count": 15
+        }
+        """
+        let decoded = try decoder.decode(RewardItem.self, from: Data(json.utf8))
+        XCTAssertEqual(decoded.kind, .porcentaje)
+        XCTAssertTrue(decoded.kind.isDiscount)
+        XCTAssertEqual(decoded.remaining, 5)
+        XCTAssertEqual(decoded.kind.placeholderSymbol, "percent")
+
+        // Servidor viejo (sin columnas nuevas) o tipo desconocido.
+        let old = try decoder.decode(RewardItem.self, from: Data("""
+        {"id": "6F9619FF-8B86-D011-B42D-00C04FC964FF", "merchant_id": "7F9619FF-8B86-D011-B42D-00C04FC964FF",
+         "name": "Capuchino", "points_cost": 350, "status": "active", "sort_order": 0, "reward_type": "otro"}
+        """.utf8))
+        XCTAssertEqual(old.kind, .producto)
+        XCTAssertNil(old.remaining)
+    }
+
+    func testRemainingNeverNegativeAndText() {
+        var limited = item(name: "Capuchino", merchant: merchant(name: "Café"))
+        limited.maxRedemptions = 20
+        limited.usedCount = 25
+        XCTAssertEqual(limited.remaining, 0)
+        XCTAssertNil(RewardsMath.remainingText(limited.remaining))
+        XCTAssertNil(RewardsMath.remainingText(nil))
+        XCTAssertEqual(RewardsMath.remainingText(1), "¡Queda 1!")
+        XCTAssertEqual(RewardsMath.remainingText(5), "Quedan 5")
+    }
+
+    func testAvailableHidesPausedAndSoldOut() {
+        let cafe = merchant(name: "Café")
+        var paused = item(name: "Pausado", merchant: cafe)
+        paused.status = "paused"
+        var soldOut = item(name: "Agotado", merchant: cafe)
+        soldOut.status = "agotado"
+        let active = item(name: "Activo", merchant: cafe)
+        XCTAssertEqual(RewardsMath.available([paused, soldOut, active]).map(\.name), ["Activo"])
+    }
+
+    func testFillingMissingItemsRestoresHiddenProduct() throws {
+        let hidden = try decoder.decode(
+            RewardRedemption.self,
+            from: Data(redemptionJSON(status: "entregado", expiresAt: "2099-01-01T00:00:00Z", withItem: false).utf8)
+        )
+        XCTAssertEqual(hidden.itemName, "tu producto")
+
+        var product = item(name: "Capuchino", merchant: merchant(name: "Café"))
+        product = RewardItem(
+            id: hidden.rewardItemId, merchantId: product.merchantId, name: "Cupón de $20", itemDescription: nil,
+            photoUrl: nil, pointsCost: 2000, status: "agotado", sortOrder: 0, merchant: product.merchant,
+            rewardType: .monto
+        )
+        let filled = RewardsMath.fillingMissingItems([hidden], with: [product])
+        XCTAssertEqual(filled.first?.itemName, "Cupón de $20")
+        XCTAssertTrue(filled.first?.isDiscount ?? false)
+        XCTAssertEqual(filled.first?.statusText(), "Aplicado")
+
+        // Un canje que ya traia su producto no se toca.
+        let unrelated = RewardsMath.fillingMissingItems([hidden], with: [])
+        XCTAssertNil(unrelated.first?.item)
+        XCTAssertEqual(unrelated.first?.statusText(), "Entregado")
+    }
 }
+

@@ -48,6 +48,34 @@ enum RewardCurrency: String, Codable, CaseIterable, Hashable {
     }
 }
 
+/// Que se canjea (`reward_items.reward_type`, migracion 0065): un
+/// producto, un descuento en % o un cupon en US$. El nombre ya viene
+/// armado del panel ("10% de descuento", "Cupón de $20"); esto solo cambia
+/// el icono y el texto de "Entregado" -> "Aplicado".
+enum RewardKind: String, Codable, Hashable {
+    case producto
+    case porcentaje
+    case monto
+
+    /// Tolerante: un valor desconocido cae en `.producto`.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let raw = (try? container.decode(String.self)) ?? ""
+        self = RewardKind(rawValue: raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()) ?? .producto
+    }
+
+    var isDiscount: Bool { self != .producto }
+
+    /// Icono cuando el canje no tiene foto.
+    var placeholderSymbol: String {
+        switch self {
+        case .producto: return "gift.fill"
+        case .porcentaje: return "percent"
+        case .monto: return "ticket.fill"
+        }
+    }
+}
+
 /// Producto canjeable de un comercio aliado (tabla `reward_items`,
 /// migracion 0031). La RLS solo devuelve productos activos de comercios
 /// activos. Se lee con el comercio embebido:
@@ -65,6 +93,12 @@ struct RewardItem: Codable, Identifiable, Hashable {
     var sortOrder: Int
     /// Comercio embebido. Opcional por si algun select no lo trae.
     var merchant: PartnerMerchant?
+    /// `reward_type` (0065). nil en servidores viejos: producto.
+    var rewardType: RewardKind? = nil
+    /// `max_redemptions` (0065): cupo total, nil = sin limite.
+    var maxRedemptions: Int? = nil
+    /// `used_count` (0066): codigos que ya gastaron cupo.
+    var usedCount: Int? = nil
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -76,9 +110,23 @@ struct RewardItem: Codable, Identifiable, Hashable {
         case status
         case sortOrder = "sort_order"
         case merchant = "partner_merchants"
+        case rewardType = "reward_type"
+        case maxRedemptions = "max_redemptions"
+        case usedCount = "used_count"
     }
 
     var merchantName: String { merchant?.name ?? "Comercio aliado" }
+
+    var kind: RewardKind { rewardType ?? .producto }
+
+    /// Se puede canjear ahora (ni pausado ni agotado).
+    var isAvailable: Bool { status == "active" }
+
+    /// Cuantos quedan si el canje tiene cupo; nil si no tiene limite.
+    var remaining: Int? {
+        guard let maxRedemptions else { return nil }
+        return max(0, maxRedemptions - max(0, usedCount ?? 0))
+    }
 
     /// Moneda en la que se paga: la del comercio (cashback si no viene).
     /// `pointsCost` esta en esta moneda (centavos o puntos).
@@ -182,6 +230,17 @@ struct RewardRedemption: Codable, Identifiable, Hashable {
 
     /// Lo que se muestra como costo: "Gratis" en los regalos.
     var displayCostText: String { isGift ? "Gratis" : formattedCost }
+
+    /// Descuento o cupon (se "aplica" en caja en vez de "entregarse").
+    var isDiscount: Bool { item?.kind.isDiscount ?? false }
+
+    /// Texto del badge de estado: "Aplicado" en vez de "Entregado" para
+    /// descuentos y cupones.
+    func statusText(now: Date = Date()) -> String {
+        let status = effectiveStatus(now: now)
+        if status == .entregado && isDiscount { return "Aplicado" }
+        return status.displayName
+    }
 
     /// Comercio a mostrar: el directo, o el que viene dentro del producto.
     var displayMerchant: PartnerMerchant? { merchant ?? item?.merchant }
@@ -331,6 +390,33 @@ enum RewardsMath {
         }
         components.queryItems = [URLQueryItem(name: "code", value: code)]
         return components.url
+    }
+
+    /// Solo lo que se puede canjear ahora. La RLS ya esconde pausados y
+    /// agotados, pero la app no depende de eso (1.0.3).
+    static func available(_ items: [RewardItem]) -> [RewardItem] {
+        items.filter(\.isAvailable)
+    }
+
+    /// "Quedan 5" / "¡Queda 1!" para canjes con cupo; nil si no tiene
+    /// limite o ya no queda (en ese caso ni se muestra).
+    static func remainingText(_ remaining: Int?) -> String? {
+        guard let remaining, remaining > 0 else { return nil }
+        return remaining == 1 ? "¡Queda 1!" : "Quedan \(remaining)"
+    }
+
+    /// Completa el producto de los canjes que llegaron sin el (la RLS lo
+    /// esconde cuando se agota o se pausa) con los de
+    /// `my_redemption_items`. No pisa los que ya venian.
+    static func fillingMissingItems(_ redemptions: [RewardRedemption], with items: [RewardItem]) -> [RewardRedemption] {
+        let byId = Dictionary(items.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        return redemptions.map { redemption in
+            guard redemption.item == nil, let item = byId[redemption.rewardItemId] else { return redemption }
+            var filled = redemption
+            filled.item = item
+            if filled.merchant == nil { filled.merchant = item.merchant }
+            return filled
+        }
     }
 
     /// Orden del catalogo: por nombre del comercio y, dentro de cada

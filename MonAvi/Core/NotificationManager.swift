@@ -450,32 +450,6 @@ enum NotificationManager {
         }
     }
 
-    // MARK: - Consejo de pago al registrar un ingreso
-
-    /// A diferencia de los recordatorios de arriba, esta se dispara de
-    /// inmediato (no se programa a futuro) — es el mismo consejo que ya
-    /// se muestra en pantalla via PaymentAdviceView, solo que tambien
-    /// como notificacion para que quede ahi si sales de la app.
-    static func sendPaymentPriorityNotification(items: [PaymentAdviceItem]) {
-        guard let first = items.first else { return }
-
-        let content = UNMutableNotificationContent()
-        content.title = "Qué pagar primero"
-        content.sound = brandSound
-        if items.count == 1 {
-            content.body = "\(first.name) — \(formattedAmount(Decimal(first.amount))) (\(first.dueInfo))"
-        } else {
-            content.body = "1. \(first.name) — \(formattedAmount(Decimal(first.amount))). Tienes \(items.count - 1) mas por priorizar."
-        }
-
-        let request = UNNotificationRequest(
-            identifier: "payment-priority-\(UUID().uuidString)",
-            content: content,
-            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
-        )
-        UNUserNotificationCenter.current().add(request)
-    }
-
     // MARK: - Sobrante al terminar de pagar todas las cuentas
 
     /// Se dispara una sola vez, cuando `BillsViewModel` detecta que ya no
@@ -550,6 +524,24 @@ enum NotificationManager {
             trigger: UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
         )
         UNUserNotificationCenter.current().add(request)
+    }
+
+    // MARK: - Con la app abierta
+
+    /// Como se muestra un aviso que llega mientras la app esta abierta.
+    /// Antes (1.0.2 y anteriores) todo salia con banner, sonido y vibracion,
+    /// y con la app en uso se sentia que "notifica todo". Ahora:
+    /// - el aviso de prueba de Ajustes suena y se ve (para eso es);
+    /// - el consejo de "te sobró dinero" sale como banner, sin sonido,
+    ///   porque se dispara justo al marcar la ultima cuenta como pagada y
+    ///   si no, no se veria;
+    /// - todo lo demas queda callado en el centro de notificaciones.
+    /// Con la app cerrada o en segundo plano iOS no llama a esto y los
+    /// avisos llegan como siempre.
+    static func foregroundPresentation(for identifier: String) -> UNNotificationPresentationOptions {
+        if identifier.hasPrefix("test-") { return [.banner, .list, .sound] }
+        if identifier.hasPrefix("surplus-advice-") { return [.banner, .list] }
+        return [.list]
     }
 
     // MARK: - Helpers
@@ -631,9 +623,9 @@ enum NotificationManager {
     }
 }
 
-/// Sin esto, iOS no muestra ninguna notificacion mientras la app esta
-/// abierta (por ejemplo, el "Qué pagar primero" justo despues de anotar un
-/// ingreso). Se instala una vez al arrancar la app (MonAviApp).
+/// Decide como se ven los avisos con la app abierta (ver
+/// `NotificationManager.foregroundPresentation(for:)`) y maneja los toques
+/// en las notificaciones. Se instala una vez al arrancar la app (MonAviApp).
 final class NotificationPresenter: NSObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationPresenter()
 
@@ -651,11 +643,16 @@ final class NotificationPresenter: NSObject, UNUserNotificationCenterDelegate {
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        // Con la app abierta iOS reproduce el sonido pero no siempre vibra:
-        // se agrega la vibracion a mano para que se sienta igual.
+        // Con la app abierta no se interrumpe (1.0.3): ver
+        // `NotificationManager.foregroundPresentation(for:)`.
+        let options = NotificationManager.foregroundPresentation(for: notification.request.identifier)
         Task { @MainActor in
-            UINotificationFeedbackGenerator().notificationOccurred(.warning)
-            completionHandler([.banner, .list, .sound])
+            // iOS no siempre vibra con la app abierta: solo el aviso de
+            // prueba (el unico que suena en primer plano) vibra a mano.
+            if options.contains(.sound) {
+                UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            }
+            completionHandler(options)
         }
     }
 

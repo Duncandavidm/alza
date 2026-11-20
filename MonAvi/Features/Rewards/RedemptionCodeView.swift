@@ -53,8 +53,12 @@ struct RedemptionCodeView: View {
 
     private var merchantHeader: some View {
         HStack(spacing: 14) {
-            RewardPhotoView(urlString: redemption.item?.photoUrl, cornerRadius: 14)
-                .frame(width: 96)
+            RewardPhotoView(
+                urlString: redemption.item?.photoUrl,
+                cornerRadius: 14,
+                placeholderSymbol: (redemption.item?.kind ?? .producto).placeholderSymbol
+            )
+            .frame(width: 96)
             VStack(alignment: .leading, spacing: 4) {
                 if redemption.isGift {
                     GiftBadge()
@@ -122,7 +126,7 @@ struct RedemptionCodeView: View {
                     .textSelection(.enabled)
                     .accessibilityLabel(spelledCode)
             }
-            RedemptionStatusBadge(status: redemption.effectiveStatus())
+            RedemptionStatusBadge(status: redemption.effectiveStatus(), text: redemption.statusText())
         }
         .frame(maxWidth: .infinity)
         .padding(20)

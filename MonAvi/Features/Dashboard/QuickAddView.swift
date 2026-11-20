@@ -598,7 +598,6 @@ struct QuickAddView: View {
                advice.hasAdvice {
                 adviceText = advice.advice ?? ""
                 adviceItems = advice.items ?? []
-                NotificationManager.sendPaymentPriorityNotification(items: adviceItems)
                 showingAdvice = true
                 return
             }

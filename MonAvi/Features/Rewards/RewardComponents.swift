@@ -5,6 +5,8 @@ import SwiftUI
 struct RewardPhotoView: View {
     let urlString: String?
     var cornerRadius: CGFloat = 20
+    /// Icono si no hay foto: regalo, % (descuento) o boleto (cupon).
+    var placeholderSymbol: String = RewardKind.producto.placeholderSymbol
 
     var body: some View {
         Color.clear
@@ -43,7 +45,7 @@ struct RewardPhotoView: View {
                 ProgressView()
                     .tint(MonAviBrand.primary)
             } else {
-                Image(systemName: "gift.fill")
+                Image(systemName: placeholderSymbol)
                     .font(.system(size: 36, weight: .semibold))
                     .foregroundStyle(MonAviBrand.primary.opacity(0.55))
             }
@@ -214,9 +216,11 @@ struct RewardBalancesHeader: View {
 /// Badge de estado de un canje en "Mis canjes".
 struct RedemptionStatusBadge: View {
     let status: RewardRedemptionStatus
+    /// Texto propio ("Aplicado" en descuentos); nil = el del estado.
+    var text: String? = nil
 
     var body: some View {
-        Text(status.displayName)
+        Text(text ?? status.displayName)
             .font(.caption.weight(.semibold))
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
@@ -255,8 +259,12 @@ struct GiftCouponCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top, spacing: 12) {
-                RewardPhotoView(urlString: redemption.item?.photoUrl, cornerRadius: 12)
-                    .frame(width: 104)
+                RewardPhotoView(
+                    urlString: redemption.item?.photoUrl,
+                    cornerRadius: 12,
+                    placeholderSymbol: (redemption.item?.kind ?? .producto).placeholderSymbol
+                )
+                .frame(width: 104)
 
                 VStack(alignment: .leading, spacing: 5) {
                     GiftBadge()

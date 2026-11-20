@@ -121,7 +121,7 @@ struct MyRedemptionsView: View {
             }
             Spacer(minLength: 8)
             VStack(alignment: .trailing, spacing: 4) {
-                RedemptionStatusBadge(status: redemption.effectiveStatus())
+                RedemptionStatusBadge(status: redemption.effectiveStatus(), text: redemption.statusText())
                 Text(redemption.displayCostText)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
@@ -137,7 +137,7 @@ struct MyRedemptionsView: View {
             return "Código \(redemption.code) · vence el \(redemption.expiresAt.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi)))"
         }
         if redemption.status == .entregado, let deliveredAt = redemption.deliveredAt {
-            return "Entregado el \(deliveredAt.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi)))"
+            return "\(redemption.isDiscount ? "Aplicado" : "Entregado") el \(deliveredAt.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi)))"
         }
         if redemption.isGift {
             return "Recibido el \(created)"

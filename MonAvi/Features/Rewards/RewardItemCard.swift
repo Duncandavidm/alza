@@ -19,7 +19,8 @@ struct RewardItemCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             merchantHeader
-            RewardPhotoView(urlString: item.photoUrl, cornerRadius: 20)
+            RewardPhotoView(urlString: item.photoUrl, cornerRadius: 20, placeholderSymbol: item.kind.placeholderSymbol)
+                .overlay(alignment: .topLeading) { remainingBadge }
             productInfo
             actions
         }
@@ -46,6 +47,20 @@ struct RewardItemCard: View {
             }
             Spacer(minLength: 8)
             RewardCurrencyBadge(currency: item.currency)
+        }
+    }
+
+    /// "Quedan 5" sobre la foto si el canje tiene cupo.
+    @ViewBuilder
+    private var remainingBadge: some View {
+        if let text = RewardsMath.remainingText(item.remaining) {
+            Label(text, systemImage: "flame.fill")
+                .font(.caption.weight(.bold))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(.orange, in: Capsule())
+                .foregroundStyle(.white)
+                .padding(10)
         }
     }
 

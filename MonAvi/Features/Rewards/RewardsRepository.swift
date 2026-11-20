@@ -18,10 +18,11 @@ final class RewardsRepository {
         let items: [RewardItem] = try await supabase
             .from("reward_items")
             .select("*, partner_merchants(*)")
+            .eq("status", value: "active")
             .order("sort_order", ascending: true)
             .execute()
             .value
-        return RewardsMath.sorted(items)
+        return RewardsMath.sorted(RewardsMath.available(items))
     }
 
     private struct RedeemParams: Encodable {
@@ -43,13 +44,31 @@ final class RewardsRepository {
 
     /// Canjes propios, del mas nuevo al mas viejo.
     func fetchMyRedemptions(userId: UUID) async throws -> [RewardRedemption] {
-        try await supabase
+        let rows: [RewardRedemption] = try await supabase
             .from("reward_redemptions")
             .select("*, reward_items(*, partner_merchants(*)), partner_merchants(*)")
             .eq("user_id", value: userId)
             .order("created_at", ascending: false)
             .execute()
             .value
+        return await fillingMissingItems(rows)
+    }
+
+    /// Si un producto se agoto o se pauso despues del canje, la RLS lo
+    /// esconde y el embed llega en null ("tu producto"). Se completan con
+    /// `my_redemption_items` (migracion 0066), que devuelve solo los
+    /// productos que esta persona ya canjeo (sin el comercio embebido: el
+    /// canje ya trae el suyo por `merchant_id`). Si falla, se quedan como
+    /// venian.
+    private func fillingMissingItems(_ rows: [RewardRedemption]) async -> [RewardRedemption] {
+        guard rows.contains(where: { $0.item == nil }) else { return rows }
+        guard
+            let items: [RewardItem] = try? await supabase
+                .rpc("my_redemption_items")
+                .execute()
+                .value
+        else { return rows }
+        return RewardsMath.fillingMissingItems(rows, with: items)
     }
 
     /// Regalos de MonAvi listos para usar (emitidos y sin vencer), del
@@ -64,7 +83,7 @@ final class RewardsRepository {
             .order("expires_at", ascending: true)
             .execute()
             .value
-        return RewardsMath.activeGifts(rows)
+        return RewardsMath.activeGifts(await fillingMissingItems(rows))
     }
 
     /// Tolerante a fallas (para "Hoy"): cualquier error devuelve [] y la

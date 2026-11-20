@@ -42,9 +42,10 @@ struct QuickAddView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
-                MovementTypePicker(selection: $movementType)
-                    .padding(.top, 8)
+            ScrollView {
+                VStack(spacing: 20) {
+                    MovementTypePicker(selection: $movementType)
+                        .padding(.top, 8)
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text("¿Cuanto?")
@@ -87,8 +88,6 @@ struct QuickAddView: View {
                     Text(errorMessage).foregroundStyle(.red).font(.footnote)
                 }
 
-                Spacer()
-
                 Button {
                     Task { await save() }
                 } label: {
@@ -100,9 +99,11 @@ struct QuickAddView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(movementType.tintColor)
                 .disabled(amountText.isEmpty || isSaving || viewModel.defaultAccountId == nil)
+                }
+                .padding(20)
             }
-            .padding(20)
             .navigationTitle(existingTransaction == nil ? "Anotar movimiento" : "Editar movimiento")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") { dismiss() }

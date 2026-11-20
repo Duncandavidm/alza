@@ -415,7 +415,7 @@ struct PasswordResetSheet: View {
                             .disabled(viewModel.isWorking)
                     }
 
-                    Text("Revisa también la carpeta de spam o promociones.")
+                    Text("Puede tardar unos minutos en llegar. Revisa también la carpeta de spam o promociones.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

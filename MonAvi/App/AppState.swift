@@ -6,6 +6,9 @@ enum OnboardingStatus: Equatable {
     case unknown
     case pending
     case completed
+    /// No se pudo leer el perfil (p. ej. sin conexión). RootView muestra
+    /// "Reintentar" / "Cerrar sesión" en vez de quedarse cargando.
+    case failed
 }
 
 enum MFAChallengeStatus: Equatable {
@@ -89,6 +92,33 @@ final class AppState: ObservableObject {
         // dispositivo deje de recibir push de esta cuenta.
         await PushTokenService.shared.removeCurrentToken()
         try? await supabase.auth.signOut()
+        // Si el cierre global falla (p. ej. la cuenta ya no existe en el
+        // servidor), la sesion no puede quedarse en el Keychain: sobrevive
+        // a reinstalar la app y dejaria el arranque trabado.
+        if supabase.auth.currentSession != nil {
+            try? await supabase.auth.signOut(scope: .local)
+        }
+    }
+
+    /// La sesion guardada pertenece a una cuenta que ya no existe (borrada
+    /// desde el panel mientras este telefono tenia la sesion abierta). Se
+    /// descarta solo en este dispositivo y se vuelve a la pantalla de
+    /// inicio de sesion.
+    private func discardDeadSession() async {
+        try? await supabase.auth.signOut(scope: .local)
+        session = nil
+        onboardingStatus = .unknown
+        mfaStatus = .unknown
+        subscriptionStatus = .none
+        entitlementProductId = nil
+    }
+
+    /// "Reintentar" de la pantalla de error de arranque.
+    func retryLoading() async {
+        onboardingStatus = .unknown
+        await refreshMFAStatus()
+        await refreshSubscriptionStatus()
+        await refreshOnboardingStatus()
     }
 
     /// Apple exige (Guideline 5.1.1(v)) poder eliminar la cuenta desde
@@ -156,16 +186,23 @@ final class AppState: ObservableObject {
             enum CodingKeys: String, CodingKey { case onboardingCompletedAt = "onboarding_completed_at" }
         }
         do {
-            let row: Row = try await supabase
+            // Lista en vez de .single(): cero filas no es un error de red,
+            // es la señal de que la cuenta ya no existe (el perfil se crea
+            // con la cuenta por trigger y se borra en cascada con ella).
+            let rows: [Row] = try await supabase
                 .from("profiles")
                 .select("onboarding_completed_at")
                 .eq("id", value: userId)
-                .single()
+                .limit(1)
                 .execute()
                 .value
+            guard let row = rows.first else {
+                await discardDeadSession()
+                return
+            }
             onboardingStatus = row.onboardingCompletedAt != nil ? .completed : .pending
         } catch {
-            onboardingStatus = .unknown
+            onboardingStatus = .failed
         }
     }
 

@@ -192,6 +192,19 @@ struct SettingsView: View {
                 }
                 .foregroundStyle(.primary)
 
+                Section("¿Te gusta MonAvi?") {
+                    Link(destination: Config.appStoreReviewURL) {
+                        Label("Califica MonAvi en la App Store", systemImage: "star.bubble.fill")
+                    }
+                    ShareLink(
+                        item: Config.appStoreURL,
+                        message: Text("Mira MonAvi, la app con la que ordeno mis finanzas y gano cashback con mis facturas:")
+                    ) {
+                        Label("Comparte MonAvi", systemImage: "square.and.arrow.up")
+                    }
+                }
+                .foregroundStyle(.primary)
+
                 Section("Mi negocio") {
                     NavigationLink {
                         BusinessSettingsView()

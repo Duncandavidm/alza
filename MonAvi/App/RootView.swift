@@ -16,6 +16,7 @@ struct RootView: View {
         case onboarding
         case paywall
         case dashboard
+        case loadFailed
     }
 
     private var screen: Screen {
@@ -24,6 +25,7 @@ struct RootView: View {
         if appState.mfaStatus == .unknown { return .loading }
         if appState.mfaStatus == .challengeRequired { return .mfaChallenge }
         if appState.onboardingStatus == .unknown { return .loading }
+        if appState.onboardingStatus == .failed { return .loadFailed }
         if appState.onboardingStatus == .pending { return .onboarding }
         // Mientras se esta consultando la suscripcion (y todavia no hay
         // un estado conocido) no se muestra el paywall, para que no
@@ -56,12 +58,16 @@ struct RootView: View {
             case .dashboard:
                 DashboardTabView()
                     .transition(.opacity)
+            case .loadFailed:
+                StartupErrorView()
+                    .transition(.opacity)
             }
         }
         .animation(.easeInOut(duration: 0.35), value: screen)
         .overlay {
-            // Bloqueo con Face ID (opcional, Ajustes > Seguridad).
-            if lock.isEnabled && screen != .auth && screen != .loading {
+            // Bloqueo con Face ID (Ajustes > Seguridad). Nunca encima de la
+            // pantalla de error: "Cerrar sesión" tiene que quedar a mano.
+            if lock.isEnabled && screen != .auth && screen != .loading && screen != .loadFailed {
                 if lock.isLocked {
                     BiometricLockView(lock: lock, interactive: true)
                         .transition(.opacity)
@@ -77,6 +83,58 @@ struct RootView: View {
         .onChange(of: screen) { old, new in
             // Recien inicio sesion con su clave o Apple: no pedir Face ID encima.
             if old == .auth && new != .auth { lock.clearAfterSignIn() }
+        }
+    }
+}
+
+/// No se pudo terminar de cargar la cuenta al abrir la app (p. ej. sin
+/// conexion). Antes esto dejaba la pantalla de carga para siempre, sin
+/// ningun boton; ahora siempre hay salida.
+private struct StartupErrorView: View {
+    @EnvironmentObject private var appState: AppState
+    @State private var isWorking = false
+
+    var body: some View {
+        ZStack {
+            BrandLoadingView(message: "No pudimos cargar tu cuenta")
+
+            VStack(spacing: 12) {
+                Spacer()
+                Text("Revisa tu conexión a internet e inténtalo de nuevo.")
+                    .font(.footnote)
+                    .foregroundStyle(MonAviBrand.onDarkSurface.opacity(0.85))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+
+                Button {
+                    Task {
+                        isWorking = true
+                        await appState.retryLoading()
+                        isWorking = false
+                    }
+                } label: {
+                    Text("Reintentar")
+                        .font(.system(.headline, design: MonAviBrand.fontDesign))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.white)
+                .foregroundStyle(MonAviBrand.primary)
+
+                Button("Cerrar sesión") {
+                    Task {
+                        isWorking = true
+                        await appState.signOut()
+                        isWorking = false
+                    }
+                }
+                .font(.system(.subheadline, design: MonAviBrand.fontDesign))
+                .foregroundStyle(MonAviBrand.onDarkSurface)
+            }
+            .disabled(isWorking)
+            .padding(.horizontal, 32)
+            .padding(.bottom, 48)
         }
     }
 }

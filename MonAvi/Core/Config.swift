@@ -34,8 +34,10 @@ enum Config {
     /// cajero lo confirma con su PIN.
     static let redeemBaseURL = URL(string: "https://monavi.maday.app/canjear")!
 
-    /// Enlace para descargar MonAvi que va en el mensaje de "Invita
-    /// amigos". Cuando la app tenga su id de App Store, cambia esto por
-    /// `https://apps.apple.com/app/id<ID>`.
-    static let appStoreURL = URL(string: "https://monavi.maday.app")!
+    /// Ficha de MonAvi en la App Store (id verificado con la API de
+    /// busqueda de Apple: bundle app.monavi). Va en "Comparte MonAvi" y en
+    /// el mensaje de "Invita amigos".
+    static let appStoreURL = URL(string: "https://apps.apple.com/app/id6830965654")!
+    /// Abre directo la hoja de "Escribir una reseña" de la App Store.
+    static let appStoreReviewURL = URL(string: "https://apps.apple.com/app/id6830965654?action=write-review")!
 }

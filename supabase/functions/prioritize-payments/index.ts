@@ -186,7 +186,15 @@ export function isDueOrOverdue(recurringItem: Record<string, unknown>): boolean 
 
   // Vencida (ya paso su dia este mes) o le toca en los proximos 5 dias.
   const todayDay = today.getUTCDate();
-  return todayDay >= dayOfMonth - 5;
+  return todayDay >= effectiveDayOfMonth(dayOfMonth, today) - 5;
+}
+
+/// "30" o "31" en un mes mas corto cae el ultimo dia de ese mes (igual que
+/// la app). Sin esto, el dia 30 de un mes de 30 dias una recurrente del 31
+/// salia "vence en 1 dia" en vez de "vence hoy".
+export function effectiveDayOfMonth(dayOfMonth: number, today: Date): number {
+  const daysInMonth = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + 1, 0)).getUTCDate();
+  return Math.min(Math.max(dayOfMonth, 1), daysInMonth);
 }
 
 // ---------------------------------------------------------------------------
@@ -303,7 +311,7 @@ export function computeRanking(
     ...dueRecurring.map((r) => {
       // Las recurrentes no tienen fecha exacta en el mes (solo day_of_month);
       // si ya paso ese dia este mes, se tratan como vencidas.
-      const dayOfMonth = r.day_of_month as number;
+      const dayOfMonth = effectiveDayOfMonth(r.day_of_month as number, today);
       const overdue = today.getUTCDate() > dayOfMonth;
       const daysUntilDue = dayOfMonth - today.getUTCDate();
       return {

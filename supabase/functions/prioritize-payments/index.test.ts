@@ -12,6 +12,7 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
 import {
   computeRanking,
+  effectiveDayOfMonth,
   fallbackReason,
   isBillOverdue,
   isDueOrOverdue,
@@ -196,4 +197,18 @@ Deno.test("isDueOrOverdue: semanales y diarias (1.0.2) no entran al plan mensual
   // Sin columna (filas viejas) o mensual: dia 1 siempre esta vencido o al dia.
   assertEquals(isDueOrOverdue({ day_of_month: 1, last_logged_on: null }), true);
   assertEquals(isDueOrOverdue({ day_of_month: 1, last_logged_on: null, frequency: "monthly" }), true);
+});
+
+Deno.test("effectiveDayOfMonth: 31 cae el ultimo dia en meses cortos", () => {
+  assertEquals(effectiveDayOfMonth(31, new Date(Date.UTC(2026, 10, 15))), 30); // noviembre
+  assertEquals(effectiveDayOfMonth(30, new Date(Date.UTC(2027, 1, 10))), 28); // febrero
+  assertEquals(effectiveDayOfMonth(31, new Date(Date.UTC(2026, 11, 1))), 31); // diciembre
+  assertEquals(effectiveDayOfMonth(15, new Date(Date.UTC(2027, 1, 10))), 15);
+});
+
+Deno.test("computeRanking: recurrente del 31 el 30 de noviembre vence hoy", () => {
+  const today = new Date(Date.UTC(2026, 10, 30, 12));
+  const [item] = computeRanking([], [{ id: "r1", day_of_month: 31 }], [], "avalanche", today);
+  assertEquals(item.daysUntilDue, 0);
+  assertEquals(item.isOverdue, false);
 });

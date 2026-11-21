@@ -132,6 +132,7 @@ final class DayJournalViewModel: ObservableObject {
                 .execute()
                 .value) ?? debts
             NotificationManager.scheduleCardPayments(debts)
+            NotificationManager.scheduleSavingsAvailability(accounts)
         } catch {
             errorMessage = "No se pudo cargar tu día: \(error.localizedDescription)"
         }

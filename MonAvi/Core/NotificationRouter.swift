@@ -41,10 +41,18 @@ final class NotificationRouter: ObservableObject {
 
     /// "Pagar tarjeta" pedido desde el aviso del dia de pago.
     @Published var cardPayment: CardPaymentRequest?
+    /// "Pasar a otra cuenta" desde el aviso de ahorro disponible.
+    @Published var accountTransfer: AccountTransferRequest?
 
     func open(screen: String?, userInfo: [AnyHashable: Any] = [:]) {
         guard let screen else { return }
         let normalized = screen.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if normalized == "account_transfer" {
+            destination = nil
+            let id = (userInfo["accountId"] as? String).flatMap(UUID.init(uuidString:))
+            accountTransfer = AccountTransferRequest(sourceAccountId: id)
+            return
+        }
         if normalized == "card_payment" {
             destination = nil
             let id = (userInfo["debtId"] as? String).flatMap(UUID.init(uuidString:))

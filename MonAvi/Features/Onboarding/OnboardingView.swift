@@ -323,6 +323,13 @@ struct OnboardingView: View {
             if viewModel.hasSavings {
                 AmountField(placeholder: "¿Cuánto tienes ahorrado/invertido?", text: $viewModel.savingsAmountText)
                 TextField("¿Dónde lo tienes? (ej. Ahorros Banco General)", text: $viewModel.savingsNote)
+                Toggle("Está bloqueado hasta una fecha", isOn: $viewModel.savingsLocked)
+                if viewModel.savingsLocked {
+                    DatePicker("Disponible desde", selection: $viewModel.savingsAvailableOn, displayedComponents: .date)
+                    Text("Plazo fijo, ahorro navideño… Ese día te preguntamos si ya está disponible. Si no tiene bloqueo, el dinero siempre está disponible.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 Text("Lo verás como una cuenta más en Hoy y en Ajustes > Cuentas.")
                     .font(.caption)
                     .foregroundStyle(.secondary)

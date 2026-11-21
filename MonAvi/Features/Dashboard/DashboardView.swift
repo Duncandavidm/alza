@@ -34,10 +34,13 @@ struct DashboardView: View {
 
                 Section("Cuentas") {
                     ForEach(viewModel.accounts) { account in
+                        NavigationLink {
+                            AccountDetailView(account: account) { Task { await refresh() } }
+                        } label: {
                         HStack {
                             VStack(alignment: .leading) {
                                 Text(account.name)
-                                Text(account.type == .creditCard ? "Tarjeta de crédito · \(account.balanceCaption.lowercased())" : account.type.displayName)
+                                Text(accountSubtitle(account))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -45,6 +48,7 @@ struct DashboardView: View {
                             Text(account.displayAmount, format: .currency(code: account.currency))
                                 .fontWeight(.medium)
                                 .foregroundStyle(account.type == .creditCard ? Color.orange : Color.primary)
+                        }
                         }
                     }
 
@@ -125,6 +129,14 @@ struct DashboardView: View {
             Text(transaction.amount, format: .currency(code: "USD"))
                 .foregroundStyle(transaction.movementType.tintColor)
         }
+    }
+
+    private func accountSubtitle(_ account: Account) -> String {
+        if account.type == .creditCard { return "Tarjeta de crédito · \(account.balanceCaption.lowercased())" }
+        if SavingsAvailability.isLocked(account), let label = SavingsAvailability.label(account.availableOn) {
+            return "\(account.type.displayName) · disponible el \(label)"
+        }
+        return account.type.displayName
     }
 
     private func refresh() async {

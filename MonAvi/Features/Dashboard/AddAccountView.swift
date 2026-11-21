@@ -8,6 +8,8 @@ struct AddAccountView: View {
     @State private var name = ""
     @State private var type: AccountType = .checking
     @State private var balanceText = ""
+    @State private var isLocked = false
+    @State private var availableOn = SavingsAvailability.suggestedDate()
     @State private var isSaving = false
     @State private var errorMessage: String?
 
@@ -24,6 +26,16 @@ struct AddAccountView: View {
 
                 TextField("Balance actual", text: $balanceText)
                     .keyboardType(.decimalPad)
+
+                if type.isReserve {
+                    Toggle("El dinero está bloqueado hasta una fecha", isOn: $isLocked)
+                    if isLocked {
+                        DatePicker("Disponible desde", selection: $availableOn, displayedComponents: .date)
+                        Text("Ese día te preguntamos si ya está disponible y te ayudamos a pasarlo a otra cuenta.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
 
                 if let errorMessage {
                     Text(errorMessage).foregroundStyle(.red)
@@ -50,7 +62,10 @@ struct AddAccountView: View {
 
         do {
             try await viewModel.addAccount(
-                NewAccount(userId: userId, name: name, type: type, balance: balance, currency: "USD")
+                NewAccount(
+                    userId: userId, name: name, type: type, balance: balance, currency: "USD",
+                    availableOn: type.isReserve && isLocked ? SavingsAvailability.string(from: availableOn) : nil
+                )
             )
             dismiss()
         } catch {

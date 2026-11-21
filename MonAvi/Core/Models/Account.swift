@@ -36,6 +36,9 @@ struct Account: Codable, Identifiable, Hashable {
     /// Tarjeta de credito vinculada a su deuda (0079): gastar con ella sube
     /// la deuda. nil en el resto de cuentas.
     var debtId: UUID?
+    /// Dinero bloqueado hasta esta fecha ("yyyy-MM-dd", 0082): plazo fijo,
+    /// ahorro navideño... nil = siempre disponible.
+    var availableOn: String?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -47,6 +50,7 @@ struct Account: Codable, Identifiable, Hashable {
         case createdAt = "created_at"
         case updatedAt = "updated_at"
         case debtId = "debt_id"
+        case availableOn = "available_on"
     }
 }
 
@@ -57,6 +61,8 @@ struct NewAccount: Encodable {
     let type: AccountType
     let balance: Decimal
     let currency: String
+    /// Solo viaja si tiene bloqueo (la columna es de 0082).
+    var availableOn: String? = nil
 
     enum CodingKeys: String, CodingKey {
         case userId = "user_id"
@@ -64,6 +70,7 @@ struct NewAccount: Encodable {
         case type
         case balance
         case currency
+        case availableOn = "available_on"
     }
 }
 

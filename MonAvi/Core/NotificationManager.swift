@@ -32,7 +32,8 @@ enum NotificationManager {
     /// el ViewModel refresca se vuelve a elegir el subconjunto mas urgente
     /// vigente en ese momento.
     ///
-    /// Presupuesto (todo junto queda en 55 de 64):
+    /// Presupuesto (todo junto queda en 57 de 64):
+    /// - ahorro bloqueado que se libera ("¿Ya está disponible tu dinero?"): 2
     /// - cuentas por pagar: 8 x 3 avisos (antes, el dia, al dia siguiente) = 24
     /// - pago de tarjetas y prestamos: 3 x 2 avisos (3 dias antes, el dia) = 6
     /// - pagos fijos: 8 x 2 avisos (antes, el dia) = 16
@@ -42,6 +43,7 @@ enum NotificationManager {
     static let maxCardPayments = 3
     static let remindersPerCardPayment = 2
     static let maxSuggestedRecurring = 2
+    static let maxSavingsAvailability = 2
     static let maxRecurring = 8
     static let dailyLogDays = 7
 
@@ -61,6 +63,7 @@ enum NotificationManager {
             + dailyLogDays
             + maxSuggestedRecurring
             + maxCardPayments * remindersPerCardPayment
+            + maxSavingsAvailability
     }
 
     /// Sonido propio de MonAvi para todos los avisos (tres notas que
@@ -274,6 +277,72 @@ enum NotificationManager {
     static let recurringSnoozeInterval: TimeInterval = 2 * 60 * 60
 
     static func recurringSnoozeId(_ id: UUID) -> String { "recurring-snooze-\(id)" }
+
+    // MARK: - Ahorro bloqueado que se libera
+
+    static let savingsCategory = "SAVINGS_AVAILABLE"
+    static let savingsTransferAction = "SAVINGS_TRANSFER"
+    static let savingsNotYetAction = "SAVINGS_NOT_YET"
+    private static let savingsIdsKey = "monavi.savingsAvailabilityIds"
+
+    static func savingsId(_ accountId: UUID) -> String { "savings-available-\(accountId)" }
+
+    /// El dia que el dinero queda libre (a las 9): "¿Ya está disponible tu
+    /// dinero de Ahorros?". Solo cuentas con fecha de bloqueo y con dinero;
+    /// sin bloqueo no se avisa (siempre esta disponible).
+    static func scheduleSavingsAvailability(_ accounts: [Account], now: Date = Date()) {
+        removePending(ids: UserDefaults.standard.stringArray(forKey: savingsIdsKey) ?? [])
+        let upcoming = accounts.compactMap { account -> (Account, Date)? in
+            guard account.balance > 0, let day = SavingsAvailability.date(from: account.availableOn) else { return nil }
+            let at = atReminderHour(day)
+            return at > now ? (account, at) : nil
+        }
+        .sorted { $0.1 < $1.1 }
+        .prefix(maxSavingsAvailability)
+
+        var ids: [String] = []
+        for (account, date) in upcoming {
+            let id = savingsId(account.id)
+            schedule(
+                id: id,
+                title: "¿Ya está disponible tu dinero de \(account.name)?",
+                body: "Hoy es la fecha que marcaste para \(account.name) (\(formattedAmount(account.balance))). Si ya está libre, pásalo a otra cuenta, como tu cuenta principal.",
+                date: date,
+                categoryIdentifier: savingsCategory,
+                userInfo: ["screen": "account_transfer", "accountId": account.id.uuidString]
+            )
+            ids.append(id)
+        }
+        UserDefaults.standard.set(ids, forKey: savingsIdsKey)
+    }
+
+    static func removeSavingsAvailability(accountId: UUID) {
+        removePending(ids: [savingsId(accountId)])
+    }
+
+    /// "Aún no": se vuelve a preguntar en una semana (se mueve la fecha).
+    @MainActor
+    static func snoozeSavingsAvailability(userInfo: [AnyHashable: Any]) async {
+        guard let idText = userInfo["accountId"] as? String, let accountId = UUID(uuidString: idText),
+              let nextWeek = Calendar.current.date(byAdding: .day, value: 7, to: Calendar.current.startOfDay(for: Date()))
+        else { return }
+        do {
+            try await AccountTransfers.setAvailableOn(nextWeek, accountId: accountId)
+            sendImmediate(
+                id: "savings-snoozed-\(accountId)",
+                title: "Te preguntamos en una semana",
+                body: "Cambiamos la fecha a \(SavingsAvailability.label(SavingsAvailability.string(from: nextWeek)) ?? "la próxima semana"). Puedes cambiarla en Ajustes > Cuentas."
+            )
+            NotificationCenter.default.post(name: .recurringLoggedFromNotification, object: nil)
+        } catch {
+            sendImmediate(
+                id: "savings-snoozed-\(accountId)",
+                title: "No se pudo cambiar la fecha",
+                body: "Abre MonAvi para cambiar cuándo estará disponible tu dinero.",
+                userInfo: ["screen": "home"]
+            )
+        }
+    }
 
     // MARK: - Pago de tarjetas y prestamos
 
@@ -493,7 +562,16 @@ enum NotificationManager {
             intentIdentifiers: [],
             options: []
         )
-        UNUserNotificationCenter.current().setNotificationCategories([expense, income, suggested])
+        let savings = UNNotificationCategory(
+            identifier: savingsCategory,
+            actions: [
+                UNNotificationAction(identifier: savingsTransferAction, title: "Sí, pasarlo a otra cuenta", options: [.foreground]),
+                UNNotificationAction(identifier: savingsNotYetAction, title: "Aún no, pregúntame en una semana", options: []),
+            ],
+            intentIdentifiers: [],
+            options: []
+        )
+        UNUserNotificationCenter.current().setNotificationCategories([expense, income, suggested, savings])
     }
 
     /// "Sí, ya lo pagué/recibí": registra el movimiento igual que el boton
@@ -857,6 +935,10 @@ final class NotificationPresenter: NSObject, UNUserNotificationCenterDelegate {
             case NotificationManager.recurringConfirmAction:
                 let idString = content.userInfo[NotificationManager.recurringIdKey] as? String
                 await NotificationManager.confirmRecurringFromNotification(idString: idString)
+            case NotificationManager.savingsTransferAction:
+                NotificationRouter.shared.open(screen: "account_transfer", userInfo: content.userInfo)
+            case NotificationManager.savingsNotYetAction:
+                await NotificationManager.snoozeSavingsAvailability(userInfo: content.userInfo)
             case NotificationManager.suggestedSameAction,
                  NotificationManager.suggestedOtherAction,
                  NotificationManager.suggestedNotYetAction,

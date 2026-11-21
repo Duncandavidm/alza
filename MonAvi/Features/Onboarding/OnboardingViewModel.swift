@@ -55,6 +55,9 @@ final class OnboardingViewModel: ObservableObject {
     @Published var hasSavings = false
     @Published var savingsAmountText = ""
     @Published var savingsNote = ""
+    /// Plazo fijo / ahorro navideño: el dinero se libera en una fecha.
+    @Published var savingsLocked = false
+    @Published var savingsAvailableOn = SavingsAvailability.suggestedDate()
 
     // Paso 10: tolerancia al riesgo
     @Published var riskTolerance: RiskTolerance?
@@ -254,7 +257,8 @@ final class OnboardingViewModel: ObservableObject {
                         name: savingsNote.isEmpty ? "Ahorros" : String(savingsNote.prefix(40)),
                         type: .savings,
                         balance: savingsAmount,
-                        currency: "USD"
+                        currency: "USD",
+                        availableOn: savingsLocked ? SavingsAvailability.string(from: savingsAvailableOn) : nil
                     )
                 )
             }

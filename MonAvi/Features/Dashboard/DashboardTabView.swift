@@ -41,6 +41,10 @@ struct DashboardTabView: View {
         .sheet(item: $router.cardPayment) { request in
             QuickDebtPaymentView(preselectedDebtId: request.debtId)
         }
+        // "¿Ya está disponible tu dinero?" > "Sí, pasarlo a otra cuenta".
+        .sheet(item: $router.accountTransfer) { request in
+            AccountTransferView(sourceAccountId: request.sourceAccountId)
+        }
         // "Registrar con voz" desde un Atajo, Siri o Tocar atrás
         // (RecordByVoiceIntent): si la app estaba cerrada, el pedido espera
         // en el router hasta que esta pantalla aparece; si ya estaba

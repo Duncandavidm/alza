@@ -34,6 +34,11 @@ struct DayJournalView: View {
     @State private var pointsByTransaction: [UUID: Int] = [:]
     @State private var activeGiftsCount = 0
     @StateObject private var savingsViewModel = SavingsGoalsViewModel()
+    /// "Pasar a otra cuenta" cuando se libera un ahorro bloqueado.
+    @State private var transferRequest: AccountTransferRequest?
+    /// "Aún no": elegir cuándo estará libre.
+    @State private var snoozeAccount: Account?
+    @State private var snoozeDate = Date()
     /// "Pagar tarjeta" desde el aviso de vencimiento en Hoy.
     @State private var cardPaymentRequest: CardPaymentRequest?
     /// "Te estás sobreendeudando" / "Gastas más de lo que ganas" (estudio
@@ -72,6 +77,8 @@ struct DayJournalView: View {
                         }
 
                         cardDueRows
+
+                        savingsAvailableRows
 
                         recurringSuggestionCards
 
@@ -175,6 +182,34 @@ struct DayJournalView: View {
             .task { await appState.subscriptionStore.refreshRenewalInfo() }
             .task { await showPreviousDayIfNeeded() }
             .task { await refreshHealthAlert() }
+            .sheet(item: $transferRequest, onDismiss: {
+                Task { await refresh() }
+            }) { request in
+                AccountTransferView(sourceAccountId: request.sourceAccountId)
+            }
+            .sheet(item: $snoozeAccount) { account in
+                NavigationStack {
+                    Form {
+                        Section {
+                            DatePicker("Disponible desde", selection: $snoozeDate, in: Date()..., displayedComponents: .date)
+                                .datePickerStyle(.graphical)
+                        } footer: {
+                            Text("Ese día te volvemos a preguntar si ya está disponible el dinero de \(account.name).")
+                        }
+                    }
+                    .navigationTitle("¿Cuándo estará libre?")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Cancelar") { snoozeAccount = nil }
+                        }
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Guardar") { Task { await saveSnooze() } }
+                        }
+                    }
+                }
+                .presentationDetents([.medium, .large])
+            }
             .sheet(item: $cardPaymentRequest, onDismiss: {
                 Task {
                     await refresh()
@@ -641,6 +676,57 @@ struct DayJournalView: View {
         }
     }
 
+    /// "¿Ya está disponible tu dinero de Ahorros?": llego la fecha que marco
+    /// para un ahorro bloqueado (plazo fijo, ahorro navideño) y todavia
+    /// tiene dinero. Sin bloqueo no sale nada: siempre esta disponible.
+    @ViewBuilder
+    private var savingsAvailableRows: some View {
+        if viewModel.isViewingToday && !isSearching {
+            ForEach(viewModel.accounts.filter { SavingsAvailability.isDue($0) }) { account in
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(alignment: .top, spacing: 10) {
+                        Text("💰")
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("¿Ya está disponible tu dinero de \(account.name)?")
+                                .font(.subheadline.weight(.semibold))
+                            Text("Marcaste que se liberaba el \(SavingsAvailability.label(account.availableOn) ?? "día de hoy"). Tienes \(account.balance.formatted(.currency(code: account.currency))).")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                    }
+                    HStack(spacing: 8) {
+                        Button("Sí, pasarlo a otra cuenta") {
+                            transferRequest = AccountTransferRequest(sourceAccountId: account.id)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(MonAviBrand.primary)
+                        Button("Aún no") {
+                            snoozeDate = Calendar.current.date(byAdding: .day, value: 7, to: Date()) ?? Date()
+                            snoozeAccount = account
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    .font(.footnote.weight(.semibold))
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 14).fill(MonAviBrand.primary.opacity(0.1)))
+            }
+        }
+    }
+
+    private func saveSnooze() async {
+        guard let account = snoozeAccount else { return }
+        do {
+            try await AccountTransfers.setAvailableOn(snoozeDate, accountId: account.id)
+        } catch {
+            viewModel.errorMessage = "No se pudo cambiar la fecha: \(error.localizedDescription)"
+        }
+        snoozeAccount = nil
+        await refresh()
+    }
+
     private func refreshHealthAlert() async {
         guard let userId = appState.currentUserId,
               let result = try? await FinancialHealthLoader.load(userId: userId) else { return }
@@ -669,7 +755,11 @@ struct DayJournalView: View {
                         NavigationLink {
                             DashboardView()
                         } label: {
-                            AccountBalanceChip(account: account, available: viewModel.availableCredit(for: account))
+                            AccountBalanceChip(
+                                account: account,
+                                available: viewModel.availableCredit(for: account),
+                                lockedUntil: SavingsAvailability.isLocked(account) ? SavingsAvailability.label(account.availableOn) : nil
+                            )
                         }
                         .buttonStyle(.plain)
                     }
@@ -1055,6 +1145,8 @@ extension DaySummary: Identifiable {
 private struct AccountBalanceChip: View {
     let account: Account
     var available: Decimal? = nil
+    /// "1 de diciembre" si el dinero sigue bloqueado.
+    var lockedUntil: String? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -1070,7 +1162,13 @@ private struct AccountBalanceChip: View {
                 .foregroundStyle(account.type.isLiability ? Color.orange : Color.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-            if let available {
+            if let lockedUntil {
+                Label("Libre el \(lockedUntil)", systemImage: "lock.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            } else if let available {
                 Text("\(account.balanceCaption) · disponible \(available.formatted(.currency(code: account.currency)))")
                     .font(.caption2)
                     .foregroundStyle(.secondary)

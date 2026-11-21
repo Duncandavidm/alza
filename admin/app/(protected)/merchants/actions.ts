@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { friendlyDbError, parseMerchantFields } from "@/lib/merchant-form";
+import { autoLocate } from "@/lib/merchant-location";
 import { fileFromForm, uploadRewardImage, validateImage } from "@/lib/uploads";
 import type { ActionState } from "@/components/ActionForm";
 
@@ -27,6 +28,7 @@ export async function createMerchant(_prev: ActionState, formData: FormData): Pr
     .select("id")
     .single<{ id: string }>();
   if (error || !created) return { error: error ? friendlyDbError(error) : "No se pudo crear el comercio." };
+  await autoLocate("partner_merchants", created.id, parsed.fields.maps_url, true);
 
   if (logo) {
     const upload = await uploadRewardImage(logo, "logos", created.id);

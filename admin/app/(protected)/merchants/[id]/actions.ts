@@ -1,6 +1,7 @@
 "use server";
 
 import { requireAdminSession, assertUuid } from "@/lib/admin-session";
+import { autoLocate, locateFromInput } from "@/lib/merchant-location";
 
 import { randomInt } from "node:crypto";
 import { revalidatePath } from "next/cache";
@@ -45,8 +46,12 @@ export async function updateMerchant(merchantId: string, _prev: ActionState, for
 
   const supabase = supabaseAdmin();
   const previousCurrency = await merchantCurrency(merchantId);
+  const { data: before } = await supabase.from("partner_merchants").select("maps_url").eq("id", merchantId).maybeSingle();
   const { error } = await supabase.from("partner_merchants").update(update).eq("id", merchantId);
   if (error) return { error: friendlyDbError(error) };
+  // Enlace de Maps nuevo: se vuelve a sacar la ubicacion (avisos por cercania).
+  const mapsChanged = (before as { maps_url: string | null } | null)?.maps_url !== parsed.fields.maps_url;
+  await autoLocate("partner_merchants", merchantId, parsed.fields.maps_url, mapsChanged);
 
   revalidateMerchant(merchantId);
   if (previousCurrency && previousCurrency !== parsed.fields.reward_currency) {
@@ -398,10 +403,13 @@ export async function createBranch(merchantId: string, _prev: ActionState, formD
     .from("merchant_branches")
     .select("id", { count: "exact", head: true })
     .eq("merchant_id", merchantId);
-  const { error } = await supabase
+  const { data: created, error } = await supabase
     .from("merchant_branches")
-    .insert({ ...fields, merchant_id: merchantId, sort_order: count ?? 0 });
+    .insert({ ...fields, merchant_id: merchantId, sort_order: count ?? 0 })
+    .select("id")
+    .single<{ id: string }>();
   if (error) return { error: error.message };
+  if (created) await saveBranchLocation(created.id, formData, fields.maps_url, true);
   revalidateMerchant(merchantId);
   return { message: `Sucursal “${fields.name}” agregada. Si quieres saber qué canjes se hacen ahí, genérale su propio PIN.` };
 }
@@ -412,14 +420,17 @@ export async function updateBranch(merchantId: string, branchId: string, _prev: 
   assertUuid(branchId);
   const fields = branchFields(formData);
   if ("error" in fields) return { error: fields.error };
+  const { data: before } = await supabaseAdmin().from("merchant_branches").select("maps_url").eq("id", branchId).maybeSingle();
   const { error } = await supabaseAdmin()
     .from("merchant_branches")
     .update({ ...fields, updated_at: new Date().toISOString() })
     .eq("id", branchId)
     .eq("merchant_id", merchantId);
   if (error) return { error: error.message };
+  const mapsChanged = (before as { maps_url: string | null } | null)?.maps_url !== fields.maps_url;
+  const located = await saveBranchLocation(branchId, formData, fields.maps_url, mapsChanged);
   revalidateMerchant(merchantId);
-  return { message: "Sucursal guardada." };
+  return { message: located === "manual-error" ? "Sucursal guardada, pero no entendimos las coordenadas: pega algo como 9.0123, -79.5123." : "Sucursal guardada." };
 }
 
 export async function setBranchStatus(merchantId: string, branchId: string, status: "active" | "paused") {
@@ -469,4 +480,59 @@ export async function generateBranchPin(merchantId: string, branchId: string, _p
   if (error) return { error: `No se pudo guardar el PIN: ${error.message}` };
   revalidatePath(`/merchants/${merchantId}`);
   return { pin, generatedAt: Date.now() };
+}
+
+// ---------------------------------------------------------------------------
+// Ubicacion para avisos por cercania (la app los usara en una version futura)
+// ---------------------------------------------------------------------------
+
+/// Coordenadas de una sucursal: las escritas a mano ganan; si no hay, se
+/// sacan del enlace de Maps (si cambio o si todavia no tenia).
+async function saveBranchLocation(
+  branchId: string,
+  formData: FormData,
+  mapsUrl: string | null,
+  mapsChanged: boolean
+): Promise<"manual" | "manual-error" | "auto" | "none"> {
+  const manual = optionalText(formData, "coordinates", 1000);
+  if (manual) {
+    const coords = await locateFromInput(manual);
+    if (!coords) return "manual-error";
+    await supabaseAdmin().from("merchant_branches").update(coords).eq("id", branchId);
+    return "manual";
+  }
+  return (await autoLocate("merchant_branches", branchId, mapsUrl, mapsChanged)) ? "auto" : "none";
+}
+
+/// "Detectar del enlace de Maps" o pegar coordenadas / otro enlace.
+export async function setMerchantLocation(merchantId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
+  await requireAdminSession();
+  assertUuid(merchantId);
+  const supabase = supabaseAdmin();
+  let input = optionalText(formData, "location", 1000);
+  if (!input) {
+    const { data } = await supabase.from("partner_merchants").select("maps_url").eq("id", merchantId).maybeSingle();
+    input = (data as { maps_url: string | null } | null)?.maps_url ?? null;
+    if (!input) return { error: "Este comercio no tiene enlace de Google Maps. Pega aquí el enlace o las coordenadas." };
+  }
+  const coords = await locateFromInput(input);
+  if (!coords) {
+    return {
+      error:
+        "No pudimos sacar la ubicación de ese enlace. En Google Maps, mantén presionado el punto del local, copia las coordenadas (por ejemplo 9.0123, -79.5123) y pégalas aquí.",
+    };
+  }
+  const { error } = await supabase.from("partner_merchants").update(coords).eq("id", merchantId);
+  if (error) return { error: error.message };
+  revalidateMerchant(merchantId);
+  revalidatePath("/cercania");
+  return { message: `Ubicación guardada: ${coords.latitude}, ${coords.longitude}.` };
+}
+
+export async function setMerchantProximity(merchantId: string, enabled: boolean) {
+  await requireAdminSession();
+  assertUuid(merchantId);
+  await supabaseAdmin().from("partner_merchants").update({ proximity_alerts: enabled }).eq("id", merchantId);
+  revalidateMerchant(merchantId);
+  revalidatePath("/cercania");
 }

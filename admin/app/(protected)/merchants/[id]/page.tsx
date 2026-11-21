@@ -23,6 +23,7 @@ import {
 import RewardItemForm from "./RewardItemForm";
 import RedeemPinCard from "./RedeemPinCard";
 import BranchesCard from "./BranchesCard";
+import LocationCard from "./LocationCard";
 
 type Merchant = {
   id: string;
@@ -204,6 +205,8 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
       </div>
 
       <BranchesCard merchantId={merchant.id} merchantName={merchant.name} mainAddress={merchant.address} />
+
+      <LocationCard merchantId={merchant.id} hasMapsUrl={Boolean(merchant.maps_url)} />
 
       <div className="card">
         <h3>Productos canjeables</h3>

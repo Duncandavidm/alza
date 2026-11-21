@@ -42,6 +42,16 @@ export default async function BranchesCard({
       .limit(50000)
       .returns<{ branch_id: string | null }[]>(),
   ]);
+  // Ubicacion (0080) en una consulta aparte: si falta la migracion, la
+  // tarjeta sigue funcionando sin ella.
+  const { data: located } = await supabase
+    .from("merchant_branches")
+    .select("id, latitude, longitude")
+    .eq("merchant_id", merchantId)
+    .returns<{ id: string; latitude: number | null; longitude: number | null }[]>();
+  const coordsBy = new Map(
+    (located ?? []).filter((row) => row.latitude !== null && row.longitude !== null).map((row) => [row.id, `${row.latitude}, ${row.longitude}`])
+  );
   const usedBy = new Map<string, number>();
   for (const row of used ?? []) {
     const key = row.branch_id ?? "principal";
@@ -86,6 +96,18 @@ export default async function BranchesCard({
                   <strong>{branch.name}</strong>
                   <div className="text-dim">{branch.address || "Sin dirección"}</div>
                   {!branch.maps_url && <div className="text-dim">Falta el enlace de Google Maps para “Cómo llegar”.</div>}
+                  <div className="text-dim">
+                    {coordsBy.has(branch.id) ? (
+                      <>
+                        📍 Ubicada para avisos por cercanía ·{" "}
+                        <a href={`https://www.google.com/maps?q=${coordsBy.get(branch.id)}`} target="_blank" rel="noreferrer">
+                          comprobar en el mapa
+                        </a>
+                      </>
+                    ) : (
+                      "Sin ubicación para avisos por cercanía: pon su enlace de Maps o sus coordenadas en Editar."
+                    )}
+                  </div>
                   <details style={{ marginTop: 6 }}>
                     <summary>Editar</summary>
                     <ActionForm action={updateBranch.bind(null, merchantId, branch.id)} className="grid-form" submitLabel="Guardar">
@@ -100,6 +122,11 @@ export default async function BranchesCard({
                       <div className="field" style={{ gridColumn: "1 / -1" }}>
                         <label>Enlace de Google Maps</label>
                         <input type="url" name="maps_url" maxLength={1000} defaultValue={branch.maps_url ?? ""} placeholder="https://maps.app.goo.gl/…" />
+                      </div>
+                      <div className="field" style={{ gridColumn: "1 / -1" }}>
+                        <label>Coordenadas (opcional)</label>
+                        <input type="text" name="coordinates" maxLength={1000} placeholder={coordsBy.get(branch.id) ?? "Se sacan solas del enlace de Maps · o pega 9.0123, -79.5123"} />
+                        <span className="text-dim">Déjalo vacío para sacarlas del enlace. Si el enlace no las trae, en Google Maps mantén presionado el local y copia sus coordenadas.</span>
                       </div>
                     </ActionForm>
                   </details>

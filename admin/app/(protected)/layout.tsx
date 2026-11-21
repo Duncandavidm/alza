@@ -40,6 +40,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
         { href: "/categorias", label: "Categorías", icon: "tag" },
         { href: "/applications", label: "Solicitudes", icon: "inbox", badge: newApplications },
         { href: "/redemptions", label: "Canjes", icon: "check" },
+        { href: "/cercania", label: "Avisos por cercanía", icon: "pin" },
       ],
     },
     {

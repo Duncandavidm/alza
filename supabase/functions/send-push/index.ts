@@ -140,9 +140,9 @@ Deno.serve(async (req) => {
           screen = "rewards";
         } else {
           const item = bonus.reward_items as { name?: string; partner_merchants?: { name?: string } } | null;
-          title = "🎁 ¡Tienes " + (item?.name ?? "un regalo") + " gratis!";
-          text = bonus.message ||
-            "Te espera en " + (item?.partner_merchants?.name ?? "un comercio aliado") + ". Muestra tu código en caja.";
+          title = "🎁 Tienes un cupón nuevo: " + (item?.name ?? "un cupón") +
+            (item?.partner_merchants?.name ? " en " + item.partner_merchants.name : "");
+          text = bonus.message || "Toca para ver tu código y úsalo en caja.";
           screen = "redemptions";
         }
         push = await sendPushToUsers(supabase, userIds, {

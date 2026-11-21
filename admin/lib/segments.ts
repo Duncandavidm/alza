@@ -37,6 +37,10 @@ export type Segment = {
   /// Ingreso mensual promedio registrado, minimo y maximo (US$).
   min_income?: number;
   max_income?: number;
+  /// Cumplieron una meta de ahorro en el periodo.
+  goal_met?: boolean;
+  /// Clientes especificos por correo: si hay, se ignoran los demas filtros.
+  emails?: string[];
 };
 
 export const SEGMENT_GENDER_LABELS: Record<SegmentGender, string> = {
@@ -91,6 +95,8 @@ export const SEGMENT_FIELD_NAMES = [
   "min_savings",
   "min_income",
   "max_income",
+  "goal_met",
+  "emails",
   "preset",
 ] as const;
 
@@ -151,6 +157,15 @@ export function parseSegment(get: (key: string) => string | undefined | null): S
   if (minIncome) segment.min_income = minIncome;
   const maxIncome = dollars("max_income");
   if (maxIncome) segment.max_income = maxIncome;
+  if (read("goal_met") === "1" || read("goal_met") === "true") segment.goal_met = true;
+
+  const emails = [...new Set(
+    (read("emails") ?? "")
+      .split(/[\s,;]+/)
+      .map((email) => email.trim().toLowerCase())
+      .filter((email) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) && email.length <= 254)
+  )].slice(0, 500);
+  if (emails.length > 0) segment.emails = emails;
   return segment;
 }
 
@@ -169,6 +184,8 @@ export function segmentToFields(segment: Segment): Record<string, string> {
   if (segment.min_savings) fields.min_savings = String(segment.min_savings);
   if (segment.min_income) fields.min_income = String(segment.min_income);
   if (segment.max_income) fields.max_income = String(segment.max_income);
+  if (segment.goal_met) fields.goal_met = "1";
+  if (segment.emails?.length) fields.emails = segment.emails.join(", ");
   return fields;
 }
 
@@ -179,6 +196,7 @@ export function segmentFromJson(raw: unknown): Segment {
   return parseSegment((key) => {
     const map: Record<string, string> = { age: "age_range", product: "bought_product", ruc: "merchant_ruc" };
     const source = value[map[key] ?? key];
+    if (key === "emails") return Array.isArray(source) ? source.join(",") : undefined;
     if (key === "min_cashback") {
       const cents = Number(source);
       return Number.isFinite(cents) && cents > 0 ? (cents / 100).toFixed(2) : undefined;
@@ -191,7 +209,11 @@ const money = (value: number) => "$" + value.toLocaleString("en-US");
 
 /// Descripcion corta para tablas e historial: ["Mujeres", "25-34 años", ...].
 export function segmentLabels(segment: Segment): string[] {
+  if (segment.emails?.length) {
+    return [segment.emails.length === 1 ? `1 cliente: ${segment.emails[0]}` : `${segment.emails.length} clientes elegidos por correo`];
+  }
   const labels: string[] = [];
+  if (segment.goal_met) labels.push("Cumplieron una meta de ahorro");
   if (segment.gender) labels.push(SEGMENT_GENDER_LABELS[segment.gender]);
   if (segment.age_range) labels.push(`${segment.age_range} años`);
   if (segment.activity) labels.push(SEGMENT_PRESETS.find((p) => p.activity === segment.activity)?.label ?? segment.activity);

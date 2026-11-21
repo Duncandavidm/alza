@@ -17,16 +17,36 @@ type Props = {
   /// Botones de atajo ("Los que más usan la app", ...). Envian el
   /// formulario con ?preset=... y calculan el alcance al instante.
   showPresets?: boolean;
+  /// Regalar cupones: tambien se puede elegir clientes especificos por
+  /// correo (un regalo dirigido, no una oferta).
+  allowEmails?: boolean;
 };
 
 /// Campos del segmento (renderizados en el servidor). Van dentro de un
 /// <form method="get">: "Calcular alcance" recarga la pagina con los
 /// filtros en la URL y la pagina muestra segment_preview.
-export default function SegmentFields({ segment, merchants, showPresets }: Props) {
+export default function SegmentFields({ segment, merchants, showPresets, allowEmails }: Props) {
   const knownRuc = !segment.merchant_ruc || merchants.some((m) => m.ruc === segment.merchant_ruc);
   return (
     <fieldset className="segment-fields">
       <legend>¿A quién?</legend>
+      {allowEmails && (
+        <div className="field" style={{ marginBottom: 14 }}>
+          <label htmlFor="seg-emails">Clientes específicos (opcional)</label>
+          <textarea
+            id="seg-emails"
+            name="emails"
+            rows={3}
+            defaultValue={segment.emails?.join(", ") ?? ""}
+            placeholder="ana@correo.com, luis@correo.com (uno o varios, separados por coma o en líneas)"
+            style={{ width: "100%" }}
+          />
+          <small className="hint">
+            Si escribes correos, el cupón va solo a esas personas y se ignoran los filtros de abajo. Déjalo vacío para
+            elegir un grupo.
+          </small>
+        </div>
+      )}
       <p className="text-dim" style={{ marginTop: 0 }}>
         Deja todo en “Todos” para llegar a todas las personas que aceptaron recibir ofertas. Cada filtro achica el grupo.
       </p>
@@ -165,6 +185,13 @@ export default function SegmentFields({ segment, merchants, showPresets }: Props
           <label htmlFor="seg-max-income">Ingreso mensual hasta (US$)</label>
           <input id="seg-max-income" name="max_income" type="text" inputMode="decimal"
             defaultValue={segment.max_income ?? ""} placeholder="ej. 3000" />
+        </div>
+        <div className="field" style={{ alignSelf: "end" }}>
+          <label style={{ display: "inline-flex", gap: 8, alignItems: "center", color: "var(--text)" }}>
+            <input type="checkbox" name="goal_met" value="1" defaultChecked={Boolean(segment.goal_met)} />
+            Cumplieron una meta de ahorro
+          </label>
+          <small className="hint">Llegaron al monto de alguna meta en el periodo elegido arriba.</small>
         </div>
       </div>
     </fieldset>

@@ -7,7 +7,8 @@ export type HabitRuleType =
   | "meta_a_tiempo"
   | "presupuestos"
   | "dias_registrados"
-  | "salud_financiera";
+  | "salud_financiera"
+  | "semana_completa";
 
 export const HABIT_RULE_TYPES: { value: HabitRuleType; label: string; threshold: string; placeholder: string; help: string }[] = [
   {
@@ -44,6 +45,13 @@ export const HABIT_RULE_TYPES: { value: HabitRuleType; label: string; threshold:
     threshold: "Días mínimos",
     placeholder: "20",
     help: "Días distintos con al menos un movimiento anotado en el mes pasado.",
+  },
+  {
+    value: "semana_completa",
+    label: "Anotó sus movimientos todos los días de la semana",
+    threshold: "No aplica",
+    placeholder: "",
+    help: "Anotó al menos un movimiento cada día de la semana pasada (lunes a domingo). Se entrega cada lunes; una vez por semana.",
   },
   {
     value: "salud_financiera",

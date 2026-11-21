@@ -4,6 +4,7 @@ import ActionForm from "@/components/ActionForm";
 import { formatInt, formatMoney } from "@/lib/format";
 import { HABIT_RULE_TYPES, habitRuleLabel } from "@/lib/habit-coupons";
 import { createHabitCoupon, setHabitCouponStatus } from "./actions";
+import CouponTabs from "@/components/CouponTabs";
 
 export const dynamic = "force-dynamic";
 
@@ -61,16 +62,17 @@ export default async function HabitCouponsPage() {
 
   return (
     <>
-      <h1>Cupones por buenos hábitos</h1>
+      <h1>Cupones</h1>
+      <CouponTabs active="habitos" />
       <p className="text-dim">
-        Los buenos hábitos ya no dan puntos: dan cupones. Tú creas el cupón (por ejemplo <em>$20 en Bungla</em>), eliges la
+        Las mismas reglas de buenos hábitos que antes daban puntos ahora dan cupones. Tú creas el cupón (por ejemplo <em>$20 en Bungla</em>), eliges la
         regla para ganarlo (o lo das a todos, sin reglas) y MonAvi se lo entrega solo a quien la cumple, con un aviso en su teléfono. El cliente lo usa en
         caja como cualquier canje y abajo ves cuánto le debes a cada comercio. La salud financiera de cada persona está en{" "}
         <Link href="/clientes">Clientes</Link>.
       </p>
 
       <div className="card">
-        <h3>Nuevo cupón</h3>
+        <h3>Nuevo cupón automático</h3>
         <ActionForm action={createHabitCoupon} className="grid-form" submitLabel="Crear cupón" resetOnSuccess>
           <div className="field">
             <label>Comercio</label>
@@ -145,13 +147,14 @@ export default async function HabitCouponsPage() {
           <p className="text-dim">
             En &quot;Para todos&quot; no se miran ni el mínimo ni los días anotados: solo el máximo de cupones.
             &quot;Días anotados mínimos&quot; evita que alguien gane dejando de anotar sus gastos: solo cuenta quien usa la app
-            de verdad. Cada persona gana el cupón una vez por mes (o una vez por meta).
+            de verdad. Cada persona gana el cupón una vez por mes (una vez por semana en la regla semanal, una vez por
+            meta en la de metas). Para darle un cupón a alguien en particular, usa &quot;Regalar cupones&quot;.
           </p>
         </details>
       </div>
 
       <div className="card table-scroll">
-        <h3>Cupones activos</h3>
+        <h3>Cupones automáticos</h3>
         <table>
           <thead>
             <tr>

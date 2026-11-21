@@ -18,6 +18,7 @@ export async function grantBonus(_prev: ActionState, formData: FormData): Promis
   await requireAdminSession();
   const parsed = parseBonusInput((key) => formData.get(key)?.toString());
   if (!parsed.input) return { error: parsed.error ?? "Datos inválidos." };
+  if (parsed.input.kind !== "cupon") return { error: "Aquí solo se regalan cupones." };
   const segment = parseSegment((key) => formData.get(key)?.toString());
   const supabase = supabaseAdmin();
 
@@ -27,8 +28,8 @@ export async function grantBonus(_prev: ActionState, formData: FormData): Promis
       .select("id, status")
       .eq("id", parsed.input.reward_item_id)
       .maybeSingle<{ id: string; status: string }>();
-    if (!item) return { error: "No se encontró el producto." };
-    if (item.status !== "active") return { error: "Ese producto está pausado: actívalo en su comercio o elige otro." };
+    if (!item) return { error: "No se encontró el cupón." };
+    if (item.status !== "active") return { error: "Ese cupón está pausado: actívalo o elige otro." };
   }
 
   const { data: created, error } = await supabase
@@ -36,14 +37,14 @@ export async function grantBonus(_prev: ActionState, formData: FormData): Promis
     .insert({ ...parsed.input, segment, status: "draft" })
     .select("id")
     .single<{ id: string }>();
-  if (error || !created) return { error: `No se pudo guardar el bono: ${error?.message ?? "error desconocido"}` };
+  if (error || !created) return { error: `No se pudo guardar el regalo: ${error?.message ?? "error desconocido"}` };
 
   const sent = await callSendPush({ bonus_id: created.id });
-  revalidatePath("/bonos");
+  revalidatePath("/cupones/regalar");
   if (!sent.ok) {
     return { error: `Se guardó, pero no se pudo entregar: ${sent.error}. Puedes reintentar desde el historial.` };
   }
-  redirect(`/bonos?done=${created.id}&msg=${encodeURIComponent(describeBonusResult(sent.result, parsed.input.notify))}`);
+  redirect(`/cupones/regalar?done=${created.id}&msg=${encodeURIComponent(describeBonusResult(sent.result, parsed.input.notify))}`);
 }
 
 /// Reintenta la entrega de un bono que quedo en borrador (grant_bonus es
@@ -58,7 +59,7 @@ export async function retryBonus(bonusId: string) {
     .eq("id", id)
     .maybeSingle<{ notify: boolean }>();
   const sent = await callSendPush({ bonus_id: id });
-  revalidatePath("/bonos");
+  revalidatePath("/cupones/regalar");
   const msg = sent.ok ? describeBonusResult(sent.result, Boolean(bonus?.notify)) : `No se pudo entregar: ${sent.error}`;
-  redirect(`/bonos?done=${id}&msg=${encodeURIComponent(msg)}`);
+  redirect(`/cupones/regalar?done=${id}&msg=${encodeURIComponent(msg)}`);
 }

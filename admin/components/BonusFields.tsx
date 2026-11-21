@@ -13,13 +13,16 @@ type Props = {
     message: string;
     expiresDays: string;
     notify: boolean;
+    maxRecipients?: string;
   };
   rewardGroups: RewardOptionGroup[];
+  /// "Regalar cupones": solo cupones (sin cashback), con cantidad maxima.
+  couponOnly?: boolean;
 };
 
 /// Datos del bono. Solo muestra los campos que aplican al tipo elegido.
-export default function BonusFields({ defaults, rewardGroups }: Props) {
-  const [kind, setKind] = useState<BonusKind>(defaults.kind);
+export default function BonusFields({ defaults, rewardGroups, couponOnly }: Props) {
+  const [kind, setKind] = useState<BonusKind>(couponOnly ? "cupon" : defaults.kind);
 
   return (
     <div className="grid-form">
@@ -27,16 +30,20 @@ export default function BonusFields({ defaults, rewardGroups }: Props) {
         <label htmlFor="bonus-name">Nombre interno</label>
         <input id="bonus-name" name="name" type="text" maxLength={80} defaultValue={defaults.name} placeholder="Regalo de noviembre" />
       </div>
-      <div className="field">
-        <label htmlFor="bonus-kind">Qué se regala</label>
-        <select id="bonus-kind" name="kind" value={kind} onChange={(event) => setKind(event.target.value as BonusKind)}>
-          {BONUS_KINDS.filter((value) => value !== "puntos").map((value) => (
-            <option key={value} value={value}>
-              {BONUS_KIND_LABELS[value]}
-            </option>
-          ))}
-        </select>
-      </div>
+      {couponOnly ? (
+        <input type="hidden" name="kind" value="cupon" />
+      ) : (
+        <div className="field">
+          <label htmlFor="bonus-kind">Qué se regala</label>
+          <select id="bonus-kind" name="kind" value={kind} onChange={(event) => setKind(event.target.value as BonusKind)}>
+            {BONUS_KINDS.filter((value) => value !== "puntos").map((value) => (
+              <option key={value} value={value}>
+                {BONUS_KIND_LABELS[value]}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {kind === "cashback" && (
         <div className="field">
@@ -53,9 +60,9 @@ export default function BonusFields({ defaults, rewardGroups }: Props) {
       {kind === "cupon" && (
         <>
           <div className="field wide">
-            <label htmlFor="bonus-item">Producto gratis</label>
+            <label htmlFor="bonus-item">{couponOnly ? "Cupón" : "Producto gratis"}</label>
             <select id="bonus-item" name="reward_item_id" defaultValue={defaults.rewardItemId} style={{ width: "100%" }}>
-              <option value="">Elige un producto…</option>
+              <option value="">{couponOnly ? "Elige el cupón…" : "Elige un producto…"}</option>
               {rewardGroups.map((group) => (
                 <optgroup key={group.merchant} label={group.merchant}>
                   {group.items.map((item) => (
@@ -67,9 +74,18 @@ export default function BonusFields({ defaults, rewardGroups }: Props) {
               ))}
             </select>
             <small className="hint">
-              Solo productos activos de comercios aliados. Cada persona recibe un código listo para mostrar en caja.
+              {couponOnly
+                ? "¿No está el cupón que necesitas? Créalo arriba en “Crear un cupón”. Cada persona recibe un código listo para mostrar en caja."
+                : "Solo productos activos de comercios aliados. Cada persona recibe un código listo para mostrar en caja."}
             </small>
           </div>
+          {couponOnly && (
+            <div className="field">
+              <label htmlFor="bonus-max">¿Cuántos cupones vas a regalar?</label>
+              <input id="bonus-max" name="max_recipients" type="number" min={1} step={1} defaultValue={defaults.maxRecipients ?? ""} placeholder="Ej. 5 (vacío = a todos)" />
+              <small className="hint">Los que le compraste al comercio. Si el grupo es más grande, se eligen al azar.</small>
+            </div>
+          )}
           <div className="field">
             <label htmlFor="bonus-expires">Vence en (días)</label>
             <input id="bonus-expires" name="expires_days" type="number" min={1} max={365} step={1} defaultValue={defaults.expiresDays} />

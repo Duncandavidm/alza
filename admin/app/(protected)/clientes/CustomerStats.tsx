@@ -2,6 +2,9 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import StatTile from "@/components/StatTile";
 import TimeChart, { type Point } from "@/components/charts/TimeChart";
 import BarList from "@/components/BarList";
+import ActionForm from "@/components/ActionForm";
+import { fetchProBreakdown } from "@/lib/pro";
+import { updateProPrices } from "./pro-actions";
 
 type Item = { label: string; v: number };
 type Stats = {
@@ -29,7 +32,7 @@ const tail = (series: Point[] | undefined, n = 14) => (series ?? []).slice(-n).m
 
 /// Estadisticas de clientes: crecimiento, actividad, retencion y quienes son.
 export default async function CustomerStats() {
-  const { data, error } = await supabaseAdmin().rpc("admin_customers_stats");
+  const [{ data, error }, pro] = await Promise.all([supabaseAdmin().rpc("admin_customers_stats"), fetchProBreakdown()]);
   if (error) return <div className="card error">No se pudieron calcular las estadísticas de clientes: {error.message}</div>;
   const s = (data ?? {}) as Stats;
   const total = s.total ?? 0;
@@ -51,8 +54,64 @@ export default async function CustomerStats() {
         />
         <StatTile label="Escanearon una factura" value={s.with_receipt ?? 0} icon="receipt" hint={`${pctOf(s.with_receipt ?? 0, total)}% de los clientes`} />
         <StatTile label="Avisos activados" value={s.push ?? 0} icon="bell" hint={`${pctOf(s.push ?? 0, total)}% pueden recibir notificaciones`} />
-        <StatTile label="Suscriptores Pro" value={s.pro ?? 0} icon="star" hint={`${pctOf(s.pro ?? 0, total)}% de los clientes`} />
+        <StatTile label="Pagan Pro" value={pro.paying} icon="star"
+          hint={`${pctOf(pro.paying, total)}% de los clientes · ${pro.lifetime} de por vida`} />
         <StatTile label="Aceptaron estudio de mercado" value={s.consent_estudio ?? 0} icon="chart" hint={`${s.consent_ofertas ?? 0} aceptaron recibir ofertas`} />
+      </section>
+
+      <section className="dash-split">
+        <div className="card">
+          <h3>Suscripciones Pro</h3>
+          <p className="text-dim">
+            {pro.totalPro} con Pro activo. Solo cuentan como ingreso los que pagan por Apple y ya pasaron la semana gratis.
+          </p>
+          <BarList
+            total={pro.totalPro}
+            empty="Todavía nadie tiene Pro."
+            items={[
+              { label: "Pagan mensual", v: pro.monthly },
+              { label: "Pagan anual", v: pro.annual },
+              { label: "En su semana gratis (estimado)", v: pro.trial },
+              { label: "De por vida (regalado desde el panel)", v: pro.lifetime },
+              ...(pro.other > 0 ? [{ label: "Otros (códigos u otros planes)", v: pro.other }] : []),
+            ]}
+          />
+        </div>
+        <div className="card">
+          <h3>Ingreso estimado al mes</h3>
+          <div className="pro-revenue">
+            <div>
+              <span>Lo que te queda</span>
+              <strong>${pro.netMonthly.toLocaleString("es-PA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+            </div>
+            <div>
+              <span>Lo que pagan (antes de Apple)</span>
+              <strong>${pro.grossMonthly.toLocaleString("es-PA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+            </div>
+          </div>
+          <p className="text-dim">
+            {pro.monthly} × ${pro.prices.monthly} al mes + {pro.annual} × ${pro.prices.annual} al año ÷ 12, menos {pro.prices.commissionPct}% de
+            comisión de Apple. Es una estimación: el pago real lo ves en App Store Connect &gt; Pagos.
+          </p>
+          <details>
+            <summary className="text-dim">Cambiar precios o comisión</summary>
+            <ActionForm action={updateProPrices} className="grid-form" submitLabel="Guardar">
+              <div className="field">
+                <label>Precio mensual (US$)</label>
+                <input type="text" inputMode="decimal" name="monthly" defaultValue={pro.prices.monthly} required />
+              </div>
+              <div className="field">
+                <label>Precio anual (US$)</label>
+                <input type="text" inputMode="decimal" name="annual" defaultValue={pro.prices.annual} required />
+              </div>
+              <div className="field">
+                <label>Comisión de Apple (%)</label>
+                <input type="text" inputMode="decimal" name="commission" defaultValue={pro.prices.commissionPct} required />
+                <span className="text-dim">15% con el programa de pequeñas empresas; 30% si no.</span>
+              </div>
+            </ActionForm>
+          </details>
+        </div>
       </section>
 
       <section className="chart-grid">

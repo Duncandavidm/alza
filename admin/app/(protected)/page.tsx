@@ -5,6 +5,7 @@ import CopyButton from "@/components/CopyButton";
 import StatTile from "@/components/StatTile";
 import TimeChart, { type Point } from "@/components/charts/TimeChart";
 import Icon from "@/components/icons";
+import { fetchProBreakdown } from "@/lib/pro";
 
 type Stats = {
   users_total: number;
@@ -60,9 +61,10 @@ function greeting() {
 /// Dashboard: como va la app de un vistazo (crecimiento, uso, facturas,
 /// cashback, canjes) con lo que necesita atencion arriba.
 export default async function DashboardPage() {
-  const [{ data, error }, budgetExhausted] = await Promise.all([
+  const [{ data, error }, budgetExhausted, pro] = await Promise.all([
     supabaseAdmin().rpc("admin_dashboard_stats"),
     countRows("partner_merchant_offers", { status: "budget_exhausted" }),
+    fetchProBreakdown(),
   ]);
   const s = (data ?? {}) as Stats;
   const uses30 = (s.redemptions_30 ?? 0) + (s.benefits_30 ?? 0) + (s.coupons_used_30 ?? 0);
@@ -137,7 +139,8 @@ export default async function DashboardPage() {
           trend={last(s.series_uses_weekly, 12)} href="/redemptions" />
         <StatTile label="Comercios publicados" value={s.merchants_active ?? 0} icon="store" hint={`${s.applications_new ?? 0} solicitudes nuevas`}
           href="/merchants" />
-        <StatTile label="Suscriptores Pro" value={s.pro_active ?? 0} icon="star" hint={`${s.push_devices ?? 0} con avisos activados`} />
+        <StatTile label="Pagan Pro" value={pro.paying} icon="star"
+          hint={`~$${Math.round(pro.netMonthly).toLocaleString("es-PA")}/mes · ${pro.lifetime} de por vida`} href="/clientes" />
       </section>
 
       <section className="chart-grid">

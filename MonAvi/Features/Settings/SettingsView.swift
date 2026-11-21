@@ -205,26 +205,6 @@ struct SettingsView: View {
                 }
                 .foregroundStyle(.primary)
 
-                Section("Mi negocio") {
-                    NavigationLink {
-                        BusinessSettingsView()
-                    } label: {
-                        Label("Marca (logo, color, tipografia)", systemImage: "building.2.fill")
-                    }
-
-                    NavigationLink {
-                        ProductsView()
-                    } label: {
-                        Label("Catalogo y precios", systemImage: "tag.fill")
-                    }
-
-                    NavigationLink {
-                        InvoicesView()
-                    } label: {
-                        Label("Facturas", systemImage: "doc.text.fill")
-                    }
-                }
-
                 Section("Suscripción") {
                     switch appState.subscriptionStatus {
                     case .active(let expiresAt):

@@ -43,8 +43,8 @@ final class NotificationManagerTests: XCTestCase {
     /// test evita que subir un tope (ej. maxBills) rompa el limite sin que
     /// nadie se de cuenta.
     func testWorstCaseStaysUnderSystemLimit() {
-        XCTAssertEqual(NotificationManager.worstCaseScheduledCount, 61)
-        XCTAssertLessThanOrEqual(NotificationManager.worstCaseScheduledCount, 62)
+        XCTAssertEqual(NotificationManager.worstCaseScheduledCount, 55)
+        XCTAssertLessThanOrEqual(NotificationManager.worstCaseScheduledCount, 60)
         XCTAssertLessThan(NotificationManager.worstCaseScheduledCount, 64)
     }
 

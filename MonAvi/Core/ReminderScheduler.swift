@@ -37,13 +37,7 @@ enum ReminderScheduler {
             .value
         if let recurring { NotificationManager.scheduleRecurringReminders(recurring) }
 
-        let invoices: [Invoice]? = try? await supabase
-            .from("invoices")
-            .select()
-            .eq("user_id", value: userId)
-            .execute()
-            .value
-        if let invoices { NotificationManager.scheduleInvoiceReminders(invoices) }
+        NotificationManager.removeLegacyInvoiceReminders()
 
         if let today = try? await TransactionsRepository.shared.fetchToday(userId: userId) {
             NotificationManager.scheduleDailyLogReminders(loggedToday: !today.isEmpty)

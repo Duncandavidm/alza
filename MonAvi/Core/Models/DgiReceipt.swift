@@ -69,9 +69,8 @@ enum DgiReceiptDateFormat {
 }
 
 /// Una factura electronica panameña escaneada por QR — "factura
-/// RECIBIDA" (compra/gasto del usuario), distinta de `Invoice` (facturas
-/// que el usuario EMITE a sus clientes) y de `Bill` (cuenta por pagar
-/// programada a mano). Ver `MonAvi/Core/DGI/CufeParser.swift` para el
+/// RECIBIDA" (compra/gasto del usuario), distinta de `Bill` (cuenta por
+/// pagar programada a mano). Ver `MonAvi/Core/DGI/CufeParser.swift` para el
 /// parseo del QR y `supabase/migrations/0022_dgi_receipts.sql` para el
 /// esquema completo.
 struct DgiReceipt: Codable, Identifiable, Hashable {

@@ -27,33 +27,30 @@ enum NotificationManager {
     /// recurrentes se programan por separado (cada ViewModel no sabe
     /// cuantas tiene el resto), cada categoria se limita a sus items mas
     /// urgentes (los que vencen antes) para que la suma de las tres nunca
-    /// se acerque al limite, incluso con un usuario de Negocio con decenas
-    /// de facturas o cuentas activas. La ventana avanza sola: cada vez que
+    /// se acerque al limite, incluso con alguien con decenas de cuentas
+    /// activas. La ventana avanza sola: cada vez que
     /// el ViewModel refresca se vuelve a elegir el subconjunto mas urgente
     /// vigente en ese momento.
     ///
-    /// Presupuesto (todo junto queda en 61 de 64):
-    /// - cuentas por pagar: 6 x 3 avisos (antes, el dia, al dia siguiente) = 18
+    /// Presupuesto (todo junto queda en 55 de 64):
+    /// - cuentas por pagar: 8 x 3 avisos (antes, el dia, al dia siguiente) = 24
     /// - pago de tarjetas y prestamos: 3 x 2 avisos (3 dias antes, el dia) = 6
     /// - pagos fijos: 8 x 2 avisos (antes, el dia) = 16
-    /// - facturas por cobrar: 6 x 2 avisos = 12
     /// - recordatorio diario de anotar: 7
     /// - gastos que se repiten ("¿Este mes ya lo pagaste?"): 2
-    static let maxBills = 6
+    static let maxBills = 8
     static let maxCardPayments = 3
     static let remindersPerCardPayment = 2
     static let maxSuggestedRecurring = 2
     static let maxRecurring = 8
-    static let maxInvoices = 6
     static let dailyLogDays = 7
 
     /// Avisos que puede programar cada categoria por item (ver el desglose
     /// de arriba): cuentas por pagar 3 (antes, el dia, al dia siguiente),
-    /// pagos fijos 2, facturas 2, y el diario 1 por dia. Se exponen para
+    /// pagos fijos 2, tarjetas 2, y el diario 1 por dia. Se exponen para
     /// poder fijar en un test que la suma nunca pase el tope de iOS (64).
     static let remindersPerBill = 3
     static let remindersPerRecurring = 2
-    static let remindersPerInvoice = 2
 
     /// Peor caso de avisos pendientes programados a la vez — debe quedar
     /// holgadamente por debajo de 64 (iOS descarta en silencio los que
@@ -61,7 +58,6 @@ enum NotificationManager {
     static var worstCaseScheduledCount: Int {
         maxBills * remindersPerBill
             + maxRecurring * remindersPerRecurring
-            + maxInvoices * remindersPerInvoice
             + dailyLogDays
             + maxSuggestedRecurring
             + maxCardPayments * remindersPerCardPayment
@@ -119,43 +115,15 @@ enum NotificationManager {
         return granted
     }
 
-    // MARK: - Facturas (cuentas por cobrar)
+    // MARK: - Limpieza (facturas por cobrar, ya no existen)
 
-    /// Dos avisos por factura pendiente: uno `reminderLeadDays` antes del
-    /// vencimiento, y uno justo el dia que vence.
-    static func scheduleInvoiceReminders(_ invoices: [Invoice]) {
-        for invoice in invoices {
-            removePending(ids: ["invoice-lead-\(invoice.id)", "invoice-overdue-\(invoice.id)"])
-        }
-
-        let pending = invoices
-            .filter { $0.status != .pagada && $0.status != .anulada && $0.dueDateValue != nil }
-            .sorted { $0.dueDateValue! < $1.dueDateValue! }
-            .prefix(maxInvoices)
-
-        for invoice in pending {
-            let leadId = "invoice-lead-\(invoice.id)"
-            let overdueId = "invoice-overdue-\(invoice.id)"
-            let dueDate = invoice.dueDateValue!
-            let amountText = formattedAmount(invoice.total)
-
-            if let leadDate = Calendar.current.date(byAdding: .day, value: -reminderLeadDays, to: dueDate),
-               leadDate > Date() {
-                schedule(
-                    id: leadId,
-                    title: "Factura por vencer",
-                    body: "La factura de \(invoice.customerName) por \(amountText) vence en \(reminderLeadDays) día\(reminderLeadDays == 1 ? "" : "s").",
-                    date: atReminderHour(leadDate)
-                )
-            }
-
-            if dueDate > Date() {
-                schedule(
-                    id: overdueId,
-                    title: "Factura vence hoy",
-                    body: "La factura de \(invoice.customerName) por \(amountText) vence hoy.",
-                    date: atReminderHour(dueDate)
-                )
+    /// La funcion de negocio (facturas a clientes) se quito en 1.0.4: borra
+    /// los avisos "Factura por vencer" que hubieran quedado programados.
+    static func removeLegacyInvoiceReminders() {
+        UNUserNotificationCenter.current().getPendingNotificationRequests { requests in
+            let ids = requests.map(\.identifier).filter { $0.hasPrefix("invoice-") }
+            if !ids.isEmpty {
+                UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
             }
         }
     }

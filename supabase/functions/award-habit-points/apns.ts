@@ -75,6 +75,25 @@ export interface PushMessage {
   /// Datos extra para la app (ej. { screen: "points" }).
   data?: Record<string, unknown>;
   threadId?: string;
+  /// Imagen a la derecha del aviso (logo del comercio o foto del premio).
+  /// La baja la extension MonAviNotificationService de la app 1.0.3+; en
+  /// versiones viejas el aviso llega igual, sin imagen.
+  imageUrl?: string | null;
+}
+
+function buildPayload(message: PushMessage, defaultThread: string): string {
+  const image = message.imageUrl && /^https:\/\//i.test(message.imageUrl) ? message.imageUrl : null;
+  return JSON.stringify({
+    aps: {
+      alert: { title: message.title, body: message.body },
+      sound: "monavi-alert.wav",
+      "thread-id": message.threadId ?? defaultThread,
+      "interruption-level": "active",
+      ...(image ? { "mutable-content": 1 } : {}),
+    },
+    ...(image ? { image_url: image } : {}),
+    ...(message.data ?? {}),
+  });
 }
 
 /// Envia `message` a todos los iPhone del usuario. Nunca lanza: un fallo
@@ -100,15 +119,7 @@ export async function sendPushToUser(
     return { sent: 0, failed: tokens.length, skipped: "bad_key" };
   }
 
-  const payload = JSON.stringify({
-    aps: {
-      alert: { title: message.title, body: message.body },
-      sound: "monavi-alert.wav",
-      "thread-id": message.threadId ?? "monavi-puntos",
-      "interruption-level": "active",
-    },
-    ...(message.data ?? {}),
-  });
+  const payload = buildPayload(message, "monavi-puntos");
 
   let sent = 0;
   let failed = 0;
@@ -174,15 +185,7 @@ export async function sendPushToUsers(
   if (rows.length === 0) return { sent: 0, failed: 0, people: 0, skipped: "no_tokens" };
 
   const jwt = await providerToken();
-  const payload = JSON.stringify({
-    aps: {
-      alert: { title: message.title, body: message.body },
-      sound: "monavi-alert.wav",
-      "thread-id": message.threadId ?? "monavi-ofertas",
-      "interruption-level": "active",
-    },
-    ...(message.data ?? {}),
-  });
+  const payload = buildPayload(message, "monavi-ofertas");
 
   let sent = 0;
   let failed = 0;
@@ -221,4 +224,27 @@ export async function sendPushToUsers(
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, rows.length) }, () => worker()));
   return { sent, failed, people: reached.size };
+}
+
+/// Un aviso distinto para cada persona (ej. "te faltan $1.20 para tu
+/// capuchino"). Devuelve a cuantas personas les llego.
+export async function sendPersonalizedPushes(
+  supabase: SupabaseClient,
+  messages: { userId: string; title: string; body: string; imageUrl?: string | null }[],
+  extra: { data?: Record<string, unknown>; threadId?: string },
+): Promise<{ people: number; failed: number }> {
+  let people = 0;
+  let failed = 0;
+  for (const message of messages) {
+    const result = await sendPushToUser(supabase, message.userId, {
+      title: message.title,
+      body: message.body,
+      imageUrl: message.imageUrl,
+      data: extra.data,
+      threadId: extra.threadId,
+    });
+    if (result.sent > 0) people++;
+    failed += result.failed;
+  }
+  return { people, failed };
 }

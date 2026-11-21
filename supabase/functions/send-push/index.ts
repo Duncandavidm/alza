@@ -1,7 +1,11 @@
 // Edge Function: send-push
 //
 // Lo llama el panel:
-//   { push_campaign_id }  envia una notificacion segmentada (push_campaigns)
+//   { push_campaign_id }  envia una notificacion segmentada (push_campaigns).
+//                         Si trae merchant_id, el aviso se arma para cada
+//                         persona: el descuento del comercio y cuanto
+//                         cashback le falta para su premio (o si ya le
+//                         alcanza), con el logo del comercio como imagen.
 //   { bonus_id }          entrega un bono/regalo (grant_bonus) y, si el bono
 //                         lo pide, avisa por push a quienes lo recibieron
 //
@@ -9,7 +13,7 @@
 // segment_user_ids). Exige x-admin-secret; verify_jwt: false.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { sendPushToUsers } from "./apns.ts";
+import { sendPersonalizedPushes, sendPushToUsers } from "./apns.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -63,12 +67,34 @@ Deno.serve(async (req) => {
       if (segmentError) throw segmentError;
       const userIds = ((users ?? []) as { user_id: string }[]).map((row) => row.user_id);
 
-      const result = await sendPushToUsers(supabase, userIds, {
-        title: campaign.title,
-        body: campaign.body,
-        data: { screen: campaign.screen, push_campaign_id: campaign.id },
-        threadId: "monavi-ofertas",
-      });
+      let result: { people: number; failed: number; skipped?: string };
+      if (campaign.merchant_id) {
+        const { data: rows, error: rowsError } = await supabase.rpc("merchant_push_for_users", {
+          p_merchant_id: campaign.merchant_id,
+          p_user_ids: userIds,
+        });
+        if (rowsError) throw rowsError;
+        const customTitle = String(campaign.title ?? "").trim();
+        const customBody = String(campaign.body ?? "").trim();
+        const messages = ((rows ?? []) as { user_id: string; title: string; body: string; image_url: string | null }[])
+          .map((row) => ({
+            userId: row.user_id,
+            title: customTitle || row.title,
+            body: [customBody, row.body].filter((part) => part && part.length > 0).join(" "),
+            imageUrl: row.image_url,
+          }));
+        result = await sendPersonalizedPushes(supabase, messages, {
+          data: { screen: campaign.screen || "rewards", push_campaign_id: campaign.id },
+          threadId: "monavi-ofertas",
+        });
+      } else {
+        result = await sendPushToUsers(supabase, userIds, {
+          title: campaign.title,
+          body: campaign.body,
+          data: { screen: campaign.screen, push_campaign_id: campaign.id },
+          threadId: "monavi-ofertas",
+        });
+      }
       await supabase.from("push_campaigns").update({
         status: "sent",
         target_count: userIds.length,

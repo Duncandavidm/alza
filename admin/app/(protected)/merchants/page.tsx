@@ -49,7 +49,7 @@ export default async function MerchantsPage() {
         <ol className="steps-hint">
           <li>Crea el comercio con su nombre, RUC, categoría, logo y enlace de Google Maps.</li>
           <li>
-            Se abre su ficha: ahí agregas sus <strong>descuentos gratis por ser de MonAvi</strong> (10%, 20%…) y sus{" "}
+            Se abre su ficha: ahí agregas sus <strong>descuentos por ser de MonAvi</strong> (10%, 20%…) y sus{" "}
             <strong>premios con cashback</strong> (por ejemplo, <em>Capuchino</em> por $3.50).
           </li>
           <li>Generas el <strong>PIN de canje</strong> y se lo mandas al comercio.</li>

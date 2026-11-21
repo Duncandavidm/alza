@@ -244,8 +244,12 @@ struct RewardRedemption: Codable, Identifiable, Hashable {
         return trimmed
     }
 
-    /// Lo que se muestra como costo: "Gratis" en regalos y descuentos.
-    var displayCostText: String { isGift || isBenefit ? "Gratis" : formattedCost }
+    /// Lo que se muestra como costo: "Gratis" en regalos y "Descuento" en
+    /// los descuentos de aliados (no se cobran del cashback).
+    var displayCostText: String {
+        if isBenefit { return "Descuento" }
+        return isGift ? "Gratis" : formattedCost
+    }
 
     /// Descuento o cupon (se "aplica" en caja en vez de "entregarse").
     var isDiscount: Bool { isBenefit || (item?.kind.isDiscount ?? false) }

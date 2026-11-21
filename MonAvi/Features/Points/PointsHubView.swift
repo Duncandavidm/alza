@@ -56,7 +56,7 @@ struct PointsHubView: View {
                     Label("Mis canjes", systemImage: "ticket.fill")
                 }
             } footer: {
-                Text("Descuentos gratis por ser de MonAvi y premios que canjeas con tu cashback.")
+                Text("Descuentos por ser de MonAvi y premios que canjeas con tu cashback.")
             }
 
             Section {

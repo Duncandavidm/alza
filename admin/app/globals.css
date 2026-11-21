@@ -2365,6 +2365,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .al-phone-screen { height: 100%; border-radius: 38px; background: #F2F2F7; overflow: hidden; padding: 64px 16px 16px; color: #111; }
 .al-app-title { text-align: center; font-weight: 700; font-size: 17px; margin-bottom: 14px; }
 .al-balances { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.al-balances.single { grid-template-columns: 1fr; }
 .al-balances div { background: linear-gradient(135deg, #1f3d36, #0E1614); color: #fff; border-radius: 16px; padding: 10px 12px; }
 .al-balances small { display: block; font-size: 11px; opacity: .8; }
 .al-balances b { font-size: 20px; }

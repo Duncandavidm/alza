@@ -80,14 +80,14 @@ struct RedemptionCodeView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
-                if redemption.isGift || redemption.isBenefit {
+                if redemption.isGift {
                     Text("Gratis")
                         .font(.system(.subheadline, design: MonAviBrand.fontDesign, weight: .bold))
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
                         .background(MonAviBrand.primary.opacity(0.15), in: Capsule())
                         .foregroundStyle(MonAviBrand.primaryDark)
-                } else {
+                } else if !redemption.isBenefit {
                     RewardPointsPill(points: redemption.pointsCost, currency: redemption.displayCurrency)
                 }
             }

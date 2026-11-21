@@ -108,7 +108,7 @@ final class BenefitsTests: XCTestCase {
         }
         XCTAssertTrue(redemption.isBenefit)
         XCTAssertEqual(redemption.itemName, "20% de descuento")
-        XCTAssertEqual(redemption.displayCostText, "Gratis")
+        XCTAssertEqual(redemption.displayCostText, "Descuento")
         XCTAssertEqual(BenefitsMath.countdownText(until: redemption.expiresAt, now: now), "14:32")
         XCTAssertNil(BenefitsMath.countdownText(until: redemption.expiresAt, now: redemption.expiresAt))
     }

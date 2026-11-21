@@ -245,7 +245,7 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
                   </td>
                   <td>
                     {item.free_benefit
-                      ? `Gratis · ${benefitLimitLabel(item.per_user_limit, item.per_user_period)}`
+                      ? `Por ser de MonAvi · ${benefitLimitLabel(item.per_user_limit, item.per_user_period)}`
                       : formatRewardValue(item.points_cost, currency)}
                   </td>
                   <td>

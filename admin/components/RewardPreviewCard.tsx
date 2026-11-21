@@ -18,7 +18,7 @@ type Props = {
   hasMaps?: boolean;
   paused?: boolean;
   pausedLabel?: string;
-  /// Descuento gratis por ser de MonAvi: en vez del costo dice "Gratis".
+  /// Descuento gratis por ser de MonAvi: en vez del costo dice "Por ser de MonAvi".
   isFree?: boolean;
 };
 
@@ -57,7 +57,7 @@ export default function RewardPreviewCard({
       <div className="reward-preview-body">
         <span className="reward-preview-product">{productName || "Nombre del producto"}</span>
         <span className="reward-preview-points">
-          {isFree ? "Gratis" : value && value > 0 ? formatRewardValue(value, currency) : currency === "puntos" ? "— pts" : "$—"}
+          {isFree ? "Por ser de MonAvi" : value && value > 0 ? formatRewardValue(value, currency) : currency === "puntos" ? "— pts" : "$—"}
         </span>
       </div>
       {description && <p className="reward-preview-description">{description}</p>}

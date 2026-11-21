@@ -44,12 +44,6 @@ struct BenefitCard: View {
                 }
             }
             Spacer(minLength: 8)
-            Text("Gratis")
-                .font(.caption.weight(.bold))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 5)
-                .background(MonAviBrand.primary.opacity(0.15), in: Capsule())
-                .foregroundStyle(MonAviBrand.primaryDark)
         }
     }
 

@@ -9,33 +9,35 @@ import Reveal from "./Reveal";
 export const metadata: Metadata = {
   title: "Comercios aliados — MonAvi",
   description:
-    "Lleva clientes nuevos a tu negocio con MonAvi: publica un producto canjeable y recibe a clientes que lo canjean en tu local con su cashback o sus puntos. Sin costo de afiliación ni integración.",
+    "Lleva clientes nuevos a tu negocio con MonAvi: ofrece un descuento por ser de MonAvi o un premio que se canjea con cashback, y recibe a clientes en tu local. Sin costo de afiliación ni integración.",
 };
 
 const STEPS = [
   { title: "Te registras", text: "Llenas el formulario en dos minutos. Te contactamos para conocer tu negocio y preparar tu ficha." },
-  { title: "Eliges tu premio", text: "Un café, un postre, un servicio. Tú decides qué ofreces, cuánto vale y si se canjea con cashback o con puntos." },
+  { title: "Eliges qué ofreces", text: "Un descuento por ser de MonAvi (10%, 20%…) que cada persona usa las veces que tú decidas, o un premio (un café, un postre, un servicio) que se canjea con cashback." },
   { title: "Te encuentran en la app", text: "Tu negocio aparece con tu logo, la foto del producto y un botón directo a Google Maps." },
   { title: "Validas en caja", text: "El cliente muestra su código. Lo validas desde cualquier celular con tu PIN y le entregas el producto." },
 ];
 
 const BENEFITS = [
-  { icon: "🚶", title: "Clientes que llegan decididos", text: "Quien canjea ya eligió visitarte: llega por su premio y muchas veces compra algo más o vuelve." },
+  { icon: "🚶", title: "Clientes que llegan decididos", text: "Quien usa tu descuento o canjea tu premio ya eligió visitarte, y muchas veces compra algo más o vuelve." },
   { icon: "📱", title: "Visibilidad en la app", text: "Tu ficha con logo, fotos y cómo llegar, frente a personas que cuidan su dinero." },
-  { icon: "🔔", title: "Avisos que traen gente", text: "Cuando a un usuario le alcanza para tu premio, MonAvi puede avisarle con una notificación." },
+  { icon: "🔔", title: "Avisos que traen gente", text: "Cuando entras a MonAvi avisamos a los usuarios con tu descuento, y cuando a alguien le alcanza para tu premio también le llega una notificación." },
+  { icon: "📊", title: "Mides los resultados", text: "Ves cuántas visitas te trajo MonAvi y el ticket promedio de esos clientes." },
   { icon: "🆓", title: "Cero costo", text: "Sin cuota de afiliación, sin mensualidad y sin comisión por venta." },
-  { icon: "🔒", title: "Canjes seguros", text: "Cada código es único, vence a los 7 días y no se puede usar dos veces. El PIN tiene límite de intentos." },
-  { icon: "🎛️", title: "Tú tienes el control", text: "Cambia o pausa tus premios cuando quieras. Sin contratos largos." },
+  { icon: "🔒", title: "Canjes seguros", text: "Cada código es único y no se puede usar dos veces: el de un descuento vence a los 15 minutos y el de un premio a los 7 días. El PIN tiene límite de intentos." },
+  { icon: "🎛️", title: "Tú tienes el control", text: "Cambia o pausa tus descuentos y premios cuando quieras, y pon un cupo máximo. Sin contratos largos." },
 ];
 
 const FAQ = [
   { q: "¿Cuánto cuesta ser aliado?", a: "Nada. No hay cuota de afiliación, mensualidad ni comisión." },
-  { q: "¿Quién paga el producto que se canjea?", a: "Tu negocio lo entrega sin costo para el cliente, como inversión para atraer y fidelizar clientes. MonAvi no reembolsa el producto." },
+  { q: "¿Qué es un descuento por ser de MonAvi?", a: "Un descuento que ofreces a quienes usan MonAvi, por ejemplo 20% en toda la tienda. Tú eliges cada cuánto lo puede usar cada persona (1 vez por semana, por mes…). Se desbloquea cuando la persona escanea su primera factura y verifica su correo." },
+  { q: "¿Quién paga el premio o el descuento?", a: "Tu negocio, como inversión para atraer y fidelizar clientes. MonAvi no reembolsa el producto ni el descuento." },
   { q: "¿Necesito instalar algo o un equipo especial?", a: "No. Solo un celular con navegador para abrir la página de canje y tu PIN." },
   { q: "¿Qué datos del cliente veo?", a: "Su nombre de pila con la inicial del apellido, los últimos 4 dígitos de su teléfono, el código y el producto. Nunca su correo, saldo ni movimientos." },
-  { q: "¿Qué pasa si el cliente no usa su código?", a: "Vence a los 7 días y el saldo se le devuelve automáticamente. Tú no pierdes nada." },
+  { q: "¿Qué pasa si el cliente no usa su código?", a: "Vence solo (a los 15 minutos si es un descuento, a los 7 días si es un premio, y el cashback se le devuelve). Tú no pierdes nada." },
   { q: "¿Puedo hablar con alguien antes de inscribirme?", a: "Claro. Escríbenos por WhatsApp al +507 6738-9720 o a hola@maday.app y te explicamos todo." },
-  { q: "¿Cómo ganan cashback y puntos los clientes?", a: "Cashback: 1% de sus facturas electrónicas de Panamá verificadas por la DGI. Puntos: por buenos hábitos, como anotar sus gastos, ahorrar y cumplir sus presupuestos." },
+  { q: "¿Cómo ganan cashback los clientes?", a: "Con el 1% de sus facturas electrónicas de Panamá verificadas por la DGI y al invitar a sus amigos. Por eso MonAvi les recuerda pedir siempre su factura fiscal." },
 ];
 
 const WHATSAPP_URL =
@@ -84,8 +86,8 @@ export default function AliadosPage() {
               Convierte el ahorro de la gente en <span>clientes para tu negocio</span>
             </h1>
             <p>
-              En MonAvi, las personas ordenan su dinero, ganan cashback con sus facturas y puntos por sus buenos hábitos.
-              Sé el lugar donde lo canjean.
+              En MonAvi, las personas ordenan su dinero y ganan cashback con sus facturas. Sé el lugar donde lo canjean
+              y donde encuentran sus descuentos.
             </p>
             <div className="al-hero-actions">
               <a href="#solicitud" className="al-btn">Quiero ser aliado</a>
@@ -113,7 +115,7 @@ export default function AliadosPage() {
         <Reveal>
           <span className="al-kicker">Pruébalo</span>
           <h2>Así se vería tu negocio en MonAvi</h2>
-          <p className="al-lead">Escribe el nombre de tu negocio y el premio que darías. Mira cómo lo verían tus futuros clientes.</p>
+          <p className="al-lead">Escribe el nombre de tu negocio y el descuento o premio que darías. Mira cómo lo verían tus futuros clientes.</p>
         </Reveal>
         <Reveal delay={0.1}>
           <BusinessPreview />
@@ -131,7 +133,7 @@ export default function AliadosPage() {
           {[
             { img: "hoy", title: "Anotan su día", text: "Gastos, ingresos y ahorro en segundos, hasta con su voz." },
             { img: "resumen", title: "Entienden su mes", text: "En qué se fue la plata, por categorías." },
-            { img: "cashback", title: "Ganan recompensas", text: "Cashback por sus facturas y puntos por buenos hábitos, para canjear en comercios como el tuyo." },
+            { img: "cashback", title: "Ganan recompensas", text: "Cashback por sus facturas y descuentos en comercios como el tuyo." },
           ].map((s, i) => (
             <Reveal key={s.img} delay={i * 0.12} className="al-screen">
               {/* eslint-disable-next-line @next/next/no-img-element */}

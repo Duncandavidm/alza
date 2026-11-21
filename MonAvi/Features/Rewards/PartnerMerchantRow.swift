@@ -120,7 +120,7 @@ struct PartnerMerchantRow: View {
     private var summaryText: String {
         var parts: [String] = []
         if let benefit = summary.benefits.first {
-            parts.append(summary.benefits.count == 1 ? "\(benefit.name) gratis" : "\(summary.benefits.count) descuentos gratis")
+            parts.append(summary.benefits.count == 1 ? benefit.name : "\(summary.benefits.count) descuentos")
         }
         let count = summary.items.count
         if count > 0 {

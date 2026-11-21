@@ -109,7 +109,7 @@ export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps,
             }}
           >
             <option value="premio">Premio: lo canjea con su cashback o puntos</option>
-            <option value="beneficio">Descuento gratis por ser de MonAvi</option>
+            <option value="beneficio">Descuento por ser de MonAvi</option>
           </select>
         </div>
         {isFree && (

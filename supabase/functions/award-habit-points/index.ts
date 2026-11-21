@@ -144,6 +144,28 @@ async function announceNewPartners(supabase: Supabase): Promise<number> {
   return people;
 }
 
+/// Cupones por buenos habitos (o "para todos"): uno por regla y periodo,
+/// cada uno con su aviso para que la persona entre a ver su codigo.
+async function issueCouponsWithPush(supabase: Supabase): Promise<{ issued: number; pushes: number }> {
+  const { data: coupons, error: couponError } = await supabase.rpc("issue_habit_coupons");
+  if (couponError) console.error("issue_habit_coupons", couponError.message);
+  let pushes = 0;
+  for (const row of (coupons ?? []) as {
+    user_id: string; coupon_name: string; merchant: string; reason: string; expires_at: string; image_url: string | null;
+  }[]) {
+    const until = new Date(row.expires_at).toLocaleDateString("es-PA", { day: "2-digit", month: "2-digit", timeZone: "America/Panama" });
+    const result = await sendPushToUser(supabase, row.user_id, {
+      title: `🎁 Tienes un cupón nuevo: ${row.coupon_name} en ${row.merchant}`,
+      body: `Te lo ganaste ${row.reason}. Toca para ver tu código y úsalo en caja antes del ${until}.`,
+      data: { screen: "redemptions" },
+      threadId: "monavi-regalos",
+      imageUrl: row.image_url,
+    });
+    if (result.sent > 0) pushes++;
+  }
+  return { issued: (coupons ?? []).length, pushes };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS_HEADERS });
   if (req.headers.get("x-admin-secret") !== ADMIN_JOB_SECRET) {
@@ -155,28 +177,19 @@ Deno.serve(async (req) => {
 
     let body: { mode?: string } = {};
     try { body = await req.json(); } catch { /* corrida diaria sin body */ }
+    // El panel lo llama al crear o activar un cupon: se entrega ya, sin
+    // esperar a la corrida diaria.
+    if (body.mode === "coupons") {
+      const coupons = await issueCouponsWithPush(supabase);
+      return jsonResponse({ mode: "coupons", habit_coupons: coupons.issued, habit_coupon_pushes: coupons.pushes });
+    }
     if (body.mode === "hourly") {
       const invoiceReminders = await sendBenefitInvoiceReminders(supabase);
       return jsonResponse({ mode: "hourly", invoice_reminders: invoiceReminders });
     }
 
     // Cupones por buenos habitos: uno por regla y periodo, con aviso.
-    const { data: coupons, error: couponError } = await supabase.rpc("issue_habit_coupons");
-    if (couponError) console.error("issue_habit_coupons", couponError.message);
-    let couponPushes = 0;
-    for (const row of (coupons ?? []) as {
-      user_id: string; coupon_name: string; merchant: string; reason: string; expires_at: string; image_url: string | null;
-    }[]) {
-      const until = new Date(row.expires_at).toLocaleDateString("es-PA", { day: "2-digit", month: "2-digit", timeZone: "America/Panama" });
-      const result = await sendPushToUser(supabase, row.user_id, {
-        title: `🎁 Ganaste un ${row.coupon_name} en ${row.merchant}`,
-        body: `Te lo ganaste ${row.reason}. Muestra tu código en caja antes del ${until}.`,
-        data: { screen: "redemptions" },
-        threadId: "monavi-regalos",
-        imageUrl: row.image_url,
-      });
-      if (result.sent > 0) couponPushes++;
-    }
+    const coupons = await issueCouponsWithPush(supabase);
 
     // Campañas de marcas ("compra X y gana mas") sobre las facturas que la
     // DGI confirmo a las 8:00. Si falla, no frena lo demas.
@@ -229,8 +242,8 @@ Deno.serve(async (req) => {
     const invoiceReminders = await sendBenefitInvoiceReminders(supabase);
 
     return jsonResponse({
-      habit_coupons: (coupons ?? []).length,
-      habit_coupon_pushes: couponPushes,
+      habit_coupons: coupons.issued,
+      habit_coupon_pushes: coupons.pushes,
       brand_bonuses: campaignsApplied ?? 0,
       cashback_released_users: releasedUsers,
       users_notified: usersNotified,

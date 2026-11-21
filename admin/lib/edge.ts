@@ -68,6 +68,19 @@ export async function callSendPush(
   }
 }
 
+/// Entrega ya los cupones por habitos (award-habit-points en modo
+/// "coupons"), con su aviso, en vez de esperar a la corrida diaria.
+export async function callIssueCoupons(): Promise<{ issued: number; pushes: number } | null> {
+  try {
+    const response = await callAdminEdgeFunction("award-habit-points", { mode: "coupons" });
+    const data = (response.data ?? {}) as { habit_coupons?: number; habit_coupon_pushes?: number };
+    if (!response.ok) return null;
+    return { issued: data.habit_coupons ?? 0, pushes: data.habit_coupon_pushes ?? 0 };
+  } catch {
+    return null;
+  }
+}
+
 /// Explicacion amable de un envio que no salio por push.
 export function skippedNote(skipped: string | null | undefined): string | null {
   if (!skipped) return null;

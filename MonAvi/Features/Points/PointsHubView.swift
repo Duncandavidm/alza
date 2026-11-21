@@ -28,6 +28,9 @@ struct PointsHubView: View {
     @StateObject private var viewModel = PointsViewModel()
     @State private var brandCampaigns: [BrandCampaign] = []
     @State private var isShowingMarketStudyConsent = false
+    /// Cupones, regalos y canjes listos para usar: "Mis cupones y canjes"
+    /// solo se activa cuando hay alguno, con el numero como un aviso.
+    @State private var activeCodesCount = 0
 
     var body: some View {
         List {
@@ -47,22 +50,14 @@ struct PointsHubView: View {
                     rewardsCard
                 }
 
-                NavigationLink {
-                    MyRedemptionsView()
-                } label: {
-                    Label("Mis cupones y canjes", systemImage: "ticket.fill")
-                }
+                myCouponsRow
             } footer: {
-                Text("Tus cupones ganados y tus códigos están en Mis cupones y canjes. Muéstralos en caja y pide siempre tu factura fiscal.")
+                Text(activeCodesCount > 0
+                     ? "Toca Mis cupones y canjes para ver tu código y muéstralo en caja. Pide siempre tu factura fiscal."
+                     : "Mis cupones y canjes se activa cuando ganes un cupón o canjees un premio. Te avisaremos.")
             }
 
             Section {
-                NavigationLink {
-                    HabitCouponsView()
-                } label: {
-                    Label("Cupones por buenos hábitos", systemImage: "gift.fill")
-                }
-
                 NavigationLink {
                     SavingsGoalsView()
                 } label: {
@@ -129,6 +124,40 @@ struct PointsHubView: View {
         }
     }
 
+    /// Bloqueado sin cupones activos; con cupones, el numero en rojo invita
+    /// a entrar a verlos.
+    @ViewBuilder
+    private var myCouponsRow: some View {
+        if activeCodesCount > 0 {
+            NavigationLink {
+                MyRedemptionsView()
+            } label: {
+                HStack {
+                    Label("Mis cupones y canjes", systemImage: "ticket.fill")
+                    Spacer()
+                    Text("\(activeCodesCount)")
+                        .font(.footnote.weight(.bold))
+                        .monospacedDigit()
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 8)
+                        .frame(minWidth: 24, minHeight: 24)
+                        .background(Capsule().fill(Color.red))
+                        .accessibilityLabel(RewardsMath.giftCountText(activeCodesCount))
+                }
+            }
+        } else {
+            HStack {
+                Label("Mis cupones y canjes", systemImage: "ticket.fill")
+                Spacer()
+                Image(systemName: "lock.fill")
+                    .font(.footnote)
+            }
+            .foregroundStyle(.secondary)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Mis cupones y canjes, bloqueado: aún no tienes cupones")
+        }
+    }
+
     /// Entrada destacada a "Dónde canjear" (comercios, descuentos y premios).
     private var rewardsCard: some View {
         HStack(spacing: 14) {
@@ -154,8 +183,10 @@ struct PointsHubView: View {
 
     private func refresh() async {
         guard let userId = appState.currentUserId else { return }
+        async let codes: [RewardRedemption] = (try? await RewardsRepository.shared.fetchMyRedemptions(userId: userId)) ?? []
         await viewModel.refresh(userId: userId)
         brandCampaigns = await BrandCampaignsRepository.shared.fetchActiveOrEmpty()
+        activeCodesCount = RewardsMath.activeCodes(await codes).count
     }
 
     /// Una sola vez: si el usuario aun no decidio sobre el estudio de

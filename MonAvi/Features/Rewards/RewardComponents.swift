@@ -338,7 +338,7 @@ struct GiftCouponCard: View {
     }
 }
 
-/// "🎁 Tienes N regalo(s)" en Hoy: lleva a "Mis canjes". Quien lo usa
+/// "🎁 Tienes N cupón(es)" en Hoy: lleva a "Mis cupones y canjes". Quien lo usa
 /// debe esconderlo cuando no hay regalos activos.
 struct GiftsTodayCard: View {
     let count: Int
@@ -354,7 +354,7 @@ struct GiftsTodayCard: View {
                     Text(RewardsMath.giftCountText(count))
                         .font(.system(.headline, design: MonAviBrand.fontDesign, weight: .bold))
                         .foregroundStyle(.primary)
-                    Text("Muéstralo en caja y llévatelo gratis.")
+                    Text("Toca para ver su código y úsalo en caja.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

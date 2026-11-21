@@ -395,9 +395,15 @@ enum RewardsMath {
             .sorted { $0.expiresAt < $1.expiresAt }
     }
 
-    /// "Tienes 1 regalo" / "Tienes 3 regalos".
+    /// Cupones, regalos y canjes listos para mostrar en caja (sin los
+    /// descuentos de 15 minutos, que viven en "Descuentos").
+    static func activeCodes(_ redemptions: [RewardRedemption], now: Date = Date()) -> [RewardRedemption] {
+        redemptions.filter { !$0.isBenefit && $0.isUsable(now: now) }
+    }
+
+    /// "Tienes 1 cupón" / "Tienes 3 cupones".
     static func giftCountText(_ count: Int) -> String {
-        count == 1 ? "Tienes 1 regalo" : "Tienes \(count) regalos"
+        count == 1 ? "Tienes 1 cupón" : "Tienes \(count) cupones"
     }
 
     /// Lo que codifica el QR del canje:

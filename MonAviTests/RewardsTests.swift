@@ -462,8 +462,8 @@ final class RewardsTests: XCTestCase {
     }
 
     func testGiftCountText() {
-        XCTAssertEqual(RewardsMath.giftCountText(1), "Tienes 1 regalo")
-        XCTAssertEqual(RewardsMath.giftCountText(3), "Tienes 3 regalos")
+        XCTAssertEqual(RewardsMath.giftCountText(1), "Tienes 1 cupón")
+        XCTAssertEqual(RewardsMath.giftCountText(3), "Tienes 3 cupones")
     }
 
     // MARK: - Cupo y descuentos (0065/0066, app 1.0.3)

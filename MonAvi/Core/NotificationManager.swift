@@ -412,7 +412,16 @@ enum NotificationManager {
         set { UserDefaults.standard.set(newValue, forKey: dailyLogReminderKey) }
     }
 
-    /// "¿Anotaste tus gastos de hoy?" a las 8 p. m. los proximos 7 dias.
+    /// Textos del recordatorio diario; rotan un dia tras otro.
+    static let dailyLogMessages = [
+        "¿Cómo te fue hoy con tus gastos? Anótalos en 10 segundos y mantén tus buenos hábitos.",
+        "Antes de terminar el día: anota lo que gastaste y mira cómo vas.",
+        "¿Pediste factura fiscal hoy? Escanéala en MonAvi y gana cashback 🧾",
+        "Tu día en números: ¿cuánto gastaste hoy? Anótalo y mantén tus buenos hábitos.",
+        "Anotar tus gastos te acerca a tus metas y a nuevos cupones 🎁",
+    ]
+
+    /// Recordatorio diario a las 8 p. m. los proximos 7 dias.
     /// Si hoy ya anoto algo, empieza mañana. Se reprograma al abrir la app
     /// y cada vez que se anota un movimiento, asi que no avisa un dia en
     /// que ya anoto.
@@ -422,11 +431,7 @@ enum NotificationManager {
 
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        let messages = [
-            "¿Anotaste tus gastos de hoy? Toma 10 segundos y mantienes tu racha 🔥",
-            "Un minuto para tus finanzas: anota lo que gastaste hoy.",
-            "¿Qué gastaste hoy? Anótalo antes de que se te olvide.",
-        ]
+        let messages = NotificationManager.dailyLogMessages
 
         for offset in 0..<dailyLogDays {
             if offset == 0 && loggedToday { continue }

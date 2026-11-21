@@ -7,7 +7,14 @@ import { parseDollarsToCents } from "@/lib/format";
 import { optionalText, text } from "@/lib/validation";
 import { toHabitRuleType } from "@/lib/habit-coupons";
 import { fileFromForm, uploadRewardImage } from "@/lib/uploads";
+import { callIssueCoupons } from "@/lib/edge";
 import type { ActionState } from "@/components/ActionForm";
+
+function issuedText(result: { issued: number; pushes: number } | null): string {
+  if (!result) return "Se entregará en la próxima corrida diaria (8:15 a. m.) a quien cumpla.";
+  if (result.issued === 0) return "Por ahora nadie cumple la regla: se entregará solo, con aviso, a quien cumpla (se revisa cada día a las 8:15 a. m.).";
+  return `Ya se entregaron ${result.issued} cupones y les avisamos a ${result.pushes} personas por notificación. Quien cumpla después lo recibirá solo.`;
+}
 
 function intField(formData: FormData, key: string, min: number, max: number, fallback: number | null): number | null | undefined {
   const raw = text(formData, key, 9);
@@ -82,8 +89,9 @@ export async function createHabitCoupon(_prev: ActionState, formData: FormData):
     await supabase.from("reward_items").delete().eq("id", item.id);
     return { error: error.message };
   }
+  const issued = await callIssueCoupons();
   revalidatePath("/cupones");
-  return { message: `Listo: “${couponName}” se entregará en la próxima corrida diaria (8:15 a. m.) a quien cumpla.` };
+  return { message: `Listo: “${couponName}” creado. ${issuedText(issued)}` };
 }
 
 export async function setHabitCouponStatus(ruleId: string, status: "active" | "paused") {
@@ -95,5 +103,7 @@ export async function setHabitCouponStatus(ruleId: string, status: "active" | "p
     .update({ status, updated_at: new Date().toISOString() })
     .eq("id", ruleId);
   if (error) throw new Error(error.message);
+  // Al activarlo se entrega ya a quien cumpla (con su aviso).
+  if (status === "active") await callIssueCoupons();
   revalidatePath("/cupones");
 }

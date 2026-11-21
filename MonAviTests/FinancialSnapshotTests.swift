@@ -165,4 +165,103 @@ final class FinancialSnapshotTests: XCTestCase {
         let different = [entry("Regalo", 20, date(2026, 10, 2)), entry("Regalo", 90, date(2026, 11, 2))]
         XCTAssertTrue(RecurringDetector.suggestions(entries: different, existingNames: [], dismissed: [], now: now, calendar: calendar).isEmpty)
     }
+
+    // MARK: - Sobreendeudamiento y estudio real
+
+    func testOverIndebtedWhenPaymentsTakeTooMuchIncome() {
+        let card = FinancialSnapshot.DebtInput(name: "Visa", balance: 3000, creditLimit: 5000, minimumPayment: 300)
+        let loan = FinancialSnapshot.DebtInput(name: "Préstamo", balance: 4000, minimumPayment: 250)
+        let snapshot = FinancialSnapshot(monthlyIncome: 1200, fixedExpenses: 300, debts: [card, loan], cash: 100, savings: 0)
+        XCTAssertEqual(snapshot.paymentShare ?? 0, 550.0 / 1200.0, accuracy: 0.001)
+        XCTAssertEqual(snapshot.debtLevel, .high)
+        let alert = snapshot.debtAlert
+        XCTAssertEqual(alert?.title, "Te estás sobreendeudando")
+        XCTAssertTrue(alert?.message.contains("Debes $7,000, el 583% de lo que ganas en un mes") ?? false)
+        XCTAssertTrue(alert?.message.contains("46% de tus ingresos") ?? false)
+        // Para quedar en 36%: 550 / 0.36 = 1528 -> faltan $328 al mes.
+        XCTAssertEqual(snapshot.incomeNeededIncrease, 328)
+        XCTAssertTrue(snapshot.plan.contains { $0.text.contains("aumenta tus ingresos en unos $328") })
+    }
+
+    func testHealthyDebtHasNoAlert() {
+        let card = FinancialSnapshot.DebtInput(name: "Visa", balance: 200, creditLimit: 2000, minimumPayment: 25)
+        let snapshot = FinancialSnapshot(monthlyIncome: 2500, fixedExpenses: 800, debts: [card], cash: 2000, savings: 1000)
+        XCTAssertEqual(snapshot.debtLevel, .healthy)
+        XCTAssertNil(snapshot.debtAlert)
+    }
+
+    func testRealDataOverridesDeclaredIncomeAndDetectsOverspending() {
+        let snapshot = FinancialSnapshot(
+            monthlyIncome: 1500, fixedExpenses: 400, debts: [], cash: 50, savings: 0,
+            realIncome: 1100, realSpending: 1300, realMonths: 2
+        )
+        XCTAssertTrue(snapshot.usesRealData)
+        XCTAssertEqual(snapshot.income, 1100)
+        XCTAssertEqual(snapshot.overspending, 200)
+        XCTAssertEqual(snapshot.debtAlert?.title, "Estás gastando más de lo que ganas")
+        XCTAssertEqual(snapshot.health, .attention)
+        XCTAssertTrue(snapshot.observations.contains { $0.text.contains("Es menos que el ingreso fijo que nos dijiste") })
+    }
+
+    private func transaction(_ type: MovementType, _ amount: Decimal, daysAgo: Double, now: Date) -> FinanceTransaction {
+        let json = """
+        {"id":"\(UUID().uuidString)","user_id":"\(UUID().uuidString)","account_id":"\(UUID().uuidString)",
+         "amount":\(NSDecimalNumber(decimal: amount).stringValue),"movement_type":"\(type.rawValue)","tags":[],
+         "occurred_at":"\(ISO8601DateFormatter().string(from: now.addingTimeInterval(-daysAgo * 86_400)))",
+         "created_at":"\(ISO8601DateFormatter().string(from: now))"}
+        """
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return try! decoder.decode(FinanceTransaction.self, from: Data(json.utf8))
+    }
+
+    func testRealAveragesNeedAMonthAndIgnoreTransfers() {
+        let now = date(2026, 11, 21)
+        let rows = [
+            transaction(.ingreso, 1000, daysAgo: 10, now: now),
+            transaction(.ingreso, 1000, daysAgo: 40, now: now),
+            transaction(.gasto, -700, daysAgo: 5, now: now),
+            transaction(.gasto, -500, daysAgo: 45, now: now),
+            transaction(.transferencia, -300, daysAgo: 3, now: now),
+        ]
+        // Solo 2 semanas de historial: todavia no hay promedio real.
+        XCTAssertNil(FinancialHealthInputs.realAverages(transactions: rows, historyStart: now.addingTimeInterval(-14 * 86_400), now: now))
+        // 2 meses de historial: promedio de 2 meses, sin contar la transferencia.
+        let real = FinancialHealthInputs.realAverages(transactions: rows, historyStart: now.addingTimeInterval(-60 * 86_400), now: now)
+        XCTAssertEqual(real?.months, 2)
+        XCTAssertEqual(real?.income, 1000)
+        XCTAssertEqual(real?.spending, 600)
+    }
+
+    // MARK: - Tarjeta de credito
+
+    private func debt(balance: Decimal, limit: Decimal?, minimum: Decimal? = nil, name: String = "Visa", day: Int? = 15) -> Debt {
+        Debt(
+            id: UUID(), userId: UUID(), creditor: name, balance: balance, creditLimit: limit,
+            interestRateMonthly: nil, minimumPayment: minimum, dueDate: nil, isOverdue: false,
+            status: .active, createdAt: Date(), updatedAt: Date(), paymentDay: day
+        )
+    }
+
+    func testCardHelpers() {
+        let card = debt(balance: 1600, limit: 2000)
+        XCTAssertTrue(card.isCard)
+        XCTAssertEqual(card.availableCredit, 400)
+        XCTAssertEqual(card.estimatedMinimum, 48)
+        XCTAssertEqual(debt(balance: 1600, limit: nil, minimum: 80).estimatedMinimum, 80)
+        XCTAssertFalse(debt(balance: 900, limit: nil, name: "Préstamo carro").isCard)
+        XCTAssertTrue(debt(balance: 900, limit: nil, name: "Tarjeta de Crédito").isCard)
+    }
+
+    func testNextPaymentDate() {
+        let now = date(2026, 11, 21)
+        let later = CreditCardSchedule.nextDueDate(paymentDay: 25, now: now, calendar: calendar)
+        XCTAssertEqual(later.map { calendar.component(.day, from: $0) }, 25)
+        XCTAssertEqual(later.map { calendar.component(.month, from: $0) }, 11)
+        let passed = CreditCardSchedule.nextDueDate(paymentDay: 15, now: now, calendar: calendar)
+        XCTAssertEqual(passed.map { calendar.component(.month, from: $0) }, 12)
+        let february = CreditCardSchedule.nextDueDate(paymentDay: 31, now: date(2027, 2, 3), calendar: calendar)
+        XCTAssertEqual(february.map { calendar.component(.day, from: $0) }, 28)
+        XCTAssertEqual(CreditCardSchedule.daysUntil(later!, now: now, calendar: calendar), 4)
+    }
 }

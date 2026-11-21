@@ -15,14 +15,26 @@ struct FinancialSnapshotSections: View {
                     .font(.system(size: 44))
                 Text(name.isEmpty ? snapshot.health.title : "\(name), \(snapshot.health.title.lowercased())")
                     .font(.title2.bold())
-                Text("Así se ve tu vida financiera con lo que nos contaste. No es un juicio: es el punto de partida.")
+                Text(snapshot.sourceText)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
             .padding(.vertical, 6)
         }
 
-        if snapshot.monthlyIncome > 0 {
+        if let alert = snapshot.debtAlert {
+            Section {
+                DebtAlertCard(alert: alert)
+            }
+        }
+
+        if snapshot.totalDebt > 0 {
+            Section("Tus deudas frente a tus ingresos") {
+                DebtVersusIncomeRows(snapshot: snapshot)
+            }
+        }
+
+        if snapshot.income > 0 {
             Section {
                 MoneySplitBar(snapshot: snapshot)
                     .padding(.vertical, 6)
@@ -116,7 +128,7 @@ private struct MoneySplitBar: View {
                     Spacer()
                     Text(FinancialSnapshot.money(part.value))
                         .fontWeight(.semibold)
-                    Text(FinancialSnapshot.percent((part.value / max(snapshot.monthlyIncome, 1)).doubleValue))
+                    Text(FinancialSnapshot.percent((part.value / max(snapshot.income, 1)).doubleValue))
                         .foregroundStyle(.secondary)
                         .frame(width: 44, alignment: .trailing)
                 }
@@ -159,6 +171,74 @@ struct CreditUseRow: View {
             Text(utilization > 0.3 ? "Lo ideal es usar menos del 30%: cuida tu historial de crédito." : "Bien: estás por debajo del 30% recomendado.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+/// "Te estás sobreendeudando" / "Estás gastando más de lo que ganas".
+struct DebtAlertCard: View {
+    let alert: FinancialSnapshot.Alert
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.red)
+                .font(.title3)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(alert.title)
+                    .font(.subheadline.weight(.bold))
+                Text(alert.message)
+                    .font(.footnote)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+/// Deuda total en % del ingreso mensual y cuánto se llevan los pagos.
+private struct DebtVersusIncomeRows: View {
+    let snapshot: FinancialSnapshot
+
+    private var levelColor: Color {
+        switch snapshot.debtLevel {
+        case .critical, .high: return .red
+        case .caution: return .orange
+        default: return MonAviBrand.primary
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text(snapshot.debtLevel.title)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(levelColor)
+                Spacer()
+                Text(FinancialSnapshot.money(snapshot.totalDebt))
+                    .font(.subheadline.weight(.semibold))
+            }
+            if let total = snapshot.debtToIncome {
+                Text("Debes el \(FinancialSnapshot.percent(total)) de lo que ganas en un mes.")
+                    .font(.footnote)
+            }
+            if let payments = snapshot.paymentShare {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Pagos de deudas")
+                        Spacer()
+                        Text("\(FinancialSnapshot.percent(payments)) de tus ingresos")
+                            .fontWeight(.semibold)
+                    }
+                    .font(.footnote)
+                    ProgressView(value: min(payments / 0.6, 1))
+                        .tint(levelColor)
+                    Text("Sano: menos de 20% · Cuidado: 20 a 36% · Sobreendeudado: más de 36%")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
         .padding(.vertical, 4)
     }

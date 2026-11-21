@@ -26,6 +26,7 @@ final class DebtsViewModel: ObservableObject {
                 .order("balance", ascending: false)
                 .execute()
                 .value
+            NotificationManager.scheduleCardPayments(debts)
         } catch {
             errorMessage = "No se pudo cargar tus deudas: \(error.localizedDescription)"
         }
@@ -45,6 +46,23 @@ final class DebtsViewModel: ObservableObject {
             }
         } catch {
             errorMessage = "No se pudo guardar el cupo: \(error.localizedDescription)"
+        }
+    }
+
+    /// Dia del mes en que vence (para avisar y registrar el pago).
+    func setPaymentDay(_ day: Int, for debt: Debt) async {
+        struct DayUpdate: Encodable {
+            let paymentDay: Int
+            enum CodingKeys: String, CodingKey { case paymentDay = "payment_day" }
+        }
+        do {
+            try await supabase.from("debts").update(DayUpdate(paymentDay: day)).eq("id", value: debt.id).execute()
+            if let index = debts.firstIndex(where: { $0.id == debt.id }) {
+                debts[index].paymentDay = day
+            }
+            NotificationManager.scheduleCardPayments(debts)
+        } catch {
+            errorMessage = "No se pudo guardar el día de pago: \(error.localizedDescription)"
         }
     }
 

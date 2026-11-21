@@ -39,6 +39,8 @@ struct DebtDraft: Identifiable {
     /// Cupo total, solo para tarjetas de credito: con esto se calcula
     /// cuanto del cupo se esta usando (salud financiera).
     var creditLimitText: String = ""
+    /// Dia del mes en que vence el pago ("" = no lo sabe).
+    var paymentDayText: String = ""
     var interestRateText: String = ""
     var minimumPaymentText: String = ""
     var isOverdue: Bool = false

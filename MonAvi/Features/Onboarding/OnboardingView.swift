@@ -293,6 +293,10 @@ struct OnboardingView: View {
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(use > 0.3 ? .orange : MonAviBrand.primary)
                     }
+                    LabeledField(label: "Día de pago de cada mes (opcional)") {
+                        TextField("ej. 15", text: $debt.paymentDayText)
+                            .keyboardType(.numberPad)
+                    }
                     LabeledField(label: "Interés al mes (opcional)") {
                         PercentField(placeholder: "ej. 2.5", text: $debt.interestRateText)
                     }

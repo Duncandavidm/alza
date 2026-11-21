@@ -240,7 +240,8 @@ final class OnboardingViewModel: ObservableObject {
                             interestRateMonthly: Decimal(string: debt.interestRateText.replacingOccurrences(of: ",", with: ".")),
                             minimumPayment: Decimal(string: debt.minimumPaymentText.replacingOccurrences(of: ",", with: ".")),
                             dueDate: nil,
-                            isOverdue: debt.isOverdue
+                            isOverdue: debt.isOverdue,
+                            paymentDay: Int(debt.paymentDayText.filter(\.isNumber)).flatMap { (1...31).contains($0) ? $0 : nil }
                         )
                     )
                     .execute()

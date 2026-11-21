@@ -34,6 +34,11 @@ struct DayJournalView: View {
     @State private var pointsByTransaction: [UUID: Int] = [:]
     @State private var activeGiftsCount = 0
     @StateObject private var savingsViewModel = SavingsGoalsViewModel()
+    /// "Pagar tarjeta" desde el aviso de vencimiento en Hoy.
+    @State private var cardPaymentRequest: CardPaymentRequest?
+    /// "Te estás sobreendeudando" / "Gastas más de lo que ganas" (estudio
+    /// real, ver FinancialHealthLoader).
+    @State private var healthAlert: FinancialSnapshot.Alert?
     /// "Fue otro monto" en el recordatorio de un pago fijo.
     @State private var amountPromptItem: RecurringTransaction?
     @State private var customAmountText = ""
@@ -58,9 +63,15 @@ struct DayJournalView: View {
 
                         totalsCard
 
+                        if let alert = healthAlert, viewModel.isViewingToday && !isSearching {
+                            debtAlertBanner(alert)
+                        }
+
                         if !viewModel.accounts.isEmpty && !isSearching {
                             accountsStrip
                         }
+
+                        cardDueRows
 
                         recurringSuggestionCards
 
@@ -163,12 +174,22 @@ struct DayJournalView: View {
             .task { await refreshFeaturedRewards() }
             .task { await appState.subscriptionStore.refreshRenewalInfo() }
             .task { await showPreviousDayIfNeeded() }
+            .task { await refreshHealthAlert() }
+            .sheet(item: $cardPaymentRequest, onDismiss: {
+                Task {
+                    await refresh()
+                    await refreshHealthAlert()
+                }
+            }) { request in
+                QuickDebtPaymentView(accounts: viewModel.accounts, preselectedDebtId: request.debtId)
+            }
             // "Sí, ya lo pagué" desde la notificacion con la app abierta:
             // el movimiento nuevo y el recordatorio se actualizan solos.
             .onReceive(NotificationCenter.default.publisher(for: .recurringLoggedFromNotification)) { _ in
                 Task {
                     await refresh()
                     await refreshRecurring()
+                    await refreshHealthAlert()
                 }
             }
             .onChange(of: scenePhase) { _, phase in
@@ -557,6 +578,75 @@ struct DayJournalView: View {
         Binding(get: { otherAmountSuggestion != nil }, set: { if !$0 { otherAmountSuggestion = nil } })
     }
 
+    /// Aviso fuerte cuando el estudio real detecta sobreendeudamiento o que
+    /// gasta mas de lo que gana. Toca para ver el analisis completo.
+    private func debtAlertBanner(_ alert: FinancialSnapshot.Alert) -> some View {
+        NavigationLink {
+            FinancialHealthView()
+        } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.red)
+                    Text(alert.title)
+                        .font(.subheadline.weight(.bold))
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.secondary)
+                }
+                Text(alert.message)
+                    .font(.footnote)
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 14).fill(Color.red.opacity(0.1)))
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// "Tu Visa vence el 15 (en 3 días): debes $1,600 · mínimo $80" con el
+    /// boton para registrar el pago y de que cuenta salio.
+    @ViewBuilder
+    private var cardDueRows: some View {
+        if viewModel.isViewingToday && !isSearching {
+            ForEach(CreditCardSchedule.upcoming(viewModel.debts)) { item in
+                let days = CreditCardSchedule.daysUntil(item.due)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(alignment: .top, spacing: 10) {
+                        Text("💳")
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(days == 0 ? "Hoy vence \(item.debt.creditor)" : "\(item.debt.creditor) vence en \(days) día\(days == 1 ? "" : "s")")
+                                .font(.subheadline.weight(.semibold))
+                            Text("Debes \(item.debt.balance.formatted(.currency(code: "USD"))) · mínimo \(item.debt.estimatedMinimum.formatted(.currency(code: "USD")))")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                    }
+                    Button("Registrar pago") {
+                        cardPaymentRequest = CardPaymentRequest(debtId: item.debt.id)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.orange)
+                    .font(.footnote.weight(.semibold))
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 14).fill(Color.orange.opacity(0.12)))
+            }
+        }
+    }
+
+    private func refreshHealthAlert() async {
+        guard let userId = appState.currentUserId,
+              let result = try? await FinancialHealthLoader.load(userId: userId) else { return }
+        healthAlert = result.snapshot.debtAlert
+    }
+
     /// "Tus cuentas": el saldo de cada una (banco, efectivo, ahorros,
     /// tarjeta) a la vista en Hoy. Antes solo estaban en Ajustes > Cuentas
     /// y la cuenta de ahorros del onboarding "no se veia".
@@ -579,7 +669,7 @@ struct DayJournalView: View {
                         NavigationLink {
                             DashboardView()
                         } label: {
-                            AccountBalanceChip(account: account)
+                            AccountBalanceChip(account: account, available: viewModel.availableCredit(for: account))
                         }
                         .buttonStyle(.plain)
                     }
@@ -960,9 +1050,11 @@ extension DaySummary: Identifiable {
     var id: String { "\(income)-\(expense)-\(mood.title)-\(dayLabel ?? "hoy")" }
 }
 
-/// Tarjetita de una cuenta en "Tus cuentas" (Hoy).
+/// Tarjetita de una cuenta en "Tus cuentas" (Hoy). En una tarjeta de
+/// credito: lo que debes y el cupo que te queda.
 private struct AccountBalanceChip: View {
     let account: Account
+    var available: Decimal? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -978,11 +1070,19 @@ private struct AccountBalanceChip: View {
                 .foregroundStyle(account.type.isLiability ? Color.orange : Color.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-            Text(account.balanceCaption)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+            if let available {
+                Text("\(account.balanceCaption) · disponible \(available.formatted(.currency(code: account.currency)))")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            } else {
+                Text(account.balanceCaption)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
         }
-        .frame(width: 140, alignment: .leading)
+        .frame(width: 150, alignment: .leading)
         .padding(12)
         .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemBackground)))
     }

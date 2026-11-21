@@ -47,6 +47,9 @@ struct DaySummary {
 final class DayJournalViewModel: ObservableObject {
     @Published private(set) var todayTransactions: [FinanceTransaction] = []
     @Published private(set) var accounts: [Account] = []
+    /// Deudas y tarjetas (cupo, dia de pago): cupo disponible en Hoy y al
+    /// anotar, y avisos del dia de pago.
+    @Published private(set) var debts: [Debt] = []
     @Published private(set) var isLoading = false
     @Published var errorMessage: String?
 
@@ -76,6 +79,19 @@ final class DayJournalViewModel: ObservableObject {
             return last
         }
         return dayToDay.first?.id ?? accounts.first?.id
+    }
+
+    /// Deuda vinculada a una cuenta de tarjeta.
+    func debt(for account: Account) -> Debt? {
+        guard let debtId = account.debtId else { return nil }
+        return debts.first { $0.id == debtId }
+    }
+
+    /// Cupo disponible de una tarjeta, al dia con su cuenta (lo que debe =
+    /// -saldo de la cuenta). nil si no es tarjeta o no tiene cupo.
+    func availableCredit(for account: Account) -> Decimal? {
+        guard account.type == .creditCard, let limit = debt(for: account)?.creditLimit, limit > 0 else { return nil }
+        return max(limit + min(account.balance, 0), 0)
     }
 
     var todayIncome: Decimal {
@@ -109,6 +125,13 @@ final class DayJournalViewModel: ObservableObject {
 
             todayTransactions = try await txTask
             accounts = try await accountsTask
+            debts = (try? await supabase
+                .from("debts")
+                .select()
+                .eq("user_id", value: userId)
+                .execute()
+                .value) ?? debts
+            NotificationManager.scheduleCardPayments(debts)
         } catch {
             errorMessage = "No se pudo cargar tu día: \(error.localizedDescription)"
         }

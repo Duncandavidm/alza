@@ -40,6 +40,7 @@ enum PaymentAdviceActions {
                 .execute()
         } else if item.source == "debt", let debtId = UUID(uuidString: item.id) {
             try await applyDebtPayment(debtId: debtId, amount: Decimal(item.amount))
+            CardPaymentTracker.markPaid(debtId: debtId)
         }
     }
 
@@ -48,6 +49,46 @@ enum PaymentAdviceActions {
     /// aqui si hay que anotar el movimiento de salida ademas de bajar el
     /// saldo de la deuda.
     static func payDebt(debtId: UUID, amount: Decimal, accountId: UUID, creditor: String, userId: UUID) async throws {
+        // Tarjeta con su cuenta (0079): el pago es una transferencia de la
+        // cuenta de origen a la tarjeta. No es un gasto nuevo (las compras
+        // ya se contaron como gasto al hacerlas con la tarjeta): sale de la
+        // cuenta, entra a la tarjeta y la deuda baja sola (trigger).
+        struct LinkedAccount: Decodable { let id: UUID }
+        let linked: [LinkedAccount] = (try? await SupabaseManager.shared.client
+            .from("accounts")
+            .select("id")
+            .eq("debt_id", value: debtId)
+            .limit(1)
+            .execute()
+            .value) ?? []
+        if let card = linked.first, card.id != accountId {
+            let sourceName = (try? await accountName(accountId)) ?? "tu cuenta"
+            try await TransactionsRepository.shared.add(
+                NewTransaction(
+                    userId: userId,
+                    accountId: accountId,
+                    amount: -abs(amount),
+                    movementType: .transferencia,
+                    category: TransactionCategory.transfers.rawValue,
+                    description: "Pago a \(creditor)",
+                    occurredAt: Date()
+                )
+            )
+            try await TransactionsRepository.shared.add(
+                NewTransaction(
+                    userId: userId,
+                    accountId: card.id,
+                    amount: abs(amount),
+                    movementType: .transferencia,
+                    category: TransactionCategory.transfers.rawValue,
+                    description: "Pago recibido desde \(sourceName)",
+                    occurredAt: Date()
+                )
+            )
+            CardPaymentTracker.markPaid(debtId: debtId)
+            return
+        }
+
         try await TransactionsRepository.shared.add(
             NewTransaction(
                 userId: userId,
@@ -60,6 +101,14 @@ enum PaymentAdviceActions {
             )
         )
         try await applyDebtPayment(debtId: debtId, amount: amount)
+        CardPaymentTracker.markPaid(debtId: debtId)
+    }
+
+    private static func accountName(_ id: UUID) async throws -> String {
+        struct Row: Decodable { let name: String }
+        let row: Row = try await SupabaseManager.shared.client
+            .from("accounts").select("name").eq("id", value: id).single().execute().value
+        return row.name
     }
 
     private static func applyDebtPayment(debtId: UUID, amount: Decimal) async throws {

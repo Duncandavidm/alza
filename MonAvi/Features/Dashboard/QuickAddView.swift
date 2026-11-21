@@ -77,6 +77,7 @@ struct QuickAddView: View {
                     if existingTransaction == nil, viewModel.accounts.count > 1 {
                         accountChip
                     }
+                    creditHint
                     budgetHint
 
                     if viewModel.defaultAccountId == nil {
@@ -252,6 +253,42 @@ struct QuickAddView: View {
 
     private var accountId: UUID? { selectedAccountId ?? viewModel.defaultAccountId }
 
+    private func accountMenuTitle(_ account: Account) -> String {
+        let money = account.displayAmount.formatted(.currency(code: account.currency))
+        guard account.type == .creditCard else { return "\(account.name) · \(money)" }
+        if let available = viewModel.availableCredit(for: account) {
+            return "\(account.name) · disponible \(available.formatted(.currency(code: account.currency)))"
+        }
+        return "\(account.name) · debes \(money)"
+    }
+
+    /// Con la tarjeta elegida: cuanto cupo queda, y aviso si el gasto se
+    /// pasa del cupo o la deja muy arriba (mas del 70% usado).
+    @ViewBuilder
+    private var creditHint: some View {
+        if existingTransaction == nil, !movementType.isInflow,
+           let account = viewModel.accounts.first(where: { $0.id == accountId }),
+           account.type == .creditCard,
+           let available = viewModel.availableCredit(for: account),
+           let limit = viewModel.debt(for: account)?.creditLimit, limit > 0 {
+            let after = available - enteredMagnitude
+            Group {
+                if enteredMagnitude > available {
+                    Text("Este gasto pasa tu cupo disponible (\(available.formatted(.currency(code: "USD")))). El banco podría rechazarlo o cobrarte sobregiro.")
+                        .foregroundStyle(.red)
+                } else if enteredMagnitude > 0, (limit - after) / limit > Decimal(string: "0.7")! {
+                    Text("Te quedarían \(after.formatted(.currency(code: "USD"))) de cupo: estarías usando más del 70% de tu tarjeta.")
+                        .foregroundStyle(.orange)
+                } else {
+                    Text("Cupo disponible: \(available.formatted(.currency(code: "USD"))) de \(limit.formatted(.currency(code: "USD")))")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .font(.footnote)
+            .multilineTextAlignment(.center)
+        }
+    }
+
     /// "De: Cuenta principal ▾" — para elegir de que cuenta salio el dinero
     /// cuando hay varias (banco, efectivo, ahorros, tarjeta...).
     private var accountChip: some View {
@@ -262,7 +299,7 @@ struct QuickAddView: View {
                     selectedAccountId = account.id
                 } label: {
                     Label(
-                        "\(account.name) · \(account.type == .creditCard ? "debes " : "")\(account.displayAmount.formatted(.currency(code: account.currency)))",
+                        accountMenuTitle(account),
                         systemImage: account.id == accountId ? "checkmark" : AccountIcon.symbol(for: account.type)
                     )
                 }

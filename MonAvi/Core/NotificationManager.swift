@@ -33,12 +33,15 @@ enum NotificationManager {
     /// vigente en ese momento.
     ///
     /// Presupuesto (todo junto queda en 61 de 64):
-    /// - cuentas por pagar: 8 x 3 avisos (antes, el dia, al dia siguiente) = 24
+    /// - cuentas por pagar: 6 x 3 avisos (antes, el dia, al dia siguiente) = 18
+    /// - pago de tarjetas y prestamos: 3 x 2 avisos (3 dias antes, el dia) = 6
     /// - pagos fijos: 8 x 2 avisos (antes, el dia) = 16
     /// - facturas por cobrar: 6 x 2 avisos = 12
     /// - recordatorio diario de anotar: 7
     /// - gastos que se repiten ("¿Este mes ya lo pagaste?"): 2
-    static let maxBills = 8
+    static let maxBills = 6
+    static let maxCardPayments = 3
+    static let remindersPerCardPayment = 2
     static let maxSuggestedRecurring = 2
     static let maxRecurring = 8
     static let maxInvoices = 6
@@ -61,6 +64,7 @@ enum NotificationManager {
             + maxInvoices * remindersPerInvoice
             + dailyLogDays
             + maxSuggestedRecurring
+            + maxCardPayments * remindersPerCardPayment
     }
 
     /// Sonido propio de MonAvi para todos los avisos (tres notas que
@@ -302,6 +306,46 @@ enum NotificationManager {
     static let recurringSnoozeInterval: TimeInterval = 2 * 60 * 60
 
     static func recurringSnoozeId(_ id: UUID) -> String { "recurring-snooze-\(id)" }
+
+    // MARK: - Pago de tarjetas y prestamos
+
+    private static let cardPaymentIdsKey = "monavi.cardPaymentReminderIds"
+
+    /// "Tu Visa vence el 15: debes $1,600 (mínimo $80)". 3 dias antes y el
+    /// mismo dia a las 9. Al tocarlo se abre "Pagar tarjeta" para elegir de
+    /// que cuenta sale el pago. No se avisa si ese pago ya se registro.
+    static func scheduleCardPayments(_ debts: [Debt], now: Date = Date()) {
+        removePending(ids: UserDefaults.standard.stringArray(forKey: cardPaymentIdsKey) ?? [])
+        let calendar = Calendar.current
+        let due = debts.compactMap { debt -> (Debt, Date)? in
+            guard debt.status != .paidOff, debt.balance > 0, let day = debt.paymentDay,
+                  let date = CreditCardSchedule.nextDueDate(paymentDay: day, now: now, calendar: calendar),
+                  !CardPaymentTracker.isPaid(debtId: debt.id, due: date, calendar: calendar)
+            else { return nil }
+            return (debt, date)
+        }
+        .sorted { $0.1 < $1.1 }
+        .prefix(maxCardPayments)
+
+        var ids: [String] = []
+        for (debt, date) in due {
+            let what = debt.isCard ? "tu \(debt.creditor)" : debt.creditor
+            let amounts = "Debes \(formattedAmount(debt.balance)) (mínimo \(formattedAmount(debt.estimatedMinimum)))."
+            let userInfo: [AnyHashable: Any] = ["screen": "card_payment", "debtId": debt.id.uuidString]
+            let dayText = date.formatted(.dateTime.day().month(.wide).locale(Locale(identifier: "es_PA")))
+            if let before = calendar.date(byAdding: .day, value: -3, to: date), atReminderHour(before) > now {
+                let id = "card-before-\(debt.id)"
+                schedule(id: id, title: "En 3 días vence \(what)", body: "\(amounts) Vence el \(dayText). Toca para registrar el pago y de qué cuenta sale.", date: atReminderHour(before), userInfo: userInfo)
+                ids.append(id)
+            }
+            if atReminderHour(date) > now {
+                let id = "card-due-\(debt.id)"
+                schedule(id: id, title: "Hoy vence \(what)", body: "\(amounts) Toca para registrar el pago y de qué cuenta salió el dinero.", date: atReminderHour(date), timeSensitive: true, userInfo: userInfo)
+                ids.append(id)
+            }
+        }
+        UserDefaults.standard.set(ids, forKey: cardPaymentIdsKey)
+    }
 
     // MARK: - Gastos que se repiten
 
@@ -857,7 +901,7 @@ final class NotificationPresenter: NSObject, UNUserNotificationCenterDelegate {
                 NotificationManager.snoozeRecurring(content)
             default:
                 let screen = content.userInfo["screen"] as? String
-                NotificationRouter.shared.open(screen: screen)
+                NotificationRouter.shared.open(screen: screen, userInfo: content.userInfo)
             }
             completionHandler()
         }

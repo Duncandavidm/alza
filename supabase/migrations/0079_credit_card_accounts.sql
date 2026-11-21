@@ -1,4 +1,4 @@
--- 0079: la tarjeta de credito tambien es "de donde sale el dinero".
+-- 0079: la tarjeta de credito funciona como una tarjeta real.
 -- Cada deuda que es tarjeta (tiene cupo o se llama "tarjeta", "visa"...)
 -- tiene una cuenta tipo credit_card vinculada (accounts.debt_id). Su saldo
 -- va en negativo (lo que se debe), igual que cualquier cuenta: gastar con
@@ -9,6 +9,11 @@
 
 alter table public.accounts
   add column if not exists debt_id uuid unique references public.debts(id) on delete set null;
+
+-- Dia del mes en que vence el pago (tarjetas y prestamos): para recordar
+-- "Hoy toca pagar tu Visa" y registrar de que cuenta salio el pago.
+alter table public.debts
+  add column if not exists payment_day smallint check (payment_day between 1 and 31);
 
 create or replace function public.debt_is_card(p_creditor text, p_credit_limit numeric)
  returns boolean

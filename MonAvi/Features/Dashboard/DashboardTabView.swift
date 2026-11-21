@@ -37,6 +37,10 @@ struct DashboardTabView: View {
         .sheet(item: $router.destination) { destination in
             destinationView(destination)
         }
+        // "Hoy vence tu Visa": tocar el aviso abre el pago de esa tarjeta.
+        .sheet(item: $router.cardPayment) { request in
+            QuickDebtPaymentView(preselectedDebtId: request.debtId)
+        }
         // "Registrar con voz" desde un Atajo, Siri o Tocar atrás
         // (RecordByVoiceIntent): si la app estaba cerrada, el pedido espera
         // en el router hasta que esta pantalla aparece; si ya estaba

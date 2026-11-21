@@ -6,6 +6,12 @@ import Foundation
 /// payload; llega como `userInfo["screen"]`. Tambien `"redemptions"`
 /// (regalos y codigos en "Mis canjes") y `"home"` (solo abre la app en
 /// Hoy, sin hoja encima).
+/// Abrir "Pagar tarjeta / deuda" con esa deuda elegida.
+struct CardPaymentRequest: Identifiable, Equatable {
+    let id = UUID()
+    let debtId: UUID?
+}
+
 enum NotificationDestination: String, Identifiable {
     case points
     case rewards
@@ -33,9 +39,18 @@ final class NotificationRouter: ObservableObject {
     /// (DayJournalView) lo observa para recargar el dia al cerrarla.
     @Published var isVoiceCapturePresented = false
 
-    func open(screen: String?) {
+    /// "Pagar tarjeta" pedido desde el aviso del dia de pago.
+    @Published var cardPayment: CardPaymentRequest?
+
+    func open(screen: String?, userInfo: [AnyHashable: Any] = [:]) {
         guard let screen else { return }
         let normalized = screen.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if normalized == "card_payment" {
+            destination = nil
+            let id = (userInfo["debtId"] as? String).flatMap(UUID.init(uuidString:))
+            cardPayment = CardPaymentRequest(debtId: id)
+            return
+        }
         if normalized == "home" {
             // La app abre en Hoy: basta con cerrar la hoja que hubiera.
             destination = nil

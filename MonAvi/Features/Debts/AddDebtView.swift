@@ -11,7 +11,8 @@ struct AddDebtView: View {
     @State private var interestRateText = ""
     @State private var minimumPaymentText = ""
     @State private var hasDueDate = false
-    @State private var dueDate = Date()
+    /// Dia del mes en que vence (tarjetas y prestamos se pagan cada mes).
+    @State private var paymentDay = 15
     @State private var isOverdue = false
     @State private var isSaving = false
 
@@ -56,9 +57,12 @@ struct AddDebtView: View {
                         .keyboardType(.decimalPad)
                         .multilineTextAlignment(.trailing)
                 }
-                Toggle("Tiene fecha de pago", isOn: $hasDueDate)
+                Toggle("Se paga cada mes", isOn: $hasDueDate)
                 if hasDueDate {
-                    DatePicker("Fecha de pago", selection: $dueDate, displayedComponents: .date)
+                    DayOfMonthField(label: "Día de pago", day: $paymentDay)
+                    Text("Te avisamos 3 días antes y el mismo día, y registras de qué cuenta salió el pago.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
                 Toggle("Esta en mora / atrasada", isOn: $isOverdue)
             }
@@ -80,8 +84,11 @@ struct AddDebtView: View {
                                 creditLimit: Decimal(string: creditLimitText.replacingOccurrences(of: ",", with: ".")),
                                 interestRateMonthly: Decimal(string: interestRateText.replacingOccurrences(of: ",", with: ".")),
                                 minimumPayment: Decimal(string: minimumPaymentText.replacingOccurrences(of: ",", with: ".")),
-                                dueDate: hasDueDate ? InvoiceDateFormat.string(from: dueDate) : nil,
-                                isOverdue: isOverdue
+                                dueDate: hasDueDate
+                                    ? CreditCardSchedule.nextDueDate(paymentDay: paymentDay).map { InvoiceDateFormat.string(from: $0) }
+                                    : nil,
+                                isOverdue: isOverdue,
+                                paymentDay: hasDueDate ? paymentDay : nil
                             )
                         )
                         dismiss()

@@ -7,6 +7,9 @@ struct DebtsView: View {
     /// "Agregar cupo" en una tarjeta que no lo tiene.
     @State private var limitDebt: Debt?
     @State private var limitText = ""
+    @State private var dayDebt: Debt?
+    @State private var dayText = ""
+    @State private var paymentRequest: CardPaymentRequest?
     @AppStorage(DebtPayoffStrategy.storageKey) private var payoffStrategy: DebtPayoffStrategy = .avalanche
 
     var body: some View {
@@ -75,6 +78,24 @@ struct DebtsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
+                    if debt.status != .paidOff && debt.balance > 0 {
+                        HStack(spacing: 14) {
+                            Button {
+                                paymentRequest = CardPaymentRequest(debtId: debt.id)
+                            } label: {
+                                Label("Registrar pago", systemImage: "arrow.down.circle")
+                            }
+                            Button {
+                                dayText = debt.paymentDay.map(String.init) ?? ""
+                                dayDebt = debt
+                            } label: {
+                                Label(debt.paymentDay.map { "Vence el día \($0)" } ?? "Poner día de pago", systemImage: "calendar")
+                            }
+                        }
+                        .font(.caption.weight(.semibold))
+                        .buttonStyle(.borderless)
+                    }
+
                     HStack(spacing: 8) {
                         if debt.isOverdue {
                             Label("En mora", systemImage: "exclamationmark.triangle.fill")
@@ -121,6 +142,27 @@ struct DebtsView: View {
         .task {
             guard let userId = appState.currentUserId else { return }
             await viewModel.refresh(userId: userId)
+        }
+        .alert("¿Qué día del mes vence \(dayDebt?.creditor ?? "")?", isPresented: Binding(get: { dayDebt != nil }, set: { if !$0 { dayDebt = nil } })) {
+            TextField("ej. 15", text: $dayText)
+                .keyboardType(.numberPad)
+            Button("Guardar") {
+                if let debt = dayDebt, let day = Int(dayText.filter(\.isNumber)), (1...31).contains(day) {
+                    Task { await viewModel.setPaymentDay(day, for: debt) }
+                }
+                dayDebt = nil
+            }
+            Button("Cancelar", role: .cancel) { dayDebt = nil }
+        } message: {
+            Text("Te avisamos 3 días antes y el mismo día para registrar el pago y de qué cuenta salió.")
+        }
+        .sheet(item: $paymentRequest, onDismiss: {
+            Task {
+                guard let userId = appState.currentUserId else { return }
+                await viewModel.refresh(userId: userId)
+            }
+        }) { request in
+            QuickDebtPaymentView(preselectedDebtId: request.debtId)
         }
         .alert("Algo salió mal", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") { viewModel.errorMessage = nil }

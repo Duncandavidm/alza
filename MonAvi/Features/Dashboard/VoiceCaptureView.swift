@@ -458,9 +458,8 @@ struct VoiceCaptureView: View {
                 return
             }
         }
-        // Misma cuenta por defecto que AddMonAviExpenseIntent: la primera
-        // por created_at (viewModel.accounts viene ordenado asi).
-        guard let accountId = viewModel.accounts.first?.id else {
+        // La cuenta de siempre: la ultima usada hoy o la principal.
+        guard let accountId = viewModel.defaultAccountId else {
             phase = .noAccount
             return
         }

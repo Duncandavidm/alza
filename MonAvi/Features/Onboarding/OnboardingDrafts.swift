@@ -36,6 +36,9 @@ struct DebtDraft: Identifiable {
     let id = UUID()
     var creditor: String = ""
     var balanceText: String = ""
+    /// Cupo total, solo para tarjetas de credito: con esto se calcula
+    /// cuanto del cupo se esta usando (salud financiera).
+    var creditLimitText: String = ""
     var interestRateText: String = ""
     var minimumPaymentText: String = ""
     var isOverdue: Bool = false

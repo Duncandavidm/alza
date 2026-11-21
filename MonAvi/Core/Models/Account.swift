@@ -62,3 +62,26 @@ struct NewAccount: Encodable {
         case currency
     }
 }
+
+/// Icono SF Symbol de cada tipo de cuenta (selector de cuenta y "Tus
+/// cuentas" en Hoy).
+enum AccountIcon {
+    static func symbol(for type: AccountType) -> String {
+        switch type {
+        case .checking: return "building.columns"
+        case .savings: return "banknote"
+        case .creditCard: return "creditcard"
+        case .investment: return "chart.line.uptrend.xyaxis"
+        case .cash: return "dollarsign.circle"
+        case .loan: return "doc.text"
+        case .other: return "wallet.pass"
+        }
+    }
+}
+
+extension AccountType {
+    /// Ahorros e inversiones: no se usan por defecto para el gasto del dia.
+    var isReserve: Bool { self == .savings || self == .investment }
+    /// Tarjetas y prestamos: el saldo es lo que se debe.
+    var isLiability: Bool { self == .creditCard || self == .loan }
+}

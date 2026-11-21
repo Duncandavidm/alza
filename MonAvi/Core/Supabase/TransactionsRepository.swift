@@ -48,6 +48,20 @@ final class TransactionsRepository {
             .value
     }
 
+    /// Movimientos desde una fecha (para detectar gastos que se repiten
+    /// cada mes). Con tope de filas para no bajar historiales enormes.
+    func fetchSince(userId: UUID, date: Date, limit: Int = 1500) async throws -> [FinanceTransaction] {
+        try await supabase
+            .from("transactions")
+            .select()
+            .eq("user_id", value: userId)
+            .gte("occurred_at", value: ISO8601DateFormatter().string(from: date))
+            .order("occurred_at", ascending: false)
+            .limit(limit)
+            .execute()
+            .value
+    }
+
     func fetchRecent(userId: UUID, limit: Int = 20) async throws -> [FinanceTransaction] {
         try await supabase
             .from("transactions")

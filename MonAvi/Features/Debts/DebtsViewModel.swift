@@ -31,6 +31,23 @@ final class DebtsViewModel: ObservableObject {
         }
     }
 
+    /// Cupo total de una tarjeta (para ver cuanto del cupo se usa). Las
+    /// deudas creadas en el onboarding de 1.0.3 no lo pedian.
+    func setCreditLimit(_ limit: Decimal, for debt: Debt) async {
+        struct LimitUpdate: Encodable {
+            let creditLimit: Decimal
+            enum CodingKeys: String, CodingKey { case creditLimit = "credit_limit" }
+        }
+        do {
+            try await supabase.from("debts").update(LimitUpdate(creditLimit: limit)).eq("id", value: debt.id).execute()
+            if let index = debts.firstIndex(where: { $0.id == debt.id }) {
+                debts[index].creditLimit = limit
+            }
+        } catch {
+            errorMessage = "No se pudo guardar el cupo: \(error.localizedDescription)"
+        }
+    }
+
     @discardableResult
     func add(_ new: NewDebt) async throws -> Debt {
         let created: Debt = try await supabase

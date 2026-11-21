@@ -273,7 +273,7 @@ enum NotificationManager {
                     title: isIncome ? "¿Ya recibiste \(item.name)?" : "Hoy toca pagar \(item.name)",
                     body: isIncome
                         ? "Hoy es el día de \(item.name) (\(amountText)). ¿Ya lo recibiste? Mantén presionado para registrarlo."
-                        : "\(item.name) por \(amountText). ¿Ya lo pagaste? Mantén presionado para registrarlo de una vez.",
+                        : "\(item.name), normalmente \(amountText). ¿Ya lo pagaste? Mantén presionado para registrarlo; si fue otro monto, elige «Pagué otro monto».",
                     date: atReminderHour(candidate.dueDate),
                     timeSensitive: !isIncome,
                     categoryIdentifier: isIncome ? recurringIncomeCategory : recurringExpenseCategory,
@@ -292,6 +292,9 @@ enum NotificationManager {
     static let recurringIncomeCategory = "RECURRING_DUE_INCOME"
     static let recurringConfirmAction = "RECURRING_CONFIRM"
     static let recurringSnoozeAction = "RECURRING_SNOOZE"
+    /// "Pagué otro monto": iOS muestra un campo para escribirlo en la misma
+    /// notificacion (la luz, el agua... no son iguales cada mes).
+    static let recurringOtherAmountAction = "RECURRING_OTHER_AMOUNT"
     static let recurringIdKey = "recurringId"
     static let recurringSnoozeInterval: TimeInterval = 2 * 60 * 60
 
@@ -316,15 +319,29 @@ enum NotificationManager {
             title: "Sí, ya lo recibí",
             options: []
         )
+        let otherPaid = UNTextInputNotificationAction(
+            identifier: recurringOtherAmountAction,
+            title: "Pagué otro monto",
+            options: [],
+            textInputButtonTitle: "Registrar",
+            textInputPlaceholder: "Monto, ej. 52.30"
+        )
+        let otherReceived = UNTextInputNotificationAction(
+            identifier: recurringOtherAmountAction,
+            title: "Recibí otro monto",
+            options: [],
+            textInputButtonTitle: "Registrar",
+            textInputPlaceholder: "Monto, ej. 480"
+        )
         let expense = UNNotificationCategory(
             identifier: recurringExpenseCategory,
-            actions: [paid, snooze],
+            actions: [paid, otherPaid, snooze],
             intentIdentifiers: [],
             options: []
         )
         let income = UNNotificationCategory(
             identifier: recurringIncomeCategory,
-            actions: [received, snooze],
+            actions: [received, otherReceived, snooze],
             intentIdentifiers: [],
             options: []
         )
@@ -335,7 +352,7 @@ enum NotificationManager {
     /// de Hoy (RecurringTransactionsViewModel.logPayment) y avisa con una
     /// notificacion local "Listo: registramos ...".
     @MainActor
-    static func confirmRecurringFromNotification(idString: String?) async {
+    static func confirmRecurringFromNotification(idString: String?, typedAmount: String? = nil) async {
         guard let idString, let id = UUID(uuidString: idString) else { return }
         do {
             let session = try await SupabaseManager.shared.client.auth.session
@@ -358,11 +375,24 @@ enum NotificationManager {
                 return
             }
 
-            try await RecurringTransactionsViewModel.logPayment(for: item, userId: session.user.id)
+            var amount: Decimal?
+            if let typedAmount {
+                guard let parsed = RecurringAmountParser.parse(typedAmount) else {
+                    sendImmediate(
+                        id: "recurring-failed-\(id)",
+                        title: "No entendimos el monto",
+                        body: "Escribe solo el número, por ejemplo 52.30. Abre MonAvi para registrar \(item.name).",
+                        userInfo: ["screen": "home"]
+                    )
+                    return
+                }
+                amount = parsed
+            }
+            try await RecurringTransactionsViewModel.logPayment(for: item, userId: session.user.id, amount: amount)
             sendImmediate(
                 id: "recurring-done-\(id)",
                 title: "Listo",
-                body: "Listo: registramos \(item.name) por \(formattedAmount(item.amount))."
+                body: "Listo: registramos \(item.name) por \(formattedAmount(amount ?? item.amount))."
             )
             // Si la app esta abierta, Hoy se recarga (DayJournalView).
             NotificationCenter.default.post(name: .recurringLoggedFromNotification, object: nil)
@@ -673,11 +703,15 @@ final class NotificationPresenter: NSObject, UNUserNotificationCenterDelegate {
     ) {
         let content = response.notification.request.content
         let action = response.actionIdentifier
+        let typedText = (response as? UNTextInputNotificationResponse)?.userText ?? ""
         Task { @MainActor in
             switch action {
             case NotificationManager.recurringConfirmAction:
                 let idString = content.userInfo[NotificationManager.recurringIdKey] as? String
                 await NotificationManager.confirmRecurringFromNotification(idString: idString)
+            case NotificationManager.recurringOtherAmountAction:
+                let idString = content.userInfo[NotificationManager.recurringIdKey] as? String
+                await NotificationManager.confirmRecurringFromNotification(idString: idString, typedAmount: typedText)
             case NotificationManager.recurringSnoozeAction:
                 NotificationManager.snoozeRecurring(content)
             default:

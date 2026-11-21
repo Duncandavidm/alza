@@ -51,9 +51,10 @@ final class RecurringTransactionsViewModel: ObservableObject {
     }
 
     /// Registra el pago de hoy: crea el movimiento real y marca la
-    /// recurrente como pagada este mes.
-    func confirmPayment(for item: RecurringTransaction, userId: UUID) async throws {
-        let today = try await Self.logPayment(for: item, userId: userId)
+    /// recurrente como pagada este mes. `amount` es el monto que de verdad
+    /// pago (la luz, el agua... cambian cada mes); nil = el de siempre.
+    func confirmPayment(for item: RecurringTransaction, userId: UUID, amount: Decimal? = nil) async throws {
+        let today = try await Self.logPayment(for: item, userId: userId, amount: amount)
 
         if let index = items.firstIndex(where: { $0.id == item.id }) {
             items[index].lastLoggedOn = today
@@ -69,13 +70,14 @@ final class RecurringTransactionsViewModel: ObservableObject {
     /// que ambos caminos registren exactamente igual. Devuelve la fecha con
     /// que quedo marcada.
     @discardableResult
-    static func logPayment(for item: RecurringTransaction, userId: UUID) async throws -> Date {
+    static func logPayment(for item: RecurringTransaction, userId: UUID, amount: Decimal? = nil) async throws -> Date {
         let supabase = SupabaseManager.shared.client
+        let paid = amount.flatMap { $0 > 0 ? $0 : nil } ?? item.amount
         try await TransactionsRepository.shared.add(
             NewTransaction(
                 userId: userId,
                 accountId: item.accountId,
-                amount: item.movementType.signedAmount(from: item.amount),
+                amount: item.movementType.signedAmount(from: paid),
                 movementType: item.movementType,
                 category: item.category,
                 description: item.name,

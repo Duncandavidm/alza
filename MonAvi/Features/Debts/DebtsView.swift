@@ -4,6 +4,9 @@ struct DebtsView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = DebtsViewModel()
     @State private var showingAdd = false
+    /// "Agregar cupo" en una tarjeta que no lo tiene.
+    @State private var limitDebt: Debt?
+    @State private var limitText = ""
     @AppStorage(DebtPayoffStrategy.storageKey) private var payoffStrategy: DebtPayoffStrategy = .avalanche
 
     var body: some View {
@@ -44,6 +47,23 @@ struct DebtsView: View {
                         Text(debt.balance, format: .currency(code: "USD")).font(.headline)
                     }
 
+                    if let limit = debt.creditLimit, limit > 0 {
+                        CreditUseRow(
+                            utilization: NSDecimalNumber(decimal: debt.balance / limit).doubleValue,
+                            balance: debt.balance,
+                            limit: limit
+                        )
+                    } else if debt.status != .paidOff {
+                        Button {
+                            limitText = ""
+                            limitDebt = debt
+                        } label: {
+                            Label("¿Es tarjeta? Agrega su cupo", systemImage: "plus.circle")
+                                .font(.caption.weight(.semibold))
+                        }
+                        .buttonStyle(.borderless)
+                    }
+
                     HStack(spacing: 10) {
                         if let rate = debt.interestRateMonthly {
                             Text("Interés: \(rate, format: .number.precision(.fractionLength(1)))%/mes")
@@ -76,6 +96,19 @@ struct DebtsView: View {
             }
         }
         .navigationTitle("Deudas")
+        .alert("Cupo total de \(limitDebt?.creditor ?? "la tarjeta")", isPresented: Binding(get: { limitDebt != nil }, set: { if !$0 { limitDebt = nil } })) {
+            TextField("ej. 3000", text: $limitText)
+                .keyboardType(.decimalPad)
+            Button("Guardar") {
+                if let debt = limitDebt, let limit = RecurringAmountParser.parse(limitText) {
+                    Task { await viewModel.setCreditLimit(limit, for: debt) }
+                }
+                limitDebt = nil
+            }
+            Button("Cancelar", role: .cancel) { limitDebt = nil }
+        } message: {
+            Text("Con el cupo calculamos cuánto usas de tu tarjeta. Lo ideal es menos del 30%.")
+        }
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button { showingAdd = true } label: { Image(systemName: "plus") }

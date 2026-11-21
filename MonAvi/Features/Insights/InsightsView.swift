@@ -11,6 +11,11 @@ struct InsightsView: View {
             List {
                 Section {
                     NavigationLink {
+                        FinancialHealthView()
+                    } label: {
+                        Label("Tu salud financiera", systemImage: "heart.text.square.fill")
+                    }
+                    NavigationLink {
                         SpendingInsightsView()
                     } label: {
                         Label("Gastos por categoría", systemImage: "chart.pie.fill")

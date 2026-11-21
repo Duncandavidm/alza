@@ -16,6 +16,7 @@ struct DayJournalView: View {
     @State private var lastActiveDay = Calendar.current.startOfDay(for: Date())
     @StateObject private var budgetsViewModel = BudgetsViewModel()
     @StateObject private var recurringViewModel = RecurringTransactionsViewModel()
+    @StateObject private var suggestionsModel = RecurringSuggestionsModel()
     @StateObject private var billsViewModel = BillsViewModel()
     @StateObject private var dgiViewModel = DgiReceiptsViewModel()
     @State private var isQuickAdding = false
@@ -33,6 +34,9 @@ struct DayJournalView: View {
     @State private var pointsByTransaction: [UUID: Int] = [:]
     @State private var activeGiftsCount = 0
     @StateObject private var savingsViewModel = SavingsGoalsViewModel()
+    /// "Fue otro monto" en el recordatorio de un pago fijo.
+    @State private var amountPromptItem: RecurringTransaction?
+    @State private var customAmountText = ""
 
     var body: some View {
         NavigationStack {
@@ -50,6 +54,12 @@ struct DayJournalView: View {
                         }
 
                         totalsCard
+
+                        if !viewModel.accounts.isEmpty && !isSearching {
+                            accountsStrip
+                        }
+
+                        recurringSuggestionCards
 
                         savingsCard
 
@@ -77,6 +87,19 @@ struct DayJournalView: View {
                     await refresh()
                     await refreshBudgets()
                     await refreshFeaturedRewards()
+                }
+                .alert(amountPromptTitle, isPresented: isAmountPromptShown) {
+                    TextField("Monto, ej. 52.30", text: $customAmountText)
+                        .keyboardType(.decimalPad)
+                    Button("Registrar") {
+                        if let item = amountPromptItem, let amount = RecurringAmountParser.parse(customAmountText) {
+                            Task { await confirmRecurring(item, amount: amount) }
+                        }
+                        amountPromptItem = nil
+                    }
+                    Button("Cancelar", role: .cancel) { amountPromptItem = nil }
+                } message: {
+                    Text("Lo anotamos con este monto solo esta vez. El de siempre sigue igual.")
                 }
 
                 fabRow
@@ -429,34 +452,138 @@ struct DayJournalView: View {
         .buttonStyle(.plain)
     }
 
+    /// "Pagaste Netflix en octubre y noviembre: ¿lo guardamos como gasto
+    /// fijo?" — un gasto anotado dos meses seguidos se propone como pago
+    /// fijo, para recordarlo y contarlo en el análisis.
+    @ViewBuilder
+    private var recurringSuggestionCards: some View {
+        if viewModel.isViewingToday && !isSearching {
+            ForEach(suggestionsModel.suggestions) { suggestion in
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(alignment: .top, spacing: 10) {
+                        Text("🔁")
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("¿\(suggestion.name) es un gasto fijo?")
+                                .font(.subheadline.weight(.semibold))
+                            Text("Lo anotaste en \(suggestion.monthsText) (\(suggestion.amount.formatted(.currency(code: "USD")))). Si lo guardamos, te lo recordamos el día \(suggestion.dayOfMonth) de cada mes.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    HStack(spacing: 8) {
+                        Button("Sí, guardarlo como fijo") {
+                            Task { await acceptSuggestion(suggestion) }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(MonAviBrand.primary)
+                        Button("No es fijo") {
+                            if let userId = appState.currentUserId {
+                                suggestionsModel.dismiss(suggestion, userId: userId)
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    .font(.footnote.weight(.semibold))
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 14).fill(MonAviBrand.primary.opacity(0.1)))
+            }
+        }
+    }
+
+    private func acceptSuggestion(_ suggestion: RecurringDetector.Suggestion) async {
+        guard let userId = appState.currentUserId else { return }
+        do {
+            try await suggestionsModel.accept(suggestion, userId: userId, using: recurringViewModel)
+        } catch {
+            viewModel.errorMessage = "No se pudo guardar el pago fijo: \(error.localizedDescription)"
+        }
+    }
+
+    /// "Tus cuentas": el saldo de cada una (banco, efectivo, ahorros,
+    /// tarjeta) a la vista en Hoy. Antes solo estaban en Ajustes > Cuentas
+    /// y la cuenta de ahorros del onboarding "no se veia".
+    private var accountsStrip: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Tus cuentas")
+                    .font(.headline)
+                Spacer()
+                NavigationLink {
+                    DashboardView()
+                } label: {
+                    Text("Ver todas")
+                        .font(.subheadline.weight(.semibold))
+                }
+            }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(viewModel.accounts) { account in
+                        NavigationLink {
+                            DashboardView()
+                        } label: {
+                            AccountBalanceChip(account: account)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+    }
+
+    private var amountPromptTitle: String {
+        guard let item = amountPromptItem else { return "" }
+        return item.movementType.isInflow ? "¿Cuánto recibiste de \(item.name)?" : "¿Cuánto pagaste de \(item.name)?"
+    }
+
+    private var isAmountPromptShown: Binding<Bool> {
+        Binding(get: { amountPromptItem != nil }, set: { if !$0 { amountPromptItem = nil } })
+    }
+
     private var totalSaved: Decimal {
         savingsViewModel.goals.reduce(Decimal(0)) { $0 + $1.currentAmount }
     }
 
-    /// "¿Pagaste el Gimnasio hoy?" — recordatorio de una recurrente que le
-    /// toca hoy y todavia no se ha confirmado este mes.
+    /// "¿Pagaste la luz hoy?" — recordatorio de una recurrente que le toca
+    /// hoy y todavia no se ha confirmado. Los fijos pueden variar (la luz no
+    /// es igual cada mes): se confirma el monto de siempre con un toque, o
+    /// se escribe el que de verdad fue con "Fue otro monto".
     @ViewBuilder
     private func recurringReminderRow(_ item: RecurringTransaction) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 10) {
-                Text("⚠️")
-                Text("¿Pagaste \(item.name) hoy? \(item.amount, format: .currency(code: "USD"))")
-                    .font(.subheadline)
+        let isIncome = item.movementType.isInflow
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
+                Text(isIncome ? "💵" : "🧾")
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(isIncome ? "¿Recibiste \(item.name) hoy?" : "¿Pagaste \(item.name) hoy?")
+                        .font(.subheadline.weight(.semibold))
+                    Text("Normalmente son \(item.amount, format: .currency(code: "USD")). ¿Fue lo mismo?")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
                 Spacer()
             }
-            HStack(spacing: 10) {
-                Button("Si, lo pague") {
+            HStack(spacing: 8) {
+                Button("Sí, \(item.amount.formatted(.currency(code: "USD")))") {
                     Task { await confirmRecurring(item) }
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.orange)
 
-                Button("Recordarme después") {
-                    recurringViewModel.dismissReminder(for: item)
+                Button("Fue otro monto") {
+                    customAmountText = ""
+                    amountPromptItem = item
                 }
                 .buttonStyle(.bordered)
+
+                Button("Aún no") {
+                    recurringViewModel.dismissReminder(for: item)
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(.secondary)
             }
-            .font(.footnote)
+            .font(.footnote.weight(.semibold))
         }
         .padding(12)
         .background(RoundedRectangle(cornerRadius: 14).fill(Color.orange.opacity(0.12)))
@@ -694,6 +821,7 @@ struct DayJournalView: View {
     private func refreshRecurring() async {
         guard let userId = appState.currentUserId else { return }
         await recurringViewModel.refresh(userId: userId)
+        await suggestionsModel.refresh(userId: userId, existing: recurringViewModel.items)
     }
 
     private func refreshBills() async {
@@ -731,9 +859,13 @@ struct DayJournalView: View {
         }
     }
 
-    private func confirmRecurring(_ item: RecurringTransaction) async {
+    private func confirmRecurring(_ item: RecurringTransaction, amount: Decimal? = nil) async {
         guard let userId = appState.currentUserId else { return }
-        try? await recurringViewModel.confirmPayment(for: item, userId: userId)
+        do {
+            try await recurringViewModel.confirmPayment(for: item, userId: userId, amount: amount)
+        } catch {
+            viewModel.errorMessage = "No se pudo registrar el pago: \(error.localizedDescription)"
+        }
         await refresh()
     }
 
@@ -770,4 +902,32 @@ struct DayJournalView: View {
 
 extension DaySummary: Identifiable {
     var id: String { "\(income)-\(expense)-\(mood.title)-\(dayLabel ?? "hoy")" }
+}
+
+/// Tarjetita de una cuenta en "Tus cuentas" (Hoy).
+private struct AccountBalanceChip: View {
+    let account: Account
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Image(systemName: AccountIcon.symbol(for: account.type))
+                    .foregroundStyle(MonAviBrand.primary)
+                Text(account.name)
+                    .font(.footnote.weight(.semibold))
+                    .lineLimit(1)
+            }
+            Text(account.balance, format: .currency(code: account.currency))
+                .font(.headline)
+                .foregroundStyle(account.type.isLiability ? Color.orange : Color.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(account.type.isLiability ? "Debes" : account.type.displayName)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .frame(width: 140, alignment: .leading)
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemBackground)))
+    }
 }

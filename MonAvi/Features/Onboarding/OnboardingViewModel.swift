@@ -20,6 +20,8 @@ final class OnboardingViewModel: ObservableObject {
 
     // Paso 2: cuenta principal
     @Published var accountName = "Cuenta principal"
+    /// Cuanto tiene hoy en esa cuenta: la cuenta ya no arranca en $0.
+    @Published var accountBalanceText = ""
 
     // Paso 3: ingreso fijo
     @Published var hasFixedIncome = false
@@ -65,6 +67,53 @@ final class OnboardingViewModel: ObservableObject {
     @Published var errorMessage: String?
 
     private let supabase = SupabaseManager.shared.client
+
+    nonisolated static func amount(_ text: String) -> Decimal? {
+        let cleaned = text.replacingOccurrences(of: ",", with: ".").replacingOccurrences(of: "$", with: "")
+            .trimmingCharacters(in: .whitespaces)
+        return Decimal(string: cleaned)
+    }
+
+    /// Ingreso fijo llevado a un mes: quincenal x2, semanal x52/12, diario
+    /// x22 dias habiles (aprox.).
+    var monthlyFixedIncome: Decimal {
+        guard hasFixedIncome, let amount = Self.amount(fixedIncomeAmountText), amount > 0 else { return 0 }
+        switch fixedIncomeFrequency {
+        case .monthly: return amount
+        case .biweekly: return fixedIncomeDay == fixedIncomeSecondDay ? amount : amount * 2
+        case .weekly: return (amount * 52 / 12).roundedTo(2)
+        case .daily: return amount * 22
+        }
+    }
+
+    var monthlyFixedExpenses: Decimal {
+        let bills = commonBills.filter(\.isEnabled).compactMap { Self.amount($0.amountText) }
+        let others = (subscriptions + otherFixedItems).filter { !$0.name.isEmpty }.compactMap { Self.amount($0.amountText) }
+        return (bills + others).filter { $0 > 0 }.reduce(0, +)
+    }
+
+    /// "Tu foto financiera" con todo lo que contesto, para el ultimo paso.
+    var snapshot: FinancialSnapshot {
+        FinancialSnapshot(
+            monthlyIncome: monthlyFixedIncome,
+            fixedExpenses: monthlyFixedExpenses,
+            debts: debts.filter { !$0.creditor.isEmpty }.compactMap { debt -> FinancialSnapshot.DebtInput? in
+                guard let balance = Self.amount(debt.balanceText), balance > 0 else { return nil }
+                return FinancialSnapshot.DebtInput(
+                    name: debt.creditor,
+                    balance: balance,
+                    creditLimit: Self.amount(debt.creditLimitText),
+                    minimumPayment: Self.amount(debt.minimumPaymentText),
+                    monthlyRate: Self.amount(debt.interestRateText),
+                    isOverdue: debt.isOverdue
+                )
+            },
+            cash: max(Self.amount(accountBalanceText) ?? 0, 0),
+            savings: hasSavings ? max(Self.amount(savingsAmountText) ?? 0, 0) : 0,
+            firstGoal: shortTermGoals.map { $0.text.trimmingCharacters(in: .whitespaces) }.first { !$0.isEmpty },
+            hasVariableIncome: hasVariableIncome
+        )
+    }
 
     /// El salario segun la frecuencia elegida. Quincenal = dos recurrentes
     /// mensuales con el monto de cada quincena, para que recordatorios y
@@ -116,7 +165,7 @@ final class OnboardingViewModel: ObservableObject {
                     userId: userId,
                     name: accountName.isEmpty ? "Cuenta principal" : accountName,
                     type: .checking,
-                    balance: 0,
+                    balance: Self.amount(accountBalanceText) ?? 0,
                     currency: "USD"
                 )
             )
@@ -187,7 +236,7 @@ final class OnboardingViewModel: ObservableObject {
                             userId: userId,
                             creditor: debt.creditor,
                             balance: balance,
-                            creditLimit: nil,
+                            creditLimit: Self.amount(debt.creditLimitText).flatMap { $0 > 0 ? $0 : nil },
                             interestRateMonthly: Decimal(string: debt.interestRateText.replacingOccurrences(of: ",", with: ".")),
                             minimumPayment: Decimal(string: debt.minimumPaymentText.replacingOccurrences(of: ",", with: ".")),
                             dueDate: nil,
@@ -201,7 +250,7 @@ final class OnboardingViewModel: ObservableObject {
                 try await accountsViewModel.addAccount(
                     NewAccount(
                         userId: userId,
-                        name: savingsNote.isEmpty ? "Ahorro / inversion" : savingsNote,
+                        name: savingsNote.isEmpty ? "Ahorros" : String(savingsNote.prefix(40)),
                         type: .savings,
                         balance: savingsAmount,
                         currency: "USD"

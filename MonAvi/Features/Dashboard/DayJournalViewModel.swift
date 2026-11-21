@@ -64,11 +64,16 @@ final class DayJournalViewModel: ObservableObject {
     private let supabase = SupabaseManager.shared.client
 
     /// Cuenta a usar por default en el ingreso ultra-rapido: la ultima que
-    /// se uso hoy, o la primera del negocio si todavia no hay movimientos.
+    /// se uso hoy, o la principal si todavia no hay movimientos.
     /// `todayTransactions` va de lo mas nuevo a lo mas viejo, asi que la
-    /// ultima usada es `.first`.
+    /// ultima usada es `.first`. Ahorros e inversiones no quedan como
+    /// default aunque se hayan usado (se eligen a mano en "De: ...").
     var defaultAccountId: UUID? {
-        todayTransactions.first?.accountId ?? accounts.first?.id
+        let dayToDay = accounts.filter { !$0.type.isReserve }
+        if let last = todayTransactions.first?.accountId, dayToDay.contains(where: { $0.id == last }) {
+            return last
+        }
+        return dayToDay.first?.id ?? accounts.first?.id
     }
 
     var todayIncome: Decimal {

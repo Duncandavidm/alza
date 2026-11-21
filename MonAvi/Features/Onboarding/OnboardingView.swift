@@ -91,12 +91,21 @@ struct OnboardingView: View {
         }
     }
 
+    @ViewBuilder
     private var accountStep: some View {
         Section("Tu cuenta principal") {
             Text("¿De dónde sale y entra la mayoría de tu dinero? (banco, efectivo...)")
                 .font(.caption)
                 .foregroundStyle(.secondary)
             TextField("ej. Cuenta de banco, Efectivo", text: $viewModel.accountName)
+        }
+
+        Section {
+            AmountField(placeholder: "¿Cuánto tienes hoy ahí?", text: $viewModel.accountBalanceText)
+        } header: {
+            Text("¿Cuánto tienes hoy en esa cuenta?")
+        } footer: {
+            Text("Mira tu app del banco o cuenta tu efectivo. Así tu saldo en MonAvi empieza igual al real, no en $0. Lo puedes ajustar después.")
         }
     }
 
@@ -195,6 +204,7 @@ struct OnboardingView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     TextField("Nombre (ej. Netflix)", text: $item.name)
                     AmountField(placeholder: "Monto mensual", text: $item.amountText)
+                    DayOfMonthField(label: "Día de cobro", day: $item.dayOfMonth)
                 }
                 .padding(.vertical, 2)
             }
@@ -218,6 +228,7 @@ struct OnboardingView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     TextField("Nombre (ej. Colegio)", text: $item.name)
                     AmountField(placeholder: "Monto mensual", text: $item.amountText)
+                    DayOfMonthField(label: "Día de pago", day: $item.dayOfMonth)
                 }
                 .padding(.vertical, 2)
             }
@@ -271,19 +282,31 @@ struct OnboardingView: View {
             ForEach($viewModel.debts) { $debt in
                 VStack(alignment: .leading, spacing: 6) {
                     TextField("Acreedor (ej. Tarjeta de crédito)", text: $debt.creditor)
-                    AmountField(placeholder: "Saldo actual", text: $debt.balanceText)
-                    HStack {
-                        PercentField(placeholder: "Interés /mes (opcional)", text: $debt.interestRateText)
-                        AmountField(placeholder: "Pago mínimo (opcional)", text: $debt.minimumPaymentText)
+                    LabeledField(label: "¿Cuánto debes hoy?") {
+                        AmountField(placeholder: "Saldo actual", text: $debt.balanceText)
                     }
-                    Toggle("Esta en mora / atrasada", isOn: $debt.isOverdue)
+                    LabeledField(label: "Cupo total (si es tarjeta)") {
+                        AmountField(placeholder: "ej. 3000", text: $debt.creditLimitText)
+                    }
+                    if let use = DebtDraftMath.utilization(debt) {
+                        Text("Usas el \(FinancialSnapshot.percent(use)) de tu cupo\(use > 0.3 ? " — lo ideal es menos del 30%" : "")")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(use > 0.3 ? .orange : MonAviBrand.primary)
+                    }
+                    LabeledField(label: "Interés al mes (opcional)") {
+                        PercentField(placeholder: "ej. 2.5", text: $debt.interestRateText)
+                    }
+                    LabeledField(label: "Pago mínimo (opcional)") {
+                        AmountField(placeholder: "ej. 60", text: $debt.minimumPaymentText)
+                    }
+                    Toggle("Está en mora / atrasada", isOn: $debt.isOverdue)
                 }
                 .padding(.vertical, 2)
             }
             .onDelete { viewModel.debts.remove(atOffsets: $0) }
 
             Button {
-                viewModel.debts.append(DebtDraft())
+                viewModel.debts.append(DebtDraft(creditor: viewModel.debts.isEmpty ? "Tarjeta de crédito" : ""))
             } label: {
                 Label("Agregar deuda", systemImage: "plus.circle")
             }
@@ -295,8 +318,10 @@ struct OnboardingView: View {
             Toggle("Si, tengo algo ahorrado", isOn: $viewModel.hasSavings)
             if viewModel.hasSavings {
                 AmountField(placeholder: "¿Cuánto tienes ahorrado/invertido?", text: $viewModel.savingsAmountText)
-                TextField("Nota (ej. meta banco, disponible en diciembre)", text: $viewModel.savingsNote, axis: .vertical)
-                    .lineLimit(2...4)
+                TextField("¿Dónde lo tienes? (ej. Ahorros Banco General)", text: $viewModel.savingsNote)
+                Text("Lo verás como una cuenta más en Hoy y en Ajustes > Cuentas.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -352,16 +377,16 @@ struct OnboardingView: View {
         }
     }
 
+    /// Ultimo paso: "Tu foto financiera" con todo lo que contesto y el plan
+    /// para mejorar, antes de crear la cuenta y los pagos fijos.
+    @ViewBuilder
     private var summaryStep: some View {
+        FinancialSnapshotSections(snapshot: viewModel.snapshot, name: viewModel.fullName.trimmingCharacters(in: .whitespaces))
+
         Section {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Listo, \(viewModel.fullName.isEmpty ? "eso es todo" : viewModel.fullName).")
-                    .font(.title3.bold())
-                Text("Vamos a crear tu cuenta \"\(viewModel.accountName)\" y anotar todo lo que marcaste como recurrente, para que ya lo veas reflejado desde hoy.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.vertical, 8)
+            Text("Al tocar Empezar creamos tu cuenta \"\(viewModel.accountName)\"\(viewModel.hasSavings ? " y tu cuenta de ahorros" : ""), y anotamos tus pagos fijos para recordártelos.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
         }
     }
 

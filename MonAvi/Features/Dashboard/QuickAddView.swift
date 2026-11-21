@@ -28,6 +28,9 @@ struct QuickAddView: View {
     @State private var silenceTask: Task<Void, Never>?
 
     @State private var movementType: MovementType = .gasto
+    /// De que cuenta sale (o a cual entra) el dinero. nil = la de siempre
+    /// (`viewModel.defaultAccountId`). Solo se muestra si tiene 2+ cuentas.
+    @State private var selectedAccountId: UUID?
     @State private var amountText = ""
     @State private var description = ""
     /// Opcional a proposito — la idea de quick-add es rapidez, asi que la
@@ -71,6 +74,9 @@ struct QuickAddView: View {
                 VStack(spacing: 10) {
                     amountDisplay
                     entrySummary
+                    if existingTransaction == nil, viewModel.accounts.count > 1 {
+                        accountChip
+                    }
                     budgetHint
 
                     if viewModel.defaultAccountId == nil {
@@ -200,7 +206,7 @@ struct QuickAddView: View {
         }
         .buttonStyle(.borderedProminent)
         .tint(movementType.tintColor)
-        .disabled(enteredMagnitude <= 0 || isSaving || viewModel.defaultAccountId == nil)
+        .disabled(enteredMagnitude <= 0 || isSaving || accountId == nil)
     }
 
     /// El monto en grande, con el signo del tipo de movimiento — se llena
@@ -242,6 +248,44 @@ struct QuickAddView: View {
         )
         .contentShape(Rectangle())
         .onTapGesture { descriptionFocused = true }
+    }
+
+    private var accountId: UUID? { selectedAccountId ?? viewModel.defaultAccountId }
+
+    /// "De: Cuenta principal ▾" — para elegir de que cuenta salio el dinero
+    /// cuando hay varias (banco, efectivo, ahorros, tarjeta...).
+    private var accountChip: some View {
+        let current = viewModel.accounts.first { $0.id == accountId }
+        return Menu {
+            ForEach(viewModel.accounts) { account in
+                Button {
+                    selectedAccountId = account.id
+                } label: {
+                    Label(
+                        "\(account.name) · \(account.balance.formatted(.currency(code: account.currency)))",
+                        systemImage: account.id == accountId ? "checkmark" : AccountIcon.symbol(for: account.type)
+                    )
+                }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: AccountIcon.symbol(for: current?.type ?? .checking))
+                Text(movementType.isInflow ? "A:" : "De:")
+                    .foregroundStyle(.secondary)
+                Text(current?.name ?? "Elegir cuenta")
+                    .fontWeight(.semibold)
+                    .lineLimit(1)
+                Image(systemName: "chevron.down")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(.secondary)
+            }
+            .font(.subheadline)
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .background(Capsule().stroke(Color(.separator), lineWidth: 1))
+        }
+        .accessibilityLabel("Cuenta: \(current?.name ?? "sin elegir"). Toca para cambiar")
     }
 
     /// Debajo del monto: la categoria elegida (o sugerida) y lo que se
@@ -569,7 +613,7 @@ struct QuickAddView: View {
 
         guard
             let userId = appState.currentUserId,
-            let accountId = viewModel.defaultAccountId
+            let accountId = accountId
         else { return }
 
         isSaving = true

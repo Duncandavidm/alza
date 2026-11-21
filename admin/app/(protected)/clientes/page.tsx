@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { formatCashback, formatDate, formatDateTime, formatInt, num } from "@/lib/format";
 import { cleanLine } from "@/lib/push";
 import { bannedUntilByIds, isBanned } from "@/lib/customer-accounts";
+import CustomerStats from "./CustomerStats";
 
 export const dynamic = "force-dynamic";
 
@@ -87,6 +88,8 @@ export default async function ClientesPage({
         <span className="pii-note">🔒 Datos personales: no compartir</span>
       </div>
 
+      {!search && pageNumber === 1 && <CustomerStats />}
+
       {message && (
         <div className="card">
           <strong className="success-text">Listo.</strong> {message}
@@ -98,6 +101,7 @@ export default async function ClientesPage({
         </div>
       )}
 
+      <h2 className="section-title">Lista de clientes</h2>
       <form method="get" action="/clientes" className="card inline-actions">
         <input
           type="text"

@@ -51,11 +51,12 @@ export default function TimeChart({ data, kind = "area", unit = ["", ""], period
   const reduce = useReducedMotion();
   const [hover, setHover] = useState<number | null>(null);
 
-  const pad = { top: 12, right: 12, bottom: 26, left: 34 };
+  const max = niceMax(Math.max(...data.map((p) => p.v), 0));
+  // El margen izquierdo crece con el largo del numero mas alto del eje.
+  const pad = { top: 12, right: 12, bottom: 26, left: Math.max(30, max.toLocaleString("es-PA").length * 7 + 14) };
   const w = Math.max(width, 0);
   const innerW = Math.max(w - pad.left - pad.right, 10);
   const innerH = height - pad.top - pad.bottom;
-  const max = niceMax(Math.max(...data.map((p) => p.v), 0));
   const n = data.length;
 
   const x = (i: number) => (kind === "bar" ? pad.left + (innerW / n) * (i + 0.5) : pad.left + (n <= 1 ? innerW / 2 : (innerW / (n - 1)) * i));

@@ -8,7 +8,7 @@ import Icon from "./icons";
 type Props = {
   label: string;
   value: number;
-  format?: "int" | "money" | "usd";
+  format?: "int" | "money" | "usd" | "pct";
   icon: string;
   /// Periodo anterior para el cambio en % ("vs. 30 días antes").
   previous?: number;
@@ -23,6 +23,7 @@ type Props = {
 function formatValue(value: number, format: Props["format"]) {
   if (format === "money") return "$" + (value / 100).toLocaleString("es-PA", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   if (format === "usd") return "$" + value.toLocaleString("es-PA", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (format === "pct") return `${Math.round(value)}%`;
   return Math.round(value).toLocaleString("es-PA");
 }
 

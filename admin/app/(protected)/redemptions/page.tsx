@@ -4,6 +4,7 @@ import { embedded, formatDateTime } from "@/lib/format";
 import { formatRewardValue, formatRewardValueLong, toRewardCurrency } from "@/lib/currency";
 import ActionForm from "@/components/ActionForm";
 import { cancelRedemption, markRedemptionDelivered } from "./actions";
+import RedemptionStats from "./RedemptionStats";
 
 const STATUSES = ["emitido", "entregado", "cancelado", "vencido"] as const;
 type RedemptionStatus = (typeof STATUSES)[number];
@@ -49,22 +50,10 @@ export default async function RedemptionsPage({
   if (status) query = query.eq("status", status);
   if (merchantId) query = query.eq("merchant_id", merchantId);
 
-  const nowIso = new Date().toISOString();
-  const [{ data: redemptions, error }, { data: merchants }, { count: pendingCount }, { count: overdueCount }] =
-    await Promise.all([
-      query.returns<Redemption[]>(),
-      supabase.from("partner_merchants").select("id, name").order("name").returns<{ id: string; name: string }[]>(),
-      supabase
-        .from("reward_redemptions")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "emitido")
-        .gt("expires_at", nowIso),
-      supabase
-        .from("reward_redemptions")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "emitido")
-        .lte("expires_at", nowIso),
-    ]);
+  const [{ data: redemptions, error }, { data: merchants }] = await Promise.all([
+    query.returns<Redemption[]>(),
+    supabase.from("partner_merchants").select("id, name").order("name").returns<{ id: string; name: string }[]>(),
+  ]);
 
   const now = new Date();
   const today = panamaDate(now);
@@ -78,22 +67,12 @@ export default async function RedemptionsPage({
           monavi.maday.app/canjear
         </a>{" "}
         (queda “en caja”); si no puede, márcalo aquí como entregado (queda “desde el panel”). Los canjes que no se
-        entregan vencen a los 7 días y un proceso nocturno los libera y le devuelve al cliente su cashback o sus puntos.
+        entregan vencen a los 7 días y un proceso nocturno los libera y le devuelve al cliente su cashback.
       </p>
 
-      <div className="grid-form" style={{ marginBottom: 16 }}>
-        <div className="card" style={{ marginBottom: 0 }}>
-          <div className="text-dim">Por entregar</div>
-          <div className="stat-value">{pendingCount ?? 0}</div>
-        </div>
-        <div className="card" style={{ marginBottom: 0 }}>
-          <div className="text-dim">Vencidos sin liberar (se liberan esta noche)</div>
-          <div className="stat-value" style={{ color: (overdueCount ?? 0) > 0 ? "var(--warning)" : undefined }}>
-            {overdueCount ?? 0}
-          </div>
-        </div>
-      </div>
+      {!q && !status && !merchantId && <RedemptionStats />}
 
+      <h2 className="section-title">Códigos</h2>
       <form className="card grid-form" method="get">
         <div className="field">
           <label>Código</label>

@@ -2822,6 +2822,12 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .shell .mini-stats span { display: block; font-size: 12px; color: var(--text-dim); }
 .shell .mini-stats strong { font-size: 18px; font-variant-numeric: tabular-nums; }
 
+/* Clientes y Canjes */
+.shell .section-title { font-size: 18px; margin: 10px 0 12px; letter-spacing: -.2px; }
+.shell .demo-split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+.shell .demo-split h4 { margin: 12px 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: .6px; color: var(--text-dim); }
+.shell .barlist-empty { margin: 14px 0 0; font-size: 13.5px; }
+
 /* ---------- Celular y tablet ---------- */
 @media (max-width: 1100px) {
   .shell .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -2838,9 +2844,11 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   .shell .chart-grid, .shell .dash-split { grid-template-columns: 1fr; }
 }
 @media (max-width: 520px) {
-  .shell .tiles { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .shell .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .shell .sparkline { display: none; }
   .shell .tile-value { font-size: 24px; }
   .shell .mini-stats { grid-template-columns: 1fr 1fr; }
+  .shell .demo-split { grid-template-columns: 1fr; gap: 6px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .shell .card, .shell .tile, .shell .attention-item, .shell .funnel-fill { animation: none; }

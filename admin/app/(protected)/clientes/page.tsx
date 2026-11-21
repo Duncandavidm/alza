@@ -100,8 +100,6 @@ export default async function ClientesPage({
         </div>
       )}
 
-      {!search && pageNumber === 1 && <LifetimeAccessCard />}
-
       {!search && pageNumber === 1 && <CustomerStats />}
 
       <h2 className="section-title">Lista de clientes</h2>
@@ -214,6 +212,8 @@ export default async function ClientesPage({
           </div>
         )}
       </div>
+
+      <LifetimeAccessCard />
     </>
   );
 }

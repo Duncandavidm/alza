@@ -54,6 +54,10 @@ export default async function MerchantsPage() {
           </li>
           <li>Generas el <strong>PIN de canje</strong> y se lo mandas al comercio.</li>
           <li>
+            ¿Tiene más de un local? En su ficha, en <strong>Sucursales</strong>, agregas cada dirección (y si quieres,
+            un PIN por sucursal). La dirección de aquí es la principal.
+          </li>
+          <li>
             Cuando todo esté listo, lo <strong>publicas</strong>. Hasta entonces no sale en la app. Al publicarlo, los
             clientes reciben un aviso con su descuento o premio.
           </li>

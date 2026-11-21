@@ -1,4 +1,5 @@
-import NavTabs from "@/components/NavTabs";
+import { Inter } from "next/font/google";
+import Sidebar, { type NavGroup } from "@/components/Sidebar";
 import { logout } from "../login/actions";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -6,6 +7,9 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 // prerenderiza en el build las paginas sin searchParams (p. ej.
 // /merchants, /alerts) y mostraria datos del momento del deploy.
 export const dynamic = "force-dynamic";
+
+// La fuente se sirve desde el propio panel (next/font): cumple la CSP.
+const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-inter" });
 
 /// Cuenta las solicitudes nuevas y, de paso, comprueba que el panel
 /// pueda hablar con Supabase. Si la llave esta mal (p. ej. una
@@ -27,48 +31,60 @@ async function checkSupabase(): Promise<{ newApplications: number; error: string
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { newApplications, error: supabaseError } = await checkSupabase();
 
+  const groups: NavGroup[] = [
+    { title: "General", items: [{ href: "/", label: "Resumen", icon: "home" }] },
+    {
+      title: "Comercios",
+      items: [
+        { href: "/merchants", label: "Comercios y productos", icon: "store" },
+        { href: "/categorias", label: "Categorías", icon: "tag" },
+        { href: "/applications", label: "Solicitudes", icon: "inbox", badge: newApplications },
+        { href: "/redemptions", label: "Canjes", icon: "check" },
+      ],
+    },
+    {
+      title: "Clientes",
+      items: [
+        { href: "/clientes", label: "Clientes", icon: "users" },
+        { href: "/cupones", label: "Cupones", icon: "gift" },
+        { href: "/referidos", label: "Invita amigos", icon: "userPlus" },
+        { href: "/notificaciones", label: "Notificaciones", icon: "bell" },
+      ],
+    },
+    {
+      title: "Datos y marcas",
+      items: [
+        { href: "/campaigns", label: "Campañas de marcas", icon: "megaphone" },
+        { href: "/insights", label: "Estudio de mercado", icon: "chart" },
+        { href: "/dgi-verification", label: "Facturas DGI", icon: "receipt" },
+      ],
+    },
+    {
+      title: "Sistema",
+      items: [
+        { href: "/ia", label: "Costo de IA", icon: "cpu" },
+        { href: "/alerts", label: "Alertas", icon: "alert" },
+        { href: "/seguridad", label: "Seguridad", icon: "shield" },
+      ],
+    },
+  ];
+
   return (
-    <>
-      <nav className="top">
-        <span className="brand">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="brand-mark" src="/monavi-mark.svg" alt="" aria-hidden="true" />
-          MonAvi Admin
-        </span>
-        <NavTabs
-          tabs={[
-            { href: "/", label: "Resumen" },
-            { href: "/merchants", label: "Comercios y productos" },
-            { href: "/categorias", label: "Categorías" },
-            { href: "/cupones", label: "Cupones" },
-            { href: "/referidos", label: "Invita amigos" },
-            { href: "/applications", label: "Solicitudes", badge: newApplications },
-            { href: "/redemptions", label: "Canjes" },
-            { href: "/clientes", label: "Clientes" },
-            { href: "/notificaciones", label: "Notificaciones" },
-            { href: "/campaigns", label: "Campañas de marcas" },
-            { href: "/insights", label: "Estudio de mercado" },
-            { href: "/dgi-verification", label: "Facturas DGI" },
-            { href: "/ia", label: "Costo de IA" },
-            { href: "/alerts", label: "Alertas" },
-            { href: "/seguridad", label: "Seguridad" },
-          ]}
-        />
-        <form action={logout}>
-          <button type="submit" className="secondary">
-            Salir
-          </button>
-        </form>
-      </nav>
-      <div className="page">{supabaseError && (
-          <div className="card" style={{ borderColor: "#B5453A", marginBottom: 16 }}>
-            <strong>El panel no se puede conectar con Supabase:</strong> {supabaseError}.
-            <br />
-            Revisa en Vercel la variable <code>SUPABASE_SERVICE_ROLE_KEY</code> (Supabase &gt; Project Settings &gt;
-            API Keys) y <code>SUPABASE_URL</code>, y vuelve a publicar (Deployments &gt; Redeploy).
-          </div>
-        )}
-        {children}</div>
-    </>
+    <div className={`shell ${inter.variable}`}>
+      <Sidebar groups={groups} logoutAction={logout} />
+      <main className="main">
+        <div className="page">
+          {supabaseError && (
+            <div className="card" style={{ borderColor: "#B5453A", marginBottom: 16 }}>
+              <strong>El panel no se puede conectar con Supabase:</strong> {supabaseError}.
+              <br />
+              Revisa en Vercel la variable <code>SUPABASE_SERVICE_ROLE_KEY</code> (Supabase &gt; Project Settings &gt;
+              API Keys) y <code>SUPABASE_URL</code>, y vuelve a publicar (Deployments &gt; Redeploy).
+            </div>
+          )}
+          {children}
+        </div>
+      </main>
+    </div>
   );
 }

@@ -37,26 +37,41 @@ struct PointsHubView: View {
                     .listRowBackground(Color.clear)
             }
 
+            // Una sola entrada para canjear: "Dónde canjear" abre los
+            // comercios con sus descuentos y premios (pestañas Descuentos /
+            // Comercios). Antes habia otra entrada que mostraba lo mismo.
             Section {
                 NavigationLink {
-                    RewardsView(initialMode: .benefits)
+                    RewardsView(initialMode: .merchants)
                 } label: {
                     rewardsCard
                 }
 
                 NavigationLink {
-                    RewardsView(initialMode: .merchants)
+                    MyRedemptionsView()
                 } label: {
-                    Label("Dónde canjear: comercios aliados", systemImage: "storefront.fill")
+                    Label("Mis cupones y canjes", systemImage: "ticket.fill")
+                }
+            } footer: {
+                Text("Tus cupones ganados y tus códigos están en Mis cupones y canjes. Muéstralos en caja y pide siempre tu factura fiscal.")
+            }
+
+            Section {
+                NavigationLink {
+                    HabitCouponsView()
+                } label: {
+                    Label("Cupones por buenos hábitos", systemImage: "gift.fill")
                 }
 
                 NavigationLink {
-                    MyRedemptionsView()
+                    SavingsGoalsView()
                 } label: {
-                    Label("Mis canjes", systemImage: "ticket.fill")
+                    Label("Metas de ahorro", systemImage: "banknote.fill")
                 }
+            } header: {
+                Text("Gana cupones")
             } footer: {
-                Text("Descuentos por ser de MonAvi y premios que canjeas con tu cashback.")
+                Text("Ahorrar parte de tus ingresos, cumplir tus metas a tiempo y tus presupuestos te da cupones de descuento en comercios aliados.")
             }
 
             Section {
@@ -64,6 +79,12 @@ struct PointsHubView: View {
                     DgiReceiptsListView()
                 } label: {
                     Label("Facturas que suman", systemImage: "qrcode.viewfinder")
+                }
+
+                NavigationLink {
+                    ReferralView()
+                } label: {
+                    Label("Invita amigos y gana cashback", systemImage: "person.badge.plus")
                 }
             } header: {
                 Text("Gana cashback")
@@ -93,24 +114,6 @@ struct PointsHubView: View {
                 Text("Cada pago con tarjeta se anota solo. Si pagas con tarjeta en un comercio aliado y escaneas la factura, ganas un bono extra.")
             }
 
-            Section {
-                NavigationLink {
-                    HabitCouponsView()
-                } label: {
-                    Label("Cupones por buenos hábitos", systemImage: "ticket.fill")
-                }
-
-                NavigationLink {
-                    SavingsGoalsView()
-                } label: {
-                    Label("Metas de ahorro", systemImage: "banknote.fill")
-                }
-            } header: {
-                Text("Gana cupones")
-            } footer: {
-                Text("Ahorrar parte de tus ingresos, cumplir tus metas a tiempo y tus presupuestos te da cupones de descuento en comercios aliados.")
-            }
-
             if let errorMessage = viewModel.errorMessage {
                 Section {
                     Text(errorMessage).foregroundStyle(.red)
@@ -126,22 +129,22 @@ struct PointsHubView: View {
         }
     }
 
-    /// Entrada destacada al catalogo de canje.
+    /// Entrada destacada a "Dónde canjear" (comercios, descuentos y premios).
     private var rewardsCard: some View {
         HStack(spacing: 14) {
             ZStack {
                 Circle()
                     .fill(MonAviBrand.headerGradient)
-                Image(systemName: "gift.fill")
+                Image(systemName: "storefront.fill")
                     .font(.title3)
                     .foregroundStyle(MonAviBrand.accentOnDark)
             }
             .frame(width: 48, height: 48)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("Descuentos y premios")
+                Text("Dónde canjear")
                     .font(.system(.headline, design: MonAviBrand.fontDesign, weight: .bold))
-                Text("Descuentos por ser de MonAvi y premios con tu cashback")
+                Text("Comercios aliados con descuentos por ser de MonAvi y premios con tu cashback")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

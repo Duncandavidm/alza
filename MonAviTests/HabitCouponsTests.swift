@@ -53,7 +53,7 @@ final class HabitCouponsTests: XCTestCase {
             "Anota tus movimientos al menos 15 días del mes (llevas 9)."
         )
         XCTAssertNil(HabitCouponsMath.loggedDaysHint(rule: everyone, month: response.thisMonth))
-        XCTAssertEqual(HabitCouponsMath.progressText(rule: everyone, month: response.thisMonth), "Ya está en Mis canjes con su código.")
+        XCTAssertEqual(HabitCouponsMath.progressText(rule: everyone, month: response.thisMonth), "Ya está en Mis cupones y canjes con su código.")
         XCTAssertEqual(HabitCouponsMath.earnedText(1), "¡Ya lo ganaste!")
         XCTAssertEqual(HabitCouponsMath.earnedText(3), "Ganado 3 veces")
         XCTAssertNil(HabitCouponsMath.earnedText(0))

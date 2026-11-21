@@ -14,7 +14,7 @@ struct MyRedemptionsView: View {
         List {
             content
         }
-        .navigationTitle("Mis canjes")
+        .navigationTitle("Mis cupones y canjes")
         .refreshable { await refresh() }
         .task { await refresh() }
         .sheet(item: $presentedRedemption) { (redemption: RewardRedemption) in
@@ -57,9 +57,9 @@ struct MyRedemptionsView: View {
                         .listRowSeparator(.hidden)
                     }
                 } header: {
-                    Text("Tus regalos")
+                    Text("Tus cupones")
                 } footer: {
-                    Text("Regalos de MonAvi: no te costaron nada. Toca uno para ver su código y muéstralo en caja.")
+                    Text("Cupones y regalos de MonAvi: no te cuestan nada. Toca uno para ver su código y muéstralo en caja.")
                 }
             }
 

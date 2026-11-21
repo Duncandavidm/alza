@@ -147,7 +147,7 @@ struct RewardsView: View {
             NavigationLink {
                 MyRedemptionsView()
             } label: {
-                Label("Mis canjes", systemImage: "ticket.fill")
+                Label("Mis cupones y canjes", systemImage: "ticket.fill")
             }
         }
     }

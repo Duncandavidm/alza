@@ -93,7 +93,7 @@ enum HabitCouponsMath {
             return "Tu salud financiera este mes: \(number(month.score)) de \(number(rule.threshold)) puntos."
         case "todos":
             return rule.earnedCount > 0
-                ? "Ya está en Mis canjes con su código."
+                ? "Ya está en Mis cupones y canjes con su código."
                 : "Es para todos los clientes de MonAvi: te llega en la próxima entrega."
         case "meta_a_tiempo":
             return "Llega al monto de una meta de al menos $\(number(rule.threshold)) antes de su fecha."
@@ -169,7 +169,7 @@ struct HabitCouponsView: View {
             } header: {
                 Text("Cupones que puedes ganar")
             } footer: {
-                Text("Los cupones los paga MonAvi y se entregan solos cuando cumples. Te avisamos y aparecen en Mis canjes con su código para caja.")
+                Text("Los cupones los paga MonAvi y se entregan solos cuando cumples. Te avisamos y aparecen en Mis cupones y canjes con su código para caja.")
             }
 
             Section {

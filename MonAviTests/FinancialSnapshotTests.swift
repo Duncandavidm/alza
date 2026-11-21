@@ -113,6 +113,38 @@ final class FinancialSnapshotTests: XCTestCase {
         XCTAssertEqual(result.first?.name, "Luz")
         XCTAssertEqual(result.first?.dayOfMonth, 13)
         XCTAssertEqual(result.first?.monthsText, "octubre y noviembre")
+        XCTAssertEqual(result.first?.datesText, "el 12 de octubre y el 13 de noviembre")
+        XCTAssertEqual(result.first?.paidThisMonth, true)
+        // Se pregunta el mismo dia del mes siguiente: 13 de diciembre.
+        let due = result.first?.nextDueDate(calendar: calendar)
+        XCTAssertEqual(due.map { calendar.component(.month, from: $0) }, 12)
+        XCTAssertEqual(due.map { calendar.component(.day, from: $0) }, 13)
+    }
+
+    func testNotPaidThisMonthAsksThisMonth() {
+        let entries = [entry("Internet", 35, date(2026, 9, 5)), entry("Internet", 35, date(2026, 10, 5))]
+        let result = RecurringDetector.suggestions(entries: entries, existingNames: [], dismissed: [], now: date(2026, 11, 21), calendar: calendar)
+        XCTAssertEqual(result.first?.paidThisMonth, false)
+        let due = result.first?.nextDueDate(calendar: calendar)
+        XCTAssertEqual(due.map { calendar.component(.month, from: $0) }, 11)
+        XCTAssertEqual(due.map { calendar.component(.day, from: $0) }, 5)
+    }
+
+    func testDueDayClampsToShortMonths() {
+        let entries = [entry("Colegio", 120, date(2026, 12, 31)), entry("Colegio", 120, date(2027, 1, 31))]
+        let result = RecurringDetector.suggestions(entries: entries, existingNames: [], dismissed: [], now: date(2027, 1, 31), calendar: calendar)
+        let due = result.first?.nextDueDate(calendar: calendar)
+        XCTAssertEqual(due.map { calendar.component(.day, from: $0) }, 28)
+    }
+
+    func testSuggestedReminderWhenDayAlreadyPassed() {
+        let now = calendar.date(from: DateComponents(year: 2026, month: 11, day: 21, hour: 15))!
+        let past = date(2026, 11, 5)
+        let reminder = NotificationManager.suggestedReminderDate(due: past, now: now, calendar: calendar)
+        XCTAssertEqual(calendar.component(.day, from: reminder), 22)
+        XCTAssertEqual(calendar.component(.hour, from: reminder), 9)
+        let future = date(2026, 12, 13)
+        XCTAssertEqual(NotificationManager.suggestedReminderDate(due: future, now: now, calendar: calendar), future)
     }
 
     func testIgnoresFrequentPurchasesExistingAndDismissed() {

@@ -14,7 +14,10 @@ final class DashboardViewModel: ObservableObject {
     var totalBalance: Decimal {
         accounts.reduce(0) { partial, account in
             switch account.type {
-            case .creditCard, .loan:
+            // La tarjeta ya guarda en negativo lo que se debe.
+            case .creditCard:
+                return partial + account.balance
+            case .loan:
                 return partial - account.balance
             default:
                 return partial + account.balance

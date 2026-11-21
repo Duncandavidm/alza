@@ -33,6 +33,9 @@ struct Account: Codable, Identifiable, Hashable {
     var currency: String
     let createdAt: Date
     let updatedAt: Date
+    /// Tarjeta de credito vinculada a su deuda (0079): gastar con ella sube
+    /// la deuda. nil en el resto de cuentas.
+    var debtId: UUID?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -43,6 +46,7 @@ struct Account: Codable, Identifiable, Hashable {
         case currency
         case createdAt = "created_at"
         case updatedAt = "updated_at"
+        case debtId = "debt_id"
     }
 }
 
@@ -84,4 +88,19 @@ extension AccountType {
     var isReserve: Bool { self == .savings || self == .investment }
     /// Tarjetas y prestamos: el saldo es lo que se debe.
     var isLiability: Bool { self == .creditCard || self == .loan }
+}
+
+extension Account {
+    /// Lo que se ve como saldo: en una tarjeta, cuanto se debe (en
+    /// positivo); en el resto, el saldo tal cual. La tarjeta guarda su
+    /// saldo en negativo (gastar con ella lo baja), igual que la base.
+    var displayAmount: Decimal { type == .creditCard ? abs(balance) : balance }
+
+    var balanceCaption: String {
+        switch type {
+        case .creditCard: return balance <= 0 ? "Debes" : "A favor"
+        case .loan: return "Debes"
+        default: return type.displayName
+        }
+    }
 }

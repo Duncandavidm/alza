@@ -262,7 +262,7 @@ struct QuickAddView: View {
                     selectedAccountId = account.id
                 } label: {
                     Label(
-                        "\(account.name) · \(account.balance.formatted(.currency(code: account.currency)))",
+                        "\(account.name) · \(account.type == .creditCard ? "debes " : "")\(account.displayAmount.formatted(.currency(code: account.currency)))",
                         systemImage: account.id == accountId ? "checkmark" : AccountIcon.symbol(for: account.type)
                     )
                 }

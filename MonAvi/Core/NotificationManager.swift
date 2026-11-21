@@ -32,12 +32,14 @@ enum NotificationManager {
     /// el ViewModel refresca se vuelve a elegir el subconjunto mas urgente
     /// vigente en ese momento.
     ///
-    /// Presupuesto (todo junto queda en 59 de 64):
+    /// Presupuesto (todo junto queda en 61 de 64):
     /// - cuentas por pagar: 8 x 3 avisos (antes, el dia, al dia siguiente) = 24
     /// - pagos fijos: 8 x 2 avisos (antes, el dia) = 16
     /// - facturas por cobrar: 6 x 2 avisos = 12
     /// - recordatorio diario de anotar: 7
+    /// - gastos que se repiten ("¿Este mes ya lo pagaste?"): 2
     static let maxBills = 8
+    static let maxSuggestedRecurring = 2
     static let maxRecurring = 8
     static let maxInvoices = 6
     static let dailyLogDays = 7
@@ -58,6 +60,7 @@ enum NotificationManager {
             + maxRecurring * remindersPerRecurring
             + maxInvoices * remindersPerInvoice
             + dailyLogDays
+            + maxSuggestedRecurring
     }
 
     /// Sonido propio de MonAvi para todos los avisos (tres notas que
@@ -300,6 +303,122 @@ enum NotificationManager {
 
     static func recurringSnoozeId(_ id: UUID) -> String { "recurring-snooze-\(id)" }
 
+    // MARK: - Gastos que se repiten
+
+    /// "Pagaste Luz el 12 de octubre y el 13 de noviembre. ¿Este mes ya lo
+    /// pagaste?": al mantener presionado, se responde sin abrir la app.
+    static let suggestedCategory = "SUGGESTED_RECURRING"
+    static let suggestedSameAction = "SUGGESTED_SAME"
+    static let suggestedOtherAction = "SUGGESTED_OTHER"
+    static let suggestedNotYetAction = "SUGGESTED_NOT_YET"
+    static let suggestedDismissAction = "SUGGESTED_DISMISS"
+    private static let suggestedIdsKey = "monavi.suggestedRecurringIds"
+
+    static func suggestedId(_ key: String) -> String { "suggested-recurring-\(key)" }
+
+    /// Proximo momento razonable para avisar: el dia que toca a las 9, o si
+    /// ese dia ya paso (se le olvido anotarlo), la proxima vez que den las 9.
+    static func suggestedReminderDate(due: Date, now: Date = Date(), calendar: Calendar = .current) -> Date {
+        if due > now { return due }
+        let todayAtNine = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: now) ?? now
+        if todayAtNine > now { return todayAtNine }
+        return calendar.date(byAdding: .day, value: 1, to: todayAtNine) ?? now
+    }
+
+    static func scheduleSuggestedRecurring(_ suggestions: [RecurringDetector.Suggestion]) {
+        let previous = UserDefaults.standard.stringArray(forKey: suggestedIdsKey) ?? []
+        removePending(ids: previous)
+
+        var scheduled: [String] = []
+        for suggestion in suggestions.prefix(maxSuggestedRecurring) {
+            guard let due = suggestion.nextDueDate() else { continue }
+            let id = suggestedId(suggestion.id)
+            schedule(
+                id: id,
+                title: "¿Ya pagaste \(suggestion.name) este mes?",
+                body: "Pagaste \(suggestion.name) \(suggestion.datesText) (\(formattedAmount(suggestion.amount))). ¿Lo registramos este mes? Mantén presionado para responder si fue el mismo monto u otro.",
+                date: suggestedReminderDate(due: due),
+                categoryIdentifier: suggestedCategory,
+                userInfo: [
+                    "suggestionKey": suggestion.id,
+                    "name": suggestion.name,
+                    "amount": NSDecimalNumber(decimal: suggestion.amount).stringValue,
+                    "day": suggestion.dayOfMonth,
+                    "accountId": suggestion.accountId.uuidString,
+                    "category": suggestion.category ?? "",
+                ]
+            )
+            scheduled.append(id)
+        }
+        UserDefaults.standard.set(scheduled, forKey: suggestedIdsKey)
+    }
+
+    /// Respuesta desde la notificacion de un gasto que se repite. Corre en
+    /// segundo plano (la sesion de Supabase vive en el llavero).
+    @MainActor
+    static func handleSuggestedRecurring(action: String, userInfo: [AnyHashable: Any], typedText: String) async {
+        guard let key = userInfo["suggestionKey"] as? String,
+              let name = userInfo["name"] as? String,
+              let amountText = userInfo["amount"] as? String,
+              let baseAmount = Decimal(string: amountText),
+              let day = userInfo["day"] as? Int,
+              let accountText = userInfo["accountId"] as? String,
+              let accountId = UUID(uuidString: accountText)
+        else { return }
+        let category = (userInfo["category"] as? String).flatMap { $0.isEmpty ? nil : $0 }
+        removePending(ids: [suggestedId(key)])
+
+        do {
+            let userId = try await SupabaseManager.shared.client.auth.session.user.id
+            switch action {
+            case suggestedDismissAction:
+                RecurringSuggestionsModel.markDismissed(key: key, userId: userId)
+                return
+            case suggestedNotYetAction:
+                try await RecurringSuggestionsModel.save(
+                    name: name, amount: baseAmount, dayOfMonth: day, accountId: accountId,
+                    category: category, userId: userId, logPayment: false
+                )
+                sendImmediate(
+                    id: "suggested-done-\(key)",
+                    title: "Guardado como gasto fijo",
+                    body: "Te recordaremos \(name) el día \(day) de cada mes. Cuando lo pagues, regístralo con un toque."
+                )
+            default:
+                var paid = baseAmount
+                if action == suggestedOtherAction {
+                    guard let parsed = RecurringAmountParser.parse(typedText) else {
+                        sendImmediate(
+                            id: "suggested-failed-\(key)",
+                            title: "No entendimos el monto",
+                            body: "Escribe solo el número, por ejemplo 52.30. Abre MonAvi para registrar \(name).",
+                            userInfo: ["screen": "home"]
+                        )
+                        return
+                    }
+                    paid = parsed
+                }
+                try await RecurringSuggestionsModel.save(
+                    name: name, amount: paid, dayOfMonth: day, accountId: accountId,
+                    category: category, userId: userId, logPayment: true
+                )
+                sendImmediate(
+                    id: "suggested-done-\(key)",
+                    title: "Listo",
+                    body: "Registramos \(name) por \(formattedAmount(paid)) y lo guardamos como gasto fijo: te lo recordaremos cada mes."
+                )
+            }
+            NotificationCenter.default.post(name: .recurringLoggedFromNotification, object: nil)
+        } catch {
+            sendImmediate(
+                id: "suggested-failed-\(key)",
+                title: "No se pudo registrar",
+                body: "Abre MonAvi para registrar \(name). Revisa tu conexión a internet.",
+                userInfo: ["screen": "home"]
+            )
+        }
+    }
+
     /// Se registra una vez al arrancar (NotificationPresenter.install).
     /// Sin opciones en "Sí": iOS corre la accion en segundo plano, sin
     /// abrir la app (la sesion de Supabase vive en el llavero).
@@ -345,7 +464,24 @@ enum NotificationManager {
             intentIdentifiers: [],
             options: []
         )
-        UNUserNotificationCenter.current().setNotificationCategories([expense, income])
+        let suggested = UNNotificationCategory(
+            identifier: suggestedCategory,
+            actions: [
+                UNNotificationAction(identifier: suggestedSameAction, title: "Sí, el mismo monto", options: []),
+                UNTextInputNotificationAction(
+                    identifier: suggestedOtherAction,
+                    title: "Sí, pero otro monto",
+                    options: [],
+                    textInputButtonTitle: "Registrar",
+                    textInputPlaceholder: "Monto, ej. 52.30"
+                ),
+                UNNotificationAction(identifier: suggestedNotYetAction, title: "Aún no lo pago", options: []),
+                UNNotificationAction(identifier: suggestedDismissAction, title: "No es un gasto fijo", options: [.destructive]),
+            ],
+            intentIdentifiers: [],
+            options: []
+        )
+        UNUserNotificationCenter.current().setNotificationCategories([expense, income, suggested])
     }
 
     /// "Sí, ya lo pagué/recibí": registra el movimiento igual que el boton
@@ -709,6 +845,11 @@ final class NotificationPresenter: NSObject, UNUserNotificationCenterDelegate {
             case NotificationManager.recurringConfirmAction:
                 let idString = content.userInfo[NotificationManager.recurringIdKey] as? String
                 await NotificationManager.confirmRecurringFromNotification(idString: idString)
+            case NotificationManager.suggestedSameAction,
+                 NotificationManager.suggestedOtherAction,
+                 NotificationManager.suggestedNotYetAction,
+                 NotificationManager.suggestedDismissAction:
+                await NotificationManager.handleSuggestedRecurring(action: action, userInfo: content.userInfo, typedText: typedText)
             case NotificationManager.recurringOtherAmountAction:
                 let idString = content.userInfo[NotificationManager.recurringIdKey] as? String
                 await NotificationManager.confirmRecurringFromNotification(idString: idString, typedAmount: typedText)

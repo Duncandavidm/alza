@@ -37,13 +37,14 @@ struct DashboardView: View {
                         HStack {
                             VStack(alignment: .leading) {
                                 Text(account.name)
-                                Text(account.type.displayName)
+                                Text(account.type == .creditCard ? "Tarjeta de crédito · \(account.balanceCaption.lowercased())" : account.type.displayName)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
                             Spacer()
-                            Text(account.balance, format: .currency(code: account.currency))
+                            Text(account.displayAmount, format: .currency(code: account.currency))
                                 .fontWeight(.medium)
+                                .foregroundStyle(account.type == .creditCard ? Color.orange : Color.primary)
                         }
                     }
 

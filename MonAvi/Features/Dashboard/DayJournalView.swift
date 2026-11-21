@@ -37,6 +37,9 @@ struct DayJournalView: View {
     /// "Fue otro monto" en el recordatorio de un pago fijo.
     @State private var amountPromptItem: RecurringTransaction?
     @State private var customAmountText = ""
+    /// "Sí, otro monto" en un gasto que se repite.
+    @State private var otherAmountSuggestion: RecurringDetector.Suggestion?
+    @State private var suggestionAmountText = ""
 
     var body: some View {
         NavigationStack {
@@ -100,6 +103,19 @@ struct DayJournalView: View {
                     Button("Cancelar", role: .cancel) { amountPromptItem = nil }
                 } message: {
                     Text("Lo anotamos con este monto solo esta vez. El de siempre sigue igual.")
+                }
+                .alert("¿Cuánto pagaste de \(otherAmountSuggestion?.name ?? "")?", isPresented: isSuggestionAmountShown) {
+                    TextField("Monto, ej. 52.30", text: $suggestionAmountText)
+                        .keyboardType(.decimalPad)
+                    Button("Registrar") {
+                        if let suggestion = otherAmountSuggestion, let amount = RecurringAmountParser.parse(suggestionAmountText) {
+                            Task { await acceptSuggestion(suggestion, paidAmount: amount) }
+                        }
+                        otherAmountSuggestion = nil
+                    }
+                    Button("Cancelar", role: .cancel) { otherAmountSuggestion = nil }
+                } message: {
+                    Text("Lo anotamos este mes y lo guardamos como gasto fijo para recordártelo.")
                 }
 
                 fabRow
@@ -452,53 +468,93 @@ struct DayJournalView: View {
         .buttonStyle(.plain)
     }
 
-    /// "Pagaste Netflix en octubre y noviembre: ¿lo guardamos como gasto
-    /// fijo?" — un gasto anotado dos meses seguidos se propone como pago
-    /// fijo, para recordarlo y contarlo en el análisis.
+    /// Gasto anotado dos meses seguidos: "Pagaste Luz el 12 de octubre y
+    /// el 13 de noviembre ($55). ¿Este mes ya lo pagaste?" — Sí con el
+    /// mismo monto, Sí con otro monto, Aún no (queda como fijo y se
+    /// recuerda) o No es fijo. Si ya lo anoto este mes, solo se pregunta si
+    /// se guarda como fijo. Lo mismo llega como notificacion.
     @ViewBuilder
     private var recurringSuggestionCards: some View {
         if viewModel.isViewingToday && !isSearching {
             ForEach(suggestionsModel.suggestions) { suggestion in
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(alignment: .top, spacing: 10) {
-                        Text("🔁")
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("¿\(suggestion.name) es un gasto fijo?")
-                                .font(.subheadline.weight(.semibold))
-                            Text("Lo anotaste en \(suggestion.monthsText) (\(suggestion.amount.formatted(.currency(code: "USD")))). Si lo guardamos, te lo recordamos el día \(suggestion.dayOfMonth) de cada mes.")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    HStack(spacing: 8) {
-                        Button("Sí, guardarlo como fijo") {
-                            Task { await acceptSuggestion(suggestion) }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(MonAviBrand.primary)
-                        Button("No es fijo") {
-                            if let userId = appState.currentUserId {
-                                suggestionsModel.dismiss(suggestion, userId: userId)
-                            }
-                        }
-                        .buttonStyle(.bordered)
-                    }
-                    .font(.footnote.weight(.semibold))
-                }
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: 14).fill(MonAviBrand.primary.opacity(0.1)))
+                suggestionCard(suggestion)
             }
         }
     }
 
-    private func acceptSuggestion(_ suggestion: RecurringDetector.Suggestion) async {
+    private func suggestionCard(_ suggestion: RecurringDetector.Suggestion) -> some View {
+        let amount = suggestion.amount.formatted(.currency(code: "USD"))
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
+                Text("🔁")
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(suggestion.paidThisMonth ? "¿\(suggestion.name) es un gasto fijo?" : "¿Ya pagaste \(suggestion.name) este mes?")
+                        .font(.subheadline.weight(.semibold))
+                    Text(suggestion.paidThisMonth
+                         ? "Lo pagaste \(suggestion.datesText) (\(amount)). Si lo guardamos como fijo, te lo recordamos cada mes."
+                         : "Lo pagaste \(suggestion.datesText) (\(amount)). ¿Lo registramos este mes?")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            if suggestion.paidThisMonth {
+                HStack(spacing: 8) {
+                    Button("Sí, guardarlo como fijo") {
+                        Task { await acceptSuggestion(suggestion, paidAmount: nil) }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(MonAviBrand.primary)
+                    Button("No es fijo") { dismissSuggestion(suggestion) }
+                        .buttonStyle(.bordered)
+                }
+                .font(.footnote.weight(.semibold))
+            } else {
+                HStack(spacing: 8) {
+                    Button("Sí, \(amount)") {
+                        Task { await acceptSuggestion(suggestion, paidAmount: suggestion.amount) }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(MonAviBrand.primary)
+                    Button("Sí, otro monto") {
+                        suggestionAmountText = ""
+                        otherAmountSuggestion = suggestion
+                    }
+                    .buttonStyle(.bordered)
+                }
+                .font(.footnote.weight(.semibold))
+                HStack(spacing: 16) {
+                    Button("Aún no lo pago") {
+                        Task { await acceptSuggestion(suggestion, paidAmount: nil) }
+                    }
+                    Button("No es un gasto fijo") { dismissSuggestion(suggestion) }
+                        .foregroundStyle(.secondary)
+                }
+                .font(.footnote.weight(.semibold))
+                .buttonStyle(.borderless)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 14).fill(MonAviBrand.primary.opacity(0.1)))
+    }
+
+    private func dismissSuggestion(_ suggestion: RecurringDetector.Suggestion) {
+        guard let userId = appState.currentUserId else { return }
+        suggestionsModel.dismiss(suggestion, userId: userId)
+    }
+
+    private func acceptSuggestion(_ suggestion: RecurringDetector.Suggestion, paidAmount: Decimal?) async {
         guard let userId = appState.currentUserId else { return }
         do {
-            try await suggestionsModel.accept(suggestion, userId: userId, using: recurringViewModel)
+            try await suggestionsModel.accept(suggestion, userId: userId, paidAmount: paidAmount, using: recurringViewModel)
+            if paidAmount != nil { await refresh() }
         } catch {
             viewModel.errorMessage = "No se pudo guardar el pago fijo: \(error.localizedDescription)"
         }
+    }
+
+    private var isSuggestionAmountShown: Binding<Bool> {
+        Binding(get: { otherAmountSuggestion != nil }, set: { if !$0 { otherAmountSuggestion = nil } })
     }
 
     /// "Tus cuentas": el saldo de cada una (banco, efectivo, ahorros,
@@ -917,12 +973,12 @@ private struct AccountBalanceChip: View {
                     .font(.footnote.weight(.semibold))
                     .lineLimit(1)
             }
-            Text(account.balance, format: .currency(code: account.currency))
+            Text(account.displayAmount, format: .currency(code: account.currency))
                 .font(.headline)
                 .foregroundStyle(account.type.isLiability ? Color.orange : Color.primary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-            Text(account.type.isLiability ? "Debes" : account.type.displayName)
+            Text(account.balanceCaption)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }

@@ -67,10 +67,12 @@ final class DayJournalViewModel: ObservableObject {
     /// se uso hoy, o la principal si todavia no hay movimientos.
     /// `todayTransactions` va de lo mas nuevo a lo mas viejo, asi que la
     /// ultima usada es `.first`. Ahorros e inversiones no quedan como
-    /// default aunque se hayan usado (se eligen a mano en "De: ...").
+    /// default aunque se hayan usado (se eligen a mano en "De: ..."), y la
+    /// tarjeta de credito solo si fue la ultima usada hoy.
     var defaultAccountId: UUID? {
-        let dayToDay = accounts.filter { !$0.type.isReserve }
-        if let last = todayTransactions.first?.accountId, dayToDay.contains(where: { $0.id == last }) {
+        let dayToDay = accounts.filter { !$0.type.isReserve && !$0.type.isLiability }
+        if let last = todayTransactions.first?.accountId,
+           accounts.contains(where: { $0.id == last && !$0.type.isReserve }) {
             return last
         }
         return dayToDay.first?.id ?? accounts.first?.id

@@ -26,6 +26,26 @@ enum RecurringDetector {
         let category: String?
         /// Los dos meses en que aparecio, ej. "octubre y noviembre".
         let monthsText: String
+        /// "el 12 de octubre y el 13 de noviembre".
+        let datesText: String
+        /// Fecha del ultimo pago anotado.
+        let lastDate: Date
+        /// true si el ultimo pago ya es de este mes: solo falta guardarlo
+        /// como fijo. false: este mes todavia no aparece, se pregunta si ya
+        /// se pago.
+        let paidThisMonth: Bool
+
+        /// Cuando preguntar "¿Este mes ya lo pagaste?": el mismo dia, el mes
+        /// siguiente al ultimo pago (29-31 = ultimo dia en meses cortos).
+        func nextDueDate(calendar: Calendar = .current) -> Date? {
+            guard let nextMonth = calendar.date(byAdding: .month, value: 1, to: lastDate),
+                  let range = calendar.range(of: .day, in: .month, for: nextMonth)
+            else { return nil }
+            var parts = calendar.dateComponents([.year, .month], from: nextMonth)
+            parts.day = min(dayOfMonth, range.count)
+            parts.hour = 9
+            return calendar.date(from: parts)
+        }
     }
 
     static func normalize(_ text: String) -> String {
@@ -79,7 +99,10 @@ enum RecurringDetector {
                     dayOfMonth: calendar.component(.day, from: second.date),
                     accountId: second.accountId,
                     category: second.category ?? first.category,
-                    monthsText: "\(monthName(first.date, calendar)) y \(monthName(second.date, calendar))"
+                    monthsText: "\(monthName(first.date, calendar)) y \(monthName(second.date, calendar))",
+                    datesText: "el \(calendar.component(.day, from: first.date)) de \(monthName(first.date, calendar)) y el \(calendar.component(.day, from: second.date)) de \(monthName(second.date, calendar))",
+                    lastDate: second.date,
+                    paidThisMonth: pair.1 == currentMonth
                 )
             )
         }

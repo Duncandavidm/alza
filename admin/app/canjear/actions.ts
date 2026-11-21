@@ -51,6 +51,8 @@ type RpcResponse = {
   photo_url?: string | null;
   merchant?: string | null;
   merchant_id?: string | null;
+  branch_id?: string | null;
+  branch?: string | null;
   is_gift?: boolean | null;
   reward_type?: string | null;
   is_benefit?: boolean | null;
@@ -110,6 +112,7 @@ export async function redeemCode(input: {
         p_merchant_id: session.merchant_id,
         p_ip_hash: ipHash,
         p_confirm: input.confirm === true,
+        p_branch_id: session.branch_id ?? null,
       }));
     } else {
       if (input.requireSession) {
@@ -140,10 +143,16 @@ export async function redeemCode(input: {
 
     // Primer PIN correcto del turno: se abre la sesion de 12 horas.
     let sessionInfo: { merchant: string } | null = session ? { merchant: result.merchant ?? "" } : null;
+    const placeName = [result.merchant ?? "", result.branch ?? ""].filter(Boolean).join(" · ");
+    if (session) sessionInfo = { merchant: placeName };
     if (!session && result.merchant_id) {
       const store = await cookies();
-      store.set(REDEEM_SESSION_COOKIE, createRedeemSessionToken(result.merchant_id), REDEEM_SESSION_COOKIE_OPTIONS);
-      sessionInfo = { merchant: result.merchant ?? "" };
+      store.set(
+        REDEEM_SESSION_COOKIE,
+        createRedeemSessionToken(result.merchant_id, result.branch_id ?? null),
+        REDEEM_SESSION_COOKIE_OPTIONS
+      );
+      sessionInfo = { merchant: placeName };
     }
 
     return {
@@ -152,7 +161,7 @@ export async function redeemCode(input: {
       code: result.code ?? code,
       product: result.product ?? "Producto",
       photoUrl: result.photo_url ?? null,
-      merchant: result.merchant ?? "",
+      merchant: placeName,
       isGift: result.is_gift === true,
       isDiscount: isDiscountType(result.reward_type) || result.is_benefit === true,
       isBenefit: result.is_benefit === true,
@@ -179,6 +188,8 @@ type LoginRpcResponse = {
   error?: string;
   merchant_id?: string | null;
   merchant?: string | { name?: string | null } | null;
+  branch_id?: string | null;
+  branch?: string | null;
 };
 
 export type StartShiftResult = { ok: true; merchant: string } | { ok: false; error: string };
@@ -208,8 +219,13 @@ export async function startShift(input: { ruc: string; pin: string }): Promise<S
     const merchant =
       typeof result.merchant === "string" ? result.merchant : (result.merchant?.name ?? "");
     const store = await cookies();
-    store.set(REDEEM_SESSION_COOKIE, createRedeemSessionToken(result.merchant_id), REDEEM_SESSION_COOKIE_OPTIONS);
-    return { ok: true, merchant: merchant || "tu comercio" };
+    store.set(
+      REDEEM_SESSION_COOKIE,
+      createRedeemSessionToken(result.merchant_id, result.branch_id ?? null),
+      REDEEM_SESSION_COOKIE_OPTIONS
+    );
+    const place = [merchant || "tu comercio", result.branch ?? ""].filter(Boolean).join(" · ");
+    return { ok: true, merchant: place };
   } catch (error) {
     console.error("canjear login", error instanceof Error ? error.message : error);
     return { ok: false, error: "No se pudo iniciar el turno. Revisa tu conexión e intenta de nuevo." };

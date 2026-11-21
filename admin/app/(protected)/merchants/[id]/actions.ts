@@ -374,3 +374,99 @@ export async function sendMerchantPush(merchantId: string, _prev: ActionState, f
   if (!sent.ok) return { error: `Se guardó, pero no se pudo enviar: ${sent.error}. Reinténtalo desde Notificaciones.` };
   return { message: describePushResult(sent.result) };
 }
+
+// ---------------------------------------------------------------------------
+// Sucursales (merchant_branches, migracion 0076): mas direcciones del mismo
+// comercio (mismo RUC), cada una con su "Como llegar" y su PIN de caja.
+// ---------------------------------------------------------------------------
+
+function branchFields(formData: FormData): { error: string } | { name: string; address: string | null; maps_url: string | null } {
+  const name = text(formData, "name", 80);
+  if (name.length < 2) return { error: "Escribe el nombre de la sucursal (por ejemplo “Costa del Este”)." };
+  const mapsUrl = optionalText(formData, "maps_url", 1000);
+  if (mapsUrl && !/^https:\/\//i.test(mapsUrl)) return { error: "El enlace de Google Maps debe empezar con https://" };
+  return { name, address: optionalText(formData, "address", 300), maps_url: mapsUrl };
+}
+
+export async function createBranch(merchantId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
+  await requireAdminSession();
+  assertUuid(merchantId);
+  const fields = branchFields(formData);
+  if ("error" in fields) return { error: fields.error };
+  const supabase = supabaseAdmin();
+  const { count } = await supabase
+    .from("merchant_branches")
+    .select("id", { count: "exact", head: true })
+    .eq("merchant_id", merchantId);
+  const { error } = await supabase
+    .from("merchant_branches")
+    .insert({ ...fields, merchant_id: merchantId, sort_order: count ?? 0 });
+  if (error) return { error: error.message };
+  revalidateMerchant(merchantId);
+  return { message: `Sucursal “${fields.name}” agregada. Si quieres saber qué canjes se hacen ahí, genérale su propio PIN.` };
+}
+
+export async function updateBranch(merchantId: string, branchId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
+  await requireAdminSession();
+  assertUuid(merchantId);
+  assertUuid(branchId);
+  const fields = branchFields(formData);
+  if ("error" in fields) return { error: fields.error };
+  const { error } = await supabaseAdmin()
+    .from("merchant_branches")
+    .update({ ...fields, updated_at: new Date().toISOString() })
+    .eq("id", branchId)
+    .eq("merchant_id", merchantId);
+  if (error) return { error: error.message };
+  revalidateMerchant(merchantId);
+  return { message: "Sucursal guardada." };
+}
+
+export async function setBranchStatus(merchantId: string, branchId: string, status: "active" | "paused") {
+  await requireAdminSession();
+  assertUuid(merchantId);
+  assertUuid(branchId);
+  if (status !== "active" && status !== "paused") throw new Error("Estado inválido.");
+  const { error } = await supabaseAdmin()
+    .from("merchant_branches")
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq("id", branchId)
+    .eq("merchant_id", merchantId);
+  if (error) throw new Error(error.message);
+  revalidateMerchant(merchantId);
+}
+
+export async function deleteBranch(merchantId: string, branchId: string): Promise<ActionState> {
+  await requireAdminSession();
+  assertUuid(merchantId);
+  assertUuid(branchId);
+  // Los canjes hechos ahi quedan (branch_id pasa a null: "principal").
+  const { error } = await supabaseAdmin()
+    .from("merchant_branches")
+    .delete()
+    .eq("id", branchId)
+    .eq("merchant_id", merchantId);
+  if (error) return { error: error.message };
+  revalidateMerchant(merchantId);
+  return { message: "Sucursal eliminada." };
+}
+
+/// PIN propio de la sucursal (igual que el del comercio: se muestra una vez).
+export async function generateBranchPin(merchantId: string, branchId: string, _prev: RedeemPinState): Promise<RedeemPinState> {
+  await requireAdminSession();
+  assertUuid(merchantId);
+  assertUuid(branchId);
+  const supabase = supabaseAdmin();
+  const { data: branch } = await supabase
+    .from("merchant_branches")
+    .select("id")
+    .eq("id", branchId)
+    .eq("merchant_id", merchantId)
+    .maybeSingle<{ id: string }>();
+  if (!branch) return { error: "La sucursal ya no existe." };
+  const pin = String(randomInt(0, 1_000_000)).padStart(6, "0");
+  const { error } = await supabase.rpc("set_branch_redeem_pin", { p_branch_id: branchId, p_pin: pin });
+  if (error) return { error: `No se pudo guardar el PIN: ${error.message}` };
+  revalidatePath(`/merchants/${merchantId}`);
+  return { pin, generatedAt: Date.now() };
+}

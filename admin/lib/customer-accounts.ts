@@ -5,6 +5,14 @@ import type { SupabaseClient, User } from "@supabase/supabase-js";
 /// desde el panel.
 export const PROTECTED_CUSTOMER_EMAILS = ["apple-review@monavi.app", "hola@maday.app"];
 
+/// La cuenta de revision de Apple no se reinicia nunca desde el panel (sus
+/// datos de demo los ve el revisor). hola@maday.app si se puede reiniciar.
+export const APPLE_REVIEW_EMAIL = "apple-review@monavi.app";
+
+export function canResetAccount(email: string | null | undefined): boolean {
+  return (email ?? "").trim().toLowerCase() !== APPLE_REVIEW_EMAIL;
+}
+
 export function isProtectedEmail(email: string | null | undefined): boolean {
   return Boolean(email) && PROTECTED_CUSTOMER_EMAILS.includes(email!.trim().toLowerCase());
 }

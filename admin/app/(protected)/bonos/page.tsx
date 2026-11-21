@@ -131,7 +131,7 @@ export default async function BonosPage({ searchParams }: { searchParams: Promis
     <>
       <h1>Bonos y regalos</h1>
       <p className="text-dim">
-        Regala cashback, puntos o un producto gratis de un comercio aliado a un grupo de clientes. Cada persona lo recibe
+        Regala cashback o un producto gratis de un comercio aliado a un grupo de clientes. Cada persona lo recibe
         una sola vez por bono; los productos llegan como un código listo para canjear en caja (“🎁 Regalo de MonAvi”).
       </p>
 

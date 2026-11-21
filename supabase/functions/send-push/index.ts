@@ -74,8 +74,10 @@ Deno.serve(async (req) => {
           p_user_ids: userIds,
         });
         if (rowsError) throw rowsError;
-        const customTitle = String(campaign.title ?? "").trim();
-        const customBody = String(campaign.body ?? "").trim();
+        // custom_text: el panel escribio su propio titulo y una frase que va
+        // antes del texto personalizado. Si no, todo se arma por persona.
+        const customTitle = campaign.custom_text ? String(campaign.title ?? "").trim() : "";
+        const customBody = campaign.custom_text ? String(campaign.body ?? "").trim() : "";
         const messages = ((rows ?? []) as { user_id: string; title: string; body: string; image_url: string | null }[])
           .map((row) => ({
             userId: row.user_id,

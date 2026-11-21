@@ -39,6 +39,8 @@ export default async function ProtectedLayout({ children }: { children: React.Re
           tabs={[
             { href: "/", label: "Resumen" },
             { href: "/merchants", label: "Comercios y productos" },
+            { href: "/categorias", label: "Categorías" },
+            { href: "/cupones", label: "Cupones por hábitos" },
             { href: "/applications", label: "Solicitudes", badge: newApplications },
             { href: "/redemptions", label: "Canjes" },
             { href: "/clientes", label: "Clientes" },

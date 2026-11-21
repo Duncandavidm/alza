@@ -1,5 +1,5 @@
 import { MERCHANT_CATEGORIES } from "@/lib/merchant-categories";
-import { REWARD_CURRENCIES, REWARD_CURRENCY_LABELS, toRewardCurrency } from "@/lib/currency";
+import { toRewardCurrency } from "@/lib/currency";
 
 type Defaults = {
   name?: string | null;
@@ -11,12 +11,22 @@ type Defaults = {
   reward_currency?: string | null;
 };
 
-/// Campos de la "ficha" del comercio aliado (crear y editar).
-/// itemsCount > 0 (solo al editar) muestra el aviso de que cambiar la moneda
-/// no convierte el valor de los productos existentes.
-export default function MerchantFieldsInputs({ defaults = {}, itemsCount = 0 }: { defaults?: Defaults; itemsCount?: number }) {
+/// Campos de la "ficha" del comercio aliado (crear y editar). Las
+/// categorias vienen de /categorias. Desde 1.0.3 todo se canjea con
+/// cashback: un comercio viejo en puntos se deja igual (no se convierte
+/// solo) y se avisa.
+export default function MerchantFieldsInputs({
+  defaults = {},
+  categories,
+}: {
+  defaults?: Defaults;
+  itemsCount?: number;
+  categories?: string[];
+}) {
   const category = defaults.category ?? "";
-  const isKnownCategory = (MERCHANT_CATEGORIES as readonly string[]).includes(category);
+  const options = categories && categories.length > 0 ? categories : [...MERCHANT_CATEGORIES];
+  const isKnownCategory = options.includes(category);
+  const currency = toRewardCurrency(defaults.reward_currency);
 
   return (
     <>
@@ -33,29 +43,20 @@ export default function MerchantFieldsInputs({ defaults = {}, itemsCount = 0 }: 
         <select name="category" defaultValue={category}>
           <option value="">Sin categoría</option>
           {!isKnownCategory && category && <option value={category}>{category}</option>}
-          {MERCHANT_CATEGORIES.map((option) => (
+          {options.map((option) => (
             <option key={option} value={option}>
               {option}
             </option>
           ))}
         </select>
       </div>
-      <div className="field">
-        <label>¿Cómo canjean tus clientes?</label>
-        <select name="reward_currency" defaultValue={toRewardCurrency(defaults.reward_currency)} required>
-          {REWARD_CURRENCIES.map((option) => (
-            <option key={option} value={option}>
-              {REWARD_CURRENCY_LABELS[option]}
-            </option>
-          ))}
-        </select>
-        {itemsCount > 0 && (
-          <small className="text-dim" style={{ display: "block", marginTop: 4 }}>
-            Si cambias la moneda, revisa el valor de {itemsCount === 1 ? "su producto" : `sus ${itemsCount} productos`}: no
-            se convierte solo (por ejemplo, $3.50 pasaría a leerse como 350 pts).
-          </small>
-        )}
-      </div>
+      <input type="hidden" name="reward_currency" value={currency} />
+      {currency === "puntos" && (
+        <p className="text-dim" style={{ gridColumn: "1 / -1", margin: 0 }}>
+          Este comercio todavía canjea con puntos (de antes). Los puntos ya no se usan: cuando quieras pasarlo a cashback,
+          avísame para convertir el valor de sus productos.
+        </p>
+      )}
       <div className="field">
         <label>Dirección</label>
         <input type="text" name="address" maxLength={300} defaultValue={defaults.address ?? ""} placeholder="Calle 50, Obarrio…" />

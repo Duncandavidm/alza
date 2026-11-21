@@ -7,12 +7,14 @@ import RewardPreviewCard from "@/components/RewardPreviewCard";
 import { formatCashback, formatDateTime, formatDecimal, formatInt, formatMoney } from "@/lib/format";
 import { benefitLimitLabel, rewardTypeLabel, toRewardType } from "@/lib/reward-type";
 import { Kpi } from "@/components/Charts";
-import { formatRewardValue, REWARD_CURRENCY_LABELS, type RewardCurrency, toRewardCurrency } from "@/lib/currency";
+import { formatRewardValue, type RewardCurrency, toRewardCurrency } from "@/lib/currency";
+import { fetchMerchantCategories } from "@/lib/categories";
 import {
   createOffer,
   createRewardItem,
   deleteRewardItem,
   generateRedeemPin,
+  sendMerchantPush,
   setRewardItemStatus,
   updateMerchant,
   updateOfferStatus,
@@ -83,7 +85,7 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
     .maybeSingle<Merchant>();
   if (!merchant) notFound();
 
-  const [{ data: offers }, { data: items }, { data: delivered }, { data: usedRows }, { data: benefitReportData }] = await Promise.all([
+  const [{ data: offers }, { data: items }, { data: delivered }, { data: usedRows }, { data: benefitReportData }, categories] = await Promise.all([
     supabase
       .from("partner_merchant_offers")
       .select("id, offer_type, value, min_amount, starts_at, ends_at, budget_total_points, budget_spent_points, status")
@@ -118,6 +120,7 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
       .returns<{ reward_item_id: string }[]>(),
     // Visitas y ticket promedio que trajeron los descuentos (0067).
     supabase.rpc("merchant_benefit_report", { p_merchant_id: id, p_days: 90 }),
+    fetchMerchantCategories(),
   ]);
   const benefitReport = (benefitReportData ?? null) as BenefitReport | null;
   const usedByItem = new Map<string, number>();
@@ -146,8 +149,9 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
           <p className="text-dim" style={{ margin: "4px 0 0" }}>
             RUC {merchant.ruc}
             {merchant.category ? ` · ${merchant.category}` : ""} ·{" "}
-            <span className={`badge ${merchant.status}`}>{merchant.status === "active" ? "activo" : "pausado"}</span>{" "}
-            <span className={`badge currency-${currency}`}>{REWARD_CURRENCY_LABELS[currency]}</span>
+            <span className={`badge ${merchant.status}`}>
+              {merchant.status === "active" ? "publicado en la app" : "oculto (sin publicar)"}
+            </span>
             {merchant.maps_url && (
               <>
                 {" "}
@@ -165,12 +169,16 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
         <h3>Ficha del comercio</h3>
         <p className="text-dim">Esto es lo que ven los clientes en la app: nombre, logo, categoría, dirección y “Cómo llegar”.</p>
         <ActionForm action={updateMerchant.bind(null, merchant.id)} className="grid-form" submitLabel="Guardar ficha">
-          <MerchantFieldsInputs defaults={merchant} itemsCount={rewardItems.length} />
+          <MerchantFieldsInputs
+            defaults={merchant}
+            itemsCount={rewardItems.length}
+            categories={categories.map((category) => category.name)}
+          />
           <div className="field">
-            <label>Estado</label>
+            <label>¿Sale en la app?</label>
             <select name="status" defaultValue={merchant.status}>
-              <option value="active">Activo</option>
-              <option value="paused">Pausado (oculto en la app)</option>
+              <option value="active">Publicado (sale en la app)</option>
+              <option value="paused">Oculto (todavía no sale)</option>
             </select>
           </div>
         </ActionForm>
@@ -338,6 +346,31 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
             </div>
           </>
         )}
+      </div>
+
+      <div className="card">
+        <h3>Avisar a los clientes</h3>
+        <p className="text-dim">
+          Llega a quien aceptó recibir ofertas, con el logo del comercio. Cada persona recibe su propio mensaje: el
+          descuento por ser de MonAvi y cuánto cashback le falta para el premio más barato (o que ya puede reclamarlo). Por
+          ejemplo: <em>“Tienes 10% de descuento en {merchant.name} 🎉 · Te faltan $1.20 de cashback para un capuchino.”</em>
+        </p>
+        <ActionForm
+          action={sendMerchantPush.bind(null, merchant.id)}
+          className="grid-form"
+          submitLabel="Enviar aviso"
+          pendingLabel="Enviando…"
+          confirm={`¿Enviar el aviso de ${merchant.name} a los clientes?`}
+        >
+          <div className="field">
+            <label>Título propio (opcional)</label>
+            <input type="text" name="title" maxLength={80} placeholder="Vacío = se arma solo" />
+          </div>
+          <div className="field">
+            <label>Frase antes del mensaje (opcional)</label>
+            <input type="text" name="body" maxLength={240} placeholder="¡Solo este fin de semana!" />
+          </div>
+        </ActionForm>
       </div>
 
       <div className="card">

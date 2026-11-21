@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { requireAdminSession } from "@/lib/admin-session";
 import { parseUuid } from "@/lib/push";
-import { LIFETIME_PRODUCT_ID, SUSPEND_BAN_DURATION, isProtectedEmail } from "@/lib/customer-accounts";
+import { LIFETIME_PRODUCT_ID, SUSPEND_BAN_DURATION, canResetAccount, isProtectedEmail } from "@/lib/customer-accounts";
 
 function back(id: string, key: "msg" | "err", text: string): never {
   redirect(`/clientes/${id}?${key}=${encodeURIComponent(text)}`);
@@ -36,6 +36,27 @@ export async function setCustomerSuspended(formData: FormData) {
   revalidatePath("/clientes");
   revalidatePath(`/clientes/${id}`);
   back(id, "msg", suspend ? "Cuenta suspendida: ya no puede iniciar sesión." : "Cuenta reactivada.");
+}
+
+/// Reinicia la cuenta: borra movimientos, cuentas, metas, presupuestos,
+/// facturas, cashback y canjes, y vuelve a pedir el onboarding. La cuenta,
+/// el correo y la suscripcion se quedan. Exige escribir el correo.
+export async function resetCustomer(formData: FormData) {
+  await requireAdminSession();
+  const { id, user } = await loadUser(formData.get("id"));
+  if (!canResetAccount(user.email)) {
+    back(id, "err", "La cuenta de revisión de Apple no se reinicia desde el panel.");
+  }
+  const typed = String(formData.get("confirm_email") ?? "").trim().toLowerCase();
+  const real = (user.email ?? "").trim().toLowerCase();
+  if (!real || typed !== real) back(id, "err", "El correo escrito no coincide con el de la cuenta. No se borró nada.");
+
+  const { data, error } = await supabaseAdmin().rpc("admin_reset_account", { p_user_id: id });
+  if (error) back(id, "err", `No se pudo reiniciar la cuenta: ${error.message}`);
+  const deleted = Number((data as { transactions_deleted?: number } | null)?.transactions_deleted ?? 0);
+  revalidatePath("/clientes");
+  revalidatePath(`/clientes/${id}`);
+  back(id, "msg", `Cuenta reiniciada (${deleted} movimientos borrados). La próxima vez que entre verá el onboarding.`);
 }
 
 /// Borra la cuenta para siempre. Exige que el admin escriba el correo

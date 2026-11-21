@@ -2,9 +2,50 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { parseUuid, cleanLine } from "@/lib/push";
-import { formatCashback, formatDate, formatDateTime, formatInt } from "@/lib/format";
-import { LIFETIME_PRODUCT_ID, isBanned, isProtectedEmail } from "@/lib/customer-accounts";
-import { deleteCustomer, setCustomerSuspended, setLifetimeAccess } from "./actions";
+import { formatCashback, formatDate, formatDateTime, formatInt, formatMoney } from "@/lib/format";
+import { LIFETIME_PRODUCT_ID, canResetAccount, isBanned, isProtectedEmail } from "@/lib/customer-accounts";
+import { Kpi } from "@/components/Charts";
+import { deleteCustomer, resetCustomer, setCustomerSuspended, setLifetimeAccess } from "./actions";
+
+type MonthMetrics = {
+  month: string;
+  income: number;
+  expenses: number;
+  savings_rate: number | null;
+  logged_days: number;
+  budgets: number;
+  budgets_met: number;
+  receipts: number;
+  overdue_bills: number;
+  score: number;
+};
+
+type Health = {
+  last_month: MonthMetrics;
+  this_month: MonthMetrics;
+  goals: { name: string; target: number; current: number; target_date: string | null }[];
+  coupons: number;
+};
+
+function HealthMonth({ title, metrics }: { title: string; metrics: MonthMetrics }) {
+  return (
+    <>
+      <h4 style={{ margin: "12px 0 6px" }}>
+        {title} ({metrics.month})
+      </h4>
+      <div className="kpi-grid">
+        <Kpi label="Salud financiera" value={`${metrics.score} / 100`} />
+        <Kpi label="Ahorro" value={metrics.savings_rate === null ? "—" : `${metrics.savings_rate}%`} hint="de sus ingresos" />
+        <Kpi label="Ingresos" value={formatMoney(metrics.income)} />
+        <Kpi label="Gastos" value={formatMoney(metrics.expenses)} />
+        <Kpi label="Días anotados" value={formatInt(metrics.logged_days)} />
+        <Kpi label="Presupuestos cumplidos" value={`${metrics.budgets_met} de ${metrics.budgets}`} />
+        <Kpi label="Facturas escaneadas" value={formatInt(metrics.receipts)} />
+        <Kpi label="Cuentas vencidas" value={formatInt(metrics.overdue_bills)} />
+      </div>
+    </>
+  );
+}
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +102,9 @@ export default async function ClienteDetailPage({
     .maybeSingle();
   const hasLifetime = sub?.product_id === LIFETIME_PRODUCT_ID && sub.status === "active";
   const paysWithApple = Boolean(sub?.apple_original_transaction_id) && sub?.status === "active";
+
+  const { data: healthData } = await supabase.rpc("admin_financial_health", { p_user_id: id });
+  const health = (healthData ?? null) as Health | null;
 
   const banned = isBanned(user.banned_until);
   const isProtected = isProtectedEmail(user.email);
@@ -154,6 +198,56 @@ export default async function ClienteDetailPage({
         )}
       </div>
 
+      {health && (
+        <div className="card">
+          <h2 style={{ marginTop: 0 }}>Salud financiera</h2>
+          <p className="text-dim">
+            Sale de lo que registra en la app. Es lo que usan las reglas de <Link href="/cupones">cupones por buenos hábitos</Link>.
+            Cupones ganados: {formatInt(health.coupons)}.
+          </p>
+          <HealthMonth title="Mes pasado" metrics={health.last_month} />
+          <HealthMonth title="Este mes" metrics={health.this_month} />
+          {health.goals.length > 0 && (
+            <>
+              <h4 style={{ margin: "12px 0 6px" }}>Metas de ahorro</h4>
+              <ul>
+                {health.goals.map((goal) => (
+                  <li key={goal.name}>
+                    {goal.name}: {formatMoney(goal.current)} de {formatMoney(goal.target)}
+                    {goal.target_date ? ` · para el ${formatDate(goal.target_date)}` : ""}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
+
+      {canResetAccount(user.email) && user.email && (
+        <div className="card">
+          <h2 style={{ marginTop: 0 }}>Reiniciar cuenta</h2>
+          <p className="text-dim">
+            Deja la cuenta como nueva: borra movimientos, cuentas, metas, presupuestos, facturas, cashback y canjes, y la
+            próxima vez que entre verá el onboarding. La cuenta, el correo y la suscripción se quedan.
+          </p>
+          <form action={resetCustomer} className="inline-actions">
+            <input type="hidden" name="id" value={id} />
+            <input
+              type="email"
+              name="confirm_email"
+              required
+              autoComplete="off"
+              placeholder={`Escribe ${user.email} para confirmar`}
+              aria-label="Correo del cliente para confirmar el reinicio"
+              style={{ flex: "1 1 260px" }}
+            />
+            <button type="submit" className="danger">
+              Reiniciar cuenta
+            </button>
+          </form>
+        </div>
+      )}
+
       {isProtected ? (
         <div className="card">
           <p className="text-dim" style={{ margin: 0 }}>
@@ -181,7 +275,7 @@ export default async function ClienteDetailPage({
           <div className="card" style={{ borderColor: "var(--danger)" }}>
             <h2 style={{ marginTop: 0 }}>Eliminar cuenta</h2>
             <p className="error">
-              Se borran para siempre sus movimientos, metas, facturas, cashback, puntos y canjes. No se puede deshacer.
+              Se borran para siempre sus movimientos, metas, facturas, cashback y canjes. No se puede deshacer.
             </p>
             {hasActiveSubscription && (
               <p className="error">

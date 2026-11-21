@@ -30,7 +30,7 @@ export default function BonusFields({ defaults, rewardGroups }: Props) {
       <div className="field">
         <label htmlFor="bonus-kind">Qué se regala</label>
         <select id="bonus-kind" name="kind" value={kind} onChange={(event) => setKind(event.target.value as BonusKind)}>
-          {BONUS_KINDS.map((value) => (
+          {BONUS_KINDS.filter((value) => value !== "puntos").map((value) => (
             <option key={value} value={value}>
               {BONUS_KIND_LABELS[value]}
             </option>

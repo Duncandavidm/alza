@@ -12,6 +12,8 @@ import { optionalText, text } from "@/lib/validation";
 import { type RewardCurrency, toRewardCurrency } from "@/lib/currency";
 import { type BenefitPeriod, type RewardType, defaultRewardName, toBenefitPeriod, toRewardType } from "@/lib/reward-type";
 import type { ActionState } from "@/components/ActionForm";
+import { callSendPush, describePushResult } from "@/lib/edge";
+import { PUSH_BODY_MAX, PUSH_TITLE_MAX, cleanLine } from "@/lib/push";
 
 function revalidateMerchant(merchantId: string) {
   revalidatePath("/merchants");
@@ -328,4 +330,47 @@ export async function deleteRewardItem(merchantId: string, itemId: string): Prom
 
   revalidateMerchant(merchantId);
   return { message: "Producto eliminado." };
+}
+
+// ---------------------------------------------------------------------------
+// Aviso personalizado del comercio (push con su logo)
+// ---------------------------------------------------------------------------
+
+/// Manda a quien acepto recibir ofertas un aviso de este comercio armado para
+/// cada persona: su descuento gratis y cuanto cashback le falta para su
+/// premio (o si ya le alcanza), con el logo del comercio como imagen. Si se
+/// escribe un titulo, se usa ese y el mensaje va antes del texto personal.
+export async function sendMerchantPush(merchantId: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
+  await requireAdminSession();
+  assertUuid(merchantId);
+  const supabase = supabaseAdmin();
+  const { data: merchant } = await supabase
+    .from("partner_merchants")
+    .select("name, status")
+    .eq("id", merchantId)
+    .maybeSingle<{ name: string; status: string }>();
+  if (!merchant) return { error: "No se encontró el comercio." };
+  if (merchant.status !== "active") return { error: "Publica el comercio antes de avisar: todavía no sale en la app." };
+
+  const customTitle = cleanLine(formData.get("title"), PUSH_TITLE_MAX);
+  const customBody = cleanLine(formData.get("body"), PUSH_BODY_MAX);
+  const { data: created, error } = await supabase
+    .from("push_campaigns")
+    .insert({
+      title: customTitle || `Aviso de ${merchant.name}`.slice(0, 80),
+      body: customBody || "Mensaje personalizado para cada persona (descuento y cashback que le falta).",
+      screen: "rewards",
+      segment: {},
+      merchant_id: merchantId,
+      custom_text: Boolean(customTitle),
+      status: "draft",
+    })
+    .select("id")
+    .single<{ id: string }>();
+  if (error || !created) return { error: `No se pudo guardar el aviso: ${error?.message ?? "error desconocido"}` };
+
+  const sent = await callSendPush({ push_campaign_id: created.id });
+  revalidatePath("/notificaciones");
+  if (!sent.ok) return { error: `Se guardó, pero no se pudo enviar: ${sent.error}. Reinténtalo desde Notificaciones.` };
+  return { message: describePushResult(sent.result) };
 }

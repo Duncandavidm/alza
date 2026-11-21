@@ -135,8 +135,8 @@ Deno.serve(async (req) => {
           text = bonus.message || "Ya está en tu saldo. Úsalo en los comercios aliados de MonAvi.";
           screen = "rewards";
         } else if (bonus.kind === "puntos") {
-          title = "🎁 ¡Te regalamos " + bonus.amount + " puntos!";
-          text = bonus.message || "Ya están en tu saldo. Canjéalos en los comercios aliados.";
+          title = "🎁 ¡Tienes un regalo de MonAvi!";
+          text = bonus.message || "Ya está en tu saldo. Úsalo en los comercios aliados.";
           screen = "rewards";
         } else {
           const item = bonus.reward_items as { name?: string; partner_merchants?: { name?: string } } | null;

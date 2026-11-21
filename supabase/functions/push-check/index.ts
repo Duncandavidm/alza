@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     report.testPush = await sendPushToUser(supabase, body.userId, {
       title: "MonAvi: notificaciones listas ✅",
-      body: "Así te avisaremos cuando sumes puntos.",
+      body: "Así te avisaremos cuando ganes cashback o tengas un descuento nuevo.",
       data: { screen: "points" },
     });
   }

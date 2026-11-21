@@ -50,7 +50,7 @@ interface UnlockedItem {
 function unlockMessage(items: UnlockedItem[]): { title: string; body: string } {
   if (items.length === 1) {
     const item = items[0];
-    const how = item.currency === "puntos" ? "tus puntos" : "tu cashback";
+    const how = item.currency === "puntos" ? "tu saldo" : "tu cashback";
     return {
       title: `¡Ya puedes canjear un premio! 🎁`,
       body: `Te alcanza para ${item.name} en ${item.merchant} con ${how}. Toca para canjearlo.`,

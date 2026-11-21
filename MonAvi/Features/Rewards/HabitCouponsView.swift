@@ -90,7 +90,7 @@ enum HabitCouponsMath {
         case "dias_registrados":
             return "Llevas \(month.loggedDays) de \(Int(rule.threshold)) días anotados este mes."
         case "salud_financiera":
-            return "Tu salud financiera este mes: \(number(month.score)) de \(number(rule.threshold)) puntos."
+            return "Tu salud financiera este mes: \(number(month.score))/100 (meta \(number(rule.threshold)))."
         case "todos":
             return rule.earnedCount > 0
                 ? "Ya está en Mis cupones y canjes con su código."

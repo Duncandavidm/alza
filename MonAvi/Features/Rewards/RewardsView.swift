@@ -49,6 +49,11 @@ struct RewardsView: View {
     @State private var isConfirmingBenefit = false
     @State private var benefitAwaitingVerification: RewardItem?
     @State private var isScanningInvoice = false
+    /// "Como llegar" de un comercio con sucursales: se elige el local.
+    @State private var directionsChoices: [DirectionsOption] = []
+    @State private var isChoosingBranch = false
+    /// Codigo recien generado: se abre con la celebracion de billetes.
+    @State private var celebrateRedemptionId: UUID?
 
     var body: some View {
         ScrollView {
@@ -109,9 +114,18 @@ struct RewardsView: View {
             Text("Úsalo en caja antes de pagar: el código dura 15 minutos. Pide tu factura fiscal para ganar cashback también.")
         }
         .sheet(item: $presentedRedemption, onDismiss: {
+            celebrateRedemptionId = nil
             Task { await viewModel.refreshBenefits() }
         }) { (redemption: RewardRedemption) in
-            RedemptionCodeView(redemption: redemption)
+            RedemptionCodeView(redemption: redemption, celebrate: redemption.id == celebrateRedemptionId)
+        }
+        .confirmationDialog("¿A qué sucursal vas?", isPresented: $isChoosingBranch, titleVisibility: .visible) {
+            ForEach(directionsChoices) { (option: DirectionsOption) in
+                Button(option.subtitle.map { "\(option.title) — \($0)" } ?? option.title) {
+                    openURL(option.url)
+                }
+            }
+            Button("Cancelar", role: .cancel) {}
         }
         .invoiceScanner(isPresented: $isScanningInvoice) {
             await viewModel.refreshBenefits()
@@ -309,9 +323,9 @@ struct RewardsView: View {
         isRedeeming = true
         do {
             let redemption = try await RewardsRepository.shared.useBenefit(item: item)
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
             isRedeeming = false
             pendingBenefit = nil
+            celebrateRedemptionId = redemption.id
             presentedRedemption = redemption
         } catch let error where RewardsRepository.requiresEmailVerification(error) {
             isRedeeming = false
@@ -483,7 +497,13 @@ struct RewardsView: View {
     }
 
     private func openDirections(for item: RewardItem) {
-        let url = RewardsMath.directionsURL(for: item.merchant)
+        let options = RewardsMath.directionsOptions(for: item.merchant)
+        if options.count > 1 {
+            directionsChoices = options
+            isChoosingBranch = true
+            return
+        }
+        let url = options.first?.url
             ?? RewardsMath.directionsURL(name: item.merchantName, address: nil, mapsUrl: nil)
         if let url {
             openURL(url)
@@ -495,9 +515,9 @@ struct RewardsView: View {
         isRedeeming = true
         do {
             let redemption = try await RewardsRepository.shared.redeem(item: item)
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
             isRedeeming = false
             pendingItem = nil
+            celebrateRedemptionId = redemption.id
             presentedRedemption = redemption
         } catch let error where RewardsRepository.requiresEmailVerification(error) {
             // Primer canje con el correo sin verificar: pedir el codigo y,

@@ -80,6 +80,11 @@ struct PartnerMerchantRow: View {
                             .foregroundStyle(.secondary)
                             .lineLimit(2)
                     }
+                    if let branches = RewardsMath.branchesText(summary.merchant) {
+                        Text(branches)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(MonAviBrand.primary)
+                    }
                 }
                 Spacer(minLength: 8)
                 if summary.currency == .puntos {

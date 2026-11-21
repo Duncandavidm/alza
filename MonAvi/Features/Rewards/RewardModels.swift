@@ -519,4 +519,45 @@ enum RewardsMath {
         guard let merchant else { return nil }
         return directionsURL(name: merchant.name, address: merchant.address, mapsUrl: merchant.mapsUrl)
     }
+
+    /// "Como llegar" a cada local: la direccion principal y luego cada
+    /// sucursal. Con una sola ubicacion devuelve un elemento.
+    static func directionsOptions(for merchant: PartnerMerchant?) -> [DirectionsOption] {
+        guard let merchant else { return [] }
+        var options: [DirectionsOption] = []
+        let branches = merchant.sortedBranches
+        if let url = directionsURL(for: merchant) {
+            options.append(DirectionsOption(
+                id: "principal",
+                title: branches.isEmpty ? merchant.name : "\(merchant.name) · Principal",
+                subtitle: merchant.address,
+                url: url
+            ))
+        }
+        for branch in branches {
+            guard let url = directionsURL(name: "\(merchant.name) \(branch.name)", address: branch.address, mapsUrl: branch.mapsUrl) else { continue }
+            options.append(DirectionsOption(
+                id: branch.id.uuidString,
+                title: "\(merchant.name) · \(branch.name)",
+                subtitle: branch.address,
+                url: url
+            ))
+        }
+        return options
+    }
+
+    /// "y 2 sucursales más" (nil si no tiene sucursales).
+    static func branchesText(_ merchant: PartnerMerchant?) -> String? {
+        let count = merchant?.sortedBranches.count ?? 0
+        guard count > 0 else { return nil }
+        return count == 1 ? "y 1 sucursal más" : "y \(count) sucursales más"
+    }
+}
+
+/// Un local al que se puede pedir "Como llegar".
+struct DirectionsOption: Identifiable, Hashable {
+    let id: String
+    let title: String
+    let subtitle: String?
+    let url: URL
 }

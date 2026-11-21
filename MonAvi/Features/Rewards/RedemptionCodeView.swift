@@ -5,12 +5,20 @@ import UIKit
 /// con su QR, mas el comercio, el producto y el vencimiento.
 struct RedemptionCodeView: View {
     let redemption: RewardRedemption
+    /// true cuando se acaba de generar el codigo: se abre celebrando.
+    var celebrate: Bool = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     /// Brillo que tenia la pantalla antes de abrir el codigo, para
     /// devolverlo al cerrar (el brillo al maximo ayuda al lector de caja).
     @State private var previousBrightness: CGFloat?
     @State private var isScanningInvoice = false
+    /// Lluvia de billetes (cambia el id para repetirla).
+    @State private var isRaining = false
+    @State private var rainBurst = 0
+    /// Cuando el cajero valida el codigo (se revisa cada pocos segundos
+    /// mientras esta pantalla esta abierta).
+    @State private var deliveredNow = false
 
     var body: some View {
         NavigationStack {
@@ -38,8 +46,91 @@ struct RedemptionCodeView: View {
             .safeAreaInset(edge: .bottom) { directionsBar }
         }
         .invoiceScanner(isPresented: $isScanningInvoice)
-        .onAppear { raiseBrightness() }
+        .overlay {
+            if deliveredNow {
+                deliveredCard
+                    .transition(.scale(scale: 0.85).combined(with: .opacity))
+            }
+        }
+        .overlay {
+            if isRaining {
+                MoneyRainView { isRaining = false }
+                    .id(rainBurst)
+                    .ignoresSafeArea()
+            }
+        }
+        .animation(.spring(response: 0.45, dampingFraction: 0.8), value: deliveredNow)
+        .onAppear {
+            raiseBrightness()
+            if celebrate { celebrateNow() }
+        }
         .onDisappear { restoreBrightness() }
+        .task { await watchForDelivery() }
+    }
+
+    private func celebrateNow() {
+        CelebrationFeedback.playRedemption()
+        rainBurst += 1
+        isRaining = true
+    }
+
+    /// Mientras el codigo sigue vigente, revisa cada 4 segundos si el
+    /// comercio ya lo valido para celebrar con la persona en ese momento.
+    private func watchForDelivery() async {
+        guard redemption.isUsable() else { return }
+        let deadline = Date().addingTimeInterval(20 * 60)
+        while !Task.isCancelled && Date() < deadline {
+            try? await Task.sleep(nanoseconds: 4_000_000_000)
+            guard !Task.isCancelled else { return }
+            if let state = await RewardsRepository.shared.fetchRedemptionStatus(id: redemption.id) {
+                if state.status == .entregado {
+                    restoreBrightness()
+                    deliveredNow = true
+                    celebrateNow()
+                    return
+                }
+                if state.status != .emitido { return }
+            }
+        }
+    }
+
+    /// "¡Canje listo!": aparece cuando el cajero valida el codigo.
+    private var deliveredCard: some View {
+        ZStack {
+            Color.black.opacity(0.35).ignoresSafeArea()
+            VStack(spacing: 14) {
+                Text("🎉")
+                    .font(.system(size: 64))
+                Text(redemption.isDiscount ? "¡Descuento aplicado!" : "¡Canje listo!")
+                    .font(.system(.title, design: MonAviBrand.fontDesign, weight: .heavy))
+                    .multilineTextAlignment(.center)
+                Text("\(redemption.itemName) en \(redemption.merchantName)")
+                    .font(.headline)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+                Text("¡Disfrútalo! Pide tu factura fiscal y escanéala: cada factura te da cashback para tu próximo canje.")
+                    .font(.subheadline)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button {
+                    deliveredNow = false
+                    isScanningInvoice = true
+                } label: {
+                    Label("Escanear mi factura", systemImage: "qrcode.viewfinder")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(MonAviBrand.primary)
+                Button("Listo") { dismiss() }
+                    .font(.subheadline.weight(.semibold))
+            }
+            .padding(24)
+            .background(RoundedRectangle(cornerRadius: 28, style: .continuous).fill(Color(.systemBackground)))
+            .padding(.horizontal, 28)
+        }
     }
 
     private func raiseBrightness() {
@@ -230,7 +321,31 @@ struct RedemptionCodeView: View {
     /// que pasa por debajo al hacer scroll.
     @ViewBuilder
     private var directionsBar: some View {
-        if let url = RewardsMath.directionsURL(for: redemption.displayMerchant) {
+        let options = RewardsMath.directionsOptions(for: redemption.displayMerchant)
+        if options.count > 1 {
+            // Comercio con sucursales: se elige a cual ir.
+            Menu {
+                ForEach(options) { (option: DirectionsOption) in
+                    Button {
+                        openURL(option.url)
+                    } label: {
+                        Text(option.title)
+                        if let subtitle = option.subtitle { Text(subtitle) }
+                    }
+                }
+            } label: {
+                Label("Cómo llegar (\(options.count) sucursales)", systemImage: "map.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+            .tint(MonAviBrand.primary)
+            .padding(.horizontal, 16)
+            .padding(.top, 10)
+            .padding(.bottom, 8)
+            .frame(maxWidth: .infinity)
+            .background(.bar)
+        } else if let url = options.first?.url {
             Button {
                 openURL(url)
             } label: {

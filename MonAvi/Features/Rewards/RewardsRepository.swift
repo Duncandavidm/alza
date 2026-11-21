@@ -17,7 +17,7 @@ final class RewardsRepository {
     func fetchItems() async throws -> [RewardItem] {
         let items: [RewardItem] = try await supabase
             .from("reward_items")
-            .select("*, partner_merchants(*)")
+            .select("*, partner_merchants(*, merchant_branches(id, name, address, maps_url, sort_order))")
             .eq("status", value: "active")
             .order("sort_order", ascending: true)
             .execute()
@@ -88,7 +88,7 @@ final class RewardsRepository {
     func fetchMyRedemptions(userId: UUID) async throws -> [RewardRedemption] {
         let rows: [RewardRedemption] = try await supabase
             .from("reward_redemptions")
-            .select("*, reward_items(*, partner_merchants(*)), partner_merchants(*)")
+            .select("*, reward_items(*, partner_merchants(*, merchant_branches(id, name, address, maps_url, sort_order))), partner_merchants(*, merchant_branches(id, name, address, maps_url, sort_order))")
             .eq("user_id", value: userId)
             .order("created_at", ascending: false)
             .execute()
@@ -113,12 +113,36 @@ final class RewardsRepository {
         return RewardsMath.fillingMissingItems(rows, with: items)
     }
 
+    private struct RedemptionStatusRow: Decodable {
+        let status: RewardRedemptionStatus
+        let deliveredAt: Date?
+        enum CodingKeys: String, CodingKey {
+            case status
+            case deliveredAt = "delivered_at"
+        }
+    }
+
+    /// Estado actual de un canje (para saber cuando el cajero lo valido).
+    /// nil si no se pudo leer.
+    func fetchRedemptionStatus(id: UUID) async -> (status: RewardRedemptionStatus, deliveredAt: Date?)? {
+        guard
+            let row: RedemptionStatusRow = try? await supabase
+                .from("reward_redemptions")
+                .select("status, delivered_at")
+                .eq("id", value: id)
+                .single()
+                .execute()
+                .value
+        else { return nil }
+        return (row.status, row.deliveredAt)
+    }
+
     /// Regalos de MonAvi listos para usar (emitidos y sin vencer), del
     /// que vence primero al ultimo.
     func fetchActiveGifts(userId: UUID) async throws -> [RewardRedemption] {
         let rows: [RewardRedemption] = try await supabase
             .from("reward_redemptions")
-            .select("*, reward_items(*, partner_merchants(*)), partner_merchants(*)")
+            .select("*, reward_items(*, partner_merchants(*, merchant_branches(id, name, address, maps_url, sort_order))), partner_merchants(*, merchant_branches(id, name, address, maps_url, sort_order))")
             .eq("user_id", value: userId)
             .eq("source", value: "regalo")
             .eq("status", value: "emitido")

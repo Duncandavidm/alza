@@ -21,6 +21,9 @@ struct PartnerMerchant: Codable, Identifiable, Hashable {
     /// `puntos`. Opcional por si llega en null o un select no la trae —
     /// usa `currency`, que cae en `.cashback`.
     var rewardCurrency: RewardCurrency? = nil
+    /// Otras sucursales del comercio (migracion 0076). La direccion de la
+    /// ficha es la principal. nil/[] = una sola ubicacion.
+    var branches: [MerchantBranch]? = nil
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -34,10 +37,31 @@ struct PartnerMerchant: Codable, Identifiable, Hashable {
         case createdAt = "created_at"
         case updatedAt = "updated_at"
         case rewardCurrency = "reward_currency"
+        case branches = "merchant_branches"
     }
 
     /// Moneda de canje del comercio (cashback si no viene).
     var currency: RewardCurrency { rewardCurrency ?? .cashback }
+
+    /// Sucursales extra ordenadas como en el panel.
+    var sortedBranches: [MerchantBranch] {
+        (branches ?? []).sorted { ($0.sortOrder ?? 0, $0.name) < ($1.sortOrder ?? 0, $1.name) }
+    }
+}
+
+/// Una sucursal de un comercio aliado (`merchant_branches`, 0076).
+struct MerchantBranch: Codable, Identifiable, Hashable {
+    let id: UUID
+    var name: String
+    var address: String?
+    var mapsUrl: String?
+    var sortOrder: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, address
+        case mapsUrl = "maps_url"
+        case sortOrder = "sort_order"
+    }
 }
 
 enum PartnerOfferType: String, Codable {

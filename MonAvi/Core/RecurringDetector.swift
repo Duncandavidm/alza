@@ -83,7 +83,10 @@ enum RecurringDetector {
 
             // Dos meses seguidos dentro de los ultimos 3 (este incluido).
             let months = byMonth.keys.filter { $0 >= currentMonth - 2 && $0 <= currentMonth }.sorted()
-            guard let pair = zip(months, months.dropFirst()).last(where: { $1 - $0 == 1 }) else { continue }
+            // Pares de meses seguidos; el mas reciente gana. (Zip2Sequence no
+            // tiene last(where:): se pasa a Array primero.)
+            let consecutive = zip(months, months.dropFirst()).filter { $0.1 - $0.0 == 1 }
+            guard let pair = consecutive.last else { continue }
             guard let first = byMonth[pair.0]?.first, let second = byMonth[pair.1]?.first else { continue }
 
             // Montos parecidos (la luz cambia un poco; un 30% como maximo).

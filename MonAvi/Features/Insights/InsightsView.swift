@@ -48,9 +48,9 @@ struct InsightsView: View {
                     }
                 }
 
-                Section("Insights") {
+                Section("Análisis") {
                     if viewModel.insights.isEmpty && !viewModel.isLoading {
-                        Text("Genera insights de IA a partir de tus cuentas y movimientos.")
+                        Text("Genera un análisis con IA de tus cuentas y movimientos.")
                             .foregroundStyle(.secondary)
                     }
 
@@ -67,7 +67,7 @@ struct InsightsView: View {
                     }
                 }
             }
-            .navigationTitle("Insights")
+            .navigationTitle("Análisis")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {

@@ -6,6 +6,8 @@ import UIKit
 @MainActor
 final class ReferralViewModel: ObservableObject {
     @Published private(set) var summary: ReferralSummary?
+    /// Cashback por invitacion (1.0.3: ya no son puntos).
+    @Published private(set) var reward = ReferralRewardCents.default
     @Published private(set) var isLoading = false
     @Published private(set) var isApplying = false
     @Published var loadErrorMessage: String?
@@ -20,6 +22,7 @@ final class ReferralViewModel: ObservableObject {
     func load() async {
         isLoading = true
         defer { isLoading = false }
+        reward = await ReferralRepository.shared.fetchRewardCents()
         do {
             summary = try await ReferralRepository.shared.fetchSummary()
             loadErrorMessage = nil
@@ -89,7 +92,7 @@ struct ReferralView: View {
         .alert("¡Listo!", isPresented: $viewModel.didApplyCode) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Ganarás 100 puntos cuando registres tu primera factura y se confirme.")
+            Text("Ganarás \(viewModel.reward.refereeText) de cashback cuando registres tu primera factura y se confirme.")
         }
     }
 
@@ -113,7 +116,7 @@ struct ReferralView: View {
                     .font(.system(size: 34))
                     .foregroundStyle(MonAviBrand.accentOnDark)
 
-                Text("Invita amigos y gana 200 puntos")
+                Text("Invita amigos y gana \(viewModel.reward.referrerText) de cashback")
                     .font(.system(.title3, design: MonAviBrand.fontDesign, weight: .bold))
                     .foregroundStyle(MonAviBrand.onDarkSurface)
                     .multilineTextAlignment(.center)
@@ -168,7 +171,7 @@ struct ReferralView: View {
     }
 
     private func shareMessage(for code: String) -> String {
-        "Únete a MonAvi y gana 100 puntos con mi código \(code): \(Config.appStoreURL.absoluteString)"
+        "Únete a MonAvi y gana \(viewModel.reward.refereeText) de cashback con mi código \(code): \(Config.appStoreURL.absoluteString)"
     }
 
     private func copy(_ code: String) {
@@ -189,8 +192,8 @@ struct ReferralView: View {
             LabeledContent("Invitados", value: "\(summary.invited)")
             LabeledContent("Premiados", value: "\(summary.rewarded)")
             LabeledContent("Pendientes", value: "\(summary.pending)")
-            LabeledContent("Puntos ganados") {
-                Text("\(summary.pointsEarned)")
+            LabeledContent("Cashback ganado") {
+                Text(Cashback.format(cents: summary.pointsEarned))
                     .fontWeight(.semibold)
                     .foregroundStyle(MonAviBrand.primaryDark)
             }
@@ -202,12 +205,12 @@ struct ReferralView: View {
     private var howItWorksSection: some View {
         Section {
             ruleRow(icon: "square.and.arrow.up", text: "Comparte tu código con tus amigos.")
-            ruleRow(icon: "person.badge.plus", text: "Tu amigo lo usa al unirse y gana 100 puntos.")
-            ruleRow(icon: "star.fill", text: "Tú ganas 200 puntos por cada amigo.")
+            ruleRow(icon: "person.badge.plus", text: "Tu amigo lo usa al unirse y gana \(viewModel.reward.refereeText) de cashback.")
+            ruleRow(icon: "dollarsign.circle.fill", text: "Tú ganas \(viewModel.reward.referrerText) de cashback por cada amigo.")
         } header: {
             Text("Cómo funciona")
         } footer: {
-            Text("Los puntos llegan cuando tu amigo registra su primera factura y se confirma. Se premian hasta 10 invitaciones cada 30 días.")
+            Text("El cashback llega cuando tu amigo registra su primera factura y se confirma. Se premian hasta 10 invitaciones cada 30 días.")
         }
     }
 
@@ -262,7 +265,7 @@ struct ReferralView: View {
             } header: {
                 Text("¿Te invitó alguien?")
             } footer: {
-                Text("Escribe el código de quien te invitó y gana 100 puntos. Solo puedes usar un código, en tus primeros 7 días.")
+                Text("Escribe el código de quien te invitó y gana \(viewModel.reward.refereeText) de cashback. Solo puedes usar un código, en tus primeros 7 días.")
             }
         }
     }

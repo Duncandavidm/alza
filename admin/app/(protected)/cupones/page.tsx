@@ -64,7 +64,7 @@ export default async function HabitCouponsPage() {
       <h1>Cupones por buenos hábitos</h1>
       <p className="text-dim">
         Los buenos hábitos ya no dan puntos: dan cupones. Tú creas el cupón (por ejemplo <em>$20 en Bungla</em>), eliges la
-        regla para ganarlo y MonAvi se lo entrega solo a quien la cumple, con un aviso en su teléfono. El cliente lo usa en
+        regla para ganarlo (o lo das a todos, sin reglas) y MonAvi se lo entrega solo a quien la cumple, con un aviso en su teléfono. El cliente lo usa en
         caja como cualquier canje y abajo ves cuánto le debes a cada comercio. La salud financiera de cada persona está en{" "}
         <Link href="/clientes">Clientes</Link>.
       </p>
@@ -106,7 +106,7 @@ export default async function HabitCouponsPage() {
           </div>
           <div className="field">
             <label>Mínimo de la regla</label>
-            <input type="number" name="threshold" required min={0} step={0.01} placeholder="20 (% de ahorro, días, puntaje o US$)" />
+            <input type="number" name="threshold" min={0} step={0.01} placeholder="20 (vacío si es para todos)" />
           </div>
           <div className="field">
             <label>Días anotados mínimos en el mes</label>
@@ -143,6 +143,7 @@ export default async function HabitCouponsPage() {
             ))}
           </ul>
           <p className="text-dim">
+            En &quot;Para todos&quot; no se miran ni el mínimo ni los días anotados: solo el máximo de cupones.
             &quot;Días anotados mínimos&quot; evita que alguien gane dejando de anotar sus gastos: solo cuenta quien usa la app
             de verdad. Cada persona gana el cupón una vez por mes (o una vez por meta).
           </p>

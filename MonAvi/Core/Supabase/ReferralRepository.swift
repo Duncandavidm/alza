@@ -73,6 +73,13 @@ final class ReferralRepository {
     /// Largo exacto de un codigo de invitacion.
     static let codeLength = referralCodeLength
 
+    /// Cuanto cashback da cada invitacion (centavos), configurable en el
+    /// servidor (`referral_reward_cents`, 0068). Si falla: $1.00 y $0.50.
+    func fetchRewardCents() async -> ReferralRewardCents {
+        let reward: ReferralRewardCents? = try? await supabase.rpc("referral_reward_cents").execute().value
+        return reward ?? .default
+    }
+
     /// La RPC devuelve una tabla de una sola fila.
     func fetchSummary() async throws -> ReferralSummary {
         let rows: [ReferralSummary] = try await supabase
@@ -113,4 +120,16 @@ final class ReferralRepository {
         }
         return "No se pudo usar el código. Revisa tu conexión e inténtalo de nuevo."
     }
+}
+
+/// Cashback de una invitacion: `referrer` para quien invita y `referee`
+/// para el invitado, en centavos.
+struct ReferralRewardCents: Decodable, Equatable {
+    var referrer: Int
+    var referee: Int
+
+    static let `default` = ReferralRewardCents(referrer: 100, referee: 50)
+
+    var referrerText: String { Cashback.format(cents: referrer) }
+    var refereeText: String { Cashback.format(cents: referee) }
 }

@@ -1,9 +1,22 @@
 // Cupones por buenos habitos (migracion 0068): tipos de regla y textos.
 // Sin dependencias de servidor.
 
-export type HabitRuleType = "ahorro_ingresos" | "meta_a_tiempo" | "presupuestos" | "dias_registrados" | "salud_financiera";
+export type HabitRuleType =
+  | "todos"
+  | "ahorro_ingresos"
+  | "meta_a_tiempo"
+  | "presupuestos"
+  | "dias_registrados"
+  | "salud_financiera";
 
 export const HABIT_RULE_TYPES: { value: HabitRuleType; label: string; threshold: string; placeholder: string; help: string }[] = [
+  {
+    value: "todos",
+    label: "Para todos (sin reglas)",
+    threshold: "No aplica",
+    placeholder: "",
+    help: "Se le entrega una vez a cada cliente, también a los que se registren después, hasta el máximo de cupones que pongas. Ideal para promociones o para lanzar un aliado nuevo.",
+  },
   {
     value: "ahorro_ingresos",
     label: "Ahorró un % de sus ingresos en el mes",

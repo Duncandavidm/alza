@@ -167,7 +167,7 @@ struct RewardBalanceTile: View {
     }
 }
 
-/// Los dos saldos lado a lado: cashback (con lo pendiente) y puntos.
+/// El saldo de cashback (con lo pendiente).
 struct RewardBalancesHeader: View {
     let balance: PointsBalance
 
@@ -188,21 +188,15 @@ struct RewardBalancesHeader: View {
         }
     }
 
+    /// Desde 1.0.3 solo hay cashback (los buenos habitos dan cupones, no
+    /// puntos).
     private var tiles: some View {
-        HStack(alignment: .top, spacing: 12) {
-            RewardBalanceTile(
-                title: "Cashback",
-                value: Cashback.format(cents: max(0, balance.confirmedPoints)),
-                subtitle: cashbackSubtitle,
-                systemImage: RewardCurrency.cashback.systemImage
-            )
-            RewardBalanceTile(
-                title: "Puntos",
-                value: RewardCurrency.formatPoints(max(0, balance.habitPoints)),
-                subtitle: "por buenos hábitos",
-                systemImage: RewardCurrency.puntos.systemImage
-            )
-        }
+        RewardBalanceTile(
+            title: "Tu cashback",
+            value: Cashback.format(cents: max(0, balance.confirmedPoints)),
+            subtitle: cashbackSubtitle,
+            systemImage: RewardCurrency.cashback.systemImage
+        )
     }
 
     private var cashbackSubtitle: String {

@@ -392,7 +392,7 @@ struct DayJournalView: View {
                 }
 
                 if savingsViewModel.goals.isEmpty {
-                    Text("Crea tu primera meta y aparta algo cada semana. Ahorrar con constancia también te da puntos.")
+                    Text("Crea tu primera meta y aparta algo cada semana. Ahorrar con constancia también te da cupones de descuento.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.leading)

@@ -59,9 +59,11 @@ struct RewardsView: View {
                 if mode == .rewards {
                     if let merchantFilter {
                         merchantFilterChip(merchantFilter)
-                    } else if viewModel.categories.count > 1 {
+                    } else if chipCategories.count > 1 {
                         categoryChips
                     }
+                } else if mode == .benefits && chipCategories.count > 1 {
+                    categoryChips
                 }
                 content
             }
@@ -70,6 +72,12 @@ struct RewardsView: View {
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle(navigationTitle)
+        .onChange(of: mode) { _, _ in
+            // Cada pestaña tiene sus propias categorias.
+            if let selected = viewModel.selectedCategory, !chipCategories.contains(selected) {
+                viewModel.selectedCategory = nil
+            }
+        }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { toolbarContent }
         .refreshable { await refresh() }
@@ -145,7 +153,7 @@ struct RewardsView: View {
                 Image(systemName: "gift.fill")
                     .font(.title3)
                     .foregroundStyle(MonAviBrand.primary)
-                Text("Invita amigos y gana 200 puntos")
+                Text("Invita amigos y gana cashback")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Color.primary)
                     .multilineTextAlignment(.leading)
@@ -164,11 +172,26 @@ struct RewardsView: View {
         .buttonStyle(.plain)
     }
 
+    /// Categorias de la pestaña actual (las crea el panel en /categorias y
+    /// cada comercio tiene la suya): de los descuentos o de los premios.
+    private var chipCategories: [String] {
+        mode == .benefits
+            ? RewardsMath.categories(of: viewModel.benefits.benefits.map(\.item))
+            : viewModel.categories
+    }
+
+    /// Descuentos de la categoria elegida (o todos).
+    private var visibleBenefits: [BenefitEntry] {
+        guard let category = viewModel.selectedCategory else { return viewModel.benefits.benefits }
+        let allowed = Set(RewardsMath.filter(viewModel.benefits.benefits.map(\.item), category: category).map(\.id))
+        return viewModel.benefits.benefits.filter { allowed.contains($0.id) }
+    }
+
     private var categoryChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 categoryChip(title: "Todos", category: nil)
-                ForEach(viewModel.categories, id: \.self) { (category: String) in
+                ForEach(chipCategories, id: \.self) { (category: String) in
                     categoryChip(title: category, category: category)
                 }
             }
@@ -223,7 +246,7 @@ struct RewardsView: View {
                 )
                 .padding(.top, 12)
             } else {
-                ForEach(response.benefits) { (entry: BenefitEntry) in
+                ForEach(visibleBenefits) { (entry: BenefitEntry) in
                     BenefitCard(
                         entry: entry,
                         state: BenefitsMath.state(of: entry, unlocked: response.unlocked),
@@ -354,7 +377,7 @@ struct RewardsView: View {
             ContentUnavailableView(
                 "Pronto habrá comercios aliados",
                 systemImage: "gift",
-                description: Text("Pronto verás aquí los comercios aliados donde canjear tus puntos y tu cashback.")
+                description: Text("Pronto verás aquí los comercios aliados donde canjear tu cashback.")
             )
             .padding(.top, 24)
         } else {

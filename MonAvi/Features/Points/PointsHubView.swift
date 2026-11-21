@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// "Puntos y cashback": entrada unica a las dos monedas de premio — el
-/// cashback (facturas verificadas por la DGI) y los puntos (buenos
-/// habitos, calculados en el servidor) — y al catalogo de canje.
+/// "Cashback y cupones": el cashback (facturas verificadas por la DGI),
+/// los descuentos de aliados, el catalogo de premios y los cupones por
+/// buenos habitos (1.0.3: ya no hay puntos).
 ///
 /// "Ahorro verificado" con bancos se quito por completo del app (vistas,
 /// modelos y llamadas): depender de reportes de bancos no era viable para
@@ -39,15 +39,15 @@ struct PointsHubView: View {
 
             Section {
                 NavigationLink {
-                    RewardsView()
+                    RewardsView(initialMode: .benefits)
                 } label: {
                     rewardsCard
                 }
 
                 NavigationLink {
-                    RewardsView(initialMode: .benefits)
+                    RewardsView(initialMode: .rewards)
                 } label: {
-                    Label("Descuentos por ser de MonAvi", systemImage: "percent")
+                    Label("Premios con tu cashback", systemImage: "gift.fill")
                 }
 
                 NavigationLink {
@@ -62,7 +62,7 @@ struct PointsHubView: View {
                     Label("Mis canjes", systemImage: "ticket.fill")
                 }
             } footer: {
-                Text("Cada comercio aliado elige si canjea con puntos o con cashback.")
+                Text("Descuentos gratis por ser de MonAvi y premios que canjeas con tu cashback.")
             }
 
             Section {
@@ -101,9 +101,9 @@ struct PointsHubView: View {
 
             Section {
                 NavigationLink {
-                    LevelsView()
+                    HabitCouponsView()
                 } label: {
-                    Label("Nivel e insignias", systemImage: "rosette")
+                    Label("Cupones por buenos hábitos", systemImage: "ticket.fill")
                 }
 
                 NavigationLink {
@@ -112,9 +112,9 @@ struct PointsHubView: View {
                     Label("Metas de ahorro", systemImage: "banknote.fill")
                 }
             } header: {
-                Text("Gana puntos")
+                Text("Gana cupones")
             } footer: {
-                Text("Anotar tus movimientos, ahorrar con constancia y cumplir presupuestos te da puntos (hasta \(HabitEngine.Rules.monthlyXPCap) al mes) y te sube de nivel.")
+                Text("Ahorrar parte de tus ingresos, cumplir tus metas a tiempo y tus presupuestos te da cupones de descuento en comercios aliados.")
             }
 
             if let errorMessage = viewModel.errorMessage {
@@ -123,7 +123,7 @@ struct PointsHubView: View {
                 }
             }
         }
-        .navigationTitle("Puntos y cashback")
+        .navigationTitle("Cashback y cupones")
         .refreshable { await refresh() }
         .task { await refresh() }
         .task { await promptMarketStudyConsentIfNeeded() }
@@ -145,9 +145,9 @@ struct PointsHubView: View {
             .frame(width: 48, height: 48)
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("Canjea tus premios")
+                Text("Descuentos y premios")
                     .font(.system(.headline, design: MonAviBrand.fontDesign, weight: .bold))
-                Text("Usa tus puntos y tu cashback en comercios aliados")
+                Text("Descuentos por ser de MonAvi y premios con tu cashback")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

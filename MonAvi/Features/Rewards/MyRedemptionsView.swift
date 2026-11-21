@@ -38,7 +38,7 @@ struct MyRedemptionsView: View {
             ContentUnavailableView(
                 "Todavía no has canjeado nada",
                 systemImage: "ticket",
-                description: Text("Cuando canjees tus puntos o tu cashback en un comercio aliado, tus códigos aparecen aquí.")
+                description: Text("Cuando canjees tu cashback, uses un descuento o ganes un cupón, tus códigos aparecen aquí.")
             )
             .listRowBackground(Color.clear)
         } else {
@@ -72,7 +72,7 @@ struct MyRedemptionsView: View {
                     Text("Historial")
                 }
             } footer: {
-                Text("Los códigos vencen a los 7 días. Si no lo usas a tiempo, te devolvemos tus puntos o tu cashback.")
+                Text("Los códigos vencen a los 7 días. Si no lo usas a tiempo, te devolvemos tu cashback.")
             }
         }
     }

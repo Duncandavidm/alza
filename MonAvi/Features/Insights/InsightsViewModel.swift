@@ -29,7 +29,7 @@ final class InsightsViewModel: ObservableObject {
                 .execute()
                 .value
         } catch {
-            errorMessage = "No se pudieron cargar tus insights: \(error.localizedDescription)"
+            errorMessage = "No se pudo cargar tu análisis: \(error.localizedDescription)"
         }
     }
 
@@ -58,7 +58,7 @@ final class InsightsViewModel: ObservableObject {
             )
             await refresh(userId: userId)
         } catch {
-            errorMessage = Self.friendlyAIError(error, action: "generar tus insights")
+            errorMessage = Self.friendlyAIError(error, action: "generar tu análisis")
         }
     }
 

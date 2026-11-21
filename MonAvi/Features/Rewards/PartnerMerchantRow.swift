@@ -68,7 +68,9 @@ struct PartnerMerchantRow: View {
                     }
                 }
                 Spacer(minLength: 8)
-                RewardCurrencyBadge(currency: summary.currency)
+                if summary.currency == .puntos {
+                    RewardCurrencyBadge(currency: summary.currency)
+                }
             }
 
             Text(summaryText)

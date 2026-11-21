@@ -329,7 +329,7 @@ struct ProfileSettingsView: View {
                 Label("Invita amigos", systemImage: "gift.fill")
             }
         } footer: {
-            Text("Comparte tu código: tú ganas 200 puntos y tu amigo 100.")
+            Text("Comparte tu código y gana cashback por cada amigo que se una.")
         }
     }
 

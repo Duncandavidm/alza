@@ -18,7 +18,7 @@ struct PaywallView: View {
 
     private static let bottomChips = [
         MarqueeChip(icon: "♾️", text: "Transacciones y cuentas ilimitadas"),
-        MarqueeChip(icon: "🤖", text: "Insights de IA sobre tus gastos"),
+        MarqueeChip(icon: "🤖", text: "Análisis con IA de tus gastos"),
         MarqueeChip(icon: "🎙️", text: "Anota gastos con tu voz"),
         MarqueeChip(icon: "🎯", text: "Metas de ahorro que sí se cumplen"),
     ]

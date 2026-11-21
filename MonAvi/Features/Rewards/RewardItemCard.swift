@@ -46,7 +46,11 @@ struct RewardItemCard: View {
                 }
             }
             Spacer(minLength: 8)
-            RewardCurrencyBadge(currency: item.currency)
+            // Solo los comercios viejos en puntos llevan etiqueta: lo normal
+            // (1.0.3) es cashback.
+            if item.currency == .puntos {
+                RewardCurrencyBadge(currency: item.currency)
+            }
         }
     }
 

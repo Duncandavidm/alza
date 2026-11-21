@@ -57,6 +57,11 @@ final class VoiceTransactionRecognizer: NSObject, ObservableObject {
     @Published private(set) var isProcessing = false
     @Published private(set) var liveTranscript = ""
     @Published var errorMessage: String?
+    /// Respuesta a una pregunta por voz ("¿cuánto gasté en súper este
+    /// mes?"). Cuando la hay, toggleRecording devuelve nil sin error.
+    @Published private(set) var answer: VoiceAnswer?
+    /// true mientras se busca la respuesta (para el texto de la pantalla).
+    @Published private(set) var isAnswering = false
     /// Sube cada vez que se detecta que la persona termino de hablar
     /// (silencio despues de haber dicho algo). Las pantallas lo observan
     /// con onChange para cortar e interpretar solas, sin tocar "Listo".
@@ -118,6 +123,7 @@ final class VoiceTransactionRecognizer: NSObject, ObservableObject {
     func cancel() {
         endOfSpeechTask?.cancel()
         endOfSpeechTask = nil
+        answer = nil
         guard isRecording else { return }
         audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)
@@ -132,6 +138,7 @@ final class VoiceTransactionRecognizer: NSObject, ObservableObject {
 
     private func start() async {
         errorMessage = nil
+        answer = nil
         liveTranscript = ""
 
         let speechStatus = await requestSpeechAuthorization()
@@ -300,6 +307,13 @@ final class VoiceTransactionRecognizer: NSObject, ObservableObject {
             return nil
         }
 
+        // Preguntas ("¿cuánto gasté en súper este mes?"): se responden con
+        // la misma IA de "Pregúntale a tu dinero"; no se anota nada.
+        if VoiceQuestionDetector.isQuestion(transcript) {
+            await answerQuestion(transcript)
+            return nil
+        }
+
         // Frases simples ("gasté 12 dólares en almuerzo") se interpretan
         // en el dispositivo: no gastan cupo de IA ni esperan la red.
         if let local = SimpleVoiceParser.parse(transcript) {
@@ -328,6 +342,38 @@ final class VoiceTransactionRecognizer: NSObject, ObservableObject {
             errorMessage = AIErrorMessage.userMessage(from: error)
                 ?? VoiceRecognitionError.parseFailed.errorDescription
             return nil
+        }
+    }
+
+    private func answerQuestion(_ question: String) async {
+        guard await AIConsentCenter.shared.requestIfNeeded() else {
+            errorMessage = "Para responder preguntas necesito tu permiso de IA. Puedes activarlo en Ajustes > Privacidad. Para anotar, di algo como \"gasté 12 en almuerzo\"."
+            return
+        }
+
+        isProcessing = true
+        isAnswering = true
+        defer {
+            isProcessing = false
+            isAnswering = false
+        }
+
+        struct Payload: Encodable { let question: String; let source: String }
+        struct Response: Decodable { let answer: String }
+        do {
+            let response: Response = try await supabase.functions.invoke(
+                "ask-finances",
+                options: FunctionInvokeOptions(body: Payload(question: String(question.prefix(500)), source: "voz"))
+            )
+            let text = response.answer.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !text.isEmpty else {
+                errorMessage = "No pude responder tu pregunta. Intenta decirla de otra forma."
+                return
+            }
+            answer = VoiceAnswer(question: question, answer: text)
+        } catch {
+            errorMessage = AIErrorMessage.userMessage(from: error)
+                ?? "No pude responder tu pregunta ahora. Revisa tu conexión e intenta de nuevo."
         }
     }
 

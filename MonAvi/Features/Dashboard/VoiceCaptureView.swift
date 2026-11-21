@@ -20,6 +20,8 @@ struct VoiceCaptureView: View {
         case listening
         case saving
         case saved(FinanceTransaction)
+        /// Fue una pregunta ("¿cuánto gasté en súper?"): se muestra la respuesta.
+        case answered(VoiceAnswer)
         case noAccount
         case failed(String)
     }
@@ -44,6 +46,13 @@ struct VoiceCaptureView: View {
                     listeningContent
                 case .saved(let transaction):
                     savedContent(transaction)
+                case .answered(let answer):
+                    VoiceAnswerContent(
+                        answer: answer,
+                        onDone: close,
+                        onAskAgain: { Task { await startListening() } },
+                        onType: { Task { await startListening() } }
+                    )
                 case .noAccount:
                     noAccountContent
                 case .failed(let message):
@@ -103,6 +112,7 @@ struct VoiceCaptureView: View {
 
     private var listeningTitle: String {
         if phase == .saving { return "Anotando…" }
+        if recognizer.isAnswering { return "Buscando la respuesta…" }
         if recognizer.isProcessing { return "Entendiendo lo que dijiste…" }
         if recognizer.isRecording { return recognizer.liveTranscript.isEmpty ? "Te escucho…" : "Sigue, te escucho…" }
         return "Preparando el micrófono…"
@@ -127,7 +137,7 @@ struct VoiceCaptureView: View {
                         .lineLimit(4)
                         .animation(.default, value: recognizer.liveTranscript)
                 } else {
-                    Text("Di algo como «Gasté 12 dólares en almuerzo» o «Me pagaron 500 de salario».")
+                    Text("Di algo como «Gasté 12 dólares en almuerzo» o pregunta «¿Cuánto gasté en súper este mes?».")
                         .font(.body)
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.secondary)
@@ -417,6 +427,10 @@ struct VoiceCaptureView: View {
         guard phase == .listening, recognizer.isRecording else { return }
 
         guard let parsed = await recognizer.toggleRecording()?.normalizedForQuickAdd() else {
+            if let answer = recognizer.answer {
+                phase = .answered(answer)
+                return
+            }
             phase = .failed(recognizer.errorMessage ?? VoiceRecognitionError.parseFailed.errorDescription ?? "")
             return
         }

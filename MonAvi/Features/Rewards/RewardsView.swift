@@ -24,7 +24,12 @@ struct RewardsView: View {
     /// Si viene de "Ver premios" de un comercio, solo muestra los suyos.
     @State private var merchantFilter: UUID?
 
-    init(initialMode: Mode = .rewards) {
+    /// Pestañas visibles: "Premios" ya no tiene pestaña propia (mostraba
+    /// lo mismo que "Comercios"); los premios con cashback se ven desde
+    /// cada comercio con "Ver premios" (modo .rewards con merchantFilter).
+    static let pickerModes: [Mode] = [.benefits, .merchants]
+
+    init(initialMode: Mode = .merchants) {
         _mode = State(initialValue: initialMode)
     }
 
@@ -50,8 +55,8 @@ struct RewardsView: View {
             LazyVStack(spacing: 20) {
                 balanceHeader
                 referralBanner
-                Picker("Ver", selection: $mode) {
-                    ForEach(Mode.allCases) { (option: Mode) in
+                Picker("Ver", selection: pickerSelection) {
+                    ForEach(Self.pickerModes) { (option: Mode) in
                         Text(option.rawValue).tag(option)
                     }
                 }
@@ -121,6 +126,17 @@ struct RewardsView: View {
         } message: {
             Text(redeemErrorMessage ?? "")
         }
+    }
+
+    /// Los premios de un comercio se muestran bajo la pestaña "Comercios".
+    private var pickerSelection: Binding<Mode> {
+        Binding(
+            get: { mode == .rewards ? .merchants : mode },
+            set: { newValue in
+                merchantFilter = nil
+                mode = newValue
+            }
+        )
     }
 
     // MARK: - Secciones
@@ -363,7 +379,12 @@ struct RewardsView: View {
     private func merchantFilterChip(_ merchantId: UUID) -> some View {
         let name = (viewModel.items + benefitItems).first { $0.merchantId == merchantId }?.merchantName ?? "Comercio"
         return Button {
-            withAnimation(.snappy) { merchantFilter = nil }
+            withAnimation(.snappy) {
+                merchantFilter = nil
+                // Los premios de un comercio se abren desde "Comercios":
+                // al quitar el filtro se vuelve a la lista de comercios.
+                if mode == .rewards { mode = .merchants }
+            }
         } label: {
             Label("\(name)  ✕", systemImage: "storefront")
                 .font(.subheadline.weight(.semibold))

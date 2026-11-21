@@ -158,7 +158,8 @@ struct QuickAddView: View {
                         recognizer: voiceRecognizer,
                         onFinish: { Task { await finishVoice() } },
                         onRetry: { Task { await startVoice() } },
-                        onType: cancelVoice
+                        onType: cancelVoice,
+                        onClose: { dismiss() }
                     )
                     .transition(.opacity)
                 }

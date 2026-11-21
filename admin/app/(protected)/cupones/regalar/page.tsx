@@ -12,6 +12,7 @@ import { embedded, formatCashback, formatDateTime, formatInt } from "@/lib/forma
 import { grantBonus, retryBonus } from "./actions";
 import { createGiftCoupon } from "../actions";
 import CouponTabs from "@/components/CouponTabs";
+import CouponSettlement from "@/components/CouponSettlement";
 
 export const dynamic = "force-dynamic";
 
@@ -342,6 +343,8 @@ export default async function BonosPage({ searchParams }: { searchParams: Promis
           </div>
         )}
       </div>
+
+      <CouponSettlement />
     </>
   );
 }

@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import ActionForm from "@/components/ActionForm";
-import { formatInt, formatMoney } from "@/lib/format";
+import { formatInt } from "@/lib/format";
 import { HABIT_RULE_TYPES, habitRuleLabel } from "@/lib/habit-coupons";
 import { createHabitCoupon, setHabitCouponStatus } from "./actions";
 import CouponTabs from "@/components/CouponTabs";
+import CouponSettlement from "@/components/CouponSettlement";
 
 export const dynamic = "force-dynamic";
 
@@ -21,20 +22,11 @@ type Rule = {
   reward_items: { name: string; points_cost: number; partner_merchants: { name: string } | null } | null;
 };
 
-type Settlement = {
-  month: string;
-  merchant_id: string;
-  merchant: string;
-  delivered: number;
-  amount_usd: number;
-  outstanding: number;
-};
-
 /// Cupones por buenos habitos: MonAvi le compra el cupon al comercio y se
 /// lo regala a quien cumple una regla (ahorro, metas, presupuestos...).
 export default async function HabitCouponsPage() {
   const supabase = supabaseAdmin();
-  const [{ data: rules }, { data: merchants }, { data: grants }, { data: settlementData }] = await Promise.all([
+  const [{ data: rules }, { data: merchants }, { data: grants }] = await Promise.all([
     supabase
       .from("habit_coupon_rules")
       .select("id, name, rule_type, threshold, min_logged_days, max_coupons, expires_days, status, created_at, reward_items(name, points_cost, partner_merchants(name))")
@@ -49,9 +41,7 @@ export default async function HabitCouponsPage() {
       .from("habit_coupon_grants")
       .select("rule_id, reward_redemptions(status)")
       .returns<{ rule_id: string; reward_redemptions: { status: string } | null }[]>(),
-    supabase.rpc("habit_coupon_settlement", { p_months: 6 }),
   ]);
-  const settlement = (settlementData ?? []) as Settlement[];
 
   const issued = new Map<string, number>();
   const used = new Map<string, number>();
@@ -209,42 +199,7 @@ export default async function HabitCouponsPage() {
         </table>
       </div>
 
-      <div className="card table-scroll">
-        <h3>Liquidación a comercios (últimos 6 meses)</h3>
-        <p className="text-dim">
-          Cupones usados en caja por mes y comercio: es lo que MonAvi le paga a cada uno. &quot;Por usar&quot; son cupones
-          entregados que el cliente todavía puede usar.
-        </p>
-        <table>
-          <thead>
-            <tr>
-              <th>Mes</th>
-              <th>Comercio</th>
-              <th>Usados</th>
-              <th>A pagar</th>
-              <th>Por usar</th>
-            </tr>
-          </thead>
-          <tbody>
-            {settlement.map((row) => (
-              <tr key={`${row.month}-${row.merchant_id}`}>
-                <td>{row.month}</td>
-                <td>{row.merchant}</td>
-                <td>{formatInt(row.delivered)}</td>
-                <td>{formatMoney(row.amount_usd)}</td>
-                <td>{formatInt(row.outstanding)}</td>
-              </tr>
-            ))}
-            {settlement.length === 0 && (
-              <tr>
-                <td colSpan={5} className="text-dim">
-                  Todavía no se ha usado ningún cupón en caja.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <CouponSettlement />
     </>
   );
 }

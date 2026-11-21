@@ -56,13 +56,9 @@ struct RewardsView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                if mode == .rewards {
-                    if let merchantFilter {
-                        merchantFilterChip(merchantFilter)
-                    } else if chipCategories.count > 1 {
-                        categoryChips
-                    }
-                } else if mode == .benefits && chipCategories.count > 1 {
+                if let merchantFilter, mode != .merchants {
+                    merchantFilterChip(merchantFilter)
+                } else if chipCategories.count > 1 {
                     categoryChips
                 }
                 content
@@ -175,16 +171,34 @@ struct RewardsView: View {
     /// Categorias de la pestaña actual (las crea el panel en /categorias y
     /// cada comercio tiene la suya): de los descuentos o de los premios.
     private var chipCategories: [String] {
-        mode == .benefits
-            ? RewardsMath.categories(of: viewModel.benefits.benefits.map(\.item))
-            : viewModel.categories
+        let names: [String]
+        switch mode {
+        case .benefits: names = RewardsMath.categories(of: benefitItems)
+        case .rewards: names = viewModel.categories
+        case .merchants: names = RewardsMath.categories(of: viewModel.items + benefitItems)
+        }
+        return RewardsMath.orderedCategories(names, info: viewModel.categoryInfo)
     }
 
-    /// Descuentos de la categoria elegida (o todos).
+    private var benefitItems: [RewardItem] { viewModel.benefits.benefits.map(\.item) }
+
+    /// Descuentos del comercio o de la categoria elegida (o todos).
     private var visibleBenefits: [BenefitEntry] {
-        guard let category = viewModel.selectedCategory else { return viewModel.benefits.benefits }
-        let allowed = Set(RewardsMath.filter(viewModel.benefits.benefits.map(\.item), category: category).map(\.id))
-        return viewModel.benefits.benefits.filter { allowed.contains($0.id) }
+        var entries = viewModel.benefits.benefits
+        if let merchantFilter {
+            entries = entries.filter { $0.item.merchantId == merchantFilter }
+        } else if let category = viewModel.selectedCategory {
+            let allowed = Set(RewardsMath.filter(entries.map(\.item), category: category).map(\.id))
+            entries = entries.filter { allowed.contains($0.id) }
+        }
+        return entries
+    }
+
+    /// Comercios con premios o descuentos, de la categoria elegida.
+    private var merchantSummaries: [PartnerMerchantSummary] {
+        let all = PartnerMerchantSummary.group(viewModel.items, benefits: benefitItems)
+        guard let category = viewModel.selectedCategory else { return all }
+        return all.filter { $0.category?.trimmingCharacters(in: .whitespacesAndNewlines) == category }
     }
 
     private var categoryChips: some View {
@@ -192,7 +206,7 @@ struct RewardsView: View {
             HStack(spacing: 8) {
                 categoryChip(title: "Todos", category: nil)
                 ForEach(chipCategories, id: \.self) { (category: String) in
-                    categoryChip(title: category, category: category)
+                    categoryChip(title: RewardsMath.categoryTitle(category, info: viewModel.categoryInfo), category: category)
                 }
             }
         }
@@ -302,6 +316,8 @@ struct RewardsView: View {
     private var content: some View {
         if mode == .benefits {
             benefitsContent
+        } else if mode == .merchants && !merchantSummaries.isEmpty {
+            merchantsList
         } else if !viewModel.hasLoaded && viewModel.items.isEmpty {
             ProgressView("Cargando comercios…")
                 .frame(maxWidth: .infinity)
@@ -327,15 +343,17 @@ struct RewardsView: View {
     }
 
     private var merchantsList: some View {
-        ForEach(PartnerMerchantSummary.group(viewModel.items)) { (summary: PartnerMerchantSummary) in
+        ForEach(merchantSummaries) { (summary: PartnerMerchantSummary) in
+            let sample = summary.items.first ?? summary.benefits[0]
             PartnerMerchantRow(
                 summary: summary,
-                balance: viewModel.spendableBalance(for: summary.items[0]),
-                onDirections: { openDirections(for: summary.items[0]) },
+                balance: viewModel.spendableBalance(for: sample),
+                onDirections: { openDirections(for: sample) },
                 onShowRewards: {
                     withAnimation(.snappy) {
                         merchantFilter = summary.id
-                        mode = .rewards
+                        // Solo descuentos: se abre la pestaña de descuentos.
+                        mode = summary.items.isEmpty ? .benefits : .rewards
                     }
                 }
             )
@@ -343,7 +361,7 @@ struct RewardsView: View {
     }
 
     private func merchantFilterChip(_ merchantId: UUID) -> some View {
-        let name = viewModel.items.first { $0.merchantId == merchantId }?.merchantName ?? "Comercio"
+        let name = (viewModel.items + benefitItems).first { $0.merchantId == merchantId }?.merchantName ?? "Comercio"
         return Button {
             withAnimation(.snappy) { merchantFilter = nil }
         } label: {

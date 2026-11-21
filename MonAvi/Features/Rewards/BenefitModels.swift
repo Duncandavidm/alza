@@ -184,3 +184,37 @@ extension RewardsMath {
         return digits.isEmpty ? nil : Int(digits)
     }
 }
+
+/// Categoria de comercio que se administra en el panel (`merchant_categories`,
+/// migracion 0068): nombre, emoji y orden.
+struct MerchantCategory: Decodable, Hashable {
+    var name: String
+    var emoji: String?
+    var sortOrder: Int
+
+    enum CodingKeys: String, CodingKey {
+        case name, emoji
+        case sortOrder = "sort_order"
+    }
+}
+
+extension RewardsMath {
+    /// Ordena las categorias como en el panel (sort_order); las que no
+    /// estan en el panel van al final, en orden alfabetico.
+    static func orderedCategories(_ names: [String], info: [MerchantCategory]) -> [String] {
+        let order = Dictionary(info.map { ($0.name, $0.sortOrder) }, uniquingKeysWith: { first, _ in first })
+        return names.sorted { lhs, rhs in
+            let left = order[lhs] ?? Int.max
+            let right = order[rhs] ?? Int.max
+            if left != right { return left < right }
+            return lhs.localizedLowercase < rhs.localizedLowercase
+        }
+    }
+
+    /// "🍽️ Restaurantes y cafeterías" (o solo el nombre si no tiene emoji).
+    static func categoryTitle(_ name: String, info: [MerchantCategory]) -> String {
+        guard let emoji = info.first(where: { $0.name == name })?.emoji?.trimmingCharacters(in: .whitespaces),
+              !emoji.isEmpty else { return name }
+        return "\(emoji) \(name)"
+    }
+}

@@ -45,12 +45,6 @@ struct PointsHubView: View {
                 }
 
                 NavigationLink {
-                    RewardsView(initialMode: .rewards)
-                } label: {
-                    Label("Premios con tu cashback", systemImage: "gift.fill")
-                }
-
-                NavigationLink {
                     RewardsView(initialMode: .merchants)
                 } label: {
                     Label("Dónde canjear: comercios aliados", systemImage: "storefront.fill")

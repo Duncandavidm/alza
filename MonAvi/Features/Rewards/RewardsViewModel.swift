@@ -7,6 +7,8 @@ final class RewardsViewModel: ObservableObject {
     @Published private(set) var items: [RewardItem] = []
     /// Descuentos gratis de aliados (0067) y si ya los desbloqueo.
     @Published private(set) var benefits: BenefitsResponse = .empty
+    /// Categorias del panel (emoji y orden de los chips).
+    @Published private(set) var categoryInfo: [MerchantCategory] = []
     @Published private(set) var balance = PointsBalance.zero
     @Published private(set) var isLoading = false
     @Published private(set) var hasLoaded = false
@@ -41,18 +43,17 @@ final class RewardsViewModel: ObservableObject {
 
         async let balanceTask: PointsBalance = CardPointsRepository.shared.fetchBalance(userId: userId)
         async let benefitsTask: BenefitsResponse = repository.fetchBenefitsOrEmpty()
+        async let categoriesTask: [MerchantCategory] = repository.fetchCategoriesOrEmpty()
         do {
             let fetched = try await repository.fetchItems()
             items = fetched
             errorMessage = nil
-            if let selectedCategory, !categories.contains(selectedCategory) {
-                self.selectedCategory = nil
-            }
         } catch {
             errorMessage = "No pudimos cargar los comercios aliados. Desliza hacia abajo para intentar de nuevo."
         }
         balance = await balanceTask
         benefits = await benefitsTask
+        categoryInfo = await categoriesTask
     }
 
     /// Despues de escanear una factura o de usar un descuento.

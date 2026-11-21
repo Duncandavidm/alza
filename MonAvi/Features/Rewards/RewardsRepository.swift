@@ -42,6 +42,18 @@ final class RewardsRepository {
         return redemption
     }
 
+    /// Categorias del panel (emoji y orden). Si falla, lista vacia: los
+    /// chips salen igual, solo sin emoji y en orden alfabetico.
+    func fetchCategoriesOrEmpty() async -> [MerchantCategory] {
+        let rows: [MerchantCategory]? = try? await supabase
+            .from("merchant_categories")
+            .select("name, emoji, sort_order")
+            .order("sort_order", ascending: true)
+            .execute()
+            .value
+        return rows ?? []
+    }
+
     // MARK: - Descuentos de aliados (0067)
 
     /// Descuentos gratis "por ser de MonAvi" con el estado de esta persona

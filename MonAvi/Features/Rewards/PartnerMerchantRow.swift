@@ -1,36 +1,50 @@
 import SwiftUI
 
-/// Un comercio aliado con sus premios activos, para la lista "Dónde
-/// canjear". Se arma a partir del catalogo (solo aparecen comercios que
-/// tienen al menos un premio disponible).
+/// Un comercio aliado con sus premios (cashback) y sus descuentos gratis,
+/// para la lista "Dónde canjear". Sale si tiene al menos uno de los dos.
 struct PartnerMerchantSummary: Identifiable, Hashable {
     let id: UUID
     let name: String
     let merchant: PartnerMerchant?
-    /// Nunca vacio (cada resumen nace de al menos un premio).
+    /// Premios que se canjean con cashback (puede estar vacio si el
+    /// comercio solo da descuentos).
     let items: [RewardItem]
+    /// Descuentos gratis por ser de MonAvi (1.0.3).
+    var benefits: [RewardItem] = []
 
-    var currency: RewardCurrency { items[0].currency }
+    var currency: RewardCurrency { items.first?.currency ?? .cashback }
     var cheapestCost: Int { items.map(\.pointsCost).min() ?? 0 }
+    var category: String? { merchant?.category }
 
-    /// Agrupa por comercio, en el orden en que aparece cada uno en el
-    /// catalogo.
-    static func group(_ items: [RewardItem]) -> [PartnerMerchantSummary] {
+    /// Agrupa por comercio, en el orden en que aparece cada uno: primero
+    /// los del catalogo, luego los que solo tienen descuentos.
+    static func group(_ items: [RewardItem], benefits: [RewardItem] = []) -> [PartnerMerchantSummary] {
         var order: [UUID] = []
         var byMerchant: [UUID: [RewardItem]] = [:]
+        var benefitsByMerchant: [UUID: [RewardItem]] = [:]
+        var info: [UUID: RewardItem] = [:]
         for item in items {
-            if byMerchant[item.merchantId] == nil {
+            if info[item.merchantId] == nil {
                 order.append(item.merchantId)
+                info[item.merchantId] = item
             }
             byMerchant[item.merchantId, default: []].append(item)
         }
+        for benefit in benefits {
+            if info[benefit.merchantId] == nil {
+                order.append(benefit.merchantId)
+                info[benefit.merchantId] = benefit
+            }
+            benefitsByMerchant[benefit.merchantId, default: []].append(benefit)
+        }
         return order.compactMap { (merchantId: UUID) -> PartnerMerchantSummary? in
-            guard let merchantItems = byMerchant[merchantId], let first = merchantItems.first else { return nil }
+            guard let first = info[merchantId] else { return nil }
             return PartnerMerchantSummary(
                 id: merchantId,
                 name: first.merchantName,
                 merchant: first.merchant,
-                items: merchantItems
+                items: byMerchant[merchantId] ?? [],
+                benefits: benefitsByMerchant[merchantId] ?? []
             )
         }
     }
@@ -86,7 +100,8 @@ struct PartnerMerchantRow: View {
                 .tint(MonAviBrand.primary)
 
                 Button(action: onShowRewards) {
-                    Label("Ver premios", systemImage: "gift.fill")
+                    Label(summary.items.isEmpty ? "Ver descuentos" : "Ver premios",
+                          systemImage: summary.items.isEmpty ? "percent" : "gift.fill")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
@@ -103,13 +118,19 @@ struct PartnerMerchantRow: View {
     }
 
     private var summaryText: String {
-        let count = summary.items.count
-        let prizes = count == 1 ? "1 premio" : "\(count) premios"
-        let from = "desde \(summary.currency.format(summary.cheapestCost))"
-        if affordableCount > 0 {
-            let ready = affordableCount == 1 ? "ya te alcanza para 1" : "ya te alcanza para \(affordableCount)"
-            return "\(prizes) \(from) · \(ready) 🎉"
+        var parts: [String] = []
+        if let benefit = summary.benefits.first {
+            parts.append(summary.benefits.count == 1 ? "\(benefit.name) gratis" : "\(summary.benefits.count) descuentos gratis")
         }
-        return "\(prizes) \(from)"
+        let count = summary.items.count
+        if count > 0 {
+            let prizes = count == 1 ? "1 premio" : "\(count) premios"
+            var text = "\(prizes) desde \(summary.currency.format(summary.cheapestCost))"
+            if affordableCount > 0 {
+                text += affordableCount == 1 ? " · ya te alcanza para 1 🎉" : " · ya te alcanza para \(affordableCount) 🎉"
+            }
+            parts.append(text)
+        }
+        return parts.joined(separator: " · ")
     }
 }

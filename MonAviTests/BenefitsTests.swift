@@ -162,4 +162,17 @@ final class BenefitsTests: XCTestCase {
         XCTAssertEqual(RewardsMath.historyRows([expiredBenefit, delivered], now: now).count, 1)
         XCTAssertEqual(delivered.statusText(now: now), "Aplicado")
     }
+
+    func testCategoriesFollowPanelOrderAndEmoji() {
+        let info = [
+            MerchantCategory(name: "Restaurantes y cafeterías", emoji: "🍽️", sortOrder: 1),
+            MerchantCategory(name: "Mascotas", emoji: "🐾", sortOrder: 8),
+        ]
+        XCTAssertEqual(
+            RewardsMath.orderedCategories(["Mascotas", "Zapatos", "Restaurantes y cafeterías", "Belleza"], info: info),
+            ["Restaurantes y cafeterías", "Mascotas", "Belleza", "Zapatos"]
+        )
+        XCTAssertEqual(RewardsMath.categoryTitle("Mascotas", info: info), "🐾 Mascotas")
+        XCTAssertEqual(RewardsMath.categoryTitle("Belleza", info: info), "Belleza")
+    }
 }

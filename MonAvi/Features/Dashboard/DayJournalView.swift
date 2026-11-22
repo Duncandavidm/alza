@@ -95,7 +95,7 @@ struct DayJournalView: View {
                                 Text("Tus presupuestos del mes")
                                     .font(.subheadline.weight(.semibold))
                                     .foregroundStyle(.secondary)
-                                BudgetCandyBarRow(progresses: budgetsViewModel.progresses) { progress in
+                                BudgetCandyBarRow(progresses: budgetsViewModel.progresses, barHeight: 96) { progress in
                                     selectedBudgetProgress = progress
                                 }
                             }

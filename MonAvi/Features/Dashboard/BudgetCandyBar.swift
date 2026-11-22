@@ -65,6 +65,8 @@ struct BudgetCandyBar: View {
 /// repetirlo cuando esta fila se use en otro lado.
 struct BudgetCandyBarRow: View {
     let progresses: [BudgetProgress]
+    /// Alto de cada pastilla (en Hoy van mas bajas para que quepan completas).
+    var barHeight: CGFloat = 130
     let onSelect: (BudgetProgress) -> Void
 
     var body: some View {
@@ -77,7 +79,8 @@ struct BudgetCandyBarRow: View {
                         } label: {
                             BudgetCandyBar(
                                 progress: progress,
-                                color: BudgetColorPalette.color(for: progress.budget, index: index)
+                                color: BudgetColorPalette.color(for: progress.budget, index: index),
+                                height: barHeight
                             )
                         }
                         .buttonStyle(.plain)

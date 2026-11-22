@@ -268,7 +268,7 @@ final class OnboardingViewModel: ObservableObject {
 
             for budget in budgets {
                 guard let limit = Self.amount(budget.limitText), limit > 0 else { continue }
-                try? await supabase
+                _ = try? await supabase
                     .from("budgets")
                     .insert(NewBudget(userId: userId, category: budget.category.rawValue, period: .monthly, limitAmount: limit))
                     .execute()

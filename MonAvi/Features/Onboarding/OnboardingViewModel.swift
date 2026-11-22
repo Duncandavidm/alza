@@ -51,6 +51,9 @@ final class OnboardingViewModel: ObservableObject {
     // Paso 8: deudas
     @Published var debts: [DebtDraft] = []
 
+    /// Presupuestos del mes (opcional): los que tengan monto se crean al terminar.
+    @Published var budgets = BudgetDraft.defaults()
+
     // Paso 9: ahorros/inversiones actuales
     @Published var hasSavings = false
     @Published var savingsAmountText = ""
@@ -261,6 +264,14 @@ final class OnboardingViewModel: ObservableObject {
                         availableOn: savingsLocked ? SavingsAvailability.string(from: savingsAvailableOn) : nil
                     )
                 )
+            }
+
+            for budget in budgets {
+                guard let limit = Self.amount(budget.limitText), limit > 0 else { continue }
+                try? await supabase
+                    .from("budgets")
+                    .insert(NewBudget(userId: userId, category: budget.category.rawValue, period: .monthly, limitAmount: limit))
+                    .execute()
             }
 
             let shortTermGoalTexts = shortTermGoals.map { $0.text.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }

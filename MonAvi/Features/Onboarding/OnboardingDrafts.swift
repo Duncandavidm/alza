@@ -48,6 +48,18 @@ struct DebtDraft: Identifiable {
     var isOverdue: Bool = false
 }
 
+/// Un presupuesto mensual por categoria ("" = sin presupuesto ahi).
+struct BudgetDraft: Identifiable {
+    let id = UUID()
+    let category: TransactionCategory
+    var limitText: String = ""
+
+    /// Las categorias donde mas se suele gastar dia a dia.
+    static func defaults() -> [BudgetDraft] {
+        [.food, .groceries, .transport, .goingOut, .shopping, .entertainment].map { BudgetDraft(category: $0) }
+    }
+}
+
 /// Una meta de texto libre (corto o largo plazo), ej. "liquidar las
 /// tarjetas de credito".
 struct GoalDraft: Identifiable {

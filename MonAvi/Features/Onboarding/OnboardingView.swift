@@ -12,7 +12,7 @@ struct OnboardingView: View {
     /// Cuentas ya creadas: falta solo el paso de la primera factura.
     @State private var isShowingFirstInvoice = false
 
-    private let totalSteps = 14
+    private let totalSteps = 15
 
     var body: some View {
         NavigationStack {
@@ -36,6 +36,7 @@ struct OnboardingView: View {
                     case 10: riskToleranceStep
                     case 11: shortTermGoalsStep
                     case 12: longTermGoalsStep
+                    case 13: budgetsStep
                     default: summaryStep
                     }
                 }
@@ -332,6 +333,31 @@ struct OnboardingView: View {
         }
     }
 
+    @ViewBuilder
+    private var budgetsStep: some View {
+        Section {
+            Text("Ponle un límite al mes a lo que más gastas. En Hoy verás cuánto llevas en cada uno, justo debajo del total del día.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            if viewModel.snapshot.freeMoney > 0 {
+                Text("Después de tus pagos fijos te quedan unos \(FinancialSnapshot.money(viewModel.snapshot.freeMoney)) libres al mes.")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(MonAviBrand.primary)
+            }
+            ForEach($viewModel.budgets) { $budget in
+                LabeledContent("\(budget.category.emoji) \(budget.category.rawValue)") {
+                    AmountField(placeholder: "Sin límite", text: $budget.limitText)
+                        .multilineTextAlignment(.trailing)
+                        .frame(maxWidth: 140)
+                }
+            }
+        } header: {
+            Text("¿Quieres agregar presupuestos?")
+        } footer: {
+            Text("Es opcional: deja vacío lo que no quieras limitar. Puedes agregar o cambiar presupuestos cuando quieras en la pestaña Presupuestos.")
+        }
+    }
+
     private var savingsStep: some View {
         Section("¿Tienes ahorros o inversiones actuales?") {
             Toggle("Si, tengo algo ahorrado", isOn: $viewModel.hasSavings)
@@ -410,7 +436,7 @@ struct OnboardingView: View {
         FinancialSnapshotSections(snapshot: viewModel.snapshot, name: viewModel.fullName.trimmingCharacters(in: .whitespaces))
 
         Section {
-            Text("Al tocar Empezar creamos tu cuenta \"\(viewModel.accountName)\"\(viewModel.hasSavings ? " y tu cuenta de ahorros" : ""), y anotamos tus pagos fijos para recordártelos.")
+            Text("Al tocar Empezar creamos tu cuenta \"\(viewModel.accountName)\"\(viewModel.hasSavings ? " y tu cuenta de ahorros" : ""), y anotamos tus pagos fijos para recordártelos\(viewModel.budgets.contains { (OnboardingViewModel.amount($0.limitText) ?? 0) > 0 } ? ", además de tus presupuestos del mes" : "").")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }

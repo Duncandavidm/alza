@@ -502,7 +502,9 @@ struct DayJournalView: View {
             SavingsGoalsView()
         } label: {
             VStack(alignment: .leading, spacing: 8) {
-                HStack {
+                // Una sola linea: "Tu ahorro ›   $1,840.00 · 3 metas", y debajo la
+                // meta principal. Compacto para que los presupuestos se vean.
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Label("Tu ahorro", systemImage: "banknote.fill")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(MonAviBrand.primary)
@@ -510,8 +512,13 @@ struct DayJournalView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
+                    if !savingsViewModel.goals.isEmpty {
+                        Text(totalSaved, format: .currency(code: "USD"))
+                            .font(.system(size: 19, weight: .heavy, design: MonAviBrand.fontDesign))
+                            .foregroundStyle(.primary)
+                    }
                     // Espacio para la X (va encima, fuera del enlace).
-                    Color.clear.frame(width: 28, height: 1)
+                    Color.clear.frame(width: 26, height: 1)
                 }
 
                 if savingsViewModel.goals.isEmpty {
@@ -520,15 +527,6 @@ struct DayJournalView: View {
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.leading)
                 } else {
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text(totalSaved, format: .currency(code: "USD"))
-                            .font(.system(size: 24, weight: .heavy, design: MonAviBrand.fontDesign))
-                            .foregroundStyle(.primary)
-                        Text(savingsViewModel.goals.count == 1 ? "en tu meta" : "en \(savingsViewModel.goals.count) metas")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
                     ForEach(savingsViewModel.goals.prefix(1)) { goal in
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {

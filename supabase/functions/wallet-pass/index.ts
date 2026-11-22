@@ -7,8 +7,12 @@
 //
 //   POST {"check": true}             -> {"enabled": true|false}
 //   POST {"redemption_id": "<uuid>"} -> el .pkpass (application/vnd.apple.pkpass)
+//   POST {"selftest": true} + x-admin-secret -> firma un pase de prueba y
+//        dice si el certificado sirve (sin devolver ningun secreto)
 //
-// verify_jwt: true (solo el dueño del canje). Necesita estos secretos de
+// verify_jwt: false: la funcion valida la sesion del usuario con
+// auth.getUser (solo el dueño del canje), o x-admin-secret para la
+// autoprueba. Necesita estos secretos de
 // Supabase, que pone el dueño del proyecto (nunca en el codigo):
 //   WALLET_PASS_TYPE_ID   p. ej. pass.app.monavi.cupon (Apple Developer > Identifiers)
 //   WALLET_P12_BASE64     el certificado del Pass Type ID exportado como .p12, en base64
@@ -24,6 +28,7 @@ import { PASS_IMAGES } from "./assets.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const ADMIN_JOB_SECRET = Deno.env.get("ADMIN_JOB_SECRET") ?? "";
 const PASS_TYPE_ID = Deno.env.get("WALLET_PASS_TYPE_ID") ?? "";
 const P12_BASE64 = (Deno.env.get("WALLET_P12_BASE64") ?? "").replace(/\s+/g, "");
 const P12_PASSWORD = Deno.env.get("WALLET_P12_PASSWORD") ?? "";
@@ -33,7 +38,7 @@ const WWDR_URL = "https://www.apple.com/certificateauthority/AppleWWDRCAG4.cer";
 const REDEEM_BASE_URL = "https://monavi.maday.app/canjear";
 
 const CORS_HEADERS = {
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-admin-secret",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -45,16 +50,58 @@ function configured(): boolean {
   return Boolean(PASS_TYPE_ID && P12_BASE64);
 }
 
-function verifiedUserId(req: Request): string | null {
+/// El usuario de la sesion, validada con Supabase Auth (firma y vigencia).
+async function verifiedUserId(req: Request): Promise<string | null> {
   const header = req.headers.get("Authorization");
   if (!header?.startsWith("Bearer ")) return null;
-  const parts = header.slice(7).split(".");
-  if (parts.length !== 3) return null;
+  const token = header.slice(7);
+  if (token.split(".").length !== 3) return null;
+  const { data, error } = await createClient(SUPABASE_URL, SERVICE_ROLE_KEY).auth.getUser(token);
+  return error || !data.user ? null : data.user.id;
+}
+
+/// Autoprueba: abre el .p12, baja el WWDR, firma un pase de prueba y
+/// devuelve solo datos publicos del certificado.
+async function selfTest(): Promise<Record<string, unknown>> {
+  const result: Record<string, unknown> = {
+    configured: configured(),
+    pass_type_id: PASS_TYPE_ID || null,
+    team_id: TEAM_ID,
+    password_set: P12_PASSWORD.length > 0,
+  };
+  if (!configured()) return { ...result, ok: false, error: "Faltan WALLET_PASS_TYPE_ID o WALLET_P12_BASE64." };
+  let step = "abrir el .p12";
   try {
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
-    return typeof payload.sub === "string" && payload.role === "authenticated" ? payload.sub : null;
-  } catch {
-    return null;
+    const identity = await loadIdentity();
+    step = "revisar el certificado";
+    const cn = String(identity.cert.subject.getField("CN")?.value ?? "");
+    const uid = String(identity.cert.subject.getField({ type: "0.9.2342.19200300.100.1.1" })?.value ?? "");
+    const certPublic = identity.cert.publicKey as forge.pki.rsa.PublicKey;
+    const key = identity.key as forge.pki.rsa.PrivateKey;
+    Object.assign(result, {
+      cert_subject: cn,
+      cert_pass_type_id: uid || null,
+      cert_matches_pass_type_id: uid ? uid === PASS_TYPE_ID : cn.includes(PASS_TYPE_ID),
+      cert_valid_from: identity.cert.validity.notBefore.toISOString(),
+      cert_valid_until: identity.cert.validity.notAfter.toISOString(),
+      key_matches_cert: certPublic.n.equals(key.n),
+      wwdr_subject: String(identity.wwdr.subject.getField("CN")?.value ?? ""),
+    });
+    step = "firmar un pase de prueba";
+    const pkpass = await buildPass({
+      id: crypto.randomUUID(),
+      user_id: "00000000-0000-0000-0000-000000000000",
+      code: "PRUEBA",
+      status: "emitido",
+      expires_at: new Date(Date.now() + 86_400_000).toISOString(),
+      gift_message: null,
+      merchant_id: "00000000-0000-0000-0000-000000000000",
+      reward_items: { name: "Pase de prueba", description: null },
+      partner_merchants: { name: "MonAvi", address: null, latitude: null, longitude: null },
+    }, []);
+    return { ...result, ok: Boolean(result.key_matches_cert), pkpass_bytes: pkpass.length };
+  } catch (err) {
+    return { ...result, ok: false, step, error: String((err as { message?: string })?.message ?? err) };
   }
 }
 
@@ -197,11 +244,16 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS_HEADERS });
   if (req.method !== "POST") return json({ error: "Método no permitido" }, 405);
 
-  const userId = verifiedUserId(req);
-  if (!userId) return json({ error: "No autorizado" }, 401);
-
-  let body: { check?: boolean; redemption_id?: string } = {};
+  let body: { check?: boolean; redemption_id?: string; selftest?: boolean } = {};
   try { body = await req.json(); } catch { /* vacio */ }
+
+  if (body.selftest) {
+    if (!ADMIN_JOB_SECRET || req.headers.get("x-admin-secret") !== ADMIN_JOB_SECRET) return json({ error: "No autorizado" }, 401);
+    return json(await selfTest());
+  }
+
+  const userId = await verifiedUserId(req);
+  if (!userId) return json({ error: "No autorizado" }, 401);
 
   if (body.check) return json({ enabled: configured() });
   if (!configured()) return json({ error: "Apple Wallet todavía no está configurado." }, 501);

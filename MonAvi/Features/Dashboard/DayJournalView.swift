@@ -27,6 +27,8 @@ struct DayJournalView: View {
     @State private var isShowingInvoiceScanner = false
     /// Gasto recien anotado cuya factura se va a escanear (ver openPendingInvoiceForExpense).
     @State private var pendingInvoiceExpense: FinanceTransaction?
+    @State private var isAddingBudget = false
+    @State private var didLoadBudgets = false
     @State private var invoiceExpense: FinanceTransaction?
     @State private var editingTransaction: FinanceTransaction?
     @State private var daySummary: DaySummary?
@@ -82,6 +84,9 @@ struct DayJournalView: View {
                                     selectedBudgetProgress = progress
                                 }
                             }
+                        } else if didLoadBudgets && viewModel.isViewingToday && !isSearching {
+                            // Sin presupuestos: el lugar queda para invitar a crear el primero.
+                            emptyBudgetsCard
                         }
 
                         if let alert = healthAlert, viewModel.isViewingToday && !isSearching {
@@ -270,6 +275,11 @@ struct DayJournalView: View {
                 }
             }) {
                 ScanInvoiceView(viewModel: dgiViewModel, accounts: viewModel.accounts, linkTo: invoiceExpense)
+            }
+            .sheet(isPresented: $isAddingBudget, onDismiss: {
+                Task { await refreshBudgets() }
+            }) {
+                AddBudgetView(viewModel: budgetsViewModel)
             }
             .sheet(item: $editingTransaction) { transaction in
                 QuickAddView(viewModel: viewModel, existingTransaction: transaction)
@@ -1064,6 +1074,39 @@ struct DayJournalView: View {
     private func refreshBudgets() async {
         guard let userId = appState.currentUserId else { return }
         await budgetsViewModel.refresh(userId: userId)
+        didLoadBudgets = true
+    }
+
+    /// Hoy sin presupuestos: invitacion a crear el primero, en el mismo
+    /// lugar donde luego van las barras.
+    private var emptyBudgetsCard: some View {
+        Button {
+            isAddingBudget = true
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "chart.bar.fill")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(MonAviBrand.primary)
+                    .frame(width: 40, height: 40)
+                    .background(MonAviBrand.primary.opacity(0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Crea tu primer presupuesto")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Text("Pon un límite por categoría (comida, súper…) y mira aquí cuánto te queda.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "plus.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(MonAviBrand.primary)
+            }
+            .padding(12)
+            .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 
     private func refreshRecurring() async {

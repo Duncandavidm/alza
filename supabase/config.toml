@@ -26,6 +26,8 @@ verify_jwt = true
 verify_jwt = true
 [functions.delete-account]
 verify_jwt = true
+[functions.wallet-pass]
+verify_jwt = true
 
 # --- Trabajos del servidor (exigen x-admin-secret) ---
 [functions.award-habit-points]

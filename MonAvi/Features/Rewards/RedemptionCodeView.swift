@@ -27,6 +27,7 @@ struct RedemptionCodeView: View {
                     merchantHeader
                     giftMessageCard
                     codeCard
+                    WalletPassSection(redemption: redemption)
                     instructions
                     invoiceCard
                 }

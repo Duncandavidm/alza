@@ -42,6 +42,8 @@ struct DebtDraft: Identifiable {
     /// Dia del mes en que vence el pago ("" = no lo sabe).
     var paymentDayText: String = ""
     var interestRateText: String = ""
+    /// La tasa se escribe como la da el banco: al año (lo normal) o al mes.
+    var interestPeriod: InterestPeriod = .annual
     var minimumPaymentText: String = ""
     var isOverdue: Bool = false
 }

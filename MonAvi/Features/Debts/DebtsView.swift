@@ -4,6 +4,7 @@ struct DebtsView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = DebtsViewModel()
     @State private var showingAdd = false
+    @State private var editingDebt: Debt?
     /// "Agregar cupo" en una tarjeta que no lo tiene.
     @State private var limitDebt: Debt?
     @State private var limitText = ""
@@ -68,8 +69,8 @@ struct DebtsView: View {
                     }
 
                     HStack(spacing: 10) {
-                        if let rate = debt.interestRateMonthly {
-                            Text("Interés: \(rate, format: .number.precision(.fractionLength(1)))%/mes")
+                        if let rate = debt.interestRateMonthly, rate > 0 {
+                            Text("Interés: \(CreditCardMath.rateText(monthly: rate))")
                         }
                         if let min = debt.minimumPayment {
                             Text("Mínimo: \(min, format: .currency(code: "USD"))")
@@ -90,6 +91,11 @@ struct DebtsView: View {
                                 dayDebt = debt
                             } label: {
                                 Label(debt.paymentDay.map { "Vence el día \($0)" } ?? "Poner día de pago", systemImage: "calendar")
+                            }
+                            Button {
+                                editingDebt = debt
+                            } label: {
+                                Label("Editar", systemImage: "pencil")
                             }
                         }
                         .font(.caption.weight(.semibold))
@@ -135,6 +141,9 @@ struct DebtsView: View {
                 Button { showingAdd = true } label: { Image(systemName: "plus") }
                     .accessibilityLabel("Agregar deuda")
             }
+        }
+        .sheet(item: $editingDebt) { debt in
+            NavigationStack { AddDebtView(viewModel: viewModel, existing: debt) }
         }
         .sheet(isPresented: $showingAdd) {
             NavigationStack { AddDebtView(viewModel: viewModel) }

@@ -18,6 +18,7 @@ enum WalletPassService {
 
     private static var cachedEnabled: Bool?
 
+    @MainActor
     static func isEnabled() async -> Bool {
         if let cachedEnabled { return cachedEnabled }
         guard PKAddPassesViewController.canAddPasses() else { return false }

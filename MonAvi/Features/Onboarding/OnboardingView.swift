@@ -303,8 +303,17 @@ struct OnboardingView: View {
                         TextField("ej. 15", text: $debt.paymentDayText)
                             .keyboardType(.numberPad)
                     }
-                    LabeledField(label: "Interés al mes (opcional)") {
-                        PercentField(placeholder: "ej. 2.5", text: $debt.interestRateText)
+                    LabeledField(label: "Tasa de interés (opcional)") {
+                        HStack {
+                            PercentField(placeholder: debt.interestPeriod == .annual ? "ej. 24" : "ej. 2", text: $debt.interestRateText)
+                            Picker("", selection: $debt.interestPeriod) {
+                                ForEach(InterestPeriod.allCases) { period in
+                                    Text(period.label).tag(period)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .frame(maxWidth: 170)
+                        }
                     }
                     LabeledField(label: "Pago mínimo (opcional)") {
                         AmountField(placeholder: "ej. 60", text: $debt.minimumPaymentText)

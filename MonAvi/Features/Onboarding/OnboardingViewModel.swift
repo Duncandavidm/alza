@@ -107,7 +107,7 @@ final class OnboardingViewModel: ObservableObject {
                     balance: balance,
                     creditLimit: Self.amount(debt.creditLimitText),
                     minimumPayment: Self.amount(debt.minimumPaymentText),
-                    monthlyRate: Self.amount(debt.interestRateText),
+                    monthlyRate: CreditCardMath.monthlyRate(debt.interestRateText, period: debt.interestPeriod),
                     isOverdue: debt.isOverdue
                 )
             },
@@ -240,7 +240,7 @@ final class OnboardingViewModel: ObservableObject {
                             creditor: debt.creditor,
                             balance: balance,
                             creditLimit: Self.amount(debt.creditLimitText).flatMap { $0 > 0 ? $0 : nil },
-                            interestRateMonthly: Decimal(string: debt.interestRateText.replacingOccurrences(of: ",", with: ".")),
+                            interestRateMonthly: CreditCardMath.monthlyRate(debt.interestRateText, period: debt.interestPeriod),
                             minimumPayment: Decimal(string: debt.minimumPaymentText.replacingOccurrences(of: ",", with: ".")),
                             dueDate: nil,
                             isOverdue: debt.isOverdue,

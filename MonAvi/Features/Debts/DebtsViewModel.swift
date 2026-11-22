@@ -66,6 +66,73 @@ final class DebtsViewModel: ObservableObject {
         }
     }
 
+    /// Editar una deuda (tarjeta: cupo, usado, tasa, minimo, dia de pago).
+    /// Si es tarjeta con cuenta vinculada, el saldo de la cuenta se ajusta
+    /// solo (trigger de 0079).
+    func update(
+        _ debt: Debt,
+        creditor: String,
+        balance: Decimal,
+        creditLimit: Decimal?,
+        interestRateMonthly: Decimal?,
+        minimumPayment: Decimal?,
+        paymentDay: Int?,
+        dueDate: String?,
+        isOverdue: Bool
+    ) async throws {
+        struct Update: Encodable {
+            let creditor: String
+            let balance: Decimal
+            let creditLimit: Decimal?
+            let interestRateMonthly: Decimal?
+            let minimumPayment: Decimal?
+            let paymentDay: Int?
+            let dueDate: String?
+            let isOverdue: Bool
+            let status: String
+            enum CodingKeys: String, CodingKey {
+                case creditor, balance, status
+                case creditLimit = "credit_limit"
+                case interestRateMonthly = "interest_rate_monthly"
+                case minimumPayment = "minimum_payment"
+                case paymentDay = "payment_day"
+                case dueDate = "due_date"
+                case isOverdue = "is_overdue"
+            }
+            // null explicito para poder borrar un campo opcional.
+            func encode(to encoder: Encoder) throws {
+                var c = encoder.container(keyedBy: CodingKeys.self)
+                try c.encode(creditor, forKey: .creditor)
+                try c.encode(balance, forKey: .balance)
+                try c.encode(creditLimit, forKey: .creditLimit)
+                try c.encode(interestRateMonthly, forKey: .interestRateMonthly)
+                try c.encode(minimumPayment, forKey: .minimumPayment)
+                try c.encode(paymentDay, forKey: .paymentDay)
+                try c.encode(dueDate, forKey: .dueDate)
+                try c.encode(isOverdue, forKey: .isOverdue)
+                try c.encode(status, forKey: .status)
+            }
+        }
+        let status = balance <= 0 ? DebtStatus.paidOff.rawValue
+            : (debt.status == .paidOff ? DebtStatus.active.rawValue : debt.status.rawValue)
+        let updated: Debt = try await supabase
+            .from("debts")
+            .update(Update(
+                creditor: creditor, balance: balance, creditLimit: creditLimit,
+                interestRateMonthly: interestRateMonthly, minimumPayment: minimumPayment,
+                paymentDay: paymentDay, dueDate: dueDate, isOverdue: isOverdue, status: status
+            ))
+            .eq("id", value: debt.id)
+            .select()
+            .single()
+            .execute()
+            .value
+        if let index = debts.firstIndex(where: { $0.id == debt.id }) {
+            debts[index] = updated
+        }
+        NotificationManager.scheduleCardPayments(debts)
+    }
+
     @discardableResult
     func add(_ new: NewDebt) async throws -> Debt {
         let created: Debt = try await supabase

@@ -74,8 +74,13 @@ struct DayJournalView: View {
                         // Presupuestos justo debajo del total del dia: lo
                         // primero que se ve antes de gastar.
                         if !budgetsViewModel.progresses.isEmpty && !isSearching {
-                            BudgetCandyBarRow(progresses: budgetsViewModel.progresses) { progress in
-                                selectedBudgetProgress = progress
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Tus presupuestos del mes")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                BudgetCandyBarRow(progresses: budgetsViewModel.progresses) { progress in
+                                    selectedBudgetProgress = progress
+                                }
                             }
                         }
 

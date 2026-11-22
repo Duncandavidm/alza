@@ -54,7 +54,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Atajos y Siri")
                 } footer: {
-                    Text("Toca dos veces la parte de atrás de tu iPhone o di «Oye Siri, anota en MonAvi» y anota un gasto o ingreso con tu voz.")
+                    Text("Toca atrás de tu iPhone, aun con la pantalla bloqueada, y anota un gasto con tu voz o escribiendo monto y categoría, sin abrir la app.")
                 }
 
                 Section {

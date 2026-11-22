@@ -27,6 +27,24 @@ struct VoiceBackTapGuideView: View {
         )
     ]
 
+    /// Sin abrir la app: el atajo pide monto, categoria y que fue
+    /// (QuickExpenseIntent). Funciona hasta con la pantalla bloqueada.
+    private let typedSteps: [Step] = [
+        Step(
+            id: 1,
+            text: "En **Atajos**, toca **+**, busca **MonAvi** y elige **Anotar gasto rápido**. Guárdalo como **MonAvi gasto**.",
+            note: "Deja Monto, Categoría y Qué fue en «Preguntar cada vez» (así vienen)."
+        ),
+        Step(
+            id: 2,
+            text: "En **Ajustes > Accesibilidad > Tocar > Tocar atrás**, elige **Triple toque** (o Doble toque) y selecciona **MonAvi gasto**."
+        ),
+        Step(
+            id: 3,
+            text: "Toca atrás del iPhone, aun con la pantalla bloqueada: escribe el monto, elige la categoría y qué fue. MonAvi lo anota **sin abrir la app**."
+        )
+    ]
+
     var body: some View {
         List {
             Section {
@@ -36,7 +54,7 @@ struct VoiceBackTapGuideView: View {
                         .foregroundStyle(MonAviBrand.primary)
                     Text("Registra con doble toque")
                         .font(.system(.title2, design: MonAviBrand.fontDesign, weight: .bold))
-                    Text("Toca dos veces la parte de atrás de tu iPhone, di tu gasto o ingreso y MonAvi lo anota solo. Sin buscar la app ni escribir nada.")
+                    Text("Toca atrás de tu iPhone y anota un gasto al instante: dilo con tu voz, o escribe monto, categoría y qué fue sin abrir la app.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -78,9 +96,24 @@ struct VoiceBackTapGuideView: View {
                     Label("Probar ahora", systemImage: "mic.fill")
                 }
             } header: {
-                Text("Paso a paso")
+                Text("Con tu voz (abre MonAvi)")
             } footer: {
                 Text("Tocar atrás necesita un iPhone 8 o más nuevo.")
+            }
+
+            Section {
+                ForEach(typedSteps) { step in
+                    stepRow(step)
+                }
+                if let url = URL(string: "shortcuts://") {
+                    Link(destination: url) {
+                        Label("Abrir Atajos", systemImage: "square.2.layers.3d.fill")
+                    }
+                }
+            } header: {
+                Text("Sin abrir la app: escribiendo")
+            } footer: {
+                Text("Puedes tener los dos: doble toque para hablar y triple toque para escribir. También sirve en el botón de Acción del iPhone 15 Pro o más nuevo.")
             }
 
             Section {
@@ -98,6 +131,28 @@ struct VoiceBackTapGuideView: View {
         }
         .navigationTitle("Doble toque")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func stepRow(_ step: Step) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text("\(step.id)")
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(.white)
+                .frame(width: 26, height: 26)
+                .background(Circle().fill(MonAviBrand.primary))
+            VStack(alignment: .leading, spacing: 4) {
+                Text(LocalizedStringKey(step.text))
+                    .font(.subheadline)
+                    .fixedSize(horizontal: false, vertical: true)
+                if let note = step.note {
+                    Text(note)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .padding(.vertical, 2)
     }
 
     private func benefit(icon: String, text: String) -> some View {

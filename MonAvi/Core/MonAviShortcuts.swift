@@ -203,6 +203,15 @@ struct MonAviShortcuts: AppShortcutsProvider {
             systemImageName: "mic.and.signal.meter"
         )
         AppShortcut(
+            intent: QuickExpenseIntent(),
+            phrases: [
+                "Anota un gasto rápido en \(.applicationName)",
+                "Gasto rápido en \(.applicationName)"
+            ],
+            shortTitle: "Gasto rápido",
+            systemImageName: "square.and.pencil"
+        )
+        AppShortcut(
             intent: OpenInvoiceScannerIntent(),
             phrases: [
                 "Escanea una factura en \(.applicationName)",

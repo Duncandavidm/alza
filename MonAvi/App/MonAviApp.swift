@@ -19,6 +19,11 @@ struct MonAviApp: App {
                     appState.start()
                     DiagnosticsReporter.shared.start()
                 }
+                // monavi://scan (widget) y facturas en PDF o foto abiertas
+                // con "Compartir → MonAvi".
+                .onOpenURL { url in
+                    NotificationRouter.shared.handleOpenURL(url)
+                }
         }
     }
 }

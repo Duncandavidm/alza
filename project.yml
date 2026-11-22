@@ -57,6 +57,27 @@ targets:
         NSSpeechRecognitionUsageDescription: MonAvi transcribe lo que dices para llenar el monto, la descripcion y la categoria del movimiento por ti.
         NSFaceIDUsageDescription: MonAvi usa Face ID para que desbloquees la app de forma rapida y segura.
         NSCameraUsageDescription: MonAvi usa la camara para escanear el codigo QR de tus facturas electronicas y registrar el gasto automaticamente.
+        # monavi://scan abre la camara (widget de la pantalla bloqueada).
+        CFBundleURLTypes:
+          - CFBundleURLName: app.monavi
+            CFBundleURLSchemes:
+              - monavi
+        # "Compartir → MonAvi" con la factura en PDF o imagen que llego por
+        # correo o WhatsApp: iOS entrega una copia y la app lee su QR.
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Factura en PDF
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes:
+              - com.adobe.pdf
+          - CFBundleTypeName: Foto de factura
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes:
+              - public.jpeg
+              - public.png
+              - public.heic
+        LSSupportsOpeningDocumentsInPlace: false
     entitlements:
       path: MonAvi/Resources/MonAvi.entitlements
       properties:
@@ -94,6 +115,7 @@ targets:
     sources:
       - path: MonAviWidget
       - path: MonAvi/Shared/BudgetWidgetSnapshot.swift
+      - path: MonAvi/Shared/InvoiceScanRequest.swift
       - path: MonAvi/Core/ColorHex.swift
     info:
       path: MonAviWidget/Info.plist

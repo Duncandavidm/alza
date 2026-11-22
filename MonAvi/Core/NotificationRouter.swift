@@ -43,6 +43,34 @@ final class NotificationRouter: ObservableObject {
     @Published var cardPayment: CardPaymentRequest?
     /// "Pasar a otra cuenta" desde el aviso de ahorro disponible.
     @Published var accountTransfer: AccountTransferRequest?
+    /// Factura que llego por "Compartir → MonAvi" (PDF o imagen), ya leida:
+    /// el enlace de su QR. DashboardTabView la abre en la revision.
+    @Published var sharedInvoicePayload: String?
+    /// El archivo compartido no traia el QR de una factura.
+    @Published var sharedInvoiceError: String?
+
+    /// monavi://scan (widget) o un archivo abierto con MonAvi.
+    func handleOpenURL(_ url: URL) {
+        if InvoiceScanRequest.isScanURL(url) {
+            InvoiceScanRequest.request()
+            return
+        }
+        guard url.isFileURL else { return }
+        Task.detached(priority: .userInitiated) {
+            let payload = InvoiceFileReader.payload(from: url)
+            // La copia que iOS deja en Documents/Inbox ya no hace falta.
+            if url.path.contains("/Inbox/") { try? FileManager.default.removeItem(at: url) }
+            await self.receiveSharedInvoice(payload)
+        }
+    }
+
+    private func receiveSharedInvoice(_ payload: String?) {
+        if let payload {
+            sharedInvoicePayload = payload
+        } else {
+            sharedInvoiceError = "No encontramos el código QR de una factura en ese archivo. Abre la factura y escanea su QR con la cámara."
+        }
+    }
 
     func open(screen: String?, userInfo: [AnyHashable: Any] = [:]) {
         guard let screen else { return }

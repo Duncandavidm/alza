@@ -4,6 +4,9 @@ struct DashboardTabView: View {
     @EnvironmentObject private var appState: AppState
     @Environment(\.scenePhase) private var scenePhase
     @ObservedObject private var router = NotificationRouter.shared
+    /// Camara pedida desde fuera (widget, control, Siri) o factura compartida.
+    @State private var isScanningInvoice = false
+    @State private var sharedPayload: String?
 
     var body: some View {
         TabView {
@@ -30,7 +33,27 @@ struct DashboardTabView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 Task { await refreshReminders() }
+                presentPendingInvoiceScan()
             }
+        }
+        .invoiceScanner(isPresented: $isScanningInvoice, payload: sharedPayload) {
+            sharedPayload = nil
+        }
+        .task { presentPendingInvoiceScan() }
+        .onReceive(NotificationCenter.default.publisher(for: InvoiceScanRequest.notification)) { _ in
+            presentPendingInvoiceScan()
+        }
+        .onChange(of: router.sharedInvoicePayload) { _, payload in
+            if payload != nil { presentPendingInvoiceScan() }
+        }
+        .alert("No encontramos la factura", isPresented: isSharedInvoiceErrorShown) {
+            Button("Escanear con la cámara") {
+                router.sharedInvoiceError = nil
+                InvoiceScanRequest.request()
+            }
+            Button("Cerrar", role: .cancel) { router.sharedInvoiceError = nil }
+        } message: {
+            Text(router.sharedInvoiceError ?? "")
         }
         // Tocar una notificacion con destino (ej. "¡Sumaste X puntos!")
         // abre esa pantalla encima de la que este abierta.
@@ -55,6 +78,31 @@ struct DashboardTabView: View {
         .task { presentPendingVoiceCapture() }
         .onChange(of: router.voiceCaptureRequestedAt) { _, requestedAt in
             if requestedAt != nil { presentPendingVoiceCapture() }
+        }
+    }
+
+    private var isSharedInvoiceErrorShown: Binding<Bool> {
+        Binding(
+            get: { router.sharedInvoiceError != nil },
+            set: { if !$0 { router.sharedInvoiceError = nil } }
+        )
+    }
+
+    /// Abre la camara (o la revision de la factura compartida) si hay un
+    /// pedido pendiente. Cierra antes la hoja de una notificacion, si hay.
+    private func presentPendingInvoiceScan() {
+        let payload = router.sharedInvoicePayload
+        guard payload != nil || InvoiceScanRequest.consume() else { return }
+        router.sharedInvoicePayload = nil
+        sharedPayload = payload
+        if router.destination != nil {
+            router.destination = nil
+            Task {
+                try? await Task.sleep(nanoseconds: 600_000_000)
+                isScanningInvoice = true
+            }
+        } else {
+            isScanningInvoice = true
         }
     }
 

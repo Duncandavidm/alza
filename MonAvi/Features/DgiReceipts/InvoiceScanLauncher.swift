@@ -9,7 +9,10 @@ import SwiftUI
 struct InvoiceScanLauncher: ViewModifier {
     @EnvironmentObject private var appState: AppState
     @Binding var isPresented: Bool
+    /// Una factura ya leida (de un PDF compartido): se abre su revision.
+    var payload: String? = nil
     var onFinished: () async -> Void
+    @State private var activePayload: String?
 
     @StateObject private var dgiViewModel = DgiReceiptsViewModel()
     @StateObject private var accountsViewModel = DashboardViewModel()
@@ -31,12 +34,13 @@ struct InvoiceScanLauncher: ViewModifier {
             .sheet(isPresented: $isShowingScanner, onDismiss: {
                 Task { await onFinished() }
             }) {
-                ScanInvoiceView(viewModel: dgiViewModel, accounts: accountsViewModel.accounts)
+                ScanInvoiceView(viewModel: dgiViewModel, accounts: accountsViewModel.accounts, initialPayload: activePayload)
             }
     }
 
     private func start() async {
         guard let userId = appState.currentUserId else { return }
+        activePayload = payload
         await dgiViewModel.refresh(userId: userId)
         await accountsViewModel.refresh(userId: userId)
         if dgiViewModel.hasConsented == true {
@@ -48,7 +52,7 @@ struct InvoiceScanLauncher: ViewModifier {
 }
 
 extension View {
-    func invoiceScanner(isPresented: Binding<Bool>, onFinished: @escaping () async -> Void = {}) -> some View {
-        modifier(InvoiceScanLauncher(isPresented: isPresented, onFinished: onFinished))
+    func invoiceScanner(isPresented: Binding<Bool>, payload: String? = nil, onFinished: @escaping () async -> Void = {}) -> some View {
+        modifier(InvoiceScanLauncher(isPresented: isPresented, payload: payload, onFinished: onFinished))
     }
 }

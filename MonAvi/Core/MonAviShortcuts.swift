@@ -202,5 +202,14 @@ struct MonAviShortcuts: AppShortcutsProvider {
             shortTitle: "Anotar gasto",
             systemImageName: "mic.and.signal.meter"
         )
+        AppShortcut(
+            intent: OpenInvoiceScannerIntent(),
+            phrases: [
+                "Escanea una factura en \(.applicationName)",
+                "Escanear factura con \(.applicationName)"
+            ],
+            shortTitle: "Escanear factura",
+            systemImageName: "qrcode.viewfinder"
+        )
     }
 }

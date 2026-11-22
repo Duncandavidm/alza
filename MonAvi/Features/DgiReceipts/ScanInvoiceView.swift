@@ -1,14 +1,31 @@
 import SwiftUI
 import PhotosUI
+import UIKit
 
 /// Hoja principal de "Facturas que suman": camara en vivo (lo normal) o,
 /// si la factura llego como captura de pantalla, una foto de la galeria.
 /// Ambas desembocan en `ScanReviewView`.
+///
+/// Escaneo seguido: al guardar una factura la camara queda abierta para la
+/// siguiente (con el conteo arriba) hasta que el usuario toca "Listo".
+/// Con `linkTo` (la factura de un gasto recien anotado) se cierra al
+/// guardar esa una.
 struct ScanInvoiceView: View {
     @EnvironmentObject private var appState: AppState
     @ObservedObject var viewModel: DgiReceiptsViewModel
     let accounts: [Account]
+    var linkTo: FinanceTransaction? = nil
+    /// Una factura que llego por "Compartir → MonAvi" (PDF o imagen): se
+    /// lee al abrir, sin pasar por la camara.
+    var initialPayload: String? = nil
     @Environment(\.dismiss) private var dismiss
+
+    @State private var savedCount = 0
+    /// QR ya guardados en esta sesion de camara: si la misma factura sigue
+    /// frente a la camara despues de guardarla, no se vuelve a abrir.
+    @State private var savedPayloads: Set<String> = []
+    @State private var pendingPayload: String?
+    @State private var didHandleInitialPayload = false
 
     @State private var isProcessing = false
     @State private var progressText = "Validando..."
@@ -21,6 +38,7 @@ struct ScanInvoiceView: View {
             VStack(spacing: 0) {
                 cameraSection
                     .overlay(alignment: .bottom) { photoButton }
+                    .overlay(alignment: .top) { savedBanner }
 
                 if let invalidMessage {
                     Text(invalidMessage)
@@ -39,16 +57,21 @@ struct ScanInvoiceView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancelar") { dismiss() }
+                    Button(savedCount > 0 ? "Listo" : "Cancelar") { dismiss() }
                 }
             }
             .sheet(item: $draft) { scanDraft in
                 ScanReviewView(
                     viewModel: viewModel,
                     accounts: accounts,
-                    onSaved: { dismiss() },
+                    onSaved: { handleSaved() },
                     draft: scanDraft
                 )
+            }
+            .task {
+                guard let initialPayload, !didHandleInitialPayload else { return }
+                didHandleInitialPayload = true
+                handleScan(initialPayload)
             }
         }
     }
@@ -60,6 +83,37 @@ struct ScanInvoiceView: View {
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black)
+    }
+
+    @ViewBuilder
+    private var savedBanner: some View {
+        if savedCount > 0 {
+            Label(
+                savedCount == 1
+                    ? "1 factura guardada · escanea la siguiente"
+                    : "\(savedCount) facturas guardadas · escanea la siguiente",
+                systemImage: "checkmark.circle.fill"
+            )
+            .font(.subheadline.weight(.semibold))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(MonAviBrand.primary, in: Capsule())
+            .foregroundStyle(.white)
+            .padding(.top, 16)
+            .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
+
+    private func handleSaved() {
+        if let pendingPayload { savedPayloads.insert(pendingPayload) }
+        pendingPayload = nil
+        if linkTo != nil || initialPayload != nil {
+            dismiss()
+            return
+        }
+        withAnimation { savedCount += 1 }
+        invalidMessage = nil
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
 
     /// Para facturas que llegaron como captura (correo, WhatsApp).
@@ -79,9 +133,13 @@ struct ScanInvoiceView: View {
     }
 
     private func handleScan(_ raw: String) {
-        guard !isProcessing else { return }
+        guard !isProcessing, draft == nil else { return }
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
+        guard !savedPayloads.contains(trimmed) else {
+            invalidMessage = "Esa factura ya la guardaste. Apunta a la siguiente."
+            return
+        }
 
         Task {
             guard let userId = appState.currentUserId else { return }
@@ -97,7 +155,13 @@ struct ScanInvoiceView: View {
                 // Intenta leer la factura completa (monto, comercio,
                 // productos); si no se puede, sigue el flujo manual.
                 progressText = "Leyendo tu factura…"
-                draft = await viewModel.lookupInvoice(for: scanDraft)
+                var enriched = await viewModel.lookupInvoice(for: scanDraft)
+                if let linkTo {
+                    enriched.linkedTransaction = linkTo
+                    enriched.splitByCategory = false
+                }
+                pendingPayload = trimmed
+                draft = enriched
             }
         }
     }

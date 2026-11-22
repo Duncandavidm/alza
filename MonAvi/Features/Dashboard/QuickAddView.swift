@@ -16,6 +16,12 @@ struct QuickAddView: View {
     /// (ver TransactionsRepository.update); para eso hay que borrar y
     /// anotar de nuevo.
     var existingTransaction: FinanceTransaction? = nil
+    /// «¿Te dieron factura?»: despues de anotar un gasto a mano, ofrece
+    /// escanear su factura para ganar cashback. Hoy recibe el gasto y abre
+    /// la camara cuando esta hoja termina de cerrarse.
+    var onScanInvoice: ((FinanceTransaction) -> Void)? = nil
+    @AppStorage("monavi.askInvoiceAfterExpense") private var askInvoiceAfterExpense = true
+    @State private var expenseAwaitingInvoice: FinanceTransaction?
     @StateObject private var voiceRecognizer = VoiceTransactionRecognizer()
     @StateObject private var budgetsViewModel = BudgetsViewModel()
     @Environment(\.dismiss) private var dismiss
@@ -185,6 +191,24 @@ struct QuickAddView: View {
                         amount: enteredMagnitude
                     )
                 }
+            }
+            .alert("¿Te dieron factura?", isPresented: isInvoicePromptShown) {
+                Button("Escanear factura") {
+                    if let expense = expenseAwaitingInvoice { onScanInvoice?(expense) }
+                    expenseAwaitingInvoice = nil
+                    dismiss()
+                }
+                Button("No me dieron") {
+                    expenseAwaitingInvoice = nil
+                    dismiss()
+                }
+                Button("No volver a preguntar", role: .destructive) {
+                    askInvoiceAfterExpense = false
+                    expenseAwaitingInvoice = nil
+                    dismiss()
+                }
+            } message: {
+                Text("Escanéala y gana cashback. Se une a este gasto, no se anota dos veces.")
             }
             .sheet(isPresented: $showingAdvice, onDismiss: { dismiss() }) {
                 if let userId = appState.currentUserId {
@@ -665,7 +689,7 @@ struct QuickAddView: View {
         defer { isSaving = false }
 
         do {
-            async let saved: Void = viewModel.quickAdd(
+            async let saved: FinanceTransaction = viewModel.quickAdd(
                 userId: userId,
                 accountId: accountId,
                 magnitude: magnitude,
@@ -674,7 +698,7 @@ struct QuickAddView: View {
                 category: category?.storedValue
             )
             async let minDelay: Void = Task.sleep(nanoseconds: MovementSavingOverlay.minDisplayNanoseconds(for: movementType))
-            _ = try await (saved, minDelay)
+            let (created, _) = try await (saved, minDelay)
 
             if movementType == .ingreso, let advice = try? await PaymentAdviceService.fetch(userId: userId, incomeAmount: magnitude),
                advice.hasAdvice {
@@ -684,11 +708,30 @@ struct QuickAddView: View {
                 return
             }
 
+            if movementType == .gasto, askInvoiceAfterExpense, onScanInvoice != nil {
+                showingSavingAnimation = false
+                expenseAwaitingInvoice = created
+                return
+            }
+
             dismiss()
         } catch {
             showingSavingAnimation = false
             errorMessage = error.localizedDescription
         }
+    }
+
+    private var isInvoicePromptShown: Binding<Bool> {
+        Binding(
+            get: { expenseAwaitingInvoice != nil },
+            set: { shown in
+                // Cerrada sin elegir (no deberia pasar con botones): se cierra la hoja.
+                if !shown && expenseAwaitingInvoice != nil {
+                    expenseAwaitingInvoice = nil
+                    dismiss()
+                }
+            }
+        )
     }
 
     private func saveEdit(to transaction: FinanceTransaction, magnitude: Decimal) async {

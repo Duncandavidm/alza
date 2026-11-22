@@ -133,12 +133,37 @@ struct AccountDetailView: View {
     @State private var isSaving = false
     @State private var message: String?
     @State private var showingTransfer = false
+    /// Saldo mostrado (cambia al ajustarlo sin esperar a recargar Hoy).
+    @State private var shownAmount: Decimal?
+    @State private var isEditingBalance = false
+    @State private var balanceText = ""
+    @State private var balanceMessage: String?
 
     var body: some View {
         Form {
             Section {
                 LabeledContent("Tipo", value: account.type.displayName)
-                LabeledContent(account.type == .creditCard ? "Debes" : "Saldo", value: account.displayAmount.formatted(.currency(code: account.currency)))
+                LabeledContent(account.type == .creditCard ? "Debes" : "Saldo", value: (shownAmount ?? account.displayAmount).formatted(.currency(code: account.currency)))
+                if isEditingBalance {
+                    AmountField(placeholder: account.type == .creditCard ? "Lo que debes hoy" : "Saldo de hoy", text: $balanceText)
+                    Button(isSaving ? "Guardando…" : "Guardar saldo") { Task { await saveBalance() } }
+                        .disabled(isSaving || RecurringAmountParser.parse(balanceText) == nil)
+                } else {
+                    Button {
+                        balanceText = DgiInvoiceLookupLogic.amountText(for: shownAmount ?? account.displayAmount)
+                        balanceMessage = nil
+                        isEditingBalance = true
+                    } label: {
+                        Label("Ajustar saldo", systemImage: "pencil")
+                    }
+                }
+                if let balanceMessage {
+                    Text(balanceMessage).font(.footnote).foregroundStyle(.secondary)
+                }
+            } footer: {
+                Text(account.type == .creditCard
+                     ? "Escribe lo que debes según tu banco. No se anota como gasto ni como pago."
+                     : "Escribe el saldo que ves en tu banco. No se anota como gasto ni como ingreso.")
             }
 
             if !account.type.isLiability {
@@ -177,6 +202,21 @@ struct AccountDetailView: View {
         }
         .sheet(isPresented: $showingTransfer) {
             AccountTransferView(sourceAccountId: account.id) { onChange?() }
+        }
+    }
+
+    private func saveBalance() async {
+        guard let entered = RecurringAmountParser.parse(balanceText) else { return }
+        isSaving = true
+        defer { isSaving = false }
+        do {
+            try await AccountBalanceAdjustment.save(entered: entered, account: account)
+            shownAmount = account.type == .creditCard ? abs(entered) : entered
+            isEditingBalance = false
+            balanceMessage = "Listo: saldo actualizado."
+            onChange?()
+        } catch {
+            balanceMessage = "No se pudo guardar: \(error.localizedDescription)"
         }
     }
 

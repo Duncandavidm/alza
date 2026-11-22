@@ -105,6 +105,28 @@ enum AccountTransfers {
     }
 }
 
+/// "Ajustar saldo": el usuario escribe lo que ve en su banco y la cuenta
+/// queda con ese saldo. No es un gasto ni un ingreso (no cuenta en el
+/// resumen del mes). En una tarjeta escribe lo que debe: se guarda en
+/// negativo y la deuda vinculada se actualiza sola (triggers de 0079).
+enum AccountBalanceAdjustment {
+    /// Lo que se guarda en `accounts.balance` a partir de lo que se ve.
+    static func storedBalance(entered: Decimal, type: AccountType) -> Decimal {
+        type == .creditCard ? -abs(entered) : entered
+    }
+
+    static func save(entered: Decimal, account: Account) async throws {
+        struct Update: Encodable {
+            let balance: Decimal
+        }
+        try await SupabaseManager.shared.client
+            .from("accounts")
+            .update(Update(balance: storedBalance(entered: entered, type: account.type)))
+            .eq("id", value: account.id)
+            .execute()
+    }
+}
+
 /// Abrir "Transferir" con esa cuenta de origen (desde el aviso de
 /// disponibilidad o desde Hoy).
 struct AccountTransferRequest: Identifiable, Equatable {

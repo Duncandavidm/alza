@@ -158,6 +158,7 @@ final class DayJournalViewModel: ObservableObject {
     /// El ingreso ultra-rapido (mejora #2): solo monto + descripcion. El
     /// tipo de movimiento se pre-selecciona (gasto, lo mas comun) y se puede
     /// cambiar con un toque; la cuenta se infiere sola.
+    @discardableResult
     func quickAdd(
         userId: UUID,
         accountId: UUID,
@@ -165,7 +166,7 @@ final class DayJournalViewModel: ObservableObject {
         description: String,
         movementType: MovementType,
         category: String? = nil
-    ) async throws {
+    ) async throws -> FinanceTransaction {
         let created = try await repository.add(
             NewTransaction(
                 userId: userId,
@@ -183,6 +184,7 @@ final class DayJournalViewModel: ObservableObject {
         if let index = accounts.firstIndex(where: { $0.id == accountId }) {
             accounts[index].balance += created.amount
         }
+        return created
     }
 
     /// Corregir un movimiento ya anotado (monto, tipo, categoria o

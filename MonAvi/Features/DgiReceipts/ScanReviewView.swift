@@ -27,7 +27,7 @@ struct ScanReviewView: View {
     /// Solo se puede unir con un gasto existente cuando NO se separa por
     /// categoria.
     private var isSplitting: Bool {
-        draft.splitByCategory && draft.canSplitByCategory
+        draft.linkedTransaction == nil && draft.splitByCategory && draft.canSplitByCategory
     }
 
     private var splitPreview: [DgiCategorySplitLine] {
@@ -72,18 +72,22 @@ struct ScanReviewView: View {
                 Section {
                     amountRow
 
-                    if !isSplitting {
-                        Picker("Categoría", selection: $draft.category) {
-                            Text("Sin categoría").tag(TransactionCategory?.none)
-                            ForEach(TransactionCategory.allCases) { category in
-                                Text("\(category.emoji) \(category.rawValue)").tag(Optional(category))
+                    if let linked = draft.linkedTransaction {
+                        LabeledContent("Se une a tu gasto", value: linked.description ?? "Gasto de hoy")
+                    } else {
+                        if !isSplitting {
+                            Picker("Categoría", selection: $draft.category) {
+                                Text("Sin categoría").tag(TransactionCategory?.none)
+                                ForEach(TransactionCategory.allCases) { category in
+                                    Text("\(category.emoji) \(category.rawValue)").tag(Optional(category))
+                                }
                             }
                         }
-                    }
 
-                    Picker("Cuenta", selection: $selectedAccountId) {
-                        ForEach(accounts) { account in
-                            Text(account.name).tag(Optional(account.id))
+                        Picker("Cuenta", selection: $selectedAccountId) {
+                            ForEach(accounts) { account in
+                                Text(account.name).tag(Optional(account.id))
+                            }
                         }
                     }
                 } header: {
@@ -92,7 +96,7 @@ struct ScanReviewView: View {
                     Text("El gasto se registra de una vez. Verificamos tu factura al guardarla: si ya está publicada, tu cashback (1%) se suma enseguida; si no, la volvemos a revisar en 24 horas y queda pendiente hasta confirmarla.")
                 }
 
-                if draft.canSplitByCategory {
+                if draft.canSplitByCategory && draft.linkedTransaction == nil {
                     Section {
                         ForEach(splitPreview) { line in
                             LabeledContent {
@@ -124,7 +128,7 @@ struct ScanReviewView: View {
                 }
             }
             .onAppear {
-                selectedAccountId = selectedAccountId ?? accounts.first?.id
+                selectedAccountId = selectedAccountId ?? draft.linkedTransaction?.accountId ?? accounts.first?.id
             }
             .task {
                 // Con el monto ya leido de la factura, ofrecer de una vez
@@ -233,6 +237,7 @@ struct ScanReviewView: View {
     }
 
     private func checkMerge() async {
+        guard draft.linkedTransaction == nil else { return }
         guard let userId = appState.currentUserId, amount > 0, checkedMergeForAmount != amount else { return }
         checkedMergeForAmount = amount
         draft.mergeCandidate = await viewModel.mergeCandidate(for: draft, userId: userId, amount: amount)

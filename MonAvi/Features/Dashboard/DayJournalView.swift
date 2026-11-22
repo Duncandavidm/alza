@@ -25,6 +25,9 @@ struct DayJournalView: View {
     @State private var isContributingToSavings = false
     @State private var isShowingDgiConsent = false
     @State private var isShowingInvoiceScanner = false
+    /// Gasto recien anotado cuya factura se va a escanear (ver openPendingInvoiceForExpense).
+    @State private var pendingInvoiceExpense: FinanceTransaction?
+    @State private var invoiceExpense: FinanceTransaction?
     @State private var editingTransaction: FinanceTransaction?
     @State private var daySummary: DaySummary?
     @State private var isClosingDay = false
@@ -68,6 +71,14 @@ struct DayJournalView: View {
 
                         totalsCard
 
+                        // Presupuestos justo debajo del total del dia: lo
+                        // primero que se ve antes de gastar.
+                        if !budgetsViewModel.progresses.isEmpty && !isSearching {
+                            BudgetCandyBarRow(progresses: budgetsViewModel.progresses) { progress in
+                                selectedBudgetProgress = progress
+                            }
+                        }
+
                         if let alert = healthAlert, viewModel.isViewingToday && !isSearching {
                             debtAlertBanner(alert)
                         }
@@ -83,12 +94,6 @@ struct DayJournalView: View {
                         recurringSuggestionCards
 
                         savingsCard
-
-                        if !budgetsViewModel.progresses.isEmpty {
-                            BudgetCandyBarRow(progresses: budgetsViewModel.progresses) { progress in
-                                selectedBudgetProgress = progress
-                            }
-                        }
 
                         if !billsViewModel.pending.isEmpty {
                             billsStrip
@@ -240,11 +245,11 @@ struct DayJournalView: View {
                     await refreshBudgets()
                 }
             }
-            .sheet(isPresented: $isQuickAdding) {
-                QuickAddView(viewModel: viewModel)
+            .sheet(isPresented: $isQuickAdding, onDismiss: openPendingInvoiceForExpense) {
+                QuickAddView(viewModel: viewModel, onScanInvoice: { pendingInvoiceExpense = $0 })
             }
-            .sheet(isPresented: $isVoiceQuickAdding) {
-                QuickAddView(viewModel: viewModel, autoStartVoice: true)
+            .sheet(isPresented: $isVoiceQuickAdding, onDismiss: openPendingInvoiceForExpense) {
+                QuickAddView(viewModel: viewModel, autoStartVoice: true, onScanInvoice: { pendingInvoiceExpense = $0 })
             }
             .sheet(isPresented: $isShowingDgiConsent) {
                 DgiConsentView(viewModel: dgiViewModel) {
@@ -252,13 +257,14 @@ struct DayJournalView: View {
                 }
             }
             .sheet(isPresented: $isShowingInvoiceScanner, onDismiss: {
+                invoiceExpense = nil
                 // La factura se registra como gasto: que aparezca de una vez.
                 Task {
                     await refresh()
                     await refreshBudgets()
                 }
             }) {
-                ScanInvoiceView(viewModel: dgiViewModel, accounts: viewModel.accounts)
+                ScanInvoiceView(viewModel: dgiViewModel, accounts: viewModel.accounts, linkTo: invoiceExpense)
             }
             .sheet(item: $editingTransaction) { transaction in
                 QuickAddView(viewModel: viewModel, existingTransaction: transaction)
@@ -973,6 +979,7 @@ struct DayJournalView: View {
                 /// antes solo se llegaba ahi en 3 toques (Hoy > Puntos >
                 /// Facturas que suman > escanear). Aqui mismo, un toque.
                 Button {
+                    invoiceExpense = nil
                     startInvoiceScan()
                 } label: {
                     Image(systemName: "qrcode.viewfinder")
@@ -1077,6 +1084,18 @@ struct DayJournalView: View {
     private func refreshDgiConsent() async {
         guard let userId = appState.currentUserId else { return }
         await dgiViewModel.refresh(userId: userId)
+    }
+
+    /// «¿Te dieron factura?» > "Escanear factura": la camara se abre en
+    /// cuanto la hoja de anotar termina de cerrarse, unida a ese gasto.
+    private func openPendingInvoiceForExpense() {
+        guard let expense = pendingInvoiceExpense else { return }
+        pendingInvoiceExpense = nil
+        invoiceExpense = expense
+        Task {
+            if dgiViewModel.hasConsented == nil { await refreshDgiConsent() }
+            startInvoiceScan()
+        }
     }
 
     private func startInvoiceScan() {

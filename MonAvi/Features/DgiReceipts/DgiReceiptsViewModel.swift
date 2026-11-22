@@ -35,6 +35,10 @@ struct ScanDraft: Identifiable {
     /// La factura siempre se registra como gasto nuevo (no se pregunta si
     /// unirla con otro movimiento).
     var mergeWithCandidate: Bool = false
+    /// «¿Te dieron factura?» despues de anotar un gasto a mano: la factura
+    /// se une a ESE gasto (no se crea otro). Si el monto de la factura es
+    /// distinto, el gasto se corrige al de la factura.
+    var linkedTransaction: FinanceTransaction?
 
     /// Resultado de leer la factura completa (`lookup-dgi-receipt`).
     /// `.failed` = no se pudo leer: flujo manual de siempre.
@@ -226,12 +230,23 @@ final class DgiReceiptsViewModel: ObservableObject {
         // queda en $0 y el servidor lo actualiza con el valor de la DGI al
         // verificar la factura.
         let merchantName = draft.merchantDisplayName ?? "Factura \(draft.parsed.fields.ruc)"
-        let splitLines: [DgiCategorySplitLine] = (draft.splitByCategory && draft.canSplitByCategory)
+        let splitLines: [DgiCategorySplitLine] = (draft.linkedTransaction == nil && draft.splitByCategory && draft.canSplitByCategory)
             ? DgiInvoiceLookupLogic.splitLines(breakdown: draft.invoiceDetails?.breakdown ?? [], total: amount)
             : []
 
         let transactionId: UUID
-        if splitLines.count >= 2 {
+        if let linked = draft.linkedTransaction {
+            if amount > 0 && linked.amount.magnitude != amount {
+                try await TransactionsRepository.shared.update(
+                    linked,
+                    magnitude: amount,
+                    movementType: linked.movementType,
+                    category: linked.category,
+                    description: linked.description
+                )
+            }
+            transactionId = linked.id
+        } else if splitLines.count >= 2 {
             var createdIds: [UUID] = []
             for line in splitLines {
                 let created = try await TransactionsRepository.shared.add(

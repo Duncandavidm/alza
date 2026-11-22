@@ -9,6 +9,8 @@ struct OnboardingView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = OnboardingViewModel()
     @State private var step = 0
+    /// Cuentas ya creadas: falta solo el paso de la primera factura.
+    @State private var isShowingFirstInvoice = false
 
     private let totalSteps = 14
 
@@ -69,6 +71,10 @@ struct OnboardingView: View {
             }
         }
         .interactiveDismissDisabled()
+        .fullScreenCover(isPresented: $isShowingFirstInvoice) {
+            FirstInvoiceView { appState.markOnboardingCompleted() }
+                .environmentObject(appState)
+        }
     }
 
     // MARK: - Pasos
@@ -405,7 +411,7 @@ struct OnboardingView: View {
         guard let userId = appState.currentUserId else { return }
         let success = await viewModel.finish(userId: userId)
         if success {
-            appState.markOnboardingCompleted()
+            isShowingFirstInvoice = true
         }
     }
 }

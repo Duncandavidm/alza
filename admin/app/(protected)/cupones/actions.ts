@@ -79,9 +79,6 @@ export async function createHabitCoupon(_prev: ActionState, formData: FormData):
   if (ruleType === "ahorro_ingresos" && (threshold <= 0 || threshold > 100)) return { error: "El % de ahorro debe estar entre 1 y 100." };
   if (ruleType === "salud_financiera" && (threshold <= 0 || threshold > 100)) return { error: "El puntaje debe estar entre 1 y 100." };
   if (ruleType === "dias_registrados" && (threshold < 1 || threshold > 31)) return { error: "Los días deben estar entre 1 y 31." };
-  if (ruleType === "facturas_mes" && (!Number.isInteger(threshold) || threshold < 1 || threshold > 200)) {
-    return { error: "La meta de facturas debe ser un número entero entre 1 y 200." };
-  }
 
   const minLoggedDays = intField(formData, "min_logged_days", 0, 31, 15);
   if (minLoggedDays === undefined) return { error: "Los días mínimos anotados deben estar entre 0 y 31." };

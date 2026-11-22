@@ -1,193 +1,8 @@
--- 1.0.5: meta mensual de facturas, retos por comercio, aviso de cupon por
--- vencer, segmento "sin facturas" para reactivar, resumen del mes y
+-- 1.0.5: retos por comercio, aviso de cupon por vencer, segmento "sin facturas" para reactivar, resumen del mes y
 -- "Tus compras".
 
 -- ---------------------------------------------------------------------
--- 1) Meta mensual de facturas ("Llevas 8 de 15 facturas este mes")
--- ---------------------------------------------------------------------
--- Meta por defecto cuando no hay un cupon de tipo facturas_mes activo.
-insert into public.app_config (key, value)
-values ('invoice_goal_monthly', '15'::jsonb)
-on conflict (key) do nothing;
-
--- Regla nueva de cupones: facturas confirmadas en el mes en curso. Se
--- entrega en la corrida diaria apenas llega a la meta (una vez por mes).
-alter table public.habit_coupon_rules drop constraint if exists habit_coupon_rules_rule_type_check;
-alter table public.habit_coupon_rules add constraint habit_coupon_rules_rule_type_check
-  check (rule_type = any (array['ahorro_ingresos', 'meta_a_tiempo', 'presupuestos', 'dias_registrados',
-                                'salud_financiera', 'semana_completa', 'todos', 'facturas_mes']));
-
-create or replace function public.habit_rule_reason(p_rule habit_coupon_rules)
- returns text
- language sql
- immutable
- set search_path to 'public', 'pg_temp'
-as $function$
-  select case p_rule.rule_type
-    when 'ahorro_ingresos' then 'por ahorrar el ' || rtrim(to_char(p_rule.threshold, 'FM999990.##'), '.') || '% de tus ingresos en el mes'
-    when 'meta_a_tiempo' then 'por cumplir una meta de ahorro a tiempo'
-    when 'presupuestos' then 'por cumplir todos tus presupuestos del mes'
-    when 'dias_registrados' then 'por anotar tus movimientos ' || trim(to_char(p_rule.threshold, 'FM990')) || ' días del mes'
-    when 'semana_completa' then 'por anotar tus movimientos todos los días de la semana'
-    when 'facturas_mes' then 'por escanear ' || trim(to_char(greatest(p_rule.threshold, 1), 'FM990')) || ' facturas en el mes'
-    when 'todos' then 'por ser de MonAvi'
-    else 'por tener una salud financiera de ' || trim(to_char(p_rule.threshold, 'FM990')) || '/100 o más'
-  end;
-$function$;
-
-create or replace function public.issue_habit_coupons()
- returns table(user_id uuid, redemption_id uuid, rule_name text, coupon_name text, merchant text, reason text, expires_at timestamp with time zone, image_url text)
- language plpgsql
- security definer
- set search_path to 'public', 'pg_temp'
-as $function$
-#variable_conflict use_column
-declare
-  v_rule public.habit_coupon_rules;
-  v_item public.reward_items;
-  v_merchant public.partner_merchants;
-  v_month date := ((now() at time zone 'America/Panama') - interval '1 month')::date;
-  v_period text := to_char(((now() at time zone 'America/Panama') - interval '1 month'), 'YYYY-MM');
-  -- Mes en curso (facturas_mes se entrega apenas se cumple).
-  v_this_month_start date := date_trunc('month', now() at time zone 'America/Panama')::date;
-  v_this_period text := to_char(now() at time zone 'America/Panama', 'YYYY-MM');
-  -- Semana pasada (lunes a domingo, hora de Panama).
-  v_week_start date := date_trunc('week', (now() at time zone 'America/Panama') - interval '7 days')::date;
-  v_week text := to_char(date_trunc('week', (now() at time zone 'America/Panama') - interval '7 days'), 'IYYY-"S"IW');
-  v_candidate record;
-  v_issued integer;
-  v_redemption uuid;
-  v_metrics jsonb;
-  v_ok boolean;
-begin
-  for v_rule in select * from public.habit_coupon_rules where status = 'active' order by created_at loop
-    select * into v_item from public.reward_items where id = v_rule.reward_item_id;
-    select * into v_merchant from public.partner_merchants where id = v_item.merchant_id;
-    continue when v_item.id is null or v_merchant.id is null or v_merchant.status <> 'active';
-
-    select count(*) into v_issued from public.habit_coupon_grants g where g.rule_id = v_rule.id;
-
-    for v_candidate in
-      select u.id as uid,
-             case when v_rule.rule_type = 'meta_a_tiempo' then g.id::text
-                  when v_rule.rule_type = 'todos' then 'todos'
-                  when v_rule.rule_type = 'semana_completa' then v_week
-                  when v_rule.rule_type = 'facturas_mes' then v_this_period
-                  else v_period end as period_key,
-             g.name as goal_name
-      from auth.users u
-      left join public.savings_goals g
-        on v_rule.rule_type = 'meta_a_tiempo' and g.user_id = u.id
-       and g.current_amount >= g.target_amount and g.target_amount >= greatest(v_rule.threshold, 1)
-       and (g.target_date is null or (now() at time zone 'America/Panama')::date <= g.target_date)
-       and g.created_at <= now() - interval '30 days'
-      where (v_rule.rule_type <> 'meta_a_tiempo' or g.id is not null)
-        and (u.banned_until is null or u.banned_until < now())
-    loop
-      exit when v_rule.max_coupons is not null and v_issued >= v_rule.max_coupons;
-      continue when exists (select 1 from public.habit_coupon_grants x
-                            where x.rule_id = v_rule.id and x.user_id = v_candidate.uid and x.period_key = v_candidate.period_key);
-
-      if v_rule.rule_type = 'semana_completa' then
-        v_ok := (select count(distinct (t.created_at at time zone 'America/Panama')::date)
-                   from public.transactions t
-                  where t.user_id = v_candidate.uid
-                    and (t.created_at at time zone 'America/Panama')::date between v_week_start and v_week_start + 6) >= 7;
-      elsif v_rule.rule_type = 'facturas_mes' then
-        -- Solo facturas que la DGI ya confirmo (las pendientes cuentan
-        -- cuando se confirman).
-        v_ok := (select count(*) from public.dgi_receipts r
-                  where r.user_id = v_candidate.uid and r.status = 'confirmada'
-                    and (r.scanned_at at time zone 'America/Panama')::date >= v_this_month_start)
-                >= greatest(v_rule.threshold, 1);
-      else
-        v_metrics := case when v_rule.rule_type = 'todos' then '{}'::jsonb
-                          else public.financial_month_metrics(v_candidate.uid, v_month) end;
-        v_ok := v_rule.rule_type = 'todos' or (v_metrics->>'logged_days')::int >= v_rule.min_logged_days and case v_rule.rule_type
-          when 'ahorro_ingresos' then (v_metrics->>'income')::numeric > 0
-                                   and coalesce((v_metrics->>'savings_rate')::numeric, 0) >= v_rule.threshold
-          when 'presupuestos' then (v_metrics->>'budgets')::int >= greatest(v_rule.threshold, 1)
-                                and (v_metrics->>'budgets_met')::int = (v_metrics->>'budgets')::int
-          when 'dias_registrados' then (v_metrics->>'logged_days')::int >= v_rule.threshold
-          when 'salud_financiera' then (v_metrics->>'score')::numeric >= v_rule.threshold
-          when 'meta_a_tiempo' then true
-          else false end;
-        if v_rule.rule_type = 'meta_a_tiempo' then
-          v_ok := (public.financial_month_metrics(v_candidate.uid, (now() at time zone 'America/Panama')::date)->>'logged_days')::int
-                  >= least(v_rule.min_logged_days, extract(day from (now() at time zone 'America/Panama'))::int);
-        end if;
-      end if;
-      continue when not v_ok;
-
-      insert into public.reward_redemptions (user_id, reward_item_id, merchant_id, points_cost, code, status,
-          expires_at, currency, source, gift_message)
-      values (v_candidate.uid, v_item.id, v_item.merchant_id, v_item.points_cost, public.new_redemption_code(), 'emitido',
-          now() + make_interval(days => v_rule.expires_days), 'cashback', 'regalo',
-          coalesce(v_rule.message, '¡Felicidades! Te lo ganaste ' || public.habit_rule_reason(v_rule) || '.'))
-      returning id into v_redemption;
-
-      insert into public.habit_coupon_grants (rule_id, user_id, period_key, redemption_id)
-      values (v_rule.id, v_candidate.uid, v_candidate.period_key, v_redemption);
-      v_issued := v_issued + 1;
-
-      user_id := v_candidate.uid;
-      redemption_id := v_redemption;
-      rule_name := v_rule.name;
-      coupon_name := v_item.name;
-      merchant := v_merchant.name;
-      reason := public.habit_rule_reason(v_rule);
-      expires_at := now() + make_interval(days => v_rule.expires_days);
-      image_url := coalesce(v_item.photo_url, v_merchant.logo_url);
-      return next;
-    end loop;
-  end loop;
-end $function$;
-revoke all on function public.issue_habit_coupons() from public, anon, authenticated;
-
--- Para la app: como va la meta del mes y que cupon da (si hay uno).
-create or replace function public.my_invoice_goal()
-returns jsonb
-language sql stable security definer set search_path to 'public', 'pg_temp' as $$
-  with me as (select auth.uid() as uid),
-  m as (select date_trunc('month', now() at time zone 'America/Panama')::date as start,
-               to_char(now() at time zone 'America/Panama', 'YYYY-MM') as period),
-  c as (
-    select count(*) filter (where r.status = 'confirmada') as confirmed,
-           count(*) filter (where r.status = 'pendiente') as pending
-    from public.dgi_receipts r, m
-    where r.user_id = (select uid from me)
-      and (r.scanned_at at time zone 'America/Panama')::date >= m.start
-  ),
-  rule as (
-    select r.id, greatest(r.threshold, 1)::int as goal, ri.name as coupon, pm.name as merchant,
-           coalesce(ri.photo_url, pm.logo_url) as image_url
-    from public.habit_coupon_rules r
-    join public.reward_items ri on ri.id = r.reward_item_id
-    join public.partner_merchants pm on pm.id = ri.merchant_id
-    where r.status = 'active' and r.rule_type = 'facturas_mes' and pm.status = 'active'
-      and (r.max_coupons is null or (select count(*) from public.habit_coupon_grants g where g.rule_id = r.id) < r.max_coupons)
-    order by r.threshold, r.created_at
-    limit 1
-  )
-  select jsonb_build_object(
-    'confirmed', c.confirmed,
-    'pending', c.pending,
-    'goal', coalesce((select goal from rule),
-                     (select (value #>> '{}')::int from public.app_config where key = 'invoice_goal_monthly'), 15),
-    'coupon', (select coupon from rule),
-    'merchant', (select merchant from rule),
-    'image_url', (select image_url from rule),
-    'earned', exists (select 1 from public.habit_coupon_grants g, rule, m
-                      where g.rule_id = rule.id and g.user_id = (select uid from me) and g.period_key = m.period)
-  )
-  from c
-  where (select uid from me) is not null;
-$$;
-revoke all on function public.my_invoice_goal() from public, anon;
-grant execute on function public.my_invoice_goal() to authenticated;
-
--- ---------------------------------------------------------------------
--- 2) Retos por comercio ("Escanea 3 facturas de este comercio y gana")
+-- 1) Retos por comercio ("Escanea 3 facturas de este comercio y gana")
 -- ---------------------------------------------------------------------
 create table if not exists public.merchant_challenges (
   id uuid primary key default gen_random_uuid(),
@@ -319,7 +134,7 @@ revoke all on function public.my_merchant_challenges() from public, anon;
 grant execute on function public.my_merchant_challenges() to authenticated;
 
 -- ---------------------------------------------------------------------
--- 3) "Tu cupón en Café La Esquina vence mañana"
+-- 2) "Tu cupón en Café La Esquina vence mañana"
 -- ---------------------------------------------------------------------
 alter table public.reward_redemptions add column if not exists expiry_reminder_sent_at timestamptz;
 
@@ -341,7 +156,7 @@ $$;
 revoke all on function public.coupons_expiring_soon() from public, anon, authenticated;
 
 -- ---------------------------------------------------------------------
--- 4) Segmento "sin facturas en N días" (avisos de reactivacion)
+-- 3) Segmento "sin facturas en N días" (avisos de reactivacion)
 -- ---------------------------------------------------------------------
 create or replace function public.segment_user_ids(p_segment jsonb DEFAULT '{}'::jsonb)
  returns table(user_id uuid)
@@ -448,7 +263,7 @@ where s.by_email
 $function$;
 
 -- ---------------------------------------------------------------------
--- 5) Resumen del mes de facturas (para compartir) y "Tus compras"
+-- 4) Resumen del mes de facturas (para compartir) y "Tus compras"
 -- ---------------------------------------------------------------------
 create or replace function public.my_invoice_month_summary(p_month date default null)
 returns jsonb
@@ -513,7 +328,7 @@ revoke all on function public.my_purchases(integer) from public, anon;
 grant execute on function public.my_purchases(integer) to authenticated;
 
 -- ---------------------------------------------------------------------
--- 6) Push que abre la camara ("scan"): avisos de reactivacion
+-- 5) Push que abre la camara ("scan"): avisos de reactivacion
 -- ---------------------------------------------------------------------
 alter table public.push_campaigns drop constraint if exists push_campaigns_screen_check;
 alter table public.push_campaigns add constraint push_campaigns_screen_check

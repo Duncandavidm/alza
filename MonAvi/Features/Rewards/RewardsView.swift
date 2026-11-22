@@ -565,7 +565,7 @@ struct RewardsView: View {
 
     private func refresh() async {
         guard let userId = appState.currentUserId else { return }
-        async let challengesFetch = InvoiceGoalsRepository.fetchChallenges()
+        async let challengesFetch = MerchantChallengesRepository.fetchChallenges()
         await viewModel.refresh(userId: userId)
         challenges = await challengesFetch
     }

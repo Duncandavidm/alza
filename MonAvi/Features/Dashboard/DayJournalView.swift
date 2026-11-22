@@ -28,8 +28,6 @@ struct DayJournalView: View {
     /// Gasto recien anotado cuya factura se va a escanear (ver openPendingInvoiceForExpense).
     @State private var pendingInvoiceExpense: FinanceTransaction?
     @State private var invoiceExpense: FinanceTransaction?
-    @State private var invoiceGoal: InvoiceGoal?
-    @State private var isShowingInvoiceSummary = false
     @State private var editingTransaction: FinanceTransaction?
     @State private var daySummary: DaySummary?
     @State private var isClosingDay = false
@@ -87,16 +85,6 @@ struct DayJournalView: View {
 
                         if !viewModel.accounts.isEmpty && !isSearching {
                             accountsStrip
-                        }
-
-                        // "Llevas 8 de 15 facturas este mes" (meta y cupón del panel).
-                        if let invoiceGoal, viewModel.isViewingToday && !isSearching {
-                            InvoiceGoalCard(goal: invoiceGoal) {
-                                invoiceExpense = nil
-                                startInvoiceScan()
-                            }
-                            .contentShape(Rectangle())
-                            .onTapGesture { isShowingInvoiceSummary = true }
                         }
 
                         cardDueRows
@@ -277,16 +265,6 @@ struct DayJournalView: View {
                 }
             }) {
                 ScanInvoiceView(viewModel: dgiViewModel, accounts: viewModel.accounts, linkTo: invoiceExpense)
-            }
-            .sheet(isPresented: $isShowingInvoiceSummary) {
-                NavigationStack {
-                    InvoiceMonthSummaryView()
-                        .toolbar {
-                            ToolbarItem(placement: .cancellationAction) {
-                                Button("Cerrar") { isShowingInvoiceSummary = false }
-                            }
-                        }
-                }
             }
             .sheet(item: $editingTransaction) { transaction in
                 QuickAddView(viewModel: viewModel, existingTransaction: transaction)
@@ -1071,7 +1049,6 @@ struct DayJournalView: View {
         pointsByTransaction = await CardPointsRepository.shared.pointsByTransaction(
             userId: userId, day: viewModel.selectedDate
         )
-        if let goal = await InvoiceGoalsRepository.fetchGoal() { invoiceGoal = goal }
     }
 
     private func search() async {

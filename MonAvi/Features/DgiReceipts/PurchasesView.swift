@@ -34,7 +34,7 @@ struct Purchase: Decodable, Equatable, Identifiable {
         quantity = try? c.decodeIfPresent(Double.self, forKey: .quantity)
         unitPrice = try? c.decodeIfPresent(Double.self, forKey: .unitPrice)
         total = try? c.decodeIfPresent(Double.self, forKey: .total)
-        boughtAt = (try? c.decodeIfPresent(String.self, forKey: .boughtAt)).flatMap(InvoiceGoalsText.date(fromTimestamp:))
+        boughtAt = (try? c.decodeIfPresent(String.self, forKey: .boughtAt)).flatMap(MerchantChallengesText.date(fromTimestamp:))
     }
 
     static func == (lhs: Purchase, rhs: Purchase) -> Bool {

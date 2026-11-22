@@ -7,6 +7,8 @@ struct SettingsView: View {
     @EnvironmentObject private var appState: AppState
     @State private var isSigningOut = false
     @AppStorage("isAdvancedMode") private var isAdvancedMode = false
+    /// Mismo valor que usa Hoy (DayJournalView) para ocultar "Tu ahorro".
+    @AppStorage("monavi.hideSavingsCardInHoy") private var hideSavingsCardInHoy = false
     @AppStorage(NotificationManager.reminderLeadDaysKey) private var reminderLeadDays = NotificationManager.defaultLeadDays
     @AppStorage(NotificationManager.dailyLogReminderKey) private var dailyLogReminder = true
     @AppStorage(NotificationManager.dailyLogTimeKey) private var dailyLogMinutes = NotificationManager.defaultDailyLogMinutes
@@ -43,6 +45,17 @@ struct SettingsView: View {
                         : "Solo lo esencial al anotar: cuenta, tipo y monto.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                }
+
+                Section {
+                    Toggle("Mostrar «Tu ahorro» en Hoy", isOn: Binding(
+                        get: { !hideSavingsCardInHoy },
+                        set: { hideSavingsCardInHoy = !$0 }
+                    ))
+                } header: {
+                    Text("Pantalla Hoy")
+                } footer: {
+                    Text("Si lo ocultaste con la X, aquí lo vuelves a mostrar. Tus metas siguen en Ahorro.")
                 }
 
                 Section {

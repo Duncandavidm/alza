@@ -28,6 +28,8 @@ struct DayJournalView: View {
     /// Gasto recien anotado cuya factura se va a escanear (ver openPendingInvoiceForExpense).
     @State private var pendingInvoiceExpense: FinanceTransaction?
     @State private var isAddingBudget = false
+    /// El usuario oculto "Tu ahorro" de Hoy (se vuelve a mostrar en Ajustes).
+    @AppStorage("monavi.hideSavingsCardInHoy") private var hideSavingsCard = false
     @State private var didLoadBudgets = false
     @State private var invoiceExpense: FinanceTransaction?
     @State private var editingTransaction: FinanceTransaction?
@@ -73,8 +75,21 @@ struct DayJournalView: View {
 
                         totalsCard
 
-                        // Presupuestos justo debajo del total del dia: lo
-                        // primero que se ve antes de gastar.
+                        if let alert = healthAlert, viewModel.isViewingToday && !isSearching {
+                            debtAlertBanner(alert)
+                        }
+
+                        if !viewModel.accounts.isEmpty && !isSearching {
+                            accountsStrip
+                        }
+
+                        // "Tu ahorro" se puede ocultar con la X (y volver a
+                        // mostrar en Ajustes).
+                        if !hideSavingsCard && !isSearching {
+                            savingsCard
+                        }
+
+                        // Presupuestos: siempre a la vista, antes de avisos y movimientos.
                         if !budgetsViewModel.progresses.isEmpty && !isSearching {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("Tus presupuestos del mes")
@@ -89,21 +104,11 @@ struct DayJournalView: View {
                             emptyBudgetsCard
                         }
 
-                        if let alert = healthAlert, viewModel.isViewingToday && !isSearching {
-                            debtAlertBanner(alert)
-                        }
-
-                        if !viewModel.accounts.isEmpty && !isSearching {
-                            accountsStrip
-                        }
-
                         cardDueRows
 
                         savingsAvailableRows
 
                         recurringSuggestionCards
-
-                        savingsCard
 
                         if !billsViewModel.pending.isEmpty {
                             billsStrip
@@ -496,31 +501,35 @@ struct DayJournalView: View {
         NavigationLink {
             SavingsGoalsView()
         } label: {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Label("Tu ahorro", systemImage: "banknote.fill")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(MonAviBrand.primary)
-                    Spacer()
                     Image(systemName: "chevron.right")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                    Spacer()
+                    // Espacio para la X (va encima, fuera del enlace).
+                    Color.clear.frame(width: 28, height: 1)
                 }
 
                 if savingsViewModel.goals.isEmpty {
-                    Text("Crea tu primera meta y aparta algo cada semana. Ahorrar con constancia también te da cupones de descuento.")
+                    Text("Crea tu primera meta y aparta algo cada semana.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.leading)
                 } else {
-                    Text(totalSaved, format: .currency(code: "USD"))
-                        .font(.system(size: 30, weight: .heavy, design: MonAviBrand.fontDesign))
-                        .foregroundStyle(.primary)
-                    Text(savingsViewModel.goals.count == 1 ? "ahorrado en tu meta" : "ahorrado en \(savingsViewModel.goals.count) metas")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(totalSaved, format: .currency(code: "USD"))
+                            .font(.system(size: 24, weight: .heavy, design: MonAviBrand.fontDesign))
+                            .foregroundStyle(.primary)
+                        Text(savingsViewModel.goals.count == 1 ? "en tu meta" : "en \(savingsViewModel.goals.count) metas")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
 
-                    ForEach(savingsViewModel.goals.prefix(2)) { goal in
+                    ForEach(savingsViewModel.goals.prefix(1)) { goal in
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
                                 Text("\(goal.emoji) \(goal.name)")
@@ -538,11 +547,25 @@ struct DayJournalView: View {
                     }
                 }
             }
-            .padding(14)
+            .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(RoundedRectangle(cornerRadius: 16).fill(Color(.secondarySystemBackground)))
         }
         .buttonStyle(.plain)
+        .overlay(alignment: .topTrailing) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.25)) { hideSavingsCard = true }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 26, height: 26)
+                    .background(Circle().fill(Color(.tertiarySystemFill)))
+                    .padding(8)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Ocultar Tu ahorro")
+        }
     }
 
     /// Gasto anotado dos meses seguidos: "Pagaste Luz el 12 de octubre y

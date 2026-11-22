@@ -56,7 +56,7 @@ enum QuickExpenseCategory: String, AppEnum {
 struct QuickExpenseIntent: AppIntent {
     static var title: LocalizedStringResource = "Anotar gasto rápido"
     static var description = IntentDescription(
-        "Te pide el monto, la categoría y qué fue, y anota el gasto en MonAvi sin abrir la app. Ideal para el doble toque atrás del iPhone."
+        "Te pide el monto, la categoría y qué fue, y anota el gasto en MonAvi sin abrir la app. Ideal para Tocar atrás."
     )
     static var openAppWhenRun: Bool = false
 

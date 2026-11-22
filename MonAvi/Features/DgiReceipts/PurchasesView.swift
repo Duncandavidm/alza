@@ -34,7 +34,17 @@ struct Purchase: Decodable, Equatable, Identifiable {
         quantity = try? c.decodeIfPresent(Double.self, forKey: .quantity)
         unitPrice = try? c.decodeIfPresent(Double.self, forKey: .unitPrice)
         total = try? c.decodeIfPresent(Double.self, forKey: .total)
-        boughtAt = (try? c.decodeIfPresent(String.self, forKey: .boughtAt)).flatMap(MerchantChallengesText.date(fromTimestamp:))
+        boughtAt = (try? c.decodeIfPresent(String.self, forKey: .boughtAt)).flatMap(Purchase.date(fromTimestamp:))
+    }
+
+    /// Fecha de Postgres ("2026-11-20T15:04:05+00:00", con o sin fraccion).
+    static func date(fromTimestamp value: String) -> Date? {
+        let plain = ISO8601DateFormatter()
+        plain.formatOptions = [.withInternetDateTime]
+        if let date = plain.date(from: value) { return date }
+        let fractional = ISO8601DateFormatter()
+        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return fractional.date(from: value)
     }
 
     static func == (lhs: Purchase, rhs: Purchase) -> Bool {

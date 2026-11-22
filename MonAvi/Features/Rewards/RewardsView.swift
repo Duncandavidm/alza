@@ -54,15 +54,12 @@ struct RewardsView: View {
     @State private var isChoosingBranch = false
     /// Codigo recien generado: se abre con la celebracion de billetes.
     @State private var celebrateRedemptionId: UUID?
-    /// Retos por comercio vigentes (0083).
-    @State private var challenges: [MerchantChallenge] = []
 
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 20) {
                 balanceHeader
                 referralBanner
-                MerchantChallengesSection(challenges: challenges)
                 Picker("Ver", selection: pickerSelection) {
                     ForEach(Self.pickerModes) { (option: Mode) in
                         Text(option.rawValue).tag(option)
@@ -565,8 +562,6 @@ struct RewardsView: View {
 
     private func refresh() async {
         guard let userId = appState.currentUserId else { return }
-        async let challengesFetch = MerchantChallengesRepository.fetchChallenges()
         await viewModel.refresh(userId: userId)
-        challenges = await challengesFetch
     }
 }

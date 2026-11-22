@@ -1,140 +1,8 @@
--- 1.0.5: retos por comercio, aviso de cupon por vencer, segmento "sin facturas" para reactivar, resumen del mes y
+-- 1.0.5: aviso de cupon por vencer, segmento "sin facturas" para reactivar, resumen del mes y
 -- "Tus compras".
 
 -- ---------------------------------------------------------------------
--- 1) Retos por comercio ("Escanea 3 facturas de este comercio y gana")
--- ---------------------------------------------------------------------
-create table if not exists public.merchant_challenges (
-  id uuid primary key default gen_random_uuid(),
-  merchant_id uuid not null references public.partner_merchants(id) on delete cascade,
-  reward_item_id uuid not null references public.reward_items(id) on delete restrict,
-  title text not null check (char_length(title) between 3 and 120),
-  required_receipts integer not null default 3 check (required_receipts between 1 and 50),
-  starts_at timestamptz not null default now(),
-  ends_at timestamptz,
-  max_winners integer check (max_winners is null or max_winners > 0),
-  expires_days integer not null default 30 check (expires_days between 1 and 365),
-  status text not null default 'active' check (status in ('active', 'paused')),
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  check (ends_at is null or ends_at > starts_at)
-);
-create index if not exists merchant_challenges_merchant_idx on public.merchant_challenges (merchant_id);
-alter table public.merchant_challenges enable row level security;
-
-create table if not exists public.merchant_challenge_grants (
-  challenge_id uuid not null references public.merchant_challenges(id) on delete cascade,
-  user_id uuid not null references auth.users(id) on delete cascade,
-  redemption_id uuid references public.reward_redemptions(id) on delete set null,
-  created_at timestamptz not null default now(),
-  primary key (challenge_id, user_id)
-);
-alter table public.merchant_challenge_grants enable row level security;
-
-create index if not exists dgi_receipts_ruc_scanned_idx on public.dgi_receipts (ruc, scanned_at);
-
--- Entrega el premio a quien ya tiene las facturas confirmadas del reto.
--- Cuentan las facturas escaneadas entre el inicio y el fin del reto; se
--- sigue revisando 3 dias despues del fin, para las que se confirman tarde.
-create or replace function public.issue_merchant_challenge_rewards()
-returns table(user_id uuid, redemption_id uuid, challenge text, coupon_name text, merchant text,
-              expires_at timestamptz, image_url text)
-language plpgsql security definer set search_path to 'public', 'pg_temp' as $function$
-#variable_conflict use_column
-declare
-  v_ch record;
-  v_uid uuid;
-  v_issued integer;
-  v_redemption uuid;
-begin
-  for v_ch in
-    select c.*, pm.ruc as merchant_ruc, pm.name as merchant_name, pm.logo_url,
-           ri.name as item_name, ri.points_cost, ri.photo_url
-    from public.merchant_challenges c
-    join public.partner_merchants pm on pm.id = c.merchant_id
-    join public.reward_items ri on ri.id = c.reward_item_id
-    where c.status = 'active' and pm.status = 'active' and pm.ruc is not null
-      and c.starts_at <= now() and (c.ends_at is null or c.ends_at > now() - interval '3 days')
-  loop
-    select count(*) into v_issued from public.merchant_challenge_grants g where g.challenge_id = v_ch.id;
-    for v_uid in
-      select r.user_id
-      from public.dgi_receipts r
-      join auth.users u on u.id = r.user_id
-      where r.ruc = v_ch.merchant_ruc and r.status = 'confirmada'
-        and r.scanned_at >= v_ch.starts_at and (v_ch.ends_at is null or r.scanned_at <= v_ch.ends_at)
-        and (u.banned_until is null or u.banned_until < now())
-        and not exists (select 1 from public.merchant_challenge_grants g
-                        where g.challenge_id = v_ch.id and g.user_id = r.user_id)
-      group by r.user_id
-      having count(*) >= v_ch.required_receipts
-      order by max(r.scanned_at)
-    loop
-      exit when v_ch.max_winners is not null and v_issued >= v_ch.max_winners;
-
-      insert into public.reward_redemptions (user_id, reward_item_id, merchant_id, points_cost, code, status,
-          expires_at, currency, source, gift_message)
-      values (v_uid, v_ch.reward_item_id, v_ch.merchant_id, v_ch.points_cost, public.new_redemption_code(), 'emitido',
-          now() + make_interval(days => v_ch.expires_days), 'cashback', 'regalo',
-          '¡Ganaste el reto «' || v_ch.title || '»! Muestra este código en caja.')
-      returning id into v_redemption;
-
-      insert into public.merchant_challenge_grants (challenge_id, user_id, redemption_id)
-      values (v_ch.id, v_uid, v_redemption);
-      v_issued := v_issued + 1;
-
-      user_id := v_uid;
-      redemption_id := v_redemption;
-      challenge := v_ch.title;
-      coupon_name := v_ch.item_name;
-      merchant := v_ch.merchant_name;
-      expires_at := now() + make_interval(days => v_ch.expires_days);
-      image_url := coalesce(v_ch.photo_url, v_ch.logo_url);
-      return next;
-    end loop;
-  end loop;
-end $function$;
-revoke all on function public.issue_merchant_challenge_rewards() from public, anon, authenticated;
-
--- Para la app: retos vigentes y como va la persona en cada uno.
-create or replace function public.my_merchant_challenges()
-returns jsonb
-language sql stable security definer set search_path to 'public', 'pg_temp' as $$
-  with me as (select auth.uid() as uid)
-  select coalesce(jsonb_agg(jsonb_build_object(
-      'id', c.id,
-      'title', c.title,
-      'merchant', pm.name,
-      'merchant_logo_url', pm.logo_url,
-      'coupon', ri.name,
-      'photo_url', ri.photo_url,
-      'required', c.required_receipts,
-      'ends_at', c.ends_at,
-      'confirmed', (select count(*) from public.dgi_receipts r
-                    where r.user_id = (select uid from me) and r.ruc = pm.ruc and r.status = 'confirmada'
-                      and r.scanned_at >= c.starts_at and (c.ends_at is null or r.scanned_at <= c.ends_at)),
-      'pending', (select count(*) from public.dgi_receipts r
-                  where r.user_id = (select uid from me) and r.ruc = pm.ruc and r.status = 'pendiente'
-                    and r.scanned_at >= c.starts_at and (c.ends_at is null or r.scanned_at <= c.ends_at)),
-      'won', exists (select 1 from public.merchant_challenge_grants g
-                     where g.challenge_id = c.id and g.user_id = (select uid from me))
-    ) order by c.ends_at nulls last, c.created_at), '[]'::jsonb)
-  from public.merchant_challenges c
-  join public.partner_merchants pm on pm.id = c.merchant_id
-  join public.reward_items ri on ri.id = c.reward_item_id
-  where (select uid from me) is not null
-    and c.status = 'active' and pm.status = 'active' and pm.ruc is not null
-    and c.starts_at <= now() and (c.ends_at is null or c.ends_at > now())
-    and (c.max_winners is null
-         or (select count(*) from public.merchant_challenge_grants g where g.challenge_id = c.id) < c.max_winners
-         or exists (select 1 from public.merchant_challenge_grants g
-                    where g.challenge_id = c.id and g.user_id = (select uid from me)));
-$$;
-revoke all on function public.my_merchant_challenges() from public, anon;
-grant execute on function public.my_merchant_challenges() to authenticated;
-
--- ---------------------------------------------------------------------
--- 2) "Tu cupón en Café La Esquina vence mañana"
+-- 1) "Tu cupón en Café La Esquina vence mañana"
 -- ---------------------------------------------------------------------
 alter table public.reward_redemptions add column if not exists expiry_reminder_sent_at timestamptz;
 
@@ -156,7 +24,7 @@ $$;
 revoke all on function public.coupons_expiring_soon() from public, anon, authenticated;
 
 -- ---------------------------------------------------------------------
--- 3) Segmento "sin facturas en N días" (avisos de reactivacion)
+-- 2) Segmento "sin facturas en N días" (avisos de reactivacion)
 -- ---------------------------------------------------------------------
 create or replace function public.segment_user_ids(p_segment jsonb DEFAULT '{}'::jsonb)
  returns table(user_id uuid)
@@ -263,7 +131,7 @@ where s.by_email
 $function$;
 
 -- ---------------------------------------------------------------------
--- 4) Resumen del mes de facturas (para compartir) y "Tus compras"
+-- 3) Resumen del mes de facturas (para compartir) y "Tus compras"
 -- ---------------------------------------------------------------------
 create or replace function public.my_invoice_month_summary(p_month date default null)
 returns jsonb
@@ -328,7 +196,7 @@ revoke all on function public.my_purchases(integer) from public, anon;
 grant execute on function public.my_purchases(integer) to authenticated;
 
 -- ---------------------------------------------------------------------
--- 5) Push que abre la camara ("scan"): avisos de reactivacion
+-- 4) Push que abre la camara ("scan"): avisos de reactivacion
 -- ---------------------------------------------------------------------
 alter table public.push_campaigns drop constraint if exists push_campaigns_screen_check;
 alter table public.push_campaigns add constraint push_campaigns_screen_check

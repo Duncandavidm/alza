@@ -15,9 +15,8 @@
 // Desde 1.0.3 ya no se suman puntos por habitos: los buenos habitos dan
 // cupones (habit_coupon_rules) en vez de puntos.
 //
-// 5. Retos por comercio (0083): entrega el premio a quien ya junto las
-//    facturas confirmadas del reto (tambien cada hora), y avisa una vez
-//    los cupones sin usar que vencen en las proximas 36 horas.
+// 5. Avisa una vez los cupones sin usar que vencen en las proximas 36
+//    horas (0083).
 //
 // Corre despues de verify-dgi-receipt (8:00), para que el cashback recien
 // confirmado tambien cuente. Ademas corre cada hora con {"mode":"hourly"},
@@ -170,30 +169,6 @@ async function issueCouponsWithPush(supabase: Supabase): Promise<{ issued: numbe
   return { issued: (coupons ?? []).length, pushes };
 }
 
-/// "Escanea 3 facturas de este comercio": premio con aviso.
-async function issueChallengeRewards(supabase: Supabase): Promise<{ issued: number; pushes: number }> {
-  const { data, error } = await supabase.rpc("issue_merchant_challenge_rewards");
-  if (error) {
-    console.error("issue_merchant_challenge_rewards", error.message);
-    return { issued: 0, pushes: 0 };
-  }
-  let pushes = 0;
-  for (const row of (data ?? []) as {
-    user_id: string; challenge: string; coupon_name: string; merchant: string; expires_at: string; image_url: string | null;
-  }[]) {
-    const until = new Date(row.expires_at).toLocaleDateString("es-PA", { day: "2-digit", month: "2-digit", timeZone: "America/Panama" });
-    const result = await sendPushToUser(supabase, row.user_id, {
-      title: `🏆 ¡Ganaste el reto de ${row.merchant}!`,
-      body: `Tu premio: ${row.coupon_name}. Toca para ver tu código y úsalo en caja antes del ${until}.`,
-      data: { screen: "redemptions" },
-      threadId: "monavi-regalos",
-      imageUrl: row.image_url,
-    });
-    if (result.sent > 0) pushes++;
-  }
-  return { issued: (data ?? []).length, pushes };
-}
-
 function panamaDay(date: Date): string {
   return date.toLocaleDateString("en-CA", { timeZone: "America/Panama" });
 }
@@ -250,18 +225,11 @@ Deno.serve(async (req) => {
     // esperar a la corrida diaria.
     if (body.mode === "coupons") {
       const coupons = await issueCouponsWithPush(supabase);
-      const challenges = await issueChallengeRewards(supabase);
-      return jsonResponse({
-        mode: "coupons",
-        habit_coupons: coupons.issued,
-        habit_coupon_pushes: coupons.pushes,
-        challenge_rewards: challenges.issued,
-      });
+      return jsonResponse({ mode: "coupons", habit_coupons: coupons.issued, habit_coupon_pushes: coupons.pushes });
     }
     if (body.mode === "hourly") {
       const invoiceReminders = await sendBenefitInvoiceReminders(supabase);
-      const challenges = await issueChallengeRewards(supabase);
-      return jsonResponse({ mode: "hourly", invoice_reminders: invoiceReminders, challenge_rewards: challenges.issued });
+      return jsonResponse({ mode: "hourly", invoice_reminders: invoiceReminders });
     }
 
     // Cupones por buenos habitos: uno por regla y periodo, con aviso.
@@ -316,7 +284,6 @@ Deno.serve(async (req) => {
 
     const partnerAnnouncementPeople = await announceNewPartners(supabase);
     const invoiceReminders = await sendBenefitInvoiceReminders(supabase);
-    const challenges = await issueChallengeRewards(supabase);
     const expiringReminders = await sendExpiringCouponReminders(supabase);
 
     return jsonResponse({
@@ -328,8 +295,6 @@ Deno.serve(async (req) => {
       push_sent: pushSent,
       partner_announcement_people: partnerAnnouncementPeople,
       invoice_reminders: invoiceReminders,
-      challenge_rewards: challenges.issued,
-      challenge_reward_pushes: challenges.pushes,
       expiring_coupon_reminders: expiringReminders,
     });
   } catch (error) {

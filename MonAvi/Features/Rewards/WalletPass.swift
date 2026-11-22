@@ -6,6 +6,7 @@ import UIKit
 /// comercio, vencimiento y aviso al pasar cerca del local). El pase lo
 /// arma y firma la funcion wallet-pass; si el certificado de Apple Wallet
 /// todavia no esta configurado en el servidor, el boton no aparece.
+@MainActor
 enum WalletPassService {
     enum PassError: LocalizedError {
         case server(String)
@@ -18,7 +19,6 @@ enum WalletPassService {
 
     private static var cachedEnabled: Bool?
 
-    @MainActor
     static func isEnabled() async -> Bool {
         if let cachedEnabled { return cachedEnabled }
         guard PKAddPassesViewController.canAddPasses() else { return false }

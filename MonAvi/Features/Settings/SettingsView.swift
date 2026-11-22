@@ -9,6 +9,7 @@ struct SettingsView: View {
     @AppStorage("isAdvancedMode") private var isAdvancedMode = false
     /// Mismo valor que usa Hoy (DayJournalView) para ocultar "Tu ahorro".
     @AppStorage("monavi.hideSavingsCardInHoy") private var hideSavingsCardInHoy = false
+    @AppStorage("monavi.hideBudgetInviteInHoy") private var hideBudgetInviteInHoy = false
     @AppStorage(NotificationManager.reminderLeadDaysKey) private var reminderLeadDays = NotificationManager.defaultLeadDays
     @AppStorage(NotificationManager.dailyLogReminderKey) private var dailyLogReminder = true
     @AppStorage(NotificationManager.dailyLogTimeKey) private var dailyLogMinutes = NotificationManager.defaultDailyLogMinutes
@@ -52,10 +53,14 @@ struct SettingsView: View {
                         get: { !hideSavingsCardInHoy },
                         set: { hideSavingsCardInHoy = !$0 }
                     ))
+                    Toggle("Mostrar «Crea tu primer presupuesto»", isOn: Binding(
+                        get: { !hideBudgetInviteInHoy },
+                        set: { hideBudgetInviteInHoy = !$0 }
+                    ))
                 } header: {
                     Text("Pantalla Hoy")
                 } footer: {
-                    Text("Si lo ocultaste con la X, aquí lo vuelves a mostrar. Tus metas siguen en Ahorro.")
+                    Text("Si los ocultaste con la X, aquí los vuelves a mostrar. Tus metas siguen en Ahorro y tus presupuestos en la pestaña Presupuestos (cuando creas uno, en Hoy aparecen las barras).")
                 }
 
                 Section {

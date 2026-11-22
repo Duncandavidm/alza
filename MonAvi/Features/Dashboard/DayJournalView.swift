@@ -30,6 +30,8 @@ struct DayJournalView: View {
     @State private var isAddingBudget = false
     /// El usuario oculto "Tu ahorro" de Hoy (se vuelve a mostrar en Ajustes).
     @AppStorage("monavi.hideSavingsCardInHoy") private var hideSavingsCard = false
+    /// El usuario cerro "Crea tu primer presupuesto" (se vuelve a mostrar en Ajustes).
+    @AppStorage("monavi.hideBudgetInviteInHoy") private var hideBudgetInvite = false
     @State private var didLoadBudgets = false
     @State private var invoiceExpense: FinanceTransaction?
     @State private var editingTransaction: FinanceTransaction?
@@ -99,7 +101,7 @@ struct DayJournalView: View {
                                     selectedBudgetProgress = progress
                                 }
                             }
-                        } else if didLoadBudgets && viewModel.isViewingToday && !isSearching {
+                        } else if didLoadBudgets && !hideBudgetInvite && viewModel.isViewingToday && !isSearching {
                             // Sin presupuestos: el lugar queda para invitar a crear el primero.
                             emptyBudgetsCard
                         }
@@ -1123,11 +1125,27 @@ struct DayJournalView: View {
                 Image(systemName: "plus.circle.fill")
                     .font(.title3)
                     .foregroundStyle(MonAviBrand.primary)
+                // Espacio para la X (va encima, fuera del boton).
+                Color.clear.frame(width: 22, height: 1)
             }
             .padding(12)
             .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .buttonStyle(.plain)
+        .overlay(alignment: .topTrailing) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.25)) { hideBudgetInvite = true }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 26, height: 26)
+                    .background(Circle().fill(Color(.tertiarySystemFill)))
+                    .padding(6)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Ocultar Crea tu primer presupuesto")
+        }
     }
 
     private func refreshRecurring() async {

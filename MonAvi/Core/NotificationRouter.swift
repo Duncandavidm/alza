@@ -87,6 +87,12 @@ final class NotificationRouter: ObservableObject {
             cardPayment = CardPaymentRequest(debtId: id)
             return
         }
+        if normalized == "scan" {
+            // Aviso de reactivacion: abre la camara para escanear.
+            destination = nil
+            InvoiceScanRequest.request()
+            return
+        }
         if normalized == "home" {
             // La app abre en Hoy: basta con cerrar la hoja que hubiera.
             destination = nil

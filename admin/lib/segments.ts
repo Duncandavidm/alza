@@ -12,7 +12,9 @@ import { parseDollarsToCents } from "./format";
 export const SEGMENT_GENDERS = ["femenino", "masculino", "otro"] as const;
 export const SEGMENT_AGES = ["18-24", "25-34", "35-44", "45-54", "55+"] as const;
 export const SEGMENT_DAYS = [7, 14, 30, 60, 90, 180, 365] as const;
-export const SEGMENT_ACTIVITIES = ["mas_activos", "menos_activos", "inactivos", "top_facturas", "mas_ahorro", "mas_ingresos"] as const;
+export const SEGMENT_ACTIVITIES = [
+  "mas_activos", "menos_activos", "inactivos", "sin_facturas", "top_facturas", "mas_ahorro", "mas_ingresos",
+] as const;
 export const SEGMENT_PAYMENTS = [
   "tarjeta", "credito", "debito", "efectivo", "yappy", "transferencia", "billetera", "cheque", "vale", "otro",
 ] as const;
@@ -53,6 +55,7 @@ export const SEGMENT_ACTIVITY_LABELS: Record<SegmentActivity, string> = {
   mas_activos: "Los que más usan la app (20 % más activo)",
   menos_activos: "Los que menos la usan (1 a 5 días con actividad)",
   inactivos: "Inactivos hace más de 14 días",
+  sin_facturas: "Sin escanear facturas en los últimos días del periodo (o nunca)",
   top_facturas: "Los que más escanean facturas (20 % superior)",
   mas_ahorro: "Los que más ahorran (20 % con más ahorro en metas)",
   mas_ingresos: "Los de mayores ingresos (20 % con más ingreso mensual)",
@@ -77,6 +80,7 @@ export const SEGMENT_PRESETS: { activity: SegmentActivity; label: string }[] = [
   { activity: "top_facturas", label: "Los que más escanean facturas" },
   { activity: "menos_activos", label: "Los que menos la usan" },
   { activity: "inactivos", label: "Inactivos +14 días" },
+  { activity: "sin_facturas", label: "Sin escanear facturas" },
   { activity: "mas_ahorro", label: "Los que más ahorran" },
   { activity: "mas_ingresos", label: "Los de mayores ingresos" },
 ];
@@ -129,6 +133,8 @@ export function parseSegment(get: (key: string) => string | undefined | null): S
   // Un atajo (boton) manda sobre el select de actividad.
   const activity = oneOf(read("preset"), SEGMENT_ACTIVITIES) ?? oneOf(read("activity"), SEGMENT_ACTIVITIES);
   if (activity) segment.activity = activity;
+  // "Sin escanear facturas": por defecto, 7 dias sin escanear.
+  if (activity === "sin_facturas" && !segment.days) segment.days = 7;
 
   const minReceipts = Number(read("min_receipts"));
   if (Number.isInteger(minReceipts) && minReceipts > 0 && minReceipts <= 1000) segment.min_receipts = minReceipts;

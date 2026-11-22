@@ -40,6 +40,38 @@ type PushRow = {
   brand_campaigns: { name: string } | { name: string }[] | null;
 };
 
+const REACTIVATION_TEMPLATES = [
+  {
+    days: 7,
+    label: "7 días sin escanear",
+    title: "Hace 7 días no escaneas una factura 🧾",
+    body: "Tienes cashback esperando: pide tu factura fiscal en tu próxima compra y escanéala en MonAvi.",
+  },
+  {
+    days: 14,
+    label: "14 días sin escanear",
+    title: "Tu cashback te está esperando 💸",
+    body: "Hace 2 semanas no escaneas una factura. Escanéala en segundos y suma cashback para usar en comercios aliados.",
+  },
+  {
+    days: 30,
+    label: "30 días sin escanear",
+    title: "¿Volvemos a sumar cashback? 🎁",
+    body: "Hace un mes no escaneas facturas. Cada compra con factura fiscal te devuelve cashback en MonAvi.",
+  },
+];
+
+function reactivationHref(template: (typeof REACTIVATION_TEMPLATES)[number]): string {
+  const query = new URLSearchParams({
+    title: template.title,
+    body: template.body,
+    screen: "scan",
+    preset: "sin_facturas",
+    days: String(template.days),
+  });
+  return `/notificaciones?${query.toString()}#confirmar`;
+}
+
 function first(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
@@ -100,6 +132,21 @@ export default async function NotificacionesPage({ searchParams }: { searchParam
           <strong className="success-text">Listo.</strong> {doneMessage}
         </div>
       )}
+
+      <div className="card">
+        <h3>Avisos de reactivación</h3>
+        <p className="text-dim" style={{ marginTop: 0 }}>
+          Plantillas listas para quienes dejaron de escanear facturas. Al tocar el aviso se abre la cámara de MonAvi
+          (app 1.0.5 o más nueva; en versiones anteriores solo abre la app).
+        </p>
+        <div className="inline-actions">
+          {REACTIVATION_TEMPLATES.map((template) => (
+            <a key={template.days} className="button secondary-link" href={reactivationHref(template)}>
+              {template.label}
+            </a>
+          ))}
+        </div>
+      </div>
 
       <form method="get" action="/notificaciones" className="card">
         <h3>Mensaje</h3>

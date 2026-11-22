@@ -1,6 +1,6 @@
 // Notificaciones push segmentadas (tabla push_campaigns, migracion 0040).
 
-export const PUSH_SCREENS = ["home", "points", "rewards", "redemptions"] as const;
+export const PUSH_SCREENS = ["home", "points", "rewards", "redemptions", "scan"] as const;
 export type PushScreen = (typeof PUSH_SCREENS)[number];
 
 export const PUSH_SCREEN_LABELS: Record<PushScreen, string> = {
@@ -8,6 +8,7 @@ export const PUSH_SCREEN_LABELS: Record<PushScreen, string> = {
   points: "Puntos y cashback",
   rewards: "Premios (dónde canjear)",
   redemptions: "Mis canjes/regalos",
+  scan: "Cámara para escanear factura (app 1.0.5+)",
 };
 
 export const PUSH_STATUS_LABELS: Record<string, string> = {

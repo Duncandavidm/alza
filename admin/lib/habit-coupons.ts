@@ -8,7 +8,8 @@ export type HabitRuleType =
   | "presupuestos"
   | "dias_registrados"
   | "salud_financiera"
-  | "semana_completa";
+  | "semana_completa"
+  | "facturas_mes";
 
 export const HABIT_RULE_TYPES: { value: HabitRuleType; label: string; threshold: string; placeholder: string; help: string }[] = [
   {
@@ -52,6 +53,13 @@ export const HABIT_RULE_TYPES: { value: HabitRuleType; label: string; threshold:
     threshold: "No aplica",
     placeholder: "",
     help: "Anotó al menos un movimiento cada día de la semana pasada (lunes a domingo). Se entrega cada lunes; una vez por semana.",
+  },
+  {
+    value: "facturas_mes",
+    label: "Escaneó X facturas en el mes",
+    threshold: "Facturas confirmadas en el mes",
+    placeholder: "15",
+    help: "Meta mensual de facturas: en la app ven «Llevas 8 de 15 facturas este mes». Se entrega el día siguiente a llegar a la meta (solo cuentan las facturas que la DGI ya confirmó). Una vez por mes. No usa el mínimo de días anotados.",
   },
   {
     value: "salud_financiera",

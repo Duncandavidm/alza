@@ -12,6 +12,19 @@ struct DgiReceiptsListView: View {
 
     var body: some View {
         List {
+            Section {
+                NavigationLink {
+                    InvoiceMonthSummaryView()
+                } label: {
+                    Label("Resumen del mes", systemImage: "chart.bar.doc.horizontal")
+                }
+                NavigationLink {
+                    PurchasesView()
+                } label: {
+                    Label("Tus compras: dónde sale más barato", systemImage: "cart")
+                }
+            }
+
             if viewModel.receipts.isEmpty && !viewModel.isLoading {
                 ContentUnavailableView(
                     "Sin facturas escaneadas",

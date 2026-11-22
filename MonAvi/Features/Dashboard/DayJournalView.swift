@@ -29,6 +29,7 @@ struct DayJournalView: View {
     @State private var pendingInvoiceExpense: FinanceTransaction?
     @State private var invoiceExpense: FinanceTransaction?
     @State private var invoiceGoal: InvoiceGoal?
+    @State private var isShowingInvoiceSummary = false
     @State private var editingTransaction: FinanceTransaction?
     @State private var daySummary: DaySummary?
     @State private var isClosingDay = false
@@ -94,6 +95,8 @@ struct DayJournalView: View {
                                 invoiceExpense = nil
                                 startInvoiceScan()
                             }
+                            .contentShape(Rectangle())
+                            .onTapGesture { isShowingInvoiceSummary = true }
                         }
 
                         cardDueRows
@@ -274,6 +277,16 @@ struct DayJournalView: View {
                 }
             }) {
                 ScanInvoiceView(viewModel: dgiViewModel, accounts: viewModel.accounts, linkTo: invoiceExpense)
+            }
+            .sheet(isPresented: $isShowingInvoiceSummary) {
+                NavigationStack {
+                    InvoiceMonthSummaryView()
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Cerrar") { isShowingInvoiceSummary = false }
+                            }
+                        }
+                }
             }
             .sheet(item: $editingTransaction) { transaction in
                 QuickAddView(viewModel: viewModel, existingTransaction: transaction)

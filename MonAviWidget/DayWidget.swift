@@ -207,8 +207,15 @@ struct DayWidgetView: View {
         }
     }
 
+    /// Monto en la moneda de la cuenta (la app guarda el país en el App
+    /// Group): Panamá "USD 52.30" como siempre, Colombia "$ 50.000".
     private func money(_ value: Double) -> String {
-        entry.hideAmounts ? "$•••" : value.formatted(.appCurrency)
+        if entry.hideAmounts { return "$•••" }
+        let country = UserDefaults(suiteName: "group.app.monavi.shared")?.string(forKey: "monavi.country")
+        if country == "CO" {
+            return value.formatted(.currency(code: "COP").locale(Locale(identifier: "es_CO")).precision(.fractionLength(0)))
+        }
+        return value.formatted(.currency(code: "USD"))
     }
 }
 

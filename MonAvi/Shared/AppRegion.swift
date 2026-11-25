@@ -73,7 +73,7 @@ enum AppCountry: String, Codable, CaseIterable, Identifiable, Hashable {
         }
     }
 
-    /// Colombia se ofrece solo cuando se activa desde el panel
+    /// Colombia se ofrece (solo en el registro) cuando se activa desde el panel
     /// (app_config.colombia_enabled, leído con get_app_flags). Apagado por
     /// defecto: sin conexión o sin respuesta, la app se queda en Panamá.
     private static let colombiaKey = "monavi.colombiaEnabled"

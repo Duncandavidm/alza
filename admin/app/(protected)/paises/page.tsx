@@ -16,7 +16,7 @@ export default async function PaisesPage() {
       <h1>Países</h1>
       <p className="text-dim">
         Desde la versión 1.0.7 la app puede funcionar en Panamá (USD) y en Colombia (pesos colombianos). Mientras
-        Colombia esté apagada, la app no muestra “¿Dónde vives?” ni “País y moneda”: todo el mundo usa Panamá, igual
+        Colombia esté apagada, la app no muestra la elección de país: todo el mundo usa Panamá, igual
         que antes.
       </p>
 
@@ -34,8 +34,8 @@ export default async function PaisesPage() {
         </p>
         <p className="text-dim" style={{ marginBottom: 10 }}>
           {enabled
-            ? "La app ofrece Colombia al registrarse y en Ajustes > Mi perfil. Si lo apagas, nadie nuevo puede elegirlo; quien ya está en Colombia lo conserva y puede volver a Panamá."
-            : "Al activarlo, la app ofrece Colombia (pesos, voz con “luca” y “palo”, Nequi/Daviplata) la próxima vez que se abra. Antes, confirma las políticas para Colombia y la disponibilidad en la App Store."}
+            ? "Las cuentas nuevas eligen su país al registrarse (Panamá o Colombia). Las cuentas que ya existen siguen en Panamá. El país y la moneda no se pueden cambiar después. Si lo apagas, nadie nuevo puede elegir Colombia; quien ya está allá lo conserva."
+            : "Al activarlo, solo las cuentas nuevas podrán elegir Colombia al registrarse (pesos, voz con “luca” y “palo”, Nequi/Daviplata). Antes, confirma las políticas para Colombia y la disponibilidad en la App Store."}
         </p>
         <p className="text-dim" style={{ marginBottom: 10 }}>Cuentas en Colombia hoy: {colombianos ?? 0}</p>
         <form action={setColombiaEnabled.bind(null, !enabled)}>

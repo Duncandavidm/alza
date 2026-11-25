@@ -45,7 +45,7 @@ final class AppState: ObservableObject {
     /// redibuja la app para que los montos salgan en la moneda nueva.
     @Published private(set) var country: AppCountry = AppCountry.current
     /// Hay más de un país para elegir (Colombia activada desde el panel).
-    /// Si no, la app no muestra "¿Dónde vives?" ni "País y moneda".
+    /// Si no, el registro no muestra la elección de país.
     @Published private(set) var offersCountryChoice: Bool = AppCountry.available.count > 1
 
     let subscriptionStore = SubscriptionStore()
@@ -116,23 +116,6 @@ final class AppState: ObservableObject {
             country = newCountry
             WidgetCenter.shared.reloadAllTimelines()
         }
-    }
-
-    /// Ajustes > Mi perfil > País y moneda: lo guarda en el perfil y pasa
-    /// las cuentas a la moneda nueva (los montos quedan iguales).
-    func changeCountry(to newCountry: AppCountry) async throws {
-        guard let userId = currentUserId else { return }
-        try await supabase
-            .from("profiles")
-            .update(["country": newCountry.rawValue])
-            .eq("id", value: userId)
-            .execute()
-        try await supabase
-            .from("accounts")
-            .update(["currency": newCountry.currencyCode])
-            .eq("user_id", value: userId)
-            .execute()
-        applyCountry(newCountry)
     }
 
     /// Lo que la cuenta deja guardado en este iPhone fuera de la sesion:

@@ -232,15 +232,10 @@ struct ProfileSettingsView: View {
     @State private var isSigningOut = false
     @State private var isShowingEmailVerification = false
     /// Pais elegido en la lista, esperando confirmacion.
-    @State private var pendingCountry: AppCountry?
-    @State private var isChangingCountry = false
 
     var body: some View {
         Form {
             accountSection
-            if appState.offersCountryChoice {
-                countrySection
-            }
             referralSection
             personalDataSection
             saveSection
@@ -326,47 +321,6 @@ struct ProfileSettingsView: View {
     }
 
     // MARK: - Invita amigos
-
-    // MARK: - País y moneda
-
-    private var countrySection: some View {
-        Section {
-            CountryPicker(selection: Binding(
-                get: { appState.country },
-                set: { newValue in
-                    if newValue != appState.country { pendingCountry = newValue }
-                }
-            ))
-            .disabled(isChangingCountry)
-        } header: {
-            Text("País y moneda")
-        } footer: {
-            Text("Tus montos se muestran en \(appState.country.currencyName).")
-        }
-        .confirmationDialog(
-            "¿Cambiar a \(pendingCountry?.label ?? "")?",
-            isPresented: Binding(get: { pendingCountry != nil }, set: { if !$0 { pendingCountry = nil } }),
-            titleVisibility: .visible,
-            presenting: pendingCountry
-        ) { country in
-            Button("Cambiar a \(country.currencyCode)") {
-                Task { await changeCountry(to: country) }
-            }
-            Button("Cancelar", role: .cancel) {}
-        } message: { country in
-            Text("Tus cuentas y montos pasan a \(country.currencyName). Los montos no se convierten: \(AppCountry.current.currencyCode) 100 se verá como \(country.currencyCode) 100.")
-        }
-    }
-
-    private func changeCountry(to country: AppCountry) async {
-        isChangingCountry = true
-        defer { isChangingCountry = false }
-        do {
-            try await appState.changeCountry(to: country)
-        } catch {
-            viewModel.errorMessage = "No se pudo cambiar el país: \(error.localizedDescription)"
-        }
-    }
 
     private var referralSection: some View {
         Section {

@@ -65,7 +65,7 @@ struct AddRecurringTransactionView: View {
         guard
             let userId = appState.currentUserId,
             let accountId = selectedAccountId,
-            let amount = Decimal(string: amountText.replacingOccurrences(of: ",", with: "."))
+            let amount = AppCountry.parseAmount(amountText)
         else { return }
 
         isSaving = true

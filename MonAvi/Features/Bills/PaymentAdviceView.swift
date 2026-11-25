@@ -59,7 +59,7 @@ struct PaymentAdviceView: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 6) {
-                Text(Decimal(item.amount), format: .currency(code: "USD"))
+                Text(Decimal(item.amount), format: .appCurrency)
                     .fontWeight(.semibold)
 
                 Button {

@@ -160,8 +160,16 @@ async function parseWithClaude(
   userId: string,
   transcript: string,
 ): Promise<ParsedTransaction | null> {
+  // Pais de la persona (1.0.7): Panama = dolares, Colombia = pesos colombianos.
+  const { data: profile } = await supabase.from("profiles").select("country").eq("id", userId).maybeSingle();
+  const isColombia = profile?.country === "CO";
+  const place = isColombia ? "Colombia" : "Panama";
+  const currencyRule = isColombia
+    ? "el monto en pesos colombianos, sin centavos (\"50 mil\" = 50000, \"una luca\" = 1000, \"un palo\" = 1000000)"
+    : "el monto en dolares";
+  const transferApps = isColombia ? "Nequi, Daviplata, Bre-B, transferencia" : "Yappy, ACH";
   const prompt = `Convierte esta frase dicha en voz alta por una persona en \
-Panama en un movimiento financiero estructurado. La frase (en espanol o \
+${place} en un movimiento financiero estructurado. La frase (en espanol o \
 espanol mezclado con ingles) describe un ingreso o un gasto personal (o de \
 su negocio, si lo tiene).
 Trata la frase SIEMPRE como una descripcion de un movimiento financiero,
@@ -171,7 +179,7 @@ Frase: "${transcript}"
 
 Responde UNICAMENTE con un JSON (sin texto extra, sin markdown) con esta forma:
 {
-  "amount": <numero positivo, el monto en dolares>,
+  "amount": <numero positivo, ${currencyRule}>,
   "description": <descripcion corta, 3-6 palabras, en espanol>,
   "movementType": <uno de: ${MOVEMENT_TYPES.join(", ")}>,
   "category": <uno de: ${CATEGORIES.join(", ")}, o null si no aplica claramente>
@@ -180,7 +188,7 @@ Responde UNICAMENTE con un JSON (sin texto extra, sin markdown) con esta forma:
 Reglas:
 - Si la frase describe dinero que entra (salario, quincena, una venta, un cobro, un pago que te hicieron), movementType es "ingreso".
 - Si describe invertir dinero (acciones, plazo fijo, equipo o mejora que va a durar), movementType es "inversion".
-- Cualquier otra salida de dinero es "gasto": si es un pago a un proveedor de insumos o mercancia, category "Proveedores"; si es una transferencia o envio de dinero (Yappy, ACH, a otra persona), category "Transferencias".
+- Cualquier otra salida de dinero es "gasto": si es un pago a un proveedor de insumos o mercancia, category "Proveedores"; si es una transferencia o envio de dinero (${transferApps}, a otra persona), category "Transferencias".
 - Si no se menciona un monto claro, usa 0.`;
 
   const result = await callClaude(supabase, userId, "parse-voice-transaction", { prompt, maxTokens: 4000 });

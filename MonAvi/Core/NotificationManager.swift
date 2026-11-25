@@ -852,7 +852,7 @@ enum NotificationManager {
     }
 
     private static func formattedAmount(_ amount: Decimal) -> String {
-        amount.formatted(.currency(code: "USD"))
+        amount.formatted(.appCurrency)
     }
 
     /// `timeSensitive`: para los avisos del dia de pago (o de un pago

@@ -136,8 +136,14 @@ struct DetectedMovementReviewView: View {
     }
 
     private var amount: Decimal? {
-        let normalized = amountText.replacingOccurrences(of: ",", with: ".").filter { $0.isNumber || $0 == "." }
-        guard let value = Decimal(string: normalized, locale: Locale(identifier: "en_US_POSIX")), value > 0 else { return nil }
+        let value: Decimal?
+        if AppCountry.current == .colombia {
+            value = AppCountry.parseAmount(amountText)
+        } else {
+            let normalized = amountText.replacingOccurrences(of: ",", with: ".").filter { $0.isNumber || $0 == "." }
+            value = Decimal(string: normalized, locale: Locale(identifier: "en_US_POSIX"))
+        }
+        guard let value, value > 0 else { return nil }
         return value
     }
 
@@ -269,7 +275,7 @@ struct DetectedMovementReviewView: View {
                     HStack {
                         Text("\(category.emoji) \(category.rawValue)")
                         Spacer()
-                        Text("\(projected.formatted(.currency(code: "USD"))) de \(limit.formatted(.currency(code: "USD")))")
+                        Text("\(projected.formatted(.appCurrency)) de \(limit.formatted(.appCurrency))")
                             .font(.subheadline.weight(.semibold))
                     }
                     ProgressView(value: min(max(ratio, 0), 1))

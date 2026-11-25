@@ -208,7 +208,7 @@ struct DayWidgetView: View {
     }
 
     private func money(_ value: Double) -> String {
-        entry.hideAmounts ? "$•••" : value.formatted(.currency(code: "USD"))
+        entry.hideAmounts ? "$•••" : value.formatted(.appCurrency)
     }
 }
 

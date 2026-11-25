@@ -210,7 +210,7 @@ enum DetectedMovementActions {
                                category: suggestedCategory(for: movement), description: nil, rememberCard: false)
             let name = accounts.first { $0.id == accountId }?.name ?? "tu cuenta"
             sendSimple(id: "detected-done-\(id)", title: "Listo ✓",
-                       body: "Registramos \(movement.title) por \(abs(movement.amount).formatted(.currency(code: "USD"))) en \(name).")
+                       body: "Registramos \(movement.title) por \(abs(movement.amount).formatted(.appCurrency)) en \(name).")
             NotificationCenter.default.post(name: .recurringLoggedFromNotification, object: nil)
         } catch {
             sendSimple(id: "detected-failed-\(id)", title: "No se pudo registrar",

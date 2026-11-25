@@ -63,7 +63,7 @@ struct QuickAddView: View {
     @State private var adviceItems: [PaymentAdviceItem] = []
 
     private var enteredMagnitude: Decimal {
-        Decimal(string: amountText.replacingOccurrences(of: ",", with: ".")) ?? 0
+        AppCountry.parseAmount(amountText) ?? 0
     }
 
     var body: some View {
@@ -298,13 +298,13 @@ struct QuickAddView: View {
             let after = available - enteredMagnitude
             Group {
                 if enteredMagnitude > available {
-                    Text("Este gasto pasa tu cupo disponible (\(available.formatted(.currency(code: "USD")))). El banco podría rechazarlo o cobrarte sobregiro.")
+                    Text("Este gasto pasa tu cupo disponible (\(available.formatted(.appCurrency))). El banco podría rechazarlo o cobrarte sobregiro.")
                         .foregroundStyle(.red)
                 } else if enteredMagnitude > 0, (limit - after) / limit > Decimal(string: "0.7")! {
-                    Text("Te quedarían \(after.formatted(.currency(code: "USD"))) de cupo: estarías usando más del 70% de tu tarjeta.")
+                    Text("Te quedarían \(after.formatted(.appCurrency)) de cupo: estarías usando más del 70% de tu tarjeta.")
                         .foregroundStyle(.orange)
                 } else {
-                    Text("Cupo disponible: \(available.formatted(.currency(code: "USD"))) de \(limit.formatted(.currency(code: "USD")))")
+                    Text("Cupo disponible: \(available.formatted(.appCurrency)) de \(limit.formatted(.appCurrency))")
                         .foregroundStyle(.secondary)
                 }
             }
@@ -577,9 +577,9 @@ struct QuickAddView: View {
                 Image(systemName: remaining >= 0 ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                     .foregroundStyle(remaining >= 0 ? MonAviBrand.primary : MonAviBrand.alert)
                 if remaining >= 0 {
-                    Text("Te quedarian \(remaining, format: .currency(code: "USD")).")
+                    Text("Te quedarian \(remaining, format: .appCurrency).")
                 } else {
-                    Text("Te pasarias por \(abs(remaining), format: .currency(code: "USD")).")
+                    Text("Te pasarias por \(abs(remaining), format: .appCurrency).")
                 }
             }
             .font(.caption)
@@ -664,7 +664,7 @@ struct QuickAddView: View {
 
     private func save() async {
         guard
-            let magnitude = Decimal(string: amountText.replacingOccurrences(of: ",", with: "."))
+            let magnitude = AppCountry.parseAmount(amountText)
         else { return }
 
         if let existingTransaction {

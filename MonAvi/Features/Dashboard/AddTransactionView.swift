@@ -18,7 +18,7 @@ struct AddTransactionView: View {
     @State private var sortedCategories: [TransactionCategory] = TransactionCategory.allCases
     @State private var description = ""
     @State private var tagsText = ""
-    @State private var selectedCurrency = "USD"
+    @State private var selectedCurrency = AppCountry.current.currencyCode
     @State private var isConverting = false
     @State private var isSaving = false
     @State private var showingSavingAnimation = false
@@ -36,7 +36,7 @@ struct AddTransactionView: View {
     }
 
     private var enteredMagnitude: Decimal {
-        Decimal(string: amountText.replacingOccurrences(of: ",", with: ".")) ?? 0
+        AppCountry.parseAmount(amountText) ?? 0
     }
 
     private var selectedAccount: Account? {
@@ -102,7 +102,7 @@ struct AddTransactionView: View {
                     movementType = initialMovementType
                 }
                 selectedAccountId = selectedAccountId ?? accounts.first?.id
-                selectedCurrency = selectedAccount?.currency ?? "USD"
+                selectedCurrency = selectedAccount?.currency ?? AppCountry.current.currencyCode
             }
             .task { await refreshBudgets() }
             .task { await refreshSortedCategories() }
@@ -149,9 +149,9 @@ struct AddTransactionView: View {
                 Image(systemName: remaining >= 0 ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                     .foregroundStyle(remaining >= 0 ? MonAviBrand.primary : MonAviBrand.alert)
                 if remaining >= 0 {
-                    Text("Te quedarian \(remaining, format: .currency(code: "USD")) de tu presupuesto \(progress.budget.period.displayName.lowercased()) de \(category.rawValue.lowercased()).")
+                    Text("Te quedarian \(remaining, format: .appCurrency) de tu presupuesto \(progress.budget.period.displayName.lowercased()) de \(category.rawValue.lowercased()).")
                 } else {
-                    Text("Te pasarias por \(abs(remaining), format: .currency(code: "USD")) de tu presupuesto de \(category.rawValue.lowercased()).")
+                    Text("Te pasarias por \(abs(remaining), format: .appCurrency) de tu presupuesto de \(category.rawValue.lowercased()).")
                 }
             }
             .font(.caption)
@@ -173,7 +173,7 @@ struct AddTransactionView: View {
         guard
             let userId = appState.currentUserId,
             let accountId = selectedAccountId,
-            let magnitude = Decimal(string: amountText.replacingOccurrences(of: ",", with: "."))
+            let magnitude = AppCountry.parseAmount(amountText)
         else { return }
 
         var convertedMagnitude = magnitude

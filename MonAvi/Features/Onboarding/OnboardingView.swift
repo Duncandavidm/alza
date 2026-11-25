@@ -96,6 +96,18 @@ struct OnboardingView: View {
         Section("¿Cómo te llamas?") {
             TextField("Tu nombre", text: $viewModel.fullName)
         }
+
+        Section {
+            CountryPicker(selection: $viewModel.country)
+        } header: {
+            Text("¿Dónde vives?")
+        } footer: {
+            Text("Tus montos se mostrarán en \(viewModel.country.currencyName). Puedes cambiarlo después en Ajustes > Mi perfil.")
+        }
+        .onAppear { appState.applyCountry(viewModel.country) }
+        .onChange(of: viewModel.country) { _, newValue in
+            appState.applyCountry(newValue)
+        }
     }
 
     @ViewBuilder

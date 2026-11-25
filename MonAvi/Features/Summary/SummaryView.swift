@@ -659,8 +659,8 @@ struct SummaryView: View {
     }
 
     private func money(_ value: Decimal) -> String {
-        let decimals = abs(value) >= 1000 ? 0 : 2
-        return value.formatted(.currency(code: "USD").precision(.fractionLength(decimals)))
+        let decimals = abs(value) >= 1000 ? 0 : AppCountry.current.fractionDigits
+        return value.formatted(.appCurrency.precision(.fractionLength(decimals)))
     }
 
     private func compact(_ value: Double) -> String {

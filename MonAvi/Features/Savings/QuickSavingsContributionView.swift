@@ -18,7 +18,7 @@ struct QuickSavingsContributionView: View {
     }
 
     private var amount: Decimal {
-        Decimal(string: amountText.replacingOccurrences(of: ",", with: ".")) ?? 0
+        AppCountry.parseAmount(amountText) ?? 0
     }
 
     var body: some View {

@@ -18,18 +18,19 @@ enum InterestPeriod: String, CaseIterable, Identifiable {
 
 /// Cuentas de una tarjeta de credito (logica pura, probada en CreditCardMathTests).
 enum CreditCardMath {
-    static func parse(_ text: String) -> Decimal? {
+    /// `isMoney: false` para tasas de interes.
+    static func parse(_ text: String, isMoney: Bool = true) -> Decimal? {
         let trimmed = text.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return nil }
         let cleaned = trimmed.replacingOccurrences(of: "%", with: "").replacingOccurrences(of: "$", with: "")
         // "0" es valido aqui (tarjeta sin usar, tasa 0%); el parser de montos no lo acepta.
         if let plain = Decimal(string: cleaned.replacingOccurrences(of: ",", with: ".")), plain == 0 { return 0 }
-        return RecurringAmountParser.parse(cleaned)
+        return RecurringAmountParser.parse(cleaned, isMoney: isMoney)
     }
 
     /// Tasa mensual a guardar: la anual se divide entre 12.
     static func monthlyRate(_ text: String, period: InterestPeriod) -> Decimal? {
-        guard let rate = parse(text), rate >= 0 else { return nil }
+        guard let rate = parse(text, isMoney: false), rate >= 0 else { return nil }
         switch period {
         case .monthly: return rate
         case .annual: return (rate / 12).roundedTo(4)

@@ -25,7 +25,7 @@ struct DashboardView: View {
                         Text("Balance total")
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                        Text(viewModel.totalBalance, format: .currency(code: "USD"))
+                        Text(viewModel.totalBalance, format: .appCurrency)
                             .font(.system(size: 34, weight: .bold))
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -126,7 +126,7 @@ struct DashboardView: View {
                 }
             }
             Spacer()
-            Text(transaction.amount, format: .currency(code: "USD"))
+            Text(transaction.amount, format: .appCurrency)
                 .foregroundStyle(transaction.movementType.tintColor)
         }
     }

@@ -17,7 +17,7 @@ struct BudgetProgressChip: View {
             ProgressView(value: min(progress.ratio, 1))
                 .tint(statusColor)
 
-            Text("\(progress.spent, format: .currency(code: "USD")) de \(progress.budget.limitAmount, format: .currency(code: "USD"))")
+            Text("\(progress.spent, format: .appCurrency) de \(progress.budget.limitAmount, format: .appCurrency)")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }

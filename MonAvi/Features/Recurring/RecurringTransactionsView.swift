@@ -43,7 +43,7 @@ struct RecurringTransactionsView: View {
 
                     Spacer()
 
-                    Text(item.amount, format: .currency(code: "USD"))
+                    Text(item.amount, format: .appCurrency)
                         .font(.body.weight(.semibold))
                 }
                 .padding(.vertical, 2)

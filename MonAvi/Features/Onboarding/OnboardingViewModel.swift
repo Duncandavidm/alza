@@ -10,6 +10,8 @@ import Supabase
 final class OnboardingViewModel: ObservableObject {
     // Paso 1: datos personales
     @Published var fullName = ""
+    /// Pais y moneda (1.0.6): Panama = dolar, Colombia = peso colombiano.
+    @Published var country: AppCountry = AppCountry.suggested
 
     // Paso 1b: panorama personal (edad, estado civil, dependientes, ocupacion)
     @Published var ageText = ""
@@ -75,9 +77,7 @@ final class OnboardingViewModel: ObservableObject {
     private let supabase = SupabaseManager.shared.client
 
     nonisolated static func amount(_ text: String) -> Decimal? {
-        let cleaned = text.replacingOccurrences(of: ",", with: ".").replacingOccurrences(of: "$", with: "")
-            .trimmingCharacters(in: .whitespaces)
-        return Decimal(string: cleaned)
+        AppCountry.parseAmount(text.replacingOccurrences(of: "$", with: "").trimmingCharacters(in: .whitespaces))
     }
 
     /// Ingreso fijo llevado a un mes: quincenal x2, semanal x52/12, diario
@@ -172,7 +172,7 @@ final class OnboardingViewModel: ObservableObject {
                     name: accountName.isEmpty ? "Cuenta principal" : accountName,
                     type: .checking,
                     balance: Self.amount(accountBalanceText) ?? 0,
-                    currency: "USD"
+                    currency: AppCountry.current.currencyCode
                 )
             )
             guard let accountId = accountsViewModel.accounts.first?.id else {
@@ -182,14 +182,14 @@ final class OnboardingViewModel: ObservableObject {
 
             let recurringViewModel = RecurringTransactionsViewModel()
 
-            if hasFixedIncome, let amount = Decimal(string: fixedIncomeAmountText.replacingOccurrences(of: ",", with: ".")), amount > 0 {
+            if hasFixedIncome, let amount = AppCountry.parseAmount(fixedIncomeAmountText), amount > 0 {
                 for income in fixedIncomeRecurrences(userId: userId, accountId: accountId, amount: amount) {
                     try await recurringViewModel.add(income)
                 }
             }
 
             for bill in commonBills where bill.isEnabled {
-                guard let amount = Decimal(string: bill.amountText.replacingOccurrences(of: ",", with: ".")), amount > 0 else { continue }
+                guard let amount = AppCountry.parseAmount(bill.amountText), amount > 0 else { continue }
                 try await recurringViewModel.add(
                     NewRecurringTransaction(
                         userId: userId,
@@ -204,7 +204,7 @@ final class OnboardingViewModel: ObservableObject {
             }
 
             for item in subscriptions {
-                guard !item.name.isEmpty, let amount = Decimal(string: item.amountText.replacingOccurrences(of: ",", with: ".")), amount > 0 else { continue }
+                guard !item.name.isEmpty, let amount = AppCountry.parseAmount(item.amountText), amount > 0 else { continue }
                 try await recurringViewModel.add(
                     NewRecurringTransaction(
                         userId: userId,
@@ -219,7 +219,7 @@ final class OnboardingViewModel: ObservableObject {
             }
 
             for item in otherFixedItems {
-                guard !item.name.isEmpty, let amount = Decimal(string: item.amountText.replacingOccurrences(of: ",", with: ".")), amount > 0 else { continue }
+                guard !item.name.isEmpty, let amount = AppCountry.parseAmount(item.amountText), amount > 0 else { continue }
                 try await recurringViewModel.add(
                     NewRecurringTransaction(
                         userId: userId,
@@ -234,7 +234,7 @@ final class OnboardingViewModel: ObservableObject {
             }
 
             for debt in debts where !debt.creditor.isEmpty {
-                guard let balance = Decimal(string: debt.balanceText.replacingOccurrences(of: ",", with: ".")) else { continue }
+                guard let balance = AppCountry.parseAmount(debt.balanceText) else { continue }
                 try await supabase
                     .from("debts")
                     .insert(
@@ -244,7 +244,7 @@ final class OnboardingViewModel: ObservableObject {
                             balance: balance,
                             creditLimit: Self.amount(debt.creditLimitText).flatMap { $0 > 0 ? $0 : nil },
                             interestRateMonthly: CreditCardMath.monthlyRate(debt.interestRateText, period: debt.interestPeriod),
-                            minimumPayment: Decimal(string: debt.minimumPaymentText.replacingOccurrences(of: ",", with: ".")),
+                            minimumPayment: AppCountry.parseAmount(debt.minimumPaymentText),
                             dueDate: nil,
                             isOverdue: debt.isOverdue,
                             paymentDay: Int(debt.paymentDayText.filter(\.isNumber)).flatMap { (1...31).contains($0) ? $0 : nil }
@@ -253,14 +253,14 @@ final class OnboardingViewModel: ObservableObject {
                     .execute()
             }
 
-            if hasSavings, let savingsAmount = Decimal(string: savingsAmountText.replacingOccurrences(of: ",", with: ".")), savingsAmount > 0 {
+            if hasSavings, let savingsAmount = AppCountry.parseAmount(savingsAmountText), savingsAmount > 0 {
                 try await accountsViewModel.addAccount(
                     NewAccount(
                         userId: userId,
                         name: savingsNote.isEmpty ? "Ahorros" : String(savingsNote.prefix(40)),
                         type: .savings,
                         balance: savingsAmount,
-                        currency: "USD",
+                        currency: AppCountry.current.currencyCode,
                         availableOn: savingsLocked ? SavingsAvailability.string(from: savingsAvailableOn) : nil
                     )
                 )
@@ -279,6 +279,7 @@ final class OnboardingViewModel: ObservableObject {
 
             struct ProfileUpdate: Encodable {
                 let fullName: String?
+                let country: String
                 let hasVariableIncome: Bool
                 let variableIncomeNotes: String?
                 let age: Int?
@@ -293,6 +294,7 @@ final class OnboardingViewModel: ObservableObject {
 
                 enum CodingKeys: String, CodingKey {
                     case fullName = "full_name"
+                    case country
                     case hasVariableIncome = "has_variable_income"
                     case variableIncomeNotes = "variable_income_notes"
                     case age
@@ -312,6 +314,7 @@ final class OnboardingViewModel: ObservableObject {
                 .update(
                     ProfileUpdate(
                         fullName: fullName.isEmpty ? nil : fullName,
+                        country: country.rawValue,
                         hasVariableIncome: hasVariableIncome,
                         variableIncomeNotes: hasVariableIncome && !variableIncomeNotes.isEmpty ? variableIncomeNotes : nil,
                         age: Int(ageText),

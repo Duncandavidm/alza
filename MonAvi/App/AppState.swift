@@ -41,6 +41,9 @@ final class AppState: ObservableObject {
     /// tiene que seguir mostrando AuthView (con la hoja encima) hasta que
     /// termine o se cancele.
     @Published private(set) var isHoldingAuthScreen = false
+    /// Pais y moneda de la cuenta (profiles.country). Al cambiar, RootView
+    /// redibuja la app para que los montos salgan en la moneda nueva.
+    @Published private(set) var country: AppCountry = AppCountry.current
 
     let subscriptionStore = SubscriptionStore()
     private let supabase = SupabaseManager.shared.client
@@ -102,10 +105,39 @@ final class AppState: ObservableObject {
         clearLocalAccountData()
     }
 
+    /// Cambia el pais (y la moneda) en este iPhone: montos, widgets y
+    /// cuentas nuevas. No convierte montos.
+    func applyCountry(_ newCountry: AppCountry) {
+        AppCountry.current = newCountry
+        if country != newCountry {
+            country = newCountry
+            WidgetCenter.shared.reloadAllTimelines()
+        }
+    }
+
+    /// Ajustes > Mi perfil > País y moneda: lo guarda en el perfil y pasa
+    /// las cuentas a la moneda nueva (los montos quedan iguales).
+    func changeCountry(to newCountry: AppCountry) async throws {
+        guard let userId = currentUserId else { return }
+        try await supabase
+            .from("profiles")
+            .update(["country": newCountry.rawValue])
+            .eq("id", value: userId)
+            .execute()
+        try await supabase
+            .from("accounts")
+            .update(["currency": newCountry.currencyCode])
+            .eq("user_id", value: userId)
+            .execute()
+        applyCountry(newCountry)
+    }
+
     /// Lo que la cuenta deja guardado en este iPhone fuera de la sesion:
     /// los widgets ("Tu día", presupuestos) y los movimientos detectados
     /// por confirmar. Se borra al cerrar sesion o eliminar la cuenta.
     private func clearLocalAccountData() {
+        AppCountry.reset()
+        country = AppCountry.current
         DayWidgetSnapshot.clear()
         BudgetWidgetSnapshot.clear()
         WidgetCenter.shared.reloadAllTimelines()
@@ -196,7 +228,11 @@ final class AppState: ObservableObject {
         }
         struct Row: Decodable {
             let onboardingCompletedAt: Date?
-            enum CodingKeys: String, CodingKey { case onboardingCompletedAt = "onboarding_completed_at" }
+            let country: String?
+            enum CodingKeys: String, CodingKey {
+                case onboardingCompletedAt = "onboarding_completed_at"
+                case country
+            }
         }
         do {
             // Lista en vez de .single(): cero filas no es un error de red,
@@ -204,7 +240,7 @@ final class AppState: ObservableObject {
             // con la cuenta por trigger y se borra en cascada con ella).
             let rows: [Row] = try await supabase
                 .from("profiles")
-                .select("onboarding_completed_at")
+                .select("onboarding_completed_at, country")
                 .eq("id", value: userId)
                 .limit(1)
                 .execute()
@@ -212,6 +248,9 @@ final class AppState: ObservableObject {
             guard let row = rows.first else {
                 await discardDeadSession()
                 return
+            }
+            if let saved = row.country.flatMap(AppCountry.init(rawValue:)), row.onboardingCompletedAt != nil {
+                applyCountry(saved)
             }
             onboardingStatus = row.onboardingCompletedAt != nil ? .completed : .pending
         } catch {

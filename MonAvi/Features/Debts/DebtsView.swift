@@ -17,7 +17,7 @@ struct DebtsView: View {
         List {
             if !viewModel.debts.isEmpty {
                 Section {
-                    LabeledContent("Deuda total activa", value: viewModel.totalActiveBalance.formatted(.currency(code: "USD")))
+                    LabeledContent("Deuda total activa", value: viewModel.totalActiveBalance.formatted(.appCurrency))
                         .font(.headline)
                 }
             }
@@ -48,7 +48,7 @@ struct DebtsView: View {
                     HStack {
                         Text(debt.creditor).font(.headline)
                         Spacer()
-                        Text(debt.balance, format: .currency(code: "USD")).font(.headline)
+                        Text(debt.balance, format: .appCurrency).font(.headline)
                     }
 
                     if let limit = debt.creditLimit, limit > 0 {
@@ -73,7 +73,7 @@ struct DebtsView: View {
                             Text("Interés: \(CreditCardMath.rateText(monthly: rate))")
                         }
                         if let min = debt.minimumPayment {
-                            Text("Mínimo: \(min, format: .currency(code: "USD"))")
+                            Text("Mínimo: \(min, format: .appCurrency)")
                         }
                     }
                     .font(.caption)

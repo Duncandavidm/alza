@@ -73,7 +73,7 @@ struct ReceiptStampView: View {
         .shadow(color: .black.opacity(0.28), radius: 24, y: 10)
         .padding(.horizontal, 24)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Recibo de pago de MonAvi. \(description.isEmpty ? "Pago recibido" : description). Total \(amount.formatted(.currency(code: "USD"))). Pagado.")
+        .accessibilityLabel("Recibo de pago de MonAvi. \(description.isEmpty ? "Pago recibido" : description). Total \(amount.formatted(.appCurrency)). Pagado.")
         .onAppear { animate() }
     }
 
@@ -160,7 +160,7 @@ struct ReceiptStampView: View {
                 Text("TOTAL")
                     .font(.system(size: 12, weight: .bold, design: .monospaced))
                 Spacer()
-                Text(amount, format: .currency(code: "USD"))
+                Text(amount, format: .appCurrency)
                     .font(.system(size: 15, weight: .heavy, design: .monospaced))
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)

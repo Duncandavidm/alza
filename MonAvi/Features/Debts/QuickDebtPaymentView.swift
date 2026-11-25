@@ -49,9 +49,9 @@ struct QuickDebtPaymentView: View {
                             }
                         }
                         if let debt = selectedDebt {
-                            LabeledContent("Debes", value: debt.balance.formatted(.currency(code: "USD")))
+                            LabeledContent("Debes", value: debt.balance.formatted(.appCurrency))
                             if let limit = debt.creditLimit, limit > 0, let available = debt.availableCredit {
-                                LabeledContent("Cupo disponible", value: "\(available.formatted(.currency(code: "USD"))) de \(limit.formatted(.currency(code: "USD")))")
+                                LabeledContent("Cupo disponible", value: "\(available.formatted(.appCurrency)) de \(limit.formatted(.appCurrency))")
                             }
                             if let day = debt.paymentDay {
                                 LabeledContent("Vence", value: "el día \(day) de cada mes")
@@ -113,7 +113,7 @@ struct QuickDebtPaymentView: View {
         } label: {
             VStack(spacing: 2) {
                 Text(label).font(.caption)
-                Text(value.formatted(.currency(code: "USD"))).font(.subheadline.weight(.semibold))
+                Text(value.formatted(.appCurrency)).font(.subheadline.weight(.semibold))
             }
             .frame(maxWidth: .infinity)
         }

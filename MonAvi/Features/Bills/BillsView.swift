@@ -67,7 +67,7 @@ struct BillsView: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 4) {
-                Text(bill.amount, format: .currency(code: "USD"))
+                Text(bill.amount, format: .appCurrency)
                     .fontWeight(.medium)
                 Text(bill.priority.displayName)
                     .font(.caption2)

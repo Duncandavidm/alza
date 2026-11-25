@@ -22,7 +22,7 @@ struct AddSavingsGoalView: View {
     @State private var errorMessage: String?
 
     private var targetAmount: Decimal {
-        Decimal(string: targetAmountText.replacingOccurrences(of: ",", with: ".")) ?? 0
+        AppCountry.parseAmount(targetAmountText) ?? 0
     }
 
     /// Misma cuenta que `SavingsGoal.monthsRemaining`/`monthlyContributionNeeded`
@@ -72,7 +72,7 @@ struct AddSavingsGoalView: View {
                 if targetAmount > 0 {
                     Section("Cuota sugerida") {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(monthlyContributionNeeded, format: .currency(code: "USD"))
+                            Text(monthlyContributionNeeded, format: .appCurrency)
                                 .font(.title2.bold())
                                 .foregroundStyle(MonAviBrand.primary)
                             Text("por mes durante \(monthsRemaining) mes\(monthsRemaining == 1 ? "" : "es") para llegar a tiempo.")

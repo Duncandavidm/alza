@@ -11,7 +11,7 @@ enum SurplusAdviceService {
     static func buildAdvice(userId: UUID, surplus: Decimal) async -> String? {
         guard surplus > 0 else { return nil }
         let supabase = SupabaseManager.shared.client
-        let amountText = surplus.formatted(.currency(code: "USD"))
+        let amountText = surplus.formatted(.appCurrency)
 
         async let debtsRequest: [Debt] = (try? await supabase
             .from("debts")

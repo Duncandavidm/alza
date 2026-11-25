@@ -71,7 +71,7 @@ struct DayCloseSummaryView: View {
             Text(label)
                 .font(emphasized ? .headline : .subheadline)
             Spacer()
-            Text(value, format: .currency(code: "USD"))
+            Text(value, format: .appCurrency)
                 .font(emphasized ? .title3.bold() : .subheadline.weight(.medium))
                 .foregroundStyle(color)
         }

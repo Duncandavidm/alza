@@ -70,7 +70,7 @@ struct BudgetsView: View {
                 .tint(statusColor(progress.status))
 
             HStack {
-                Text("\(progress.spent, format: .currency(code: "USD")) de \(progress.budget.limitAmount, format: .currency(code: "USD"))")
+                Text("\(progress.spent, format: .appCurrency) de \(progress.budget.limitAmount, format: .appCurrency)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()

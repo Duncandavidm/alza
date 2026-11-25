@@ -292,7 +292,7 @@ struct VoiceCaptureView: View {
         } else {
             description = rawDescription.prefix(1).uppercased() + String(rawDescription.dropFirst())
         }
-        let amount = abs(transaction.amount).formatted(.currency(code: "USD"))
+        let amount = abs(transaction.amount).formatted(.appCurrency)
         return "Anotado: \(description) · \(amount) (\(transaction.movementType.displayName.lowercased()))"
     }
 

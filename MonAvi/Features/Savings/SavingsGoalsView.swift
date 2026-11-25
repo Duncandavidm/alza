@@ -88,7 +88,7 @@ struct SavingsGoalsView: View {
                 .tint(goal.isAchieved ? .green : MonAviBrand.primary)
 
             HStack {
-                Text("\(goal.currentAmount, format: .currency(code: "USD")) de \(goal.targetAmount, format: .currency(code: "USD"))")
+                Text("\(goal.currentAmount, format: .appCurrency) de \(goal.targetAmount, format: .appCurrency)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
@@ -99,7 +99,7 @@ struct SavingsGoalsView: View {
                         .font(.caption.bold())
                         .foregroundStyle(.green)
                 } else {
-                    Text("\(goal.monthlyContributionNeeded, format: .currency(code: "USD"))/mes")
+                    Text("\(goal.monthlyContributionNeeded, format: .appCurrency)/mes")
                         .font(.caption.bold())
                         .foregroundStyle(MonAviBrand.primary)
                 }
@@ -137,7 +137,7 @@ private struct ContributeToGoalView: View {
     @State private var errorMessage: String?
 
     private var amount: Decimal {
-        Decimal(string: amountText.replacingOccurrences(of: ",", with: ".")) ?? 0
+        AppCountry.parseAmount(amountText) ?? 0
     }
 
     var body: some View {
@@ -156,7 +156,7 @@ private struct ContributeToGoalView: View {
                         text: $amountText
                     )
                 } header: {
-                    Text("\(goal.emoji) \(goal.name) — llevas \(goal.currentAmount, format: .currency(code: "USD"))")
+                    Text("\(goal.emoji) \(goal.name) — llevas \(goal.currentAmount, format: .appCurrency)")
                 } footer: {
                     VStack(alignment: .leading, spacing: 4) {
                         if goal.accountId != nil {

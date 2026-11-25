@@ -254,7 +254,7 @@ struct LevelsView: View {
                     .foregroundStyle(color)
             }
             Spacer(minLength: 8)
-            Text(review.contribution.amount, format: .currency(code: "USD"))
+            Text(review.contribution.amount, format: .appCurrency)
                 .font(.subheadline.weight(.semibold))
         }
         .padding(.vertical, 8)

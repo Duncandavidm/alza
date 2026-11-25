@@ -152,7 +152,7 @@ struct DayJournalView: View {
                     await refreshFeaturedRewards()
                 }
                 .alert(amountPromptTitle, isPresented: isAmountPromptShown) {
-                    TextField("Monto, ej. 52.30", text: $customAmountText)
+                    TextField("Monto, ej. \(AppCountry.current.amountExample)", text: $customAmountText)
                         .keyboardType(.decimalPad)
                     Button("Registrar") {
                         if let item = amountPromptItem, let amount = RecurringAmountParser.parse(customAmountText) {
@@ -165,7 +165,7 @@ struct DayJournalView: View {
                     Text("Lo anotamos con este monto solo esta vez. El de siempre sigue igual.")
                 }
                 .alert("¿Cuánto pagaste de \(otherAmountSuggestion?.name ?? "")?", isPresented: isSuggestionAmountShown) {
-                    TextField("Monto, ej. 52.30", text: $suggestionAmountText)
+                    TextField("Monto, ej. \(AppCountry.current.amountExample)", text: $suggestionAmountText)
                         .keyboardType(.decimalPad)
                     Button("Registrar") {
                         if let suggestion = otherAmountSuggestion, let amount = RecurringAmountParser.parse(suggestionAmountText) {
@@ -466,7 +466,7 @@ struct DayJournalView: View {
     private var totalsCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             if totalOverBudget > 0 {
-                Text("\(totalOverBudget, format: .currency(code: "USD")) sobre presupuesto")
+                Text("\(totalOverBudget, format: .appCurrency) sobre presupuesto")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(MonAviBrand.alert)
             }
@@ -504,7 +504,7 @@ struct DayJournalView: View {
                 .foregroundStyle(.white)
                 .frame(width: 18, height: 18)
                 .background(Circle().fill(color))
-            Text(amount, format: .currency(code: "USD"))
+            Text(amount, format: .appCurrency)
                 .font(.subheadline.weight(.semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
@@ -591,7 +591,7 @@ struct DayJournalView: View {
                         .foregroundStyle(.secondary)
                     Spacer()
                     if !savingsViewModel.goals.isEmpty {
-                        Text(totalSaved, format: .currency(code: "USD"))
+                        Text(totalSaved, format: .appCurrency)
                             .font(.system(size: 19, weight: .heavy, design: MonAviBrand.fontDesign))
                             .foregroundStyle(.primary)
                     }
@@ -659,7 +659,7 @@ struct DayJournalView: View {
     }
 
     private func suggestionCard(_ suggestion: RecurringDetector.Suggestion) -> some View {
-        let amount = suggestion.amount.formatted(.currency(code: "USD"))
+        let amount = suggestion.amount.formatted(.appCurrency)
         return VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top, spacing: 10) {
                 Text("🔁")
@@ -794,7 +794,7 @@ struct DayJournalView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(days == 0 ? "Hoy vence \(item.debt.creditor)" : "\(item.debt.creditor) vence en \(days) día\(days == 1 ? "" : "s")")
                                 .font(.subheadline.weight(.semibold))
-                            Text("Debes \(item.debt.balance.formatted(.currency(code: "USD"))) · mínimo \(item.debt.estimatedMinimum.formatted(.currency(code: "USD")))")
+                            Text("Debes \(item.debt.balance.formatted(.appCurrency)) · mínimo \(item.debt.estimatedMinimum.formatted(.appCurrency))")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                         }
@@ -932,14 +932,14 @@ struct DayJournalView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(isIncome ? "¿Recibiste \(item.name) hoy?" : "¿Pagaste \(item.name) hoy?")
                         .font(.subheadline.weight(.semibold))
-                    Text("Normalmente son \(item.amount, format: .currency(code: "USD")). ¿Fue lo mismo?")
+                    Text("Normalmente son \(item.amount, format: .appCurrency). ¿Fue lo mismo?")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
             }
             HStack(spacing: 8) {
-                Button("Sí, \(item.amount.formatted(.currency(code: "USD")))") {
+                Button("Sí, \(item.amount.formatted(.appCurrency))") {
                     Task { await confirmRecurring(item) }
                 }
                 .buttonStyle(.borderedProminent)
@@ -1076,7 +1076,7 @@ struct DayJournalView: View {
 
             Spacer()
 
-            Text(transaction.amount, format: .currency(code: "USD"))
+            Text(transaction.amount, format: .appCurrency)
                 .font(.body.weight(.semibold))
                 .foregroundStyle(transaction.movementType.tintColor)
         }

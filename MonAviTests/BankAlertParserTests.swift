@@ -28,6 +28,18 @@ final class BankAlertParserTests: XCTestCase {
                      amount: Decimal(string: "9.50")!, income: false, counterpart: nil, last4: "4021")
     }
 
+    /// Colombia (1.0.6): "$85.900,00" y "$120.000" son miles, no centavos.
+    func testAvisosEnPesosColombianos() {
+        assertParsed("Bancolombia le informa Compra por $85.900,00 en EXITO LAURELES 25/11/2026 14:32. T.Cred *4321",
+                     amount: 85900, income: false, counterpart: "Exito Laureles", last4: "4321")
+        assertParsed("Nequi: Recibiste $120.000 de MARIA GOMEZ",
+                     amount: 120000, income: true, counterpart: "Maria Gomez", last4: nil)
+        assertParsed("Pagaste 45.000 pesos en Rappi con tu tarjeta terminada en 7788",
+                     amount: 45000, income: false, counterpart: "Rappi", last4: "7788")
+        assertParsed("Davivienda: Retiro por COP 200.000 en cajero",
+                     amount: 200000, income: false, counterpart: nil, last4: nil)
+    }
+
     func testPagosYRetiros() {
         assertParsed("Pagaste $15.75 a Farmacia Arrocha con Yappy",
                      amount: Decimal(string: "15.75")!, income: false, counterpart: "Farmacia Arrocha", last4: nil)

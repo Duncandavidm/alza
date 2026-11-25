@@ -36,7 +36,7 @@ struct SpendingInsightsView: View {
                     .frame(height: 220)
                     .chartLegend(position: .bottom, spacing: 12)
                 } header: {
-                    Text("Total gastado: \(viewModel.totalSpend, format: .currency(code: "USD"))")
+                    Text("Total gastado: \(viewModel.totalSpend, format: .appCurrency)")
                 }
 
                 Section("Top 3 categorías") {
@@ -80,7 +80,7 @@ struct SpendingInsightsView: View {
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 2) {
-                Text(item.total, format: .currency(code: "USD")).font(.subheadline.weight(.semibold))
+                Text(item.total, format: .appCurrency).font(.subheadline.weight(.semibold))
                 if let delta = item.deltaPercent {
                     Text("\(delta >= 0 ? "+" : "")\(delta, format: .number.precision(.fractionLength(0)))% vs anterior")
                         .font(.caption2)

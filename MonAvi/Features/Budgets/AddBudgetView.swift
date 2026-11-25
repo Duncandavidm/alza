@@ -50,7 +50,7 @@ struct AddBudgetView: View {
     private func save() async {
         guard
             let userId = appState.currentUserId,
-            let limit = Decimal(string: limitText.replacingOccurrences(of: ",", with: "."))
+            let limit = AppCountry.parseAmount(limitText)
         else { return }
 
         isSaving = true

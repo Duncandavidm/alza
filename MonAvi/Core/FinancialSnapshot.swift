@@ -341,10 +341,11 @@ struct FinancialSnapshot {
     static func money(_ value: Decimal) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.currencyCode = "USD"
-        formatter.locale = Locale(identifier: "en_US")
+        let country = AppCountry.current
+        formatter.currencyCode = country.currencyCode
+        formatter.locale = country.formatLocale ?? Locale(identifier: "en_US")
         let rounded = value.roundedTo(2)
-        formatter.maximumFractionDigits = rounded == rounded.roundedTo(0) ? 0 : 2
+        formatter.maximumFractionDigits = (rounded == rounded.roundedTo(0) || country.fractionDigits == 0) ? 0 : 2
         formatter.minimumFractionDigits = formatter.maximumFractionDigits
         return formatter.string(from: NSDecimalNumber(decimal: rounded)) ?? "$\(rounded)"
     }

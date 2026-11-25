@@ -16,7 +16,7 @@ struct ParsedBankMovement: Equatable {
 /// sube a ningun servidor). Reglas:
 /// - nunca acepta codigos de seguridad (OTP, claves), transacciones
 ///   rechazadas ni promociones;
-/// - el monto tiene que venir con su moneda (B/., $, USD) para no confundir
+/// - el monto tiene que venir con su moneda (B/., $, USD, COP, pesos) para no confundir
 ///   numeros de tarjeta o fechas;
 /// - "te enviaron", "recibiste", "depósito"... es ingreso; "compra",
 ///   "consumo", "pagaste", "retiro"... es gasto. Si no es ninguno, no es
@@ -44,8 +44,8 @@ enum BankAlertParser {
     ]
 
     private static let number = #"(\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)"#
-    private static let amountPrefix = regex(#"(?i)(?:b/\.?|usd|us\$|\$)\s?"# + number)
-    private static let amountSuffix = regex("(?i)" + number + #"\s?(?:usd|dolares|dólares|balboas)"#)
+    private static let amountPrefix = regex(#"(?i)(?:b/\.?|usd|us\$|cop|col\$|\$)\s?"# + number)
+    private static let amountSuffix = regex("(?i)" + number + #"\s?(?:usd|dolares|dólares|balboas|cop|pesos)"#)
     private static let otp = regex(#"(codigo|clave)[^.]{0,20}(es|:)\s*\d{4,8}"#)
 
     private static let stop = #"(?=\s+(?:el|la|con|por|fecha|tarjeta|a las|hoy|del|desde|mediante|via app|\d{1,2}[/-])\b|[,.;:!\n(]|\s-\s|$)"#

@@ -29,7 +29,7 @@ struct DetectedMovement: Codable, Identifiable, Hashable {
     var signedAmount: Decimal { isIncome ? abs(amount) : -abs(amount) }
 
     var amountText: String {
-        (isIncome ? "+" : "−") + abs(amount).formatted(.currency(code: "USD"))
+        (isIncome ? "+" : "−") + abs(amount).formatted(.appCurrency)
     }
 
     /// "Pago detectado" / "Ingreso detectado".
@@ -37,7 +37,7 @@ struct DetectedMovement: Codable, Identifiable, Hashable {
 
     /// "Café La Esquina · $12.40 (•4021)".
     var notificationBody: String {
-        var body = "\(title) · \(abs(amount).formatted(.currency(code: "USD")))"
+        var body = "\(title) · \(abs(amount).formatted(.appCurrency))"
         if let last4 { body += " (•\(last4))" }
         return body
     }

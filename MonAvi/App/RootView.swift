@@ -57,6 +57,8 @@ struct RootView: View {
                     .transition(.opacity)
             case .dashboard:
                 DashboardTabView()
+                    // Pais/moneda nuevos: se redibuja todo con la moneda nueva.
+                    .id(appState.country)
                     .transition(.opacity)
             case .loadFailed:
                 StartupErrorView()

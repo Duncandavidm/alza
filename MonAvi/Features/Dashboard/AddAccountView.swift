@@ -68,7 +68,7 @@ struct AddAccountView: View {
 
     private func save() async {
         guard let userId = appState.currentUserId else { return }
-        let balance = Decimal(string: balanceText.replacingOccurrences(of: ",", with: ".")) ?? 0
+        let balance = AppCountry.parseAmount(balanceText) ?? 0
         isSaving = true
         defer { isSaving = false }
 
@@ -80,7 +80,7 @@ struct AddAccountView: View {
         do {
             try await viewModel.addAccount(
                 NewAccount(
-                    userId: userId, name: name, type: type, balance: balance, currency: "USD",
+                    userId: userId, name: name, type: type, balance: balance, currency: AppCountry.current.currencyCode,
                     availableOn: type.isReserve && isLocked ? SavingsAvailability.string(from: availableOn) : nil
                 )
             )

@@ -136,7 +136,7 @@ struct BudgetDetailSheet: View {
     }
 
     private func save() async {
-        guard let limit = Decimal(string: limitText.replacingOccurrences(of: ",", with: ".")), limit > 0 else {
+        guard let limit = AppCountry.parseAmount(limitText), limit > 0 else {
             errorMessage = "Pon un límite válido."
             return
         }

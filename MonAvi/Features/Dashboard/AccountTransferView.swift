@@ -58,8 +58,8 @@ struct AccountTransferView: View {
                     if let source, let destination, amount > 0 {
                         let left = source.balance - amount
                         Text(left <= 0
-                             ? "\(source.name) queda en $0 y \(destination.name) sube \(amount.formatted(.currency(code: "USD")))."
-                             : "\(source.name) queda en \(left.formatted(.currency(code: "USD"))) y \(destination.name) sube \(amount.formatted(.currency(code: "USD"))).")
+                             ? "\(source.name) queda en $0 y \(destination.name) sube \(amount.formatted(.appCurrency))."
+                             : "\(source.name) queda en \(left.formatted(.appCurrency)) y \(destination.name) sube \(amount.formatted(.appCurrency)).")
                     } else {
                         Text("Es dinero tuyo que cambia de cuenta: no cuenta como gasto ni como ingreso.")
                     }

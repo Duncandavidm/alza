@@ -4,11 +4,17 @@ import Foundation
 /// Lo usan "Fue otro monto" en Hoy y la respuesta escrita de la
 /// notificacion de un pago fijo.
 enum RecurringAmountParser {
-    static func parse(_ text: String) -> Decimal? {
+    /// `isMoney: false` para tasas ("2.5"): en Colombia no se leen como miles.
+    static func parse(_ text: String, isMoney: Bool = true) -> Decimal? {
         var cleaned = text.trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "$", with: "")
             .replacingOccurrences(of: " ", with: "")
         guard !cleaned.isEmpty else { return nil }
+        if isMoney && AppCountry.current == .colombia {
+            // Pesos colombianos: "1.500.000" o "1,500,000"; sin centavos.
+            guard let value = AppCountry.parseAmount(cleaned), value > 0, value < 100_000_000_000 else { return nil }
+            return value
+        }
         let hasComma = cleaned.contains(",")
         let hasDot = cleaned.contains(".")
         if hasComma && hasDot {

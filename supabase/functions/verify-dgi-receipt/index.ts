@@ -262,6 +262,7 @@ async function awardCardBonusIfApplicable(
   amount: number,
   paymentMethods: string[],
   occurredAt: string,
+  multiplier = 1,
 ): Promise<number> {
   if (!isCardPayment(paymentMethods)) return 0;
 
@@ -288,7 +289,7 @@ async function awardCardBonusIfApplicable(
   if (offer.min_amount && amount < Number(offer.min_amount)) return 0;
 
   const rawPoints = offer.offer_type === "percent" ? amount * Number(offer.value) : Number(offer.value);
-  const points = Math.max(0, Math.floor(rawPoints));
+  const points = Math.max(0, Math.floor(rawPoints * multiplier));
   if (points === 0) return 0;
 
   if (offer.budget_total_points !== null && offer.budget_spent_points + points > offer.budget_total_points) {
@@ -327,8 +328,34 @@ interface PendingReceipt {
   user_id: string;
   cufe: string;
   ruc: string;
+  fecha_factura: string;
   scanned_at: string;
   dgi_check_count: number;
+}
+
+/// Cuanto cashback gana la factura segun cuando se registro (misma regla
+/// que DgiReceiptValidation.swift en la app). Fechas en hora de Panama:
+/// - mismo mes: 0-3 dias = 1, 4-7 dias = 0.5, 8+ dias = 0.25
+/// - mes anterior registrada en los 3 primeros dias del mes = 0 (solo gasto)
+/// - mas vieja = 0
+export function cashbackMultiplier(fechaFactura: string, scannedAt: string): number {
+  if (!fechaFactura || !scannedAt) return 1;
+  const panamaDay = (iso: string) => new Date(Date.parse(iso) - 5 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const scanDay = panamaDay(scannedAt);
+  const invoiceDay = fechaFactura.slice(0, 10);
+  const days = Math.round((Date.parse(scanDay + "T00:00:00Z") - Date.parse(invoiceDay + "T00:00:00Z")) / 86_400_000);
+  if (!Number.isFinite(days) || days < 0) return 0;
+  const [sy, sm] = scanDay.split("-").map(Number);
+  const [iy, im] = invoiceDay.split("-").map(Number);
+  const monthsApart = (sy - iy) * 12 + (sm - im);
+  if (monthsApart === 0) {
+    if (days <= 3) return 1;
+    if (days <= 7) return 0.5;
+    return 0.25;
+  }
+  // Mes anterior (la app solo la acepta los 3 primeros dias del mes) o
+  // mas vieja: se registra el gasto, sin cashback.
+  return 0;
 }
 
 interface ReceiptResult {
@@ -410,8 +437,13 @@ async function processReceipt(
 
   if (amount === null || amount <= 0) return { points: 0, merchantName, held: false };
 
+  // Completo, mitad, cuarto o nada segun los dias entre la compra y el
+  // registro (y nada si es del mes anterior).
+  const multiplier = cashbackMultiplier(receipt.fecha_factura, receipt.scanned_at);
+  if (multiplier <= 0) return { points: 0, merchantName, held: false };
+
   let awarded = 0;
-  const points = Math.max(0, Math.floor(amount * pointsPerDollar));
+  const points = Math.max(0, Math.floor(amount * pointsPerDollar * multiplier));
   if (points > 0) {
     const alreadyToday = await pointsAlreadyToday(supabase, receipt.user_id, "factura", receipt.scanned_at);
     if (alreadyToday + points <= dailyCapFactura) {
@@ -422,7 +454,7 @@ async function processReceipt(
         p_points: points,
         p_status: "confirmado",
         p_occurred_at: receipt.scanned_at,
-        p_metadata: { cufe: receipt.cufe, confirmedAmount: amount, paymentMethod: paymentMethods },
+        p_metadata: { cufe: receipt.cufe, confirmedAmount: amount, paymentMethod: paymentMethods, cashbackMultiplier: multiplier },
       });
       awarded += points;
     }
@@ -434,6 +466,7 @@ async function processReceipt(
     amount,
     paymentMethods,
     receipt.scanned_at,
+    multiplier,
   );
 
   const { data: after } = await supabase
@@ -501,7 +534,7 @@ Deno.serve(async (req) => {
     if (body.receipt_id) {
       const { data: row } = await supabase
         .from("dgi_receipts")
-        .select("id, user_id, cufe, ruc, scanned_at, dgi_check_count")
+        .select("id, user_id, cufe, ruc, fecha_factura, scanned_at, dgi_check_count")
         .eq("id", body.receipt_id).eq("status", "pendiente").maybeSingle();
       if (!row) return jsonResponse({ immediate: true, skipped: "no pendiente" });
       // Sin push: la persona acaba de escanear y esta viendo la factura en
@@ -531,7 +564,7 @@ Deno.serve(async (req) => {
     while (!dgiUnavailable && Date.now() - startedAt < TIME_BUDGET_MS) {
       const { data, error } = await supabase
         .from("dgi_receipts")
-        .select("id, user_id, cufe, ruc, scanned_at, dgi_check_count")
+        .select("id, user_id, cufe, ruc, fecha_factura, scanned_at, dgi_check_count")
         .eq("status", "pendiente")
         .or(`dgi_checked_at.is.null,dgi_checked_at.lte.${recheckBefore}`)
         .order("dgi_checked_at", { ascending: true, nullsFirst: true })
@@ -547,6 +580,7 @@ Deno.serve(async (req) => {
           user_id: row.user_id as string,
           cufe: row.cufe as string,
           ruc: row.ruc as string,
+          fecha_factura: row.fecha_factura as string,
           scanned_at: row.scanned_at as string,
           dgi_check_count: row.dgi_check_count as number,
         }));

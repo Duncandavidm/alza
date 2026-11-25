@@ -93,7 +93,11 @@ struct ScanReviewView: View {
                 } header: {
                     Text("Monto y categoría")
                 } footer: {
-                    Text("El gasto se registra de una vez. Verificamos tu factura al guardarla: si ya está publicada, tu cashback (1%) se suma enseguida; si no, la volvemos a revisar en 24 horas y queda pendiente hasta confirmarla.")
+                    if let tierMessage = DgiReceiptValidation.tierMessage(draft.cashbackTier) {
+                        Text(tierMessage)
+                    } else {
+                        Text("El gasto se registra de una vez. Verificamos tu factura al guardarla: si ya está publicada, tu cashback (1%) se suma enseguida; si no, la volvemos a revisar en 24 horas y queda pendiente hasta confirmarla.")
+                    }
                 }
 
                 if draft.canSplitByCategory && draft.linkedTransaction == nil {

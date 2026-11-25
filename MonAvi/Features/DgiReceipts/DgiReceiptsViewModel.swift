@@ -54,6 +54,9 @@ struct ScanDraft: Identifiable {
     /// "Separar por categoría": un gasto por cada categoria del desglose.
     /// Si la factura trae productos de varias categorias, se separa sola.
     var splitByCategory: Bool = true
+    /// Cuanto cashback gana segun los dias desde la compra (completo,
+    /// mitad, cuarto o nada si es del mes pasado).
+    var cashbackTier: DgiReceiptValidation.CashbackTier = .full
 
     var id: String { parsed.cufe }
 
@@ -172,15 +175,16 @@ final class DgiReceiptsViewModel: ObservableObject {
             return .invalid(error.userMessage)
         }
 
+        let cashbackTier: DgiReceiptValidation.CashbackTier
         switch DgiReceiptValidation.checkFreshness(fechaISO: parsed.fields.fechaISO) {
         case .future:
             return .invalid("Esta factura tiene fecha futura — revisa que sea el código correcto.")
         case .tooOld:
-            return .invalid("Esta factura tiene más de \(DgiReceiptValidation.maxDaysInPast) días — ya no se puede registrar por este medio.")
+            return .invalid("Esta factura es de un mes anterior — solo se pueden registrar facturas del mes en curso (o del mes pasado durante los primeros \(DgiReceiptValidation.previousMonthGraceDays) días del mes).")
         case .invalidDate:
             return .invalid("No se pudo leer la fecha de la factura.")
-        case .ok:
-            break
+        case .ok(let tier):
+            cashbackTier = tier
         }
 
         if await repository.isAlreadyScannedByMe(cufe: parsed.cufe, userId: userId) {
@@ -189,6 +193,7 @@ final class DgiReceiptsViewModel: ObservableObject {
 
         let merchant = await repository.merchant(forRUC: parsed.fields.ruc)
         var draft = ScanDraft(parsed: parsed, merchant: merchant)
+        draft.cashbackTier = cashbackTier
         if let categoryRaw = merchant?.category {
             draft.category = TransactionCategory(rawValue: categoryRaw)
         }

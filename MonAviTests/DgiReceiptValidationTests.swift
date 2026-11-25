@@ -2,69 +2,68 @@ import XCTest
 @testable import MonAvi
 
 final class DgiReceiptValidationTests: XCTestCase {
-    private func iso(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.timeZone = TimeZone(identifier: "UTC")
-        return formatter.string(from: date)
-    }
-
-    private var utcCalendar: Calendar {
+    private var panama: Calendar {
         var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(identifier: "UTC")!
+        calendar.timeZone = TimeZone(identifier: "America/Panama")!
         return calendar
     }
 
-    func testHoyEsValido() {
-        let now = Date()
-        let result = DgiReceiptValidation.checkFreshness(fechaISO: iso(now), now: now, calendar: utcCalendar)
-        XCTAssertEqual(result, .ok)
-    }
-
-    func testHaceTresDiasEsValido() {
-        let now = Date()
-        let threeDaysAgo = utcCalendar.date(byAdding: .day, value: -3, to: now)!
-        let result = DgiReceiptValidation.checkFreshness(fechaISO: iso(threeDaysAgo), now: now, calendar: utcCalendar)
-        XCTAssertEqual(result, .ok)
-    }
-
-    func testHaceCuatroDiasEsViejo() {
-        let now = Date()
-        let fourDaysAgo = utcCalendar.date(byAdding: .day, value: -4, to: now)!
-        let result = DgiReceiptValidation.checkFreshness(fechaISO: iso(fourDaysAgo), now: now, calendar: utcCalendar)
-        XCTAssertEqual(result, .tooOld)
-    }
-
-    func testFechaFuturaSeRechaza() {
-        let now = Date()
-        let tomorrow = utcCalendar.date(byAdding: .day, value: 1, to: now)!
-        let result = DgiReceiptValidation.checkFreshness(fechaISO: iso(tomorrow), now: now, calendar: utcCalendar)
-        XCTAssertEqual(result, .future)
-    }
-
-    func testFechaMalFormadaSeRechaza() {
-        let result = DgiReceiptValidation.checkFreshness(fechaISO: "no-es-una-fecha", now: Date(), calendar: utcCalendar)
-        XCTAssertEqual(result, .invalidDate)
-    }
-
-    /// En Panama (UTC-5) una factura de hace exactamente 3 dias calendario
-    /// se acepta, y una de hace 4 no — sin importar la hora del dia.
-    func testPanamaTimeZoneAcceptsThreeFullDays() {
-        var panama = Calendar(identifier: .gregorian)
-        panama.timeZone = TimeZone(identifier: "America/Panama")!
+    private func at(_ text: String) -> Date {
         let formatter = DateFormatter()
         formatter.calendar = panama
         formatter.timeZone = panama.timeZone
         formatter.dateFormat = "yyyy-MM-dd HH:mm"
-        let lateNight = formatter.date(from: "2026-11-13 23:30")!
-        let earlyMorning = formatter.date(from: "2026-11-13 00:30")!
+        return formatter.date(from: text)!
+    }
 
-        for now in [lateNight, earlyMorning] {
-            XCTAssertEqual(DgiReceiptValidation.checkFreshness(fechaISO: "2026-11-10", now: now, calendar: panama), .ok)
-            XCTAssertEqual(DgiReceiptValidation.checkFreshness(fechaISO: "2026-11-13", now: now, calendar: panama), .ok)
-            XCTAssertEqual(DgiReceiptValidation.checkFreshness(fechaISO: "2026-11-09", now: now, calendar: panama), .tooOld)
-            XCTAssertEqual(DgiReceiptValidation.checkFreshness(fechaISO: "2026-11-14", now: now, calendar: panama), .future)
-        }
+    private func check(_ fecha: String, on now: String) -> DgiReceiptValidation.FreshnessResult {
+        DgiReceiptValidation.checkFreshness(fechaISO: fecha, now: at(now), calendar: panama)
+    }
+
+    func testMismoDiaHastaTresDiasCashbackCompleto() {
+        XCTAssertEqual(check("2026-08-20", on: "2026-08-20 10:00"), .ok(.full))
+        XCTAssertEqual(check("2026-08-17", on: "2026-08-20 23:30"), .ok(.full))
+    }
+
+    func testDeCuatroASieteDiasMitad() {
+        XCTAssertEqual(check("2026-08-16", on: "2026-08-20 00:30"), .ok(.half))
+        XCTAssertEqual(check("2026-08-13", on: "2026-08-20 10:00"), .ok(.half))
+    }
+
+    func testMasDeSieteDiasDentroDelMesUnCuarto() {
+        XCTAssertEqual(check("2026-08-12", on: "2026-08-20 10:00"), .ok(.quarter))
+        XCTAssertEqual(check("2026-08-01", on: "2026-08-31 22:00"), .ok(.quarter))
+    }
+
+    func testMesAnteriorLosTresPrimerosDiasSinCashback() {
+        XCTAssertEqual(check("2026-08-31", on: "2026-09-01 08:00"), .ok(.none))
+        XCTAssertEqual(check("2026-08-05", on: "2026-09-03 23:30"), .ok(.none))
+        // Enero acepta diciembre del año anterior.
+        XCTAssertEqual(check("2025-12-28", on: "2026-01-02 09:00"), .ok(.none))
+    }
+
+    func testMesAnteriorDespuesDelDiaTresSeRechaza() {
+        XCTAssertEqual(check("2026-08-31", on: "2026-09-04 00:30"), .tooOld)
+    }
+
+    func testDosMesesAtrasSeRechaza() {
+        XCTAssertEqual(check("2026-07-31", on: "2026-09-01 08:00"), .tooOld)
+    }
+
+    func testFechaFuturaSeRechaza() {
+        XCTAssertEqual(check("2026-08-21", on: "2026-08-20 23:30"), .future)
+    }
+
+    func testFechaMalFormadaSeRechaza() {
+        XCTAssertEqual(check("no-es-una-fecha", on: "2026-08-20 10:00"), .invalidDate)
+    }
+
+    func testMultiplicadores() {
+        XCTAssertEqual(DgiReceiptValidation.CashbackTier.full.multiplier, 1)
+        XCTAssertEqual(DgiReceiptValidation.CashbackTier.half.multiplier, 0.5)
+        XCTAssertEqual(DgiReceiptValidation.CashbackTier.quarter.multiplier, 0.25)
+        XCTAssertEqual(DgiReceiptValidation.CashbackTier.none.multiplier, 0)
+        XCTAssertNil(DgiReceiptValidation.tierMessage(.full))
+        XCTAssertNotNil(DgiReceiptValidation.tierMessage(.none))
     }
 }

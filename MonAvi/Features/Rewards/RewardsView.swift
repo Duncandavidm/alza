@@ -203,7 +203,7 @@ struct RewardsView: View {
     private var chipCategories: [String] {
         let names: [String]
         switch mode {
-        case .benefits: names = RewardsMath.categories(of: benefitItems)
+        case .benefits: names = RewardsMath.categories(of: benefitItems + viewModel.items)
         case .rewards: names = viewModel.categories
         case .merchants: names = RewardsMath.categories(of: viewModel.items + benefitItems)
         }
@@ -289,6 +289,8 @@ struct RewardsView: View {
                     description: Text("Aquí verás los descuentos que te dan los comercios aliados por ser de MonAvi.")
                 )
                 .padding(.top, 12)
+            } else if merchantFilter == nil && viewModel.selectedCategory == nil {
+                marketplace(unlocked: response.unlocked)
             } else {
                 ForEach(visibleBenefits) { (entry: BenefitEntry) in
                     BenefitCard(
@@ -299,9 +301,173 @@ struct RewardsView: View {
                         onPrimary: { primaryAction(for: entry, unlocked: response.unlocked) }
                     )
                 }
+                if merchantFilter == nil, let category = viewModel.selectedCategory {
+                    ForEach(RewardsMath.filter(viewModel.items, category: category)) { (item: RewardItem) in
+                        RewardItemCard(
+                            item: item,
+                            balance: viewModel.spendableBalance(for: item),
+                            isRedeeming: isRedeeming,
+                            onDirections: { openDirections(for: item) },
+                            onRedeem: { askToRedeem(item) }
+                        )
+                    }
+                }
             }
             AskForInvoiceTip()
         }
+    }
+
+    // MARK: - Vitrina (Descuentos > Todos)
+
+    /// Fila de comercios arriba y una fila por categoria con sus beneficios
+    /// (gratis y con cashback), como una vitrina.
+    @ViewBuilder
+    private func marketplace(unlocked: Bool) -> some View {
+        let stores = PartnerMerchantSummary.group(viewModel.items, benefits: benefitItems)
+        if !stores.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                marketplaceHeader("Comercios", actionTitle: "Ver todos") {
+                    withAnimation(.snappy) { mode = .merchants }
+                }
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .top, spacing: 14) {
+                        ForEach(stores) { (store: PartnerMerchantSummary) in
+                            Button {
+                                withAnimation(.snappy) {
+                                    merchantFilter = store.id
+                                    mode = store.items.isEmpty ? .benefits : .rewards
+                                }
+                            } label: {
+                                VStack(spacing: 6) {
+                                    MerchantLogoView(urlString: store.merchant?.logoUrl, name: store.name, size: 62)
+                                    Text(store.name)
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(.primary)
+                                        .lineLimit(1)
+                                }
+                                .frame(width: 78)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+        }
+
+        let allItems = benefitItems + viewModel.items
+        let categories = RewardsMath.orderedCategories(RewardsMath.categories(of: allItems), info: viewModel.categoryInfo)
+        ForEach(categories, id: \.self) { (category: String) in
+            marketplaceRow(
+                title: RewardsMath.categoryTitle(category, info: viewModel.categoryInfo),
+                entries: viewModel.benefits.benefits.filter { RewardsMath.filter([$0.item], category: category).count == 1 },
+                items: RewardsMath.filter(viewModel.items, category: category),
+                unlocked: unlocked,
+                seeAll: { withAnimation(.snappy) { viewModel.selectedCategory = category } }
+            )
+        }
+        let known = Set(categories)
+        let uncategorized: (RewardItem) -> Bool = { item in
+            let category = item.merchant?.category?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            return !known.contains(category)
+        }
+        marketplaceRow(
+            title: "Más beneficios",
+            entries: viewModel.benefits.benefits.filter { uncategorized($0.item) },
+            items: viewModel.items.filter(uncategorized),
+            unlocked: unlocked,
+            seeAll: nil
+        )
+    }
+
+    @ViewBuilder
+    private func marketplaceRow(
+        title: String,
+        entries: [BenefitEntry],
+        items: [RewardItem],
+        unlocked: Bool,
+        seeAll: (() -> Void)?
+    ) -> some View {
+        if !entries.isEmpty || !items.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                marketplaceHeader(title, actionTitle: seeAll == nil ? nil : "Ver todo", action: seeAll ?? {})
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .top, spacing: 12) {
+                        ForEach(entries) { (entry: BenefitEntry) in
+                            benefitTile(entry, unlocked: unlocked)
+                        }
+                        ForEach(items) { (item: RewardItem) in
+                            cashbackTile(item)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+        }
+    }
+
+    private func marketplaceHeader(_ title: String, actionTitle: String?, action: @escaping () -> Void) -> some View {
+        HStack {
+            Text(title)
+                .font(.system(.headline, design: MonAviBrand.fontDesign, weight: .bold))
+            Spacer()
+            if let actionTitle {
+                Button(actionTitle, action: action)
+                    .font(.subheadline.weight(.semibold))
+                    .tint(MonAviBrand.primary)
+            }
+        }
+    }
+
+    /// Descuento o bono gratis por ser de MonAvi.
+    private func benefitTile(_ entry: BenefitEntry, unlocked: Bool) -> some View {
+        let state = BenefitsMath.state(of: entry, unlocked: unlocked)
+        let button: (title: String, enabled: Bool) = {
+            switch state {
+            case .locked: return ("Desbloquear", true)
+            case .available: return ("Usar", true)
+            case .active: return ("Ver código", true)
+            case .cooldown: return ("Disponible pronto", false)
+            case .usedUp: return ("Ya lo usaste", false)
+            }
+        }()
+        return MarketplaceOfferTile(
+            photoUrl: entry.item.photoUrl,
+            placeholderSymbol: entry.item.kind.placeholderSymbol,
+            merchantName: entry.item.merchantName,
+            title: entry.item.name,
+            costText: "Gratis",
+            buttonTitle: button.title,
+            buttonEnabled: button.enabled && !isRedeeming,
+            progress: nil,
+            action: { primaryAction(for: entry, unlocked: unlocked) }
+        )
+    }
+
+    /// Descuento, bono o producto que se desbloquea con cashback.
+    private func cashbackTile(_ item: RewardItem) -> some View {
+        let balance = viewModel.spendableBalance(for: item)
+        let affordable = RewardsMath.canAfford(cost: item.pointsCost, balance: balance)
+        return MarketplaceOfferTile(
+            photoUrl: item.photoUrl,
+            placeholderSymbol: item.kind.placeholderSymbol,
+            merchantName: item.merchantName,
+            title: item.name,
+            costText: item.formattedCost,
+            buttonTitle: affordable ? (item.isUnlockable ? "Desbloquear" : "Canjear") : "Ver",
+            buttonEnabled: !isRedeeming,
+            progress: affordable ? nil : (balance: balance, cost: item.pointsCost, currency: item.currency),
+            action: {
+                if affordable {
+                    askToRedeem(item)
+                } else {
+                    withAnimation(.snappy) {
+                        merchantFilter = item.merchantId
+                        mode = .rewards
+                    }
+                }
+            }
+        )
     }
 
     private func primaryAction(for entry: BenefitEntry, unlocked: Bool) {
@@ -566,5 +732,54 @@ struct RewardsView: View {
     private func refresh() async {
         guard let userId = appState.currentUserId else { return }
         await viewModel.refresh(userId: userId)
+    }
+}
+
+/// Tarjeta chica de la vitrina: foto, comercio, nombre, costo ("Gratis" o
+/// "$1.00"), barra de "te faltan" y boton.
+struct MarketplaceOfferTile: View {
+    let photoUrl: String?
+    let placeholderSymbol: String
+    let merchantName: String
+    let title: String
+    let costText: String
+    let buttonTitle: String
+    let buttonEnabled: Bool
+    let progress: (balance: Int, cost: Int, currency: RewardCurrency)?
+    let action: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            RewardPhotoView(urlString: photoUrl, cornerRadius: 14, placeholderSymbol: placeholderSymbol)
+            Text(merchantName)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .lineLimit(2, reservesSpace: true)
+            Text(costText)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(MonAviBrand.primaryDark)
+            if let progress {
+                RewardProgressBar(balance: progress.balance, cost: progress.cost, currency: progress.currency, compact: true)
+            }
+            Spacer(minLength: 0)
+            Button(action: action) {
+                Text(buttonTitle)
+                    .font(.caption.weight(.bold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 4)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(MonAviBrand.primary)
+            .disabled(!buttonEnabled)
+        }
+        .frame(width: 168)
+        .padding(10)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color(.secondarySystemGroupedBackground))
+        )
     }
 }

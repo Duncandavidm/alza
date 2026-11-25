@@ -1002,12 +1002,12 @@ struct DayJournalView: View {
 
     /// Deslizar a la izquierda = eliminar (con confirmacion); a la derecha =
     /// editar. Tocar tambien edita y mantener presionado muestra el menu.
-    /// Un movimiento que viene de una factura leida no se edita (el servidor
-    /// tambien lo bloquea): solo se elimina.
+    /// Un movimiento que viene de una factura se edita sin cambiar el monto
+    /// (categoria y descripcion); al eliminarlo se quita su cashback.
     @ViewBuilder
     private func journalRow(_ transaction: FinanceTransaction) -> some View {
         SwipeActionsRow(
-            onEdit: transaction.isFromInvoice ? nil : { editingTransaction = transaction },
+            onEdit: { editingTransaction = transaction },
             onDelete: { pendingDeletion = transaction }
         ) {
             journalRowContent(transaction)
@@ -1015,12 +1015,10 @@ struct DayJournalView: View {
                 .onTapGesture { open(transaction) }
         }
         .contextMenu {
-            if !transaction.isFromInvoice {
-                Button {
-                    editingTransaction = transaction
-                } label: {
-                    Label("Editar", systemImage: "pencil")
-                }
+            Button {
+                editingTransaction = transaction
+            } label: {
+                Label("Editar", systemImage: "pencil")
             }
             Button(role: .destructive) {
                 pendingDeletion = transaction
@@ -1031,11 +1029,7 @@ struct DayJournalView: View {
     }
 
     private func open(_ transaction: FinanceTransaction) {
-        if transaction.isFromInvoice {
-            lockedInvoiceTransaction = transaction
-        } else {
-            editingTransaction = transaction
-        }
+        editingTransaction = transaction
     }
 
     @ViewBuilder

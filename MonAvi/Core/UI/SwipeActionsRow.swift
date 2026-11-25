@@ -165,11 +165,11 @@ enum TransactionRowText {
 
     static func deleteMessage(for transaction: FinanceTransaction) -> String {
         if transaction.isFromInvoice {
-            return "Se borra de tus movimientos y su monto vuelve al saldo de la cuenta. La factura sigue registrada y su cashback no cambia."
+            return "Se borra de tus movimientos, su monto vuelve al saldo de la cuenta y se quita el cashback de esa factura."
         }
         return "Se borra de tus movimientos y su monto vuelve al saldo de la cuenta."
     }
 
     static let lockedTitle = "Movimiento con factura"
-    static let lockedMessage = "Este movimiento viene de una factura leída y no se puede editar. Si no corresponde, puedes eliminarlo deslizándolo a la izquierda."
+    static let lockedMessage = "Este movimiento viene de una factura: el monto es el de la factura y no se puede cambiar. Puedes cambiar la categoría y la descripción, o eliminarlo (se quita su cashback)."
 }

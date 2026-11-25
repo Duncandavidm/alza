@@ -525,21 +525,15 @@ struct SummaryView: View {
 
                     VStack(spacing: 0) {
                         ForEach(group.transactions) { transaction in
-                            // Izquierda = eliminar, derecha = editar (si no
-                            // viene de una factura).
+                            // Izquierda = eliminar, derecha = editar (con
+                            // factura: sin cambiar el monto).
                             SwipeActionsRow(
-                                onEdit: transaction.isFromInvoice ? nil : { editingTransaction = transaction },
+                                onEdit: { editingTransaction = transaction },
                                 onDelete: { pendingDeletion = transaction },
                                 rowBackground: Color(.secondarySystemGroupedBackground)
                             ) {
                                 transactionRow(transaction, kind: snapshot.kind)
-                                    .onTapGesture {
-                                        if transaction.isFromInvoice {
-                                            lockedInvoiceTransaction = transaction
-                                        } else {
-                                            editingTransaction = transaction
-                                        }
-                                    }
+                                    .onTapGesture { editingTransaction = transaction }
                             }
 
                             if transaction.id != group.transactions.last?.id {
@@ -590,7 +584,7 @@ struct SummaryView: View {
         .padding(.vertical, 10)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
-        .accessibilityHint(transaction.isFromInvoice ? "Con factura: no se edita" : "Toca para editar")
+        .accessibilityHint(transaction.isFromInvoice ? "Con factura. Toca para editar la categoría o la descripción" : "Toca para editar")
     }
 
     private func emptyState(_ snapshot: SummarySnapshot) -> some View {

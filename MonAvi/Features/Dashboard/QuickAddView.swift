@@ -66,19 +66,31 @@ struct QuickAddView: View {
         AppCountry.parseAmount(amountText) ?? 0
     }
 
+    /// Movimiento de una factura: el monto, el tipo y la fecha son los de la
+    /// factura (la base de datos tambien lo exige). Solo se cambian la
+    /// categoria y la descripcion.
+    private var isInvoiceLocked: Bool { existingTransaction?.isFromInvoice == true }
+
     var body: some View {
         NavigationStack {
             // Arriba: tipo de movimiento (centrado, ancho completo) y el
             // monto en grande, centrado en el espacio libre sobre el panel de
             // abajo (categorias, "¿Qué fue?", teclado y Guardar).
             VStack(spacing: 0) {
-                MovementTypePicker(selection: $movementType, types: MovementType.quickAddTypes, compact: true)
-                    .padding(.top, 6)
+                if !isInvoiceLocked {
+                    MovementTypePicker(selection: $movementType, types: MovementType.quickAddTypes, compact: true)
+                        .padding(.top, 6)
+                }
 
                 Spacer(minLength: 8)
 
                 VStack(spacing: 10) {
                     amountDisplay
+                    if isInvoiceLocked {
+                        Label("Monto de la factura · no se puede cambiar", systemImage: "doc.text.fill")
+                            .font(.footnote.weight(.medium))
+                            .foregroundStyle(.secondary)
+                    }
                     entrySummary
                     if existingTransaction == nil, viewModel.accounts.count > 1 {
                         accountChip
@@ -117,7 +129,7 @@ struct QuickAddView: View {
 
                     // El teclado propio se esconde mientras se escribe la
                     // descripcion, para no apilarlo con el del sistema.
-                    if !descriptionFocused {
+                    if !descriptionFocused && !isInvoiceLocked {
                         AmountKeypad(
                             text: $amountText,
                             isInflow: movementType.isInflow,
@@ -739,10 +751,12 @@ struct QuickAddView: View {
         defer { isSaving = false }
 
         do {
+            // Con factura se guardan el monto y el tipo originales: solo
+            // cambian la categoria y la descripcion.
             try await viewModel.updateTransaction(
                 transaction,
-                magnitude: magnitude,
-                movementType: movementType,
+                magnitude: isInvoiceLocked ? abs(transaction.amount) : magnitude,
+                movementType: isInvoiceLocked ? transaction.movementType : movementType,
                 category: category?.storedValue,
                 description: description.isEmpty ? nil : description
             )

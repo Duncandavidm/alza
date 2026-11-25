@@ -24,6 +24,7 @@ struct RedemptionCodeView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
+                    unlockedBanner
                     merchantHeader
                     giftMessageCard
                     codeCard
@@ -67,6 +68,19 @@ struct RedemptionCodeView: View {
         }
         .onDisappear { restoreBrightness() }
         .task { await watchForDelivery() }
+    }
+
+    /// "¡Desbloqueaste 20% de descuento en Café La Esquina!" al abrirse
+    /// justo despues de desbloquear un descuento o bono con cashback.
+    @ViewBuilder
+    private var unlockedBanner: some View {
+        if celebrate, !redemption.isBenefit, !redemption.isGift, let item = redemption.item, item.kind.isDiscount {
+            Text(item.unlockedTitle)
+                .font(.system(.title3, design: MonAviBrand.fontDesign, weight: .heavy))
+                .multilineTextAlignment(.center)
+                .foregroundStyle(MonAviBrand.primaryDark)
+                .frame(maxWidth: .infinity)
+        }
     }
 
     private func celebrateNow() {
@@ -272,9 +286,16 @@ struct RedemptionCodeView: View {
             }
         } else {
             VStack(spacing: 6) {
-                Text("Muéstralo en caja: el comercio escanea el código y te lo entrega.")
+                Text(redemption.isDiscount
+                     ? "Muéstralo en caja antes de pagar: te aplican el beneficio."
+                     : "Muéstralo en caja: el comercio escanea el código y te lo entrega.")
                     .font(.headline)
                     .multilineTextAlignment(.center)
+                if let minPurchase = redemption.item?.minPurchaseText {
+                    Label(minPurchase, systemImage: "cart")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(MonAviBrand.primaryDark)
+                }
                 Text("Vence el \(redemption.expiresAt.formatted(Date.FormatStyle(date: .long, time: .shortened, locale: .monavi)))")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)

@@ -27,7 +27,19 @@ type Item = {
   free_benefit?: boolean | null;
   per_user_limit?: number | null;
   per_user_period?: string | null;
+  unlock_valid_days?: number | null;
+  min_purchase?: number | string | null;
+  funded_by?: string | null;
+  available_from?: string | null;
+  available_until?: string | null;
 };
+
+/// timestamptz → "2026-12-01" (fecha de Panama) para el input date.
+function panamaDay(value: string | null | undefined): string {
+  if (!value) return "";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString("en-CA", { timeZone: "America/Panama" });
+}
 
 type Props = {
   action: (prev: ActionState, formData: FormData) => Promise<ActionState>;
@@ -108,8 +120,8 @@ export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps,
               if (next === "beneficio" && rewardType === "producto") setRewardType("porcentaje");
             }}
           >
-            <option value="premio">Premio: lo canjea con su cashback o puntos</option>
-            <option value="beneficio">Descuento por ser de MonAvi</option>
+            <option value="premio">Con cashback: el cliente lo desbloquea con su cashback</option>
+            <option value="beneficio">Gratis: por ser de MonAvi (no cuesta cashback)</option>
           </select>
         </div>
         {isFree && (
@@ -187,7 +199,7 @@ export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps,
         </div>
         {!isFree && (
           <div className="field">
-            <label>{isPoints ? "Puntos necesarios" : "Valor en cashback (US$)"}</label>
+            <label>{isPoints ? "Puntos necesarios" : isDiscount ? "Se desbloquea con (US$ de cashback)" : "Valor en cashback (US$)"}</label>
             <input
               type="number"
               name="reward_value"
@@ -200,6 +212,57 @@ export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps,
               onChange={(event) => setRewardValue(event.target.value)}
             />
           </div>
+        )}
+        {!isFree && (
+          <div className="field">
+            <label>Días para usarlo después de desbloquearlo</label>
+            <input
+              type="number"
+              name="unlock_valid_days"
+              min={1}
+              max={90}
+              step={1}
+              inputMode="numeric"
+              defaultValue={item?.unlock_valid_days ?? 7}
+            />
+          </div>
+        )}
+        {isDiscount && (
+          <div className="field">
+            <label>Compra mínima (US$, opcional)</label>
+            <input
+              type="number"
+              name="min_purchase"
+              min={0.01}
+              step={0.01}
+              inputMode="decimal"
+              placeholder="Sin mínimo"
+              defaultValue={item?.min_purchase != null ? String(Number(item.min_purchase)) : ""}
+            />
+          </div>
+        )}
+        {rewardType === "monto" && (
+          <div className="field">
+            <label>Quién paga el bono</label>
+            <select name="funded_by" defaultValue={item?.funded_by === "monavi" ? "monavi" : "comercio"}>
+              <option value="comercio">El comercio (lo descuenta de la cuenta)</option>
+              <option value="monavi">MonAvi (se le paga al comercio en la liquidación)</option>
+            </select>
+          </div>
+        )}
+        <div className="field">
+          <label>Disponible desde (opcional)</label>
+          <input type="date" name="available_from" defaultValue={panamaDay(item?.available_from)} />
+        </div>
+        <div className="field">
+          <label>Disponible hasta (opcional)</label>
+          <input type="date" name="available_until" defaultValue={panamaDay(item?.available_until)} />
+        </div>
+        {!isFree && isDiscount && (
+          <p className="text-dim" style={{ gridColumn: "1 / -1", margin: 0 }}>
+            El cliente lo desbloquea con su cashback y recibe un código para usarlo en caja dentro de esos días.
+            Si no lo usa, el cashback se le devuelve. En la app verá «¡Desbloqueaste {autoName || "este beneficio"} en {merchantName}!».
+          </p>
         )}
         <div className="field">
           <label>Límite de canjes (vacío = sin límite)</label>

@@ -95,7 +95,7 @@ struct RewardsView: View {
             titleVisibility: .visible,
             presenting: pendingItem
         ) { (item: RewardItem) in
-            Button("Canjear por \(item.formattedCost)") {
+            Button("\(item.isUnlockable ? "Desbloquear" : "Canjear") por \(item.formattedCost)") {
                 Task { await redeem(item) }
             }
             Button("Cancelar", role: .cancel) {}
@@ -463,7 +463,7 @@ struct RewardsView: View {
         if isRedeeming {
             ZStack {
                 Color.black.opacity(0.15).ignoresSafeArea()
-                ProgressView("Canjeando…")
+                ProgressView(pendingItem?.isUnlockable == true ? "Desbloqueando…" : "Canjeando…")
                     .padding(20)
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
@@ -474,6 +474,9 @@ struct RewardsView: View {
 
     private var confirmationTitle: String {
         guard let item = pendingItem else { return "¿Canjear este producto?" }
+        if item.isUnlockable {
+            return "¿Desbloquear \(item.name) en \(item.merchantName) por \(item.formattedCost) de cashback? Lo usas en caja en los próximos \(item.unlockValidDays ?? 7) días."
+        }
         return RewardsMath.confirmationTitle(
             itemName: item.name,
             merchantName: item.merchantName,

@@ -48,21 +48,42 @@ interface UnlockedItem {
   merchant: string;
   cost: number;
   currency: "puntos" | "cashback";
+  /// 0085: "porcentaje" (descuento) o "monto" (bono) se "desbloquean".
+  type?: "producto" | "porcentaje" | "monto" | null;
+  value?: number | string | null;
+}
+
+/// "20% de descuento" / "un bono de $20.00" / el nombre del producto.
+function unlockLabel(item: UnlockedItem): string {
+  const value = Number(item.value ?? 0);
+  if (item.type === "porcentaje" && value > 0) return `${Number.isInteger(value) ? value : value.toFixed(1)}% de descuento`;
+  if (item.type === "monto" && value > 0) return `un bono de $${value.toFixed(2)}`;
+  return item.name;
+}
+
+function isUnlockable(item: UnlockedItem): boolean {
+  return item.type === "porcentaje" || item.type === "monto";
 }
 
 function unlockMessage(items: UnlockedItem[]): { title: string; body: string } {
   if (items.length === 1) {
     const item = items[0];
     const how = item.currency === "puntos" ? "tu saldo" : "tu cashback";
+    if (isUnlockable(item)) {
+      return {
+        title: item.type === "monto" ? "Bono desbloqueado 🔓" : "Descuento desbloqueado 🔓",
+        body: `Ya puedes activar ${unlockLabel(item)} en ${item.merchant} con ${how}. Ábrelo en MonAvi para usarlo.`,
+      };
+    }
     return {
-      title: `¡Ya puedes canjear un premio! 🎁`,
-      body: `Te alcanza para ${item.name} en ${item.merchant} con ${how}. Toca para canjearlo.`,
+      title: "Premio disponible 🎁",
+      body: `Ya puedes canjear ${item.name} en ${item.merchant} con ${how}. Ábrelo en MonAvi para canjearlo.`,
     };
   }
-  const names = items.slice(0, 2).map((item) => item.name).join(" y ");
+  const names = items.slice(0, 2).map((item) => `${unlockLabel(item)} en ${item.merchant}`).join(" y ");
   return {
-    title: `¡Ya te alcanza para ${items.length} premios! 🎁`,
-    body: `Entre ellos ${names}. Toca para ver los comercios aliados.`,
+    title: `${items.length} beneficios desbloqueados 🔓`,
+    body: `Entre ellos, ${names}. Ábrelos en MonAvi para usarlos.`,
   };
 }
 

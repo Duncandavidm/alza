@@ -105,6 +105,13 @@ struct RewardItem: Codable, Identifiable, Hashable {
     /// usar cada persona y cada cuanto se renueva.
     var perUserLimit: Int? = nil
     var perUserPeriod: BenefitPeriod? = nil
+    /// `unlock_valid_days` (0085): dias para usarlo despues de desbloquearlo.
+    var unlockValidDays: Int? = nil
+    /// `min_purchase` (0085): compra minima en US$ (nil = sin minimo).
+    var minPurchase: Decimal? = nil
+    /// `available_from` / `available_until` (0085): fechas de la promocion.
+    var availableFrom: Date? = nil
+    var availableUntil: Date? = nil
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -122,9 +129,37 @@ struct RewardItem: Codable, Identifiable, Hashable {
         case freeBenefit = "free_benefit"
         case perUserLimit = "per_user_limit"
         case perUserPeriod = "per_user_period"
+        case unlockValidDays = "unlock_valid_days"
+        case minPurchase = "min_purchase"
+        case availableFrom = "available_from"
+        case availableUntil = "available_until"
     }
 
     var isFreeBenefit: Bool { freeBenefit ?? false }
+
+    /// Descuento o bono que se desbloquea con cashback (no un producto).
+    var isUnlockable: Bool { kind.isDiscount && !isFreeBenefit }
+
+    /// Dentro de las fechas de la promocion (sin fechas = siempre).
+    func isInWindow(now: Date = Date()) -> Bool {
+        if let availableFrom, availableFrom > now { return false }
+        if let availableUntil, availableUntil <= now { return false }
+        return true
+    }
+
+    /// "En compras desde $25.00", o nil si no tiene compra minima.
+    var minPurchaseText: String? {
+        guard let minPurchase, minPurchase > 0 else { return nil }
+        return "En compras desde \(minPurchase.formatted(.currency(code: "USD")))"
+    }
+
+    /// "¡Desbloqueaste 20% de descuento en Café La Esquina!" /
+    /// "¡Desbloqueaste un bono de $20.00 en Súper X!"
+    var unlockedTitle: String {
+        let what: String
+        if kind == .monto { what = "un " + name.prefix(1).lowercased() + name.dropFirst() } else { what = name }
+        return "¡Desbloqueaste \(what) en \(merchantName)!"
+    }
 
     var merchantName: String { merchant?.name ?? "Comercio aliado" }
 
@@ -420,8 +455,8 @@ enum RewardsMath {
 
     /// Solo lo que se puede canjear ahora. La RLS ya esconde pausados y
     /// agotados, pero la app no depende de eso (1.0.3).
-    static func available(_ items: [RewardItem]) -> [RewardItem] {
-        items.filter(\.isAvailable)
+    static func available(_ items: [RewardItem], now: Date = Date()) -> [RewardItem] {
+        items.filter { $0.isAvailable && $0.isInWindow(now: now) }
     }
 
     /// "Quedan 5" / "¡Queda 1!" para canjes con cupo; nil si no tiene

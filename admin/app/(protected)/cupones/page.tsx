@@ -6,6 +6,7 @@ import { HABIT_RULE_TYPES, habitRuleLabel } from "@/lib/habit-coupons";
 import { createHabitCoupon, setHabitCouponStatus } from "./actions";
 import CouponTabs from "@/components/CouponTabs";
 import CouponSettlement from "@/components/CouponSettlement";
+import BonoSettlement from "@/components/BonoSettlement";
 
 export const dynamic = "force-dynamic";
 
@@ -200,6 +201,7 @@ export default async function HabitCouponsPage() {
       </div>
 
       <CouponSettlement />
+      <BonoSettlement />
     </>
   );
 }

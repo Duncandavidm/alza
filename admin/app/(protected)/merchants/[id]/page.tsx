@@ -97,7 +97,7 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
     supabase
       .from("reward_items")
       .select(
-        "id, name, description, photo_url, points_cost, status, sort_order, reward_type, discount_value, max_redemptions, free_benefit, per_user_limit, per_user_period"
+        "id, name, description, photo_url, points_cost, status, sort_order, reward_type, discount_value, max_redemptions, free_benefit, per_user_limit, per_user_period, unlock_valid_days, min_purchase, funded_by, available_from, available_until"
       )
       .eq("merchant_id", id)
       .order("sort_order", { ascending: true })

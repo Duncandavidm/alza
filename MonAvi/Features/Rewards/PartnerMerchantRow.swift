@@ -132,7 +132,7 @@ struct PartnerMerchantRow: View {
             let prizes = count == 1 ? "1 premio" : "\(count) premios"
             var text = "\(prizes) desde \(summary.currency.format(summary.cheapestCost))"
             if affordableCount > 0 {
-                text += affordableCount == 1 ? " · ya te alcanza para 1 🎉" : " · ya te alcanza para \(affordableCount) 🎉"
+                text += affordableCount == 1 ? " · 1 desbloqueado 🔓" : " · \(affordableCount) desbloqueados 🔓"
             }
             parts.append(text)
         }

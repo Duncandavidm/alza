@@ -91,7 +91,7 @@ struct RewardsForYouCard: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
             RewardPointsPill(points: item.pointsCost, currency: item.currency)
-            Text(missingText ?? "¡Ya te alcanza!")
+            Text(missingText ?? "Desbloqueado 🔓")
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(missingText == nil ? MonAviBrand.primary : Color.secondary)
                 .lineLimit(1)

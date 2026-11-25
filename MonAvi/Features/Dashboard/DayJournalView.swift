@@ -11,6 +11,9 @@ struct DayJournalView: View {
     /// Avisos del banco detectados por Atajos, por confirmar.
     @ObservedObject private var detectedStore = DetectedMovementStore.shared
     @State private var reviewingDetected: DetectedMovement?
+    /// "¿Ya pagaste…?" ocultas con la X: solo por ahora. Al volver a abrir
+    /// la app aparecen de nuevo hasta que la persona responda.
+    @State private var hiddenForNow: Set<String> = []
     /// Para repintar emojis de categorias propias cuando terminan de cargar.
     @ObservedObject private var userCategories = UserCategoriesStore.shared
     @Environment(\.scenePhase) private var scenePhase
@@ -128,8 +131,9 @@ struct DayJournalView: View {
                             billsStrip
                         }
 
-                        ForEach(recurringViewModel.dueToday) { item in
+                        ForEach(recurringViewModel.dueToday.filter { !hiddenForNow.contains("r-\($0.id)") }) { item in
                             recurringReminderRow(item)
+                                .overlay(alignment: .topTrailing) { hideForNowButton("r-\(item.id)") }
                         }
 
                         transactionList
@@ -279,6 +283,7 @@ struct DayJournalView: View {
                 }
             }
             .onChange(of: scenePhase) { _, phase in
+                if phase == .background { hiddenForNow.removeAll() }
                 guard phase == .active else { return }
                 // Un atajo pudo detectar movimientos con la app en segundo plano.
                 detectedStore.load()
@@ -607,7 +612,7 @@ struct DayJournalView: View {
     @ViewBuilder
     private var recurringSuggestionCards: some View {
         if viewModel.isViewingToday && !isSearching {
-            ForEach(suggestionsModel.suggestions) { suggestion in
+            ForEach(suggestionsModel.suggestions.filter { !hiddenForNow.contains("s-\($0.id)") }) { suggestion in
                 suggestionCard(suggestion)
             }
         }
@@ -665,8 +670,26 @@ struct DayJournalView: View {
             }
         }
         .padding(12)
+        .padding(.trailing, 18)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 14).fill(MonAviBrand.primary.opacity(0.1)))
+        .overlay(alignment: .topTrailing) { hideForNowButton("s-\(suggestion.id)") }
+    }
+
+    /// X para ocultar un aviso por ahora (no responde nada: vuelve a
+    /// aparecer la proxima vez que se abra la app).
+    private func hideForNowButton(_ key: String) -> some View {
+        Button {
+            withAnimation(.easeOut(duration: 0.2)) { _ = hiddenForNow.insert(key) }
+        } label: {
+            Image(systemName: "xmark")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.secondary)
+                .padding(10)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Ocultar por ahora")
     }
 
     private func dismissSuggestion(_ suggestion: RecurringDetector.Suggestion) {

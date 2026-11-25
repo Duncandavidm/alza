@@ -745,6 +745,12 @@ function ConfirmScreen({
             <dt>Valor</dt>
             <dd>{data.isBenefit ? data.valueLabel : data.isGift ? `Gratis (${data.valueLabel})` : data.valueLabel}</dd>
           </div>
+          {data.minPurchaseLabel && (
+            <div>
+              <dt>Condición</dt>
+              <dd>{data.minPurchaseLabel}</dd>
+            </div>
+          )}
           <div>
             <dt>Vence el</dt>
             <dd>{data.expiresLabel}</dd>
@@ -863,6 +869,12 @@ function PinFallback({
               <dt>Valor</dt>
               <dd>{verified.isBenefit ? verified.valueLabel : verified.isGift ? `Gratis (${verified.valueLabel})` : verified.valueLabel}</dd>
             </div>
+            {verified.minPurchaseLabel && (
+              <div>
+                <dt>Condición</dt>
+                <dd>{verified.minPurchaseLabel}</dd>
+              </div>
+            )}
             <div>
               <dt>Vence el</dt>
               <dd>{verified.expiresLabel}</dd>

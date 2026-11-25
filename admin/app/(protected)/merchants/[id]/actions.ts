@@ -155,7 +155,23 @@ type RewardItemFields = {
   free_benefit: boolean;
   per_user_limit: number | null;
   per_user_period: BenefitPeriod | null;
+  /// 0085: dias para usarlo despues de desbloquearlo con cashback.
+  unlock_valid_days: number;
+  /// 0085: compra minima (US$) que ve el cajero; null = sin minimo.
+  min_purchase: number | null;
+  /// 0085: quien paga un bono en US$ (los de MonAvi se liquidan al comercio).
+  funded_by: "comercio" | "monavi";
+  /// 0085: fechas de la promocion (null = sin limite).
+  available_from: string | null;
+  available_until: string | null;
 };
+
+/// "2026-12-01" (input date) → inicio de ese dia en Panama (UTC-5).
+function panamaDate(value: string, endOfDay: boolean): string | null | undefined {
+  if (!value) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return undefined;
+  return `${value}T${endOfDay ? "23:59:59" : "00:00:00"}-05:00`;
+}
 
 /// Moneda de canje del comercio leida de la base (no se confia en el
 /// formulario): decide como se interpreta el valor del producto.
@@ -235,6 +251,35 @@ function parseRewardItemFields(
 
   const status = text(formData, "status", 10) === "paused" ? "paused" : "active";
 
+  const daysRaw = text(formData, "unlock_valid_days", 3) || "7";
+  const unlockValidDays = /^\d{1,2}$/.test(daysRaw) ? Number(daysRaw) : NaN;
+  if (!Number.isInteger(unlockValidDays) || unlockValidDays < 1 || unlockValidDays > 90) {
+    return { error: "Los días para usarlo deben ser un número entero entre 1 y 90." };
+  }
+
+  const minRaw = text(formData, "min_purchase", 12);
+  let minPurchase: number | null = null;
+  if (minRaw) {
+    minPurchase = /^\d{1,6}(\.\d{1,2})?$/.test(minRaw) ? Number(minRaw) : NaN;
+    if (!(minPurchase > 0 && minPurchase <= 100_000)) {
+      return { error: "La compra mínima debe ser un monto mayor que $0 con máximo 2 decimales, o dejarse vacía." };
+    }
+  }
+  if (rewardType === "monto" && discountValue !== null && minPurchase !== null && minPurchase < discountValue) {
+    return { error: "La compra mínima no puede ser menor que el valor del bono." };
+  }
+
+  const fundedBy = rewardType === "monto" && text(formData, "funded_by", 10) === "monavi" ? "monavi" : "comercio";
+
+  const availableFrom = panamaDate(text(formData, "available_from", 10), false);
+  const availableUntil = panamaDate(text(formData, "available_until", 10), true);
+  if (availableFrom === undefined || availableUntil === undefined) {
+    return { error: "Las fechas de la promoción no son válidas." };
+  }
+  if (availableFrom && availableUntil && availableUntil <= availableFrom) {
+    return { error: "La fecha de fin debe ser después de la fecha de inicio." };
+  }
+
   return {
     fields: {
       name,
@@ -248,6 +293,11 @@ function parseRewardItemFields(
       free_benefit: freeBenefit,
       per_user_limit: perUserLimit,
       per_user_period: perUserPeriod,
+      unlock_valid_days: unlockValidDays,
+      min_purchase: minPurchase,
+      funded_by: fundedBy,
+      available_from: availableFrom,
+      available_until: availableUntil,
     },
   };
 }

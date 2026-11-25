@@ -83,6 +83,11 @@ struct RewardItemCard: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            if let minPurchase = item.minPurchaseText {
+                Label(minPurchase, systemImage: "cart")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 
@@ -97,7 +102,8 @@ struct RewardItemCard: View {
                 .tint(MonAviBrand.primary)
 
                 Button(action: onRedeem) {
-                    Label("Canjear", systemImage: "gift.fill")
+                    Label(item.isUnlockable ? "Desbloquear" : "Canjear",
+                          systemImage: item.isUnlockable ? "lock.open.fill" : "gift.fill")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)

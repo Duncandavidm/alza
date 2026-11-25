@@ -29,6 +29,8 @@ export type RedeemResult =
       valueLabel: string;
       expiresLabel: string;
       deliveredLabel: string | null;
+      /// 0085: "Compra mínima $25.00" si el beneficio la tiene.
+      minPurchaseLabel: string | null;
       /// Comercio del turno abierto (si quedo una sesion activa).
       session: { merchant: string } | null;
     }
@@ -61,6 +63,8 @@ type RpcResponse = {
   value?: number | null;
   expires_at?: string | null;
   delivered_at?: string | null;
+  min_purchase?: number | string | null;
+  funded_by?: string | null;
 };
 
 /// IP del cliente -> hash SHA-256 con SESSION_SECRET. Nunca se guarda ni
@@ -174,6 +178,10 @@ export async function redeemCode(input: {
         : formatRewardValueLong(Number(result.value_cents ?? 0), "cashback"),
       expiresLabel: formatDateTime(result.expires_at),
       deliveredLabel: result.delivered_at ? formatDateTime(result.delivered_at) : null,
+      minPurchaseLabel:
+        result.min_purchase != null && Number(result.min_purchase) > 0
+          ? `En compras desde $${Number(result.min_purchase).toFixed(2)}`
+          : null,
       session: sessionInfo,
     };
   } catch (error) {

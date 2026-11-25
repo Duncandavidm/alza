@@ -7,7 +7,7 @@ export type RewardType = "producto" | "porcentaje" | "monto";
 export const REWARD_TYPES: { value: RewardType; label: string }[] = [
   { value: "producto", label: "Producto (ej. un capuchino)" },
   { value: "porcentaje", label: "Descuento en % (ej. 10%)" },
-  { value: "monto", label: "Cupón en US$ (ej. $20)" },
+  { value: "monto", label: "Bono en US$ (ej. $20)" },
 ];
 
 export function toRewardType(value: unknown): RewardType {
@@ -23,14 +23,14 @@ function trimNumber(value: number): string {
 export function defaultRewardName(type: RewardType, value: number | null): string {
   if (!value || !Number.isFinite(value) || value <= 0) return "";
   if (type === "porcentaje") return `${trimNumber(value)}% de descuento`;
-  if (type === "monto") return `Cupón de $${value % 1 === 0 ? value : value.toFixed(2)}`;
+  if (type === "monto") return `Bono de $${value % 1 === 0 ? value : value.toFixed(2)}`;
   return "";
 }
 
 /// Etiqueta corta para tablas del panel.
 export function rewardTypeLabel(type: RewardType): string {
   if (type === "porcentaje") return "Descuento %";
-  if (type === "monto") return "Cupón US$";
+  if (type === "monto") return "Bono US$";
   return "Producto";
 }
 

@@ -27,6 +27,8 @@ struct SummaryView: View {
     @State private var selectedCategoryKey: String?
     @State private var isAdding = false
     @State private var editingTransaction: FinanceTransaction?
+    @State private var pendingDeletion: FinanceTransaction?
+    @State private var lockedInvoiceTransaction: FinanceTransaction?
 
     private let calculator = SummaryCalculator()
 
@@ -62,6 +64,27 @@ struct SummaryView: View {
             }
             .sheet(item: $editingTransaction, onDismiss: { Task { await reload() } }) { transaction in
                 QuickAddView(viewModel: journalViewModel, existingTransaction: transaction)
+            }
+            .confirmationDialog(
+                TransactionRowText.deleteTitle,
+                isPresented: Binding(get: { pendingDeletion != nil }, set: { if !$0 { pendingDeletion = nil } }),
+                titleVisibility: .visible,
+                presenting: pendingDeletion
+            ) { transaction in
+                Button("Eliminar", role: .destructive) {
+                    Task { await delete(transaction) }
+                }
+                Button("Cancelar", role: .cancel) {}
+            } message: { transaction in
+                Text(TransactionRowText.deleteMessage(for: transaction))
+            }
+            .alert(
+                TransactionRowText.lockedTitle,
+                isPresented: Binding(get: { lockedInvoiceTransaction != nil }, set: { if !$0 { lockedInvoiceTransaction = nil } })
+            ) {
+                Button("Entendido", role: .cancel) {}
+            } message: {
+                Text(TransactionRowText.lockedMessage)
             }
             .alert("Algo salió mal", isPresented: errorBinding) {
                 Button("OK") {}
@@ -502,12 +525,22 @@ struct SummaryView: View {
 
                     VStack(spacing: 0) {
                         ForEach(group.transactions) { transaction in
-                            Button {
-                                editingTransaction = transaction
-                            } label: {
+                            // Izquierda = eliminar, derecha = editar (si no
+                            // viene de una factura).
+                            SwipeActionsRow(
+                                onEdit: transaction.isFromInvoice ? nil : { editingTransaction = transaction },
+                                onDelete: { pendingDeletion = transaction },
+                                rowBackground: Color(.secondarySystemGroupedBackground)
+                            ) {
                                 transactionRow(transaction, kind: snapshot.kind)
+                                    .onTapGesture {
+                                        if transaction.isFromInvoice {
+                                            lockedInvoiceTransaction = transaction
+                                        } else {
+                                            editingTransaction = transaction
+                                        }
+                                    }
                             }
-                            .buttonStyle(.plain)
 
                             if transaction.id != group.transactions.last?.id {
                                 Divider().padding(.leading, 66)
@@ -516,6 +549,7 @@ struct SummaryView: View {
                     }
                     .padding(.vertical, 4)
                     .background(cardBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                 }
             }
         }
@@ -556,7 +590,7 @@ struct SummaryView: View {
         .padding(.vertical, 10)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
-        .accessibilityHint("Toca para editar")
+        .accessibilityHint(transaction.isFromInvoice ? "Con factura: no se edita" : "Toca para editar")
     }
 
     private func emptyState(_ snapshot: SummarySnapshot) -> some View {
@@ -607,6 +641,15 @@ struct SummaryView: View {
         pinnedBucketLabel = nil
         selectedAngle = nil
         selectedCategoryKey = nil
+    }
+
+    private func delete(_ transaction: FinanceTransaction) async {
+        do {
+            try await journalViewModel.deleteTransaction(transaction)
+        } catch {
+            viewModel.errorMessage = "No se pudo eliminar: \(error.localizedDescription)"
+        }
+        await reload()
     }
 
     private func reload() async {

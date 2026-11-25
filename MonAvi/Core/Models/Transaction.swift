@@ -81,6 +81,14 @@ struct FinanceTransaction: Codable, Identifiable, Hashable {
     var originalAmount: Decimal?
     var occurredAt: Date
     let createdAt: Date
+    /// CUFE de la factura de la que salio este movimiento (escaneada, en PDF
+    /// o unida con «¿Te dieron factura?»). Lo pone el servidor (0087). Un
+    /// movimiento con factura no se puede editar, solo eliminar.
+    var invoiceCufe: String? = nil
+
+    /// Viene de una factura leida: no se edita (el servidor tambien lo
+    /// bloquea), solo se elimina.
+    var isFromInvoice: Bool { invoiceCufe != nil }
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -95,6 +103,7 @@ struct FinanceTransaction: Codable, Identifiable, Hashable {
         case originalAmount = "original_amount"
         case occurredAt = "occurred_at"
         case createdAt = "created_at"
+        case invoiceCufe = "invoice_cufe"
     }
 }
 

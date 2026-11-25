@@ -41,6 +41,10 @@ struct DayJournalView: View {
     @State private var didLoadBudgets = false
     @State private var invoiceExpense: FinanceTransaction?
     @State private var editingTransaction: FinanceTransaction?
+    /// Deslizar a la izquierda (o "Eliminar"): se confirma antes de borrar.
+    @State private var pendingDeletion: FinanceTransaction?
+    /// Tocar un movimiento con factura: aviso de que no se edita.
+    @State private var lockedInvoiceTransaction: FinanceTransaction?
     @State private var daySummary: DaySummary?
     @State private var isClosingDay = false
     @State private var isShowingDatePicker = false
@@ -341,6 +345,27 @@ struct DayJournalView: View {
             }
             .sheet(item: $editingTransaction) { transaction in
                 QuickAddView(viewModel: viewModel, existingTransaction: transaction)
+            }
+            .confirmationDialog(
+                TransactionRowText.deleteTitle,
+                isPresented: Binding(get: { pendingDeletion != nil }, set: { if !$0 { pendingDeletion = nil } }),
+                titleVisibility: .visible,
+                presenting: pendingDeletion
+            ) { transaction in
+                Button("Eliminar", role: .destructive) {
+                    Task { await delete(transaction) }
+                }
+                Button("Cancelar", role: .cancel) {}
+            } message: { transaction in
+                Text(TransactionRowText.deleteMessage(for: transaction))
+            }
+            .alert(
+                TransactionRowText.lockedTitle,
+                isPresented: Binding(get: { lockedInvoiceTransaction != nil }, set: { if !$0 { lockedInvoiceTransaction = nil } })
+            ) {
+                Button("Entendido", role: .cancel) {}
+            } message: {
+                Text(TransactionRowText.lockedMessage)
             }
             .sheet(isPresented: $isRecordingDebtPayment) {
                 QuickDebtPaymentView(accounts: viewModel.accounts)
@@ -975,28 +1000,42 @@ struct DayJournalView: View {
         }
     }
 
-    /// Toca para editar, mantiene presionado para eliminar — antes de esto
-    /// un movimiento ya anotado no se podia corregir ni borrar de ninguna
-    /// forma. No es un `List`, asi que no hay `.swipeActions` nativo; el
-    /// `contextMenu` sigue el mismo patron que ya usa el boton "+" de abajo
-    /// para sus acciones secundarias.
+    /// Deslizar a la izquierda = eliminar (con confirmacion); a la derecha =
+    /// editar. Tocar tambien edita y mantener presionado muestra el menu.
+    /// Un movimiento que viene de una factura leida no se edita (el servidor
+    /// tambien lo bloquea): solo se elimina.
     @ViewBuilder
     private func journalRow(_ transaction: FinanceTransaction) -> some View {
-        journalRowContent(transaction)
-            .contentShape(Rectangle())
-            .onTapGesture { editingTransaction = transaction }
-            .contextMenu {
+        SwipeActionsRow(
+            onEdit: transaction.isFromInvoice ? nil : { editingTransaction = transaction },
+            onDelete: { pendingDeletion = transaction }
+        ) {
+            journalRowContent(transaction)
+                .contentShape(Rectangle())
+                .onTapGesture { open(transaction) }
+        }
+        .contextMenu {
+            if !transaction.isFromInvoice {
                 Button {
                     editingTransaction = transaction
                 } label: {
                     Label("Editar", systemImage: "pencil")
                 }
-                Button(role: .destructive) {
-                    Task { await delete(transaction) }
-                } label: {
-                    Label("Eliminar", systemImage: "trash")
-                }
             }
+            Button(role: .destructive) {
+                pendingDeletion = transaction
+            } label: {
+                Label("Eliminar", systemImage: "trash")
+            }
+        }
+    }
+
+    private func open(_ transaction: FinanceTransaction) {
+        if transaction.isFromInvoice {
+            lockedInvoiceTransaction = transaction
+        } else {
+            editingTransaction = transaction
+        }
     }
 
     @ViewBuilder
@@ -1017,6 +1056,12 @@ struct DayJournalView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
+                    }
+                    if transaction.isFromInvoice {
+                        Image(systemName: "doc.text.fill")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .accessibilityLabel("Con factura")
                     }
                     if let points = pointsByTransaction[transaction.id] {
                         Text("+\(Cashback.format(cents: points)) de cashback")

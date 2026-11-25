@@ -65,14 +65,24 @@ struct SettingsView: View {
 
                 Section {
                     NavigationLink {
+                        BankAlertsGuideView()
+                    } label: {
+                        Label("Movimientos del banco, solos", systemImage: "bell.badge.fill")
+                    }
+                    NavigationLink {
                         VoiceBackTapGuideView()
                     } label: {
                         Label("Registra con doble toque", systemImage: "hand.tap.fill")
                     }
+                    NavigationLink {
+                        WalletAutomationGuideView()
+                    } label: {
+                        Label("Pagos con Apple Pay", systemImage: "wallet.pass.fill")
+                    }
                 } header: {
-                    Text("Atajos y Siri")
+                    Text("Automatizaciones")
                 } footer: {
-                    Text("Toca atrás de tu iPhone, aun con la pantalla bloqueada, y anota un gasto con tu voz o escribiendo monto y categoría, sin abrir la app.")
+                    Text("Que los avisos de tu banco o Yappy se conviertan en movimientos por confirmar, anotar con doble toque atrás (aun con la pantalla bloqueada) y registrar tus pagos con Apple Pay sin abrir la app.")
                 }
 
                 Section {

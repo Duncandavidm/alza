@@ -571,7 +571,10 @@ enum NotificationManager {
             intentIdentifiers: [],
             options: []
         )
-        UNUserNotificationCenter.current().setNotificationCategories([expense, income, suggested, savings])
+        UNUserNotificationCenter.current().setNotificationCategories([
+            expense, income, suggested, savings,
+            DetectedMovementActions.notificationCategoryDefinition,
+        ])
     }
 
     /// "Sí, ya lo pagué/recibí": registra el movimiento igual que el boton
@@ -802,6 +805,8 @@ enum NotificationManager {
     static func foregroundPresentation(for identifier: String) -> UNNotificationPresentationOptions {
         if identifier.hasPrefix("test-") { return [.banner, .list, .sound] }
         if identifier.hasPrefix("surplus-advice-") { return [.banner, .list] }
+        // "Movimiento detectado": se ve aunque la app este abierta.
+        if identifier.hasPrefix("detected-") { return [.banner, .list] }
         return [.list]
     }
 
@@ -949,6 +954,12 @@ final class NotificationPresenter: NSObject, UNUserNotificationCenterDelegate {
                 await NotificationManager.confirmRecurringFromNotification(idString: idString, typedAmount: typedText)
             case NotificationManager.recurringSnoozeAction:
                 NotificationManager.snoozeRecurring(content)
+            case DetectedMovementActions.registerAction:
+                await DetectedMovementActions.registerFromNotification(
+                    idString: content.userInfo[DetectedMovementActions.idKey] as? String
+                )
+            case DetectedMovementActions.dismissAction:
+                DetectedMovementActions.dismiss(idString: content.userInfo[DetectedMovementActions.idKey] as? String)
             default:
                 let screen = content.userInfo["screen"] as? String
                 NotificationRouter.shared.open(screen: screen, userInfo: content.userInfo)

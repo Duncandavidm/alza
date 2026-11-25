@@ -8,6 +8,9 @@ struct DayJournalView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = DayJournalViewModel()
     @ObservedObject private var router = NotificationRouter.shared
+    /// Avisos del banco detectados por Atajos, por confirmar.
+    @ObservedObject private var detectedStore = DetectedMovementStore.shared
+    @State private var reviewingDetected: DetectedMovement?
     /// Para repintar emojis de categorias propias cuando terminan de cargar.
     @ObservedObject private var userCategories = UserCategoriesStore.shared
     @Environment(\.scenePhase) private var scenePhase
@@ -104,6 +107,15 @@ struct DayJournalView: View {
                         } else if didLoadBudgets && !hideBudgetInvite && viewModel.isViewingToday && !isSearching {
                             // Sin presupuestos: el lugar queda para invitar a crear el primero.
                             emptyBudgetsCard
+                        }
+
+                        // Avisos del banco (Atajos) que esperan confirmacion.
+                        if viewModel.isViewingToday && !isSearching {
+                            DetectedMovementsCard(
+                                store: detectedStore,
+                                onReview: { reviewingDetected = $0 },
+                                onQuickRegister: { movement in Task { await quickRegisterDetected(movement) } }
+                            )
                         }
 
                         cardDueRows
@@ -240,6 +252,23 @@ struct DayJournalView: View {
             }) { request in
                 QuickDebtPaymentView(accounts: viewModel.accounts, preselectedDebtId: request.debtId)
             }
+            // "Movimiento detectado" (aviso del banco): revisar antes de guardar.
+            .sheet(item: $reviewingDetected) { movement in
+                DetectedMovementReviewView(
+                    movement: movement,
+                    accounts: viewModel.accounts,
+                    userId: appState.currentUserId
+                ) {
+                    Task {
+                        await refresh()
+                        await refreshBudgets()
+                    }
+                }
+            }
+            .onChange(of: router.detectedMovementToReview) { _, id in
+                openDetectedMovement(id)
+            }
+            .onAppear { openDetectedMovement(router.detectedMovementToReview) }
             // "Sí, ya lo pagué" desde la notificacion con la app abierta:
             // el movimiento nuevo y el recordatorio se actualizan solos.
             .onReceive(NotificationCenter.default.publisher(for: .recurringLoggedFromNotification)) { _ in
@@ -251,6 +280,8 @@ struct DayJournalView: View {
             }
             .onChange(of: scenePhase) { _, phase in
                 guard phase == .active else { return }
+                // Un atajo pudo detectar movimientos con la app en segundo plano.
+                detectedStore.load()
                 Task { await handleDayChangeIfNeeded() }
             }
             // Al cerrar "Registrar con voz" (Atajo / Tocar atrás) puede haber
@@ -1087,6 +1118,41 @@ struct DayJournalView: View {
         pointsByTransaction = await CardPointsRepository.shared.pointsByTransaction(
             userId: userId, day: viewModel.selectedDate
         )
+    }
+
+    /// Abre la revision del movimiento detectado que se toco en la
+    /// notificacion (o queda esperando hasta que Hoy aparezca).
+    @MainActor
+    private func openDetectedMovement(_ id: UUID?) {
+        guard let id else { return }
+        router.detectedMovementToReview = nil
+        if let movement = detectedStore.movement(id: id) {
+            reviewingDetected = movement
+        }
+    }
+
+    /// "Registrar" en la tarjeta de Hoy: cuenta y categoria sugeridas.
+    @MainActor
+    private func quickRegisterDetected(_ movement: DetectedMovement) async {
+        guard let userId = appState.currentUserId,
+              let accountId = DetectedMovementActions.suggestedAccountId(for: movement, accounts: viewModel.accounts) else {
+            reviewingDetected = movement
+            return
+        }
+        do {
+            try await DetectedMovementActions.register(
+                movement,
+                userId: userId,
+                accountId: accountId,
+                category: DetectedMovementActions.suggestedCategory(for: movement),
+                description: nil,
+                rememberCard: false
+            )
+            await refresh()
+            await refreshBudgets()
+        } catch {
+            reviewingDetected = movement
+        }
     }
 
     private func search() async {

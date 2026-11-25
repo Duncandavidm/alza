@@ -48,6 +48,8 @@ final class NotificationRouter: ObservableObject {
     @Published var sharedInvoicePayload: String?
     /// El archivo compartido no traia el QR de una factura.
     @Published var sharedInvoiceError: String?
+    /// "Movimiento detectado" tocado: Hoy abre su revision.
+    @Published var detectedMovementToReview: UUID?
 
     /// monavi://scan (widget) o un archivo abierto con MonAvi.
     func handleOpenURL(_ url: URL) {
@@ -91,6 +93,12 @@ final class NotificationRouter: ObservableObject {
             // Aviso de reactivacion: abre la camara para escanear.
             destination = nil
             InvoiceScanRequest.request()
+            return
+        }
+        if normalized == "detected" {
+            // "Movimiento detectado" (aviso del banco): abrir su revision.
+            destination = nil
+            detectedMovementToReview = (userInfo["detectedId"] as? String).flatMap(UUID.init(uuidString:))
             return
         }
         if normalized == "home" {

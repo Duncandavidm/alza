@@ -60,7 +60,7 @@ enum DetectedMovementActions {
               let parsed = BankAlertParser.parse(text) else { return nil }
 
         let trimmedSource = source?.trimmingCharacters(in: .whitespacesAndNewlines)
-        var movement = DetectedMovement(
+        let movement = DetectedMovement(
             id: UUID(),
             amount: parsed.amount,
             isIncome: parsed.isIncome,

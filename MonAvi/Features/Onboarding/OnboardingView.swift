@@ -101,7 +101,7 @@ struct OnboardingView: View {
             Section {
                 CountryPicker(selection: $viewModel.country)
             } header: {
-                Text("Tu país y moneda")
+                Text("Elige tu país")
             } footer: {
                 Text("Tus montos se mostrarán en \(viewModel.country.currencyName). El país y la moneda quedan fijos en tu cuenta.")
             }

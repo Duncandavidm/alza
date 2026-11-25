@@ -261,11 +261,19 @@ struct DayJournalView: View {
                 DetectedMovementReviewView(
                     movement: movement,
                     accounts: viewModel.accounts,
-                    userId: appState.currentUserId
+                    userId: appState.currentUserId,
+                    progresses: budgetsViewModel.progresses,
+                    position: (detectedStore.pending.firstIndex { $0.id == movement.id } ?? 0) + 1,
+                    total: detectedStore.pending.count
                 ) {
                     Task {
                         await refresh()
                         await refreshBudgets()
+                        // "1 de 2": al terminar uno se abre el siguiente.
+                        try? await Task.sleep(nanoseconds: 600_000_000)
+                        if reviewingDetected == nil, let next = detectedStore.pending.first {
+                            reviewingDetected = next
+                        }
                     }
                 }
             }

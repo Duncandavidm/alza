@@ -96,6 +96,11 @@ struct DetectedMovementReviewView: View {
     let movement: DetectedMovement
     let accounts: [Account]
     let userId: UUID?
+    /// Presupuestos del mes, para mostrar el "Límite de gasto".
+    var progresses: [BudgetProgress] = []
+    /// "1 de 2" cuando hay varios por confirmar.
+    var position: Int? = nil
+    var total: Int? = nil
     var onDone: () -> Void = {}
 
     @Environment(\.dismiss) private var dismiss
@@ -109,10 +114,21 @@ struct DetectedMovementReviewView: View {
     @State private var errorMessage: String?
     @State private var didPrefill = false
 
-    init(movement: DetectedMovement, accounts: [Account], userId: UUID?, onDone: @escaping () -> Void = {}) {
+    init(
+        movement: DetectedMovement,
+        accounts: [Account],
+        userId: UUID?,
+        progresses: [BudgetProgress] = [],
+        position: Int? = nil,
+        total: Int? = nil,
+        onDone: @escaping () -> Void = {}
+    ) {
         self.movement = movement
         self.accounts = accounts
         self.userId = userId
+        self.progresses = progresses
+        self.position = position
+        self.total = total
         self.onDone = onDone
         _isIncome = State(initialValue: movement.isIncome)
         _amountText = State(initialValue: "\(abs(movement.amount))")
@@ -155,8 +171,13 @@ struct DetectedMovementReviewView: View {
                             .font(.body.weight(.semibold))
                     }
                     TextField(isIncome ? "¿De quién?" : "¿Dónde? (ej. Café La Esquina)", text: $descriptionText)
+                    if !isIncome, let amount, amount <= 10 {
+                        Label("Gasto hormiga: pequeño, pero suma cada mes", systemImage: "ant.fill")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 } header: {
-                    Text("Movimiento detectado")
+                    Text(isIncome ? "Ingreso detectado" : "Pago detectado")
                 } footer: {
                     Text(footerText)
                 }
@@ -169,6 +190,8 @@ struct DetectedMovementReviewView: View {
                         }
                     }
                 }
+
+                budgetSection
 
                 Section("Cuenta") {
                     if accounts.isEmpty {
@@ -202,14 +225,14 @@ struct DetectedMovementReviewView: View {
                     }
                 }
             }
-            .navigationTitle("Por confirmar")
+            .navigationTitle(queueTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cerrar") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Registrar") { Task { await save() } }
+                    Button(isIncome ? "Agregar ingreso" : "Agregar gasto") { Task { await save() } }
                         .disabled(isSaving || amount == nil || accountId == nil || userId == nil)
                 }
             }
@@ -222,6 +245,41 @@ struct DetectedMovementReviewView: View {
             }
             .onChange(of: isIncome) { _, income in
                 if let current = category, !categories.contains(current) { category = income ? .income : nil }
+            }
+        }
+    }
+
+    private var queueTitle: String {
+        if let position, let total, total > 1 { return "Por confirmar · \(position) de \(total)" }
+        return "Por confirmar"
+    }
+
+    /// "Límite de gasto": como queda el presupuesto del mes de esa
+    /// categoria si se agrega este gasto.
+    @ViewBuilder
+    private var budgetSection: some View {
+        if !isIncome, let category,
+           let progress = progresses.first(where: { $0.budget.category == category.rawValue }),
+           progress.budget.limitAmount > 0 {
+            let projected = progress.spent + (amount ?? 0)
+            let limit = progress.budget.limitAmount
+            let ratio = NSDecimalNumber(decimal: projected / limit).doubleValue
+            Section("Límite de gasto") {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("\(category.emoji) \(category.rawValue)")
+                        Spacer()
+                        Text("\(projected.formatted(.currency(code: "USD"))) de \(limit.formatted(.currency(code: "USD")))")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    ProgressView(value: min(max(ratio, 0), 1))
+                        .tint(ratio >= 1 ? MonAviBrand.alert : (ratio >= 0.8 ? Color.orange : MonAviBrand.primary))
+                    Text(ratio >= 1
+                         ? "Con este gasto pasas tu presupuesto del mes."
+                         : "Con este gasto llegas al \(Int((ratio * 100).rounded()))% de tu presupuesto del mes.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
     }

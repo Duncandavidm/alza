@@ -70,11 +70,51 @@ enum DetectedMovementActions {
             detectedAt: now,
             possibleDuplicate: false
         )
-        movement.possibleDuplicate = await alreadyLogged(movement, userId: session.user.id, now: now)
+        return await keepForConfirmation(movement, userId: session.user.id, now: now)
+    }
 
+    /// Pago con Apple Pay (automatizacion "Transacción" de Wallet, ver
+    /// AddMonAviExpenseIntent): queda por confirmar igual que un aviso del
+    /// banco, con la cuenta que se eligio en la automatizacion.
+    @discardableResult
+    static func detectPayment(amount: Decimal, merchant: String, accountId: UUID?, now: Date = Date()) async -> DetectedMovement? {
+        guard amount > 0, let session = try? await SupabaseManager.shared.client.auth.session else { return nil }
+        let name = merchant.trimmingCharacters(in: .whitespacesAndNewlines)
+        var partner: String?
+        if !name.isEmpty { partner = await partnerName(for: name) }
+        let movement = DetectedMovement(
+            id: UUID(),
+            amount: amount,
+            isIncome: false,
+            counterpart: name.isEmpty ? nil : name,
+            last4: nil,
+            source: "Apple Pay",
+            detectedAt: now,
+            possibleDuplicate: false,
+            accountId: accountId,
+            partnerName: partner
+        )
+        return await keepForConfirmation(movement, userId: session.user.id, now: now)
+    }
+
+    private static func keepForConfirmation(_ detected: DetectedMovement, userId: UUID, now: Date) async -> DetectedMovement? {
+        var movement = detected
+        movement.possibleDuplicate = await alreadyLogged(movement, userId: userId, now: now)
         guard DetectedMovementStore.shared.add(movement) else { return nil }
         sendDetectedNotification(movement)
         return movement
+    }
+
+    /// Comercio aliado activo con ese nombre (best-effort: si falla, nil).
+    private static func partnerName(for merchant: String) async -> String? {
+        struct Row: Decodable { let name: String }
+        let rows: [Row] = (try? await SupabaseManager.shared.client
+            .from("partner_merchants")
+            .select("name")
+            .eq("status", value: "active")
+            .execute()
+            .value) ?? []
+        return PartnerMerchantMatcher.match(merchant: merchant, partnerNames: rows.map(\.name))
     }
 
     /// Ya hay un movimiento con el mismo monto en los ultimos minutos (ej.
@@ -92,6 +132,9 @@ enum DetectedMovementActions {
     /// si no, la primera de uso diario (no tarjeta de credito, prestamo,
     /// ahorro ni inversion); si no, la primera.
     static func suggestedAccountId(for movement: DetectedMovement, accounts: [Account]) -> UUID? {
+        if let chosen = movement.accountId, accounts.contains(where: { $0.id == chosen }) {
+            return chosen
+        }
         if let remembered = DetectedMovementStore.shared.accountId(forLast4: movement.last4),
            accounts.contains(where: { $0.id == remembered }) {
             return remembered
@@ -138,6 +181,10 @@ enum DetectedMovementActions {
         if rememberCard { DetectedMovementStore.shared.remember(last4: movement.last4, accountId: accountId) }
         DetectedMovementStore.shared.remove(id: movement.id)
         UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [notificationId(movement.id)])
+        // Pago en un comercio aliado: recordar escanear la factura (cashback).
+        if let partner = movement.partnerName, !income {
+            NotificationManager.sendPartnerCardPaymentHint(merchantName: partner)
+        }
     }
 
     /// Boton "Registrar" de la notificacion (sin abrir la app): usa la
@@ -182,11 +229,11 @@ enum DetectedMovementActions {
 
     private static func sendDetectedNotification(_ movement: DetectedMovement) {
         let content = UNMutableNotificationContent()
-        content.title = "Movimiento detectado"
+        content.title = movement.notificationTitle
         if let source = movement.source { content.subtitle = source }
         content.body = movement.notificationBody + (movement.possibleDuplicate
-            ? " Parece que ya lo anotaste: revísalo antes de guardarlo."
-            : " Toca para registrar.")
+            ? " · Parece que ya lo anotaste: revísalo antes de guardarlo."
+            : " · Toca para registrar.")
         content.sound = NotificationManager.brandSound
         content.categoryIdentifier = notificationCategory
         content.threadIdentifier = "monavi-detectados"

@@ -23,7 +23,7 @@ struct WalletAutomationGuideView: View {
         Step(id: 5, text: "Marca **Ejecutar inmediatamente** y toca **Siguiente**."),
         Step(id: 6, text: "Toca **Nueva automatización en blanco**, busca **MonAvi** y elige la acción **Anotar un gasto en MonAvi**."),
         Step(id: 7, text: "En **Monto**, elige la variable **Cantidad** (o Monto) de la transacción; en **Comercio**, elige **Comercio**. Si quieres, elige también la cuenta."),
-        Step(id: 8, text: "Toca **Listo**. ¡Ya está!")
+        Step(id: 8, text: "Toca **Listo**. Cada vez que pagues te llegará «Pago detectado»: tócalo para revisarlo y agregarlo.")
     ]
 
     var body: some View {
@@ -35,7 +35,7 @@ struct WalletAutomationGuideView: View {
                         .foregroundStyle(MonAviBrand.primary)
                     Text("Conecta tus pagos con Wallet")
                         .font(.system(.title2, design: MonAviBrand.fontDesign, weight: .bold))
-                    Text("Así cada pago con tarjeta se anota solo en MonAvi, sin abrir la app.")
+                    Text("Así cada pago con Apple Pay te llega como «Pago detectado» y lo agregas con un toque.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }

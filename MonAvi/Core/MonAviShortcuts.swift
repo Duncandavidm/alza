@@ -50,7 +50,7 @@ struct RecordByVoiceIntent: AppIntent {
 struct AddMonAviExpenseIntent: AppIntent {
     static var title: LocalizedStringResource = "Anotar un gasto en MonAvi"
     static var description = IntentDescription(
-        "Registra un gasto en MonAvi, adivinando la categoria por el nombre del comercio. Pensado para usarse desde un Atajo, por ejemplo cuando pagas con tu tarjeta."
+        "Detecta un pago (por ejemplo, cuando pagas con Apple Pay) y te pregunta si quieres registrarlo en MonAvi, con la categoría adivinada por el nombre del comercio."
     )
 
     @Parameter(title: "Monto")
@@ -72,73 +72,18 @@ struct AddMonAviExpenseIntent: AppIntent {
         }
     }
 
+    /// Desde 1.0.6 no guarda directo: deja el pago por confirmar y avisa
+    /// "Pago detectado · Comercio · $12.40 · Toca para registrar" (igual que
+    /// los avisos del banco). Si se pago en un comercio aliado, al
+    /// registrarlo recuerda escanear la factura.
     @MainActor
-    func perform() async throws -> some IntentResult & ProvidesDialog {
-        let supabase = SupabaseManager.shared.client
-
-        guard let session = try? await supabase.auth.session else {
-            return .result(dialog: "Abre MonAvi e inicia sesion primero.")
-        }
-
-        let userId = session.user.id
-        let accountId: UUID
-
-        if let chosen = account {
-            accountId = chosen.id
-        } else {
-            let accounts: [Account] = (try? await supabase
-                .from("accounts")
-                .select()
-                .eq("user_id", value: userId)
-                .order("created_at", ascending: true)
-                .limit(1)
-                .execute()
-                .value) ?? []
-
-            guard let first = accounts.first?.id else {
-                return .result(dialog: "Crea al menos una cuenta en MonAvi antes de anotar por Atajos.")
-            }
-            accountId = first
-        }
-
-        let category = MerchantCategoryGuesser.category(for: merchant)
-
-        try await TransactionsRepository.shared.add(
-            NewTransaction(
-                userId: userId,
-                accountId: accountId,
-                amount: MovementType.gasto.signedAmount(from: Decimal(amount)),
-                movementType: .gasto,
-                category: category?.rawValue,
-                description: merchant,
-                occurredAt: Date()
-            )
+    func perform() async throws -> some IntentResult {
+        _ = await DetectedMovementActions.detectPayment(
+            amount: Decimal(amount),
+            merchant: merchant,
+            accountId: account?.id
         )
-
-        let categoryNote = category.map { " (\($0.emoji) \($0.rawValue))" } ?? ""
-        var dialog = "Anotado: \(merchant) por \(amount.formatted(.currency(code: "USD")))\(categoryNote)."
-
-        // Si se pago en un comercio aliado, recordar escanear la factura:
-        // la factura DGI (que dice "tarjeta") es la prueba para el bono.
-        if let partnerName = await Self.matchingPartnerMerchant(for: merchant) {
-            NotificationManager.sendPartnerCardPaymentHint(merchantName: partnerName)
-            dialog += " \(partnerName) es comercio aliado: escanea tu factura para ganar tu cashback y el bono por pagar con tarjeta."
-        }
-
-        return .result(dialog: "\(dialog)")
-    }
-
-    /// Best-effort: cualquier error (red, RLS) simplemente no avisa nada.
-    @MainActor
-    private static func matchingPartnerMerchant(for merchant: String) async -> String? {
-        struct Row: Decodable { let name: String }
-        let rows: [Row] = (try? await SupabaseManager.shared.client
-            .from("partner_merchants")
-            .select("name")
-            .eq("status", value: "active")
-            .execute()
-            .value) ?? []
-        return PartnerMerchantMatcher.match(merchant: merchant, partnerNames: rows.map(\.name))
+        return .result()
     }
 }
 

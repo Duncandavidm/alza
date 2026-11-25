@@ -14,6 +14,10 @@ struct DetectedMovement: Codable, Identifiable, Hashable {
     let detectedAt: Date
     /// Ya habia un movimiento igual (mismo monto, pocos minutos antes).
     var possibleDuplicate: Bool
+    /// Cuenta elegida en la automatizacion (ej. la de Apple Pay), si la hay.
+    var accountId: UUID? = nil
+    /// Comercio aliado donde se pago (para recordar escanear la factura).
+    var partnerName: String? = nil
 
     /// "Café La Esquina", o "Compra" / "Dinero recibido" si el aviso no
     /// trae el nombre.
@@ -28,20 +32,18 @@ struct DetectedMovement: Codable, Identifiable, Hashable {
         (isIncome ? "+" : "−") + abs(amount).formatted(.currency(code: "USD"))
     }
 
-    /// "Compra de $12.40 en Café La Esquina (•4021)."
+    /// "Pago detectado" / "Ingreso detectado".
+    var notificationTitle: String { isIncome ? "Ingreso detectado" : "Pago detectado" }
+
+    /// "Café La Esquina · $12.40 (•4021)".
     var notificationBody: String {
-        var body: String
-        let money = abs(amount).formatted(.currency(code: "USD"))
-        if isIncome {
-            body = "Recibiste \(money)"
-            if let counterpart { body += " de \(counterpart)" }
-        } else {
-            body = "Compra de \(money)"
-            if let counterpart { body += " en \(counterpart)" }
-        }
+        var body = "\(title) · \(abs(amount).formatted(.currency(code: "USD")))"
         if let last4 { body += " (•\(last4))" }
-        return body + "."
+        return body
     }
+
+    /// Gasto chico (hasta $10): "gasto hormiga", poco a poco suma.
+    var isSmallExpense: Bool { !isIncome && abs(amount) <= 10 }
 }
 
 /// Movimientos por confirmar, guardados en el dispositivo. Los escribe la

@@ -35,7 +35,7 @@ struct BankAlertsGuideView: View {
             Section("Cómo funciona") {
                 Label("Llega la notificación, el SMS o el correo de tu banco", systemImage: "1.circle.fill")
                 Label("MonAvi lee el monto y el comercio en tu teléfono", systemImage: "2.circle.fill")
-                Label("Te avisa «Movimiento detectado»: tocas Registrar, Revisar o Descartar", systemImage: "3.circle.fill")
+                Label("Te avisa «Pago detectado» o «Ingreso detectado»: tocas Registrar, Revisar o Descartar", systemImage: "3.circle.fill")
             }
             .font(.subheadline)
 
@@ -85,7 +85,7 @@ struct BankAlertsGuideView: View {
             } header: {
                 Text("Pruébalo")
             } footer: {
-                Text("Te llega la notificación «Movimiento detectado» y el movimiento queda en Hoy por confirmar. Si no lo quieres, descártalo.")
+                Text("Te llega la notificación «Pago detectado» y el movimiento queda en Hoy por confirmar. Si no lo quieres, descártalo.")
             }
 
             Section {
@@ -149,7 +149,7 @@ struct BankAlertsGuideView: View {
             return
         }
         if await DetectedMovementActions.detect(text: sampleText, source: "Prueba") != nil {
-            testResult = "¡Listo! Te llegó «Movimiento detectado» y quedó en Hoy por confirmar."
+            testResult = "¡Listo! Te llegó «Pago detectado» y quedó en Hoy por confirmar."
         } else {
             testResult = "Ya tienes uno igual por confirmar en Hoy (el mismo monto hace pocos minutos)."
         }

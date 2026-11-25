@@ -69,8 +69,10 @@ final class BankAlertParserTests: XCTestCase {
         let movement = DetectedMovement(id: UUID(), amount: Decimal(string: "12.40")!, isIncome: false,
                                         counterpart: "Café La Esquina", last4: "4021", source: nil,
                                         detectedAt: Date(), possibleDuplicate: false)
-        XCTAssertTrue(movement.notificationBody.hasPrefix("Compra de "))
-        XCTAssertTrue(movement.notificationBody.hasSuffix(" en Café La Esquina (•4021)."))
+        XCTAssertEqual(movement.notificationTitle, "Pago detectado")
+        XCTAssertTrue(movement.notificationBody.hasPrefix("Café La Esquina · "))
+        XCTAssertTrue(movement.notificationBody.hasSuffix(" (•4021)"))
+        XCTAssertFalse(movement.isSmallExpense)
         XCTAssertEqual(movement.signedAmount, Decimal(string: "-12.40"))
     }
 }

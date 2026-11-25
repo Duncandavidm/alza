@@ -140,8 +140,9 @@ struct PartnerMerchantRow: View {
         }
         let count = summary.items.count
         if count > 0 {
-            let prizes = count == 1 ? "1 premio" : "\(count) premios"
-            var text = "\(prizes) desde \(summary.currency.format(summary.cheapestCost))"
+            // Solo lo que cuesta desbloquearlo: "$6.00" (o "$3.00 · $6.00").
+            let costs = Array(Set(summary.items.map(\.pointsCost))).sorted().prefix(3)
+            var text = costs.map { summary.currency.format($0) }.joined(separator: " · ")
             if affordableCount > 0 {
                 text += affordableCount == 1 ? " · 1 desbloqueado 🔓" : " · \(affordableCount) desbloqueados 🔓"
             }

@@ -280,7 +280,14 @@ struct DayJournalView: View {
             .onChange(of: router.detectedMovementToReview) { _, id in
                 openDetectedMovement(id)
             }
-            .onAppear { openDetectedMovement(router.detectedMovementToReview) }
+            .onAppear {
+                openDetectedMovement(router.detectedMovementToReview)
+                openQuickAddFromWidget(router.quickAddRequestedAt)
+            }
+            // "+ Agregar" desde el widget "Tu día".
+            .onChange(of: router.quickAddRequestedAt) { _, requestedAt in
+                openQuickAddFromWidget(requestedAt)
+            }
             // "Sí, ya lo pagué" desde la notificacion con la app abierta:
             // el movimiento nuevo y el recordatorio se actualizan solos.
             .onReceive(NotificationCenter.default.publisher(for: .recurringLoggedFromNotification)) { _ in
@@ -1149,10 +1156,21 @@ struct DayJournalView: View {
         pointsByTransaction = await CardPointsRepository.shared.pointsByTransaction(
             userId: userId, day: viewModel.selectedDate
         )
+        // Widget "Tu día": gastado hoy y en el mes, y ultimos movimientos.
+        await DayWidgetUpdater.refresh(userId: userId)
     }
 
     /// Abre la revision del movimiento detectado que se toco en la
     /// notificacion (o queda esperando hasta que Hoy aparezca).
+    @MainActor
+    private func openQuickAddFromWidget(_ requestedAt: Date?) {
+        guard let requestedAt else { return }
+        router.quickAddRequestedAt = nil
+        // Un toque viejo (mas de 2 minutos) ya no abre nada.
+        guard Date().timeIntervalSince(requestedAt) < 120 else { return }
+        isQuickAdding = true
+    }
+
     @MainActor
     private func openDetectedMovement(_ id: UUID?) {
         guard let id else { return }

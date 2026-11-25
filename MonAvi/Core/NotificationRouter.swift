@@ -50,9 +50,25 @@ final class NotificationRouter: ObservableObject {
     @Published var sharedInvoiceError: String?
     /// "Movimiento detectado" tocado: Hoy abre su revision.
     @Published var detectedMovementToReview: UUID?
+    /// "+ Agregar" del widget "Tu día": Hoy abre "Anotar movimiento".
+    @Published var quickAddRequestedAt: Date?
 
     /// monavi://scan (widget) o un archivo abierto con MonAvi.
     func handleOpenURL(_ url: URL) {
+        if url.scheme?.lowercased() == "monavi" {
+            switch url.host?.lowercased() {
+            case "voice":
+                destination = nil
+                requestVoiceCapture()
+                return
+            case "add":
+                destination = nil
+                quickAddRequestedAt = Date()
+                return
+            default:
+                break
+            }
+        }
         if InvoiceScanRequest.isScanURL(url) {
             InvoiceScanRequest.request()
             return

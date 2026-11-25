@@ -115,6 +115,7 @@ targets:
     sources:
       - path: MonAviWidget
       - path: MonAvi/Shared/BudgetWidgetSnapshot.swift
+      - path: MonAvi/Shared/DayWidgetSnapshot.swift
       - path: MonAvi/Shared/InvoiceScanRequest.swift
       - path: MonAvi/Core/ColorHex.swift
     info:

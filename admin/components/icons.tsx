@@ -2,6 +2,7 @@
 // linea: sin dependencias y sin pedir nada a otro dominio (CSP).
 
 const PATHS: Record<string, string> = {
+  globe: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9S14.5 18.4 12 21M12 3C9.5 5.6 8.2 8.6 8.2 12s1.3 6.4 3.8 9",
   home: "M3 10.5 12 3l9 7.5M5 9v11h5v-6h4v6h5V9",
   store: "M3 9l1.5-5h15L21 9M3 9v1a3 3 0 0 0 6 0V9m0 1a3 3 0 0 0 6 0V9m0 1a3 3 0 0 0 6 0V9M5 13v8h14v-8M10 21v-5h4v5",
   tag: "M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9zM7.5 7.5h.01",

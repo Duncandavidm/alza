@@ -63,6 +63,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
     {
       title: "Sistema",
       items: [
+        { href: "/paises", label: "Países", icon: "globe" },
         { href: "/ia", label: "Costo de IA", icon: "cpu" },
         { href: "/alerts", label: "Alertas", icon: "alert" },
         { href: "/seguridad", label: "Seguridad", icon: "shield" },

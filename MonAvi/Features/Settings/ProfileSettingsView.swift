@@ -238,7 +238,9 @@ struct ProfileSettingsView: View {
     var body: some View {
         Form {
             accountSection
-            countrySection
+            if appState.offersCountryChoice {
+                countrySection
+            }
             referralSection
             personalDataSection
             saveSection

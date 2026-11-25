@@ -73,10 +73,25 @@ enum AppCountry: String, Codable, CaseIterable, Identifiable, Hashable {
         }
     }
 
+    /// Colombia se ofrece solo cuando se activa desde el panel
+    /// (app_config.colombia_enabled, leído con get_app_flags). Apagado por
+    /// defecto: sin conexión o sin respuesta, la app se queda en Panamá.
+    private static let colombiaKey = "monavi.colombiaEnabled"
+    static var colombiaEnabled: Bool {
+        get { defaults?.bool(forKey: colombiaKey) ?? false }
+        set { defaults?.set(newValue, forKey: colombiaKey) }
+    }
+
+    /// Países que se pueden elegir. Quien ya está en Colombia lo sigue
+    /// viendo aunque se apague (para poder volver a Panamá).
+    static var available: [AppCountry] {
+        colombiaEnabled || current == .colombia ? allCases : [.panama]
+    }
+
     /// Para la primera pantalla: el país de la región del teléfono, si es
-    /// uno de los dos.
+    /// uno de los disponibles.
     static var suggested: AppCountry {
-        Locale.current.region?.identifier == "CO" ? .colombia : .panama
+        colombiaEnabled && Locale.current.region?.identifier == "CO" ? .colombia : .panama
     }
 
     /// Monto escrito por la persona → Decimal. En Colombia el punto y la

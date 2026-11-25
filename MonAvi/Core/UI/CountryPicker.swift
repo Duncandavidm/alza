@@ -5,7 +5,7 @@ struct CountryPicker: View {
     @Binding var selection: AppCountry
 
     var body: some View {
-        ForEach(AppCountry.allCases) { country in
+        ForEach(AppCountry.available) { country in
             Button {
                 selection = country
             } label: {

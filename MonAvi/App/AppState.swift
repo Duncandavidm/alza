@@ -44,6 +44,9 @@ final class AppState: ObservableObject {
     /// Pais y moneda de la cuenta (profiles.country). Al cambiar, RootView
     /// redibuja la app para que los montos salgan en la moneda nueva.
     @Published private(set) var country: AppCountry = AppCountry.current
+    /// Hay más de un país para elegir (Colombia activada desde el panel).
+    /// Si no, la app no muestra "¿Dónde vives?" ni "País y moneda".
+    @Published private(set) var offersCountryChoice: Bool = AppCountry.available.count > 1
 
     let subscriptionStore = SubscriptionStore()
     private let supabase = SupabaseManager.shared.client
@@ -226,6 +229,7 @@ final class AppState: ObservableObject {
             onboardingStatus = .unknown
             return
         }
+        await refreshAppFlags()
         struct Row: Decodable {
             let onboardingCompletedAt: Date?
             let country: String?
@@ -256,6 +260,22 @@ final class AppState: ObservableObject {
         } catch {
             onboardingStatus = .failed
         }
+    }
+
+    /// Banderas que se prenden desde el panel (por ahora, Colombia). Si
+    /// falla la consulta se queda con lo último que se supo.
+    func refreshAppFlags() async {
+        struct Flags: Decodable {
+            let colombiaEnabled: Bool?
+            enum CodingKeys: String, CodingKey { case colombiaEnabled = "colombia_enabled" }
+        }
+        do {
+            let flags: Flags = try await supabase.rpc("get_app_flags").execute().value
+            AppCountry.colombiaEnabled = flags.colombiaEnabled ?? false
+        } catch {
+            // sin red: se mantiene el valor guardado
+        }
+        offersCountryChoice = AppCountry.available.count > 1
     }
 
     /// Se llama justo al terminar el wizard, para no tener que esperar un

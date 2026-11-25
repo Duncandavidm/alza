@@ -96,6 +96,10 @@ struct PartnerMerchantRow: View {
                 .font(.subheadline)
                 .foregroundStyle(affordableCount > 0 ? MonAviBrand.primary : Color.secondary)
 
+            if let next = nextGoal {
+                RewardProgressBar(balance: balance, cost: next.pointsCost, currency: next.currency)
+            }
+
             HStack(spacing: 10) {
                 Button(action: onDirections) {
                     Label("Cómo llegar", systemImage: "map.fill")
@@ -120,6 +124,13 @@ struct PartnerMerchantRow: View {
                 .fill(Color(.secondarySystemGroupedBackground))
         )
         .accessibilityElement(children: .contain)
+    }
+
+    /// El beneficio mas barato que todavia no le alcanza (para la barra).
+    private var nextGoal: RewardItem? {
+        summary.items
+            .filter { $0.pointsCost > balance }
+            .min { $0.pointsCost < $1.pointsCost }
     }
 
     private var summaryText: String {

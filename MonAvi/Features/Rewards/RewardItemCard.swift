@@ -112,11 +112,8 @@ struct RewardItemCard: View {
             }
             .controlSize(.large)
 
-            if let missingText = RewardsMath.missingText(cost: item.pointsCost, balance: balance, currency: item.currency) {
-                Text(missingText)
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+            if missingPoints > 0 {
+                RewardProgressBar(balance: balance, cost: item.pointsCost, currency: item.currency)
             }
         }
     }

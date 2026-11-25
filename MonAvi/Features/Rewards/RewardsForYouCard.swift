@@ -66,7 +66,6 @@ struct RewardsForYouCard: View {
 
     private func tile(_ item: RewardItem) -> some View {
         let available = balance.spendable(in: item.currency)
-        let missingText = RewardsMath.missingText(cost: item.pointsCost, balance: available, currency: item.currency)
 
         return VStack(alignment: .leading, spacing: 6) {
             RewardPhotoView(urlString: item.photoUrl, cornerRadius: 12, placeholderSymbol: item.kind.placeholderSymbol)
@@ -91,10 +90,7 @@ struct RewardsForYouCard: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
             RewardPointsPill(points: item.pointsCost, currency: item.currency)
-            Text(missingText ?? "Desbloqueado 🔓")
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(missingText == nil ? MonAviBrand.primary : Color.secondary)
-                .lineLimit(1)
+            RewardProgressBar(balance: available, cost: item.pointsCost, currency: item.currency, compact: true)
         }
         .frame(width: 140, alignment: .leading)
         .padding(10)

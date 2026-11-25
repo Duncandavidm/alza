@@ -38,6 +38,13 @@ struct DayWidgetSnapshot: Codable {
         Self.defaults?.set(data, forKey: Self.storageKey)
     }
 
+    /// Al cerrar sesion: el widget no debe seguir mostrando los datos de
+    /// la cuenta anterior.
+    static func clear() {
+        defaults?.removeObject(forKey: storageKey)
+        defaults?.removeObject(forKey: hideAmountsKey)
+    }
+
     /// El ojo del widget: oculta los montos (por privacidad).
     static var hideAmounts: Bool {
         get { defaults?.bool(forKey: hideAmountsKey) ?? false }

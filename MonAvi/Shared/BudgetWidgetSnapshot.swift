@@ -45,4 +45,10 @@ struct BudgetWidgetSnapshot: Codable {
         guard let data = try? JSONEncoder().encode(self) else { return }
         defaults.set(data, forKey: Self.storageKey)
     }
+
+    /// Al cerrar sesion: el widget no debe seguir mostrando los datos de
+    /// la cuenta anterior.
+    static func clear() {
+        UserDefaults(suiteName: appGroupId)?.removeObject(forKey: storageKey)
+    }
 }

@@ -24,6 +24,22 @@
   nav.legal { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); }
   nav.legal ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 16px; }
   nav.legal a { font-size: 14px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 8px; font-size: 14px; }
+  th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; }
+  .tablewrap { overflow-x: auto; }
+  .tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--border); white-space: nowrap; }
+  .yes { color: var(--teal-dark); border-color: var(--teal); }
+  .box { border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin: 16px 0; }
+  h3 { font-size: 16px; margin-top: 24px; }
+  @media (max-width: 600px) {
+    table thead { display: none; }
+    table, table tbody, table tr, table td { display: block; width: 100%; }
+    table tr { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    table td { border: none; padding: 2px 0; }
+    table td:empty { display: none; }
+    table td:last-child { color: var(--muted); }
+  }
 </style>
 </head>
 <body>
@@ -38,7 +54,111 @@
   Ley 81 de 2019 (contacto: <a href="mailto:hola@maday.app">hola@maday.app</a>). Esta política explica qué datos
   recopilamos, para qué los usamos, con quién los compartimos y qué control tienes sobre ellos.</p>
 
-  <h2>1. Qué datos recopilamos</h2>
+  <div class="box">
+    <strong>En resumen:</strong> recopilamos los datos de tu cuenta y lo que tú registras en la app para que funcione,
+    datos de uso y de errores para mantenerla y mejorarla, y —solo si lo aceptas— usamos tus datos para avisos de
+    promociones y estudios anónimos. <strong>No te rastreamos</strong> en otras apps ni sitios, no vendemos tus datos
+    personales, no usamos SDK de publicidad ni de analítica de terceros, y no recopilamos tu ubicación ni tus contactos.
+    Las fotos, el audio y los avisos de tu banco se procesan en tu iPhone y no se suben.
+  </div>
+
+  <h2>1. Datos y cumplimiento (etiquetas de privacidad de la App Store)</h2>
+  <p>Esta es la declaración de los datos que recopila MonAvi, con las mismas categorías que usa Apple en la sección
+  «Privacidad de la app» de la App Store. «Recopilar» significa que el dato sale de tu dispositivo y se guarda en
+  nuestros servidores. Todos los datos recopilados quedan <strong>vinculados a tu cuenta</strong> (para mostrártelos y
+  darte tu cashback), salvo los estudios de mercado, que solo usan datos anónimos y agregados.</p>
+
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Categoría</th><th>Datos</th><th>¿Se recopila?</th><th>Para qué</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Información de contacto</strong></td>
+        <td>Nombre, correo electrónico, número de teléfono</td>
+        <td><span class="tag yes">Sí</span><br>El nombre y el teléfono son opcionales</td>
+        <td>Funcionalidad de la app (cuenta, correos de la cuenta, entrega de canjes en caja), soporte</td></tr>
+      <tr><td><strong>Información financiera</strong></td>
+        <td>Otra información financiera: cuentas, saldos, movimientos, presupuestos, deudas, tarjetas de crédito (cupo,
+          tasa, pago mínimo, día de pago y últimos 4 dígitos si los anotas), metas de ahorro, ingresos, cashback y canjes</td>
+        <td><span class="tag yes">Sí</span></td>
+        <td>Funcionalidad de la app, personalización (consejos e insights), analítica interna</td></tr>
+      <tr><td></td><td>Información de pago (número de tarjeta, datos bancarios)</td>
+        <td><span class="tag">No</span></td><td>Los pagos los procesa Apple; nunca vemos tu tarjeta</td></tr>
+      <tr><td></td><td>Información crediticia (puntaje de crédito)</td>
+        <td><span class="tag">No</span></td><td>—</td></tr>
+      <tr><td><strong>Compras</strong></td>
+        <td>Historial de compras: las facturas que escaneas (comercio, fecha, monto, forma de pago y productos) y el estado
+          de tu suscripción</td>
+        <td><span class="tag yes">Sí</span></td>
+        <td>Funcionalidad de la app (cashback, «Tus compras», suscripción), personalización, publicidad o marketing propio
+          (solo si aceptas promociones), analítica</td></tr>
+      <tr><td><strong>Identificadores</strong></td>
+        <td>ID de usuario (el identificador de tu cuenta, o el que entrega «Iniciar sesión con Apple»)</td>
+        <td><span class="tag yes">Sí</span></td><td>Funcionalidad de la app, analítica</td></tr>
+      <tr><td></td><td>ID del dispositivo (el identificador de notificaciones que entrega Apple)</td>
+        <td><span class="tag yes">Sí</span><br>Solo si permites las notificaciones</td>
+        <td>Funcionalidad de la app (enviarte avisos). Se borra al cerrar sesión. No usamos el identificador de publicidad
+          (IDFA)</td></tr>
+      <tr><td><strong>Datos de uso</strong></td>
+        <td>Interacción con el producto: cuándo registras movimientos y facturas, qué beneficios desbloqueas y usas, qué
+          avisos abres, cuántas veces usas las funciones de inteligencia artificial</td>
+        <td><span class="tag yes">Sí</span></td>
+        <td>Analítica, funcionalidad (cupones por buenos hábitos, límites de uso justo), personalización, marketing propio
+          (solo si aceptas promociones)</td></tr>
+      <tr><td></td><td>Datos de publicidad</td><td><span class="tag">No</span></td><td>No mostramos publicidad de terceros</td></tr>
+      <tr><td><strong>Diagnóstico</strong></td>
+        <td>Datos de fallos (errores y cierres inesperados), datos de rendimiento (tiempos de carga, uso de memoria y
+          batería) y otros datos de diagnóstico (versión de la app y de iOS), que entrega MetricKit de Apple</td>
+        <td><span class="tag yes">Sí</span></td><td>Funcionalidad de la app y analítica (corregir errores)</td></tr>
+      <tr><td><strong>Contenido del usuario</strong></td>
+        <td>Atención al cliente: lo que nos escribes por correo o con «Sugerencias» en la app. Otro contenido: las notas y
+          descripciones que pones a tus movimientos</td>
+        <td><span class="tag yes">Sí</span></td><td>Soporte, funcionalidad de la app</td></tr>
+      <tr><td></td><td>Fotos o videos</td>
+        <td><span class="tag">No</span></td>
+        <td>La cámara y las fotos que eliges se leen en tu iPhone solo para encontrar el código de la factura; la imagen no
+          se sube</td></tr>
+      <tr><td></td><td>Datos de audio</td>
+        <td><span class="tag">No</span></td><td>La voz se convierte en texto con iOS; nunca guardamos ni enviamos el audio</td></tr>
+      <tr><td></td><td>Correos o mensajes de texto</td>
+        <td><span class="tag">No</span></td>
+        <td>Los avisos de tu banco que le pasa una automatización se leen en tu iPhone; solo se guarda el movimiento que tú
+          confirmas</td></tr>
+      <tr><td><strong>Otros datos</strong></td>
+        <td>Datos demográficos opcionales del estudio inicial: edad, género, estado civil, dependientes, ocupación y metas</td>
+        <td><span class="tag yes">Sí</span><br>Opcionales</td>
+        <td>Personalización, estudios anónimos y marketing propio (solo si los aceptas)</td></tr>
+      <tr><td><strong>Ubicación</strong></td><td>Precisa o aproximada</td><td><span class="tag">No</span></td>
+        <td>Apple Wallet usa la ubicación del comercio, no la tuya</td></tr>
+      <tr><td><strong>Contactos</strong></td><td>Agenda del teléfono</td><td><span class="tag">No</span></td><td>—</td></tr>
+      <tr><td><strong>Salud y actividad física</strong></td><td>—</td><td><span class="tag">No</span></td><td>—</td></tr>
+      <tr><td><strong>Información confidencial</strong></td><td>Origen, religión, orientación, datos biométricos, etc.</td>
+        <td><span class="tag">No</span></td><td>Face ID y Touch ID los maneja iOS; nunca recibimos tu rostro ni tu huella</td></tr>
+      <tr><td><strong>Historial de navegación y de búsqueda</strong></td><td>—</td><td><span class="tag">No</span></td><td>—</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p><strong>Rastreo:</strong> MonAvi <strong>no</strong> usa ningún dato para rastrearte, es decir, no combina tus datos
+  con los de otras empresas para publicidad ni los comparte con corredores de datos. Por eso la app no te pide permiso de
+  rastreo (App Tracking Transparency).</p>
+  <p><strong>Analítica:</strong> no usamos SDK de analítica ni de publicidad de terceros. Medimos el uso de la app con
+  los datos que ya están en nuestra propia base de datos (por ejemplo, cuántas facturas se registran o cuántos beneficios se
+  usan) y con los informes de diagnóstico de Apple.</p>
+
+  <h3>Permisos que la app puede pedirte</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Permiso</th><th>Para qué</th><th>¿Sale algo del iPhone?</th></tr></thead>
+    <tbody>
+      <tr><td>Cámara</td><td>Escanear el código QR de tus facturas</td><td>Solo el código de la factura</td></tr>
+      <tr><td>Fotos (selector de fotos)</td><td>Leer el QR de una foto o captura que tú eliges</td><td>Solo el código de la factura; la app solo ve las fotos que eliges</td></tr>
+      <tr><td>Micrófono y reconocimiento de voz</td><td>Anotar un movimiento diciéndolo</td><td>Solo el texto, para interpretar el movimiento</td></tr>
+      <tr><td>Face ID / Touch ID</td><td>Bloquear la app</td><td>Nada</td></tr>
+      <tr><td>Notificaciones</td><td>Recordatorios, cashback, beneficios desbloqueados y «Pago detectado»</td><td>El identificador de notificaciones</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>2. Qué datos recopilamos, en detalle</h2>
   <ul>
     <li><strong>Cuenta:</strong> tu correo electrónico o, si inicias sesión con Apple, el
       identificador que Apple nos entrega (si eliges ocultar tu correo, nunca lo vemos).</li>
@@ -46,66 +166,78 @@
       cuentas por pagar, deudas y tarjetas de crédito (cupo, tasa de interés, pago mínimo y día de pago),
       metas de ahorro, facturas y cualquier otro dato que anotes en la app. MonAvi no se conecta a tu
       banco ni lee tus cuentas bancarias: todo lo registras tú (a mano, por voz, escaneando una factura o
-      con un Atajo de Apple que tú configuras, por ejemplo con Tocar atrás).</li>
+      con un Atajo de Apple que tú configuras).</li>
     <li><strong>Facturas que escaneas (opcional):</strong> si usas «Facturas que suman», el código
-      único (CUFE) de tus facturas electrónicas y, cuando la DGI de Panamá las confirma, los datos de
-      esa factura: el comercio que la emitió, la fecha y hora de la compra, el monto, la forma de pago
+      único (CUFE) de tus facturas electrónicas y la fecha de la factura y, cuando la DGI de Panamá las confirma, los
+      datos de esa factura: el comercio que la emitió, la fecha y hora de la compra, el monto, la forma de pago
       (por ejemplo, «tarjeta de crédito» o «efectivo», nunca el número de tu tarjeta) y el detalle de
-      los productos comprados. Con ese detalle te mostramos «Tus compras» (qué compraste y cuánto pagaste
-      en cada comercio) y el resumen del mes de tus facturas.</li>
+      los productos comprados. Con ese detalle te mostramos «Tus compras» y el resumen del mes de tus facturas.
+      También guardamos cuándo registraste cada factura, porque el cashback depende de los días que pasaron desde la
+      compra (ver los <a href="/terms">Términos de uso</a>).</li>
     <li><strong>Facturas que nos compartes en PDF o foto:</strong> si abres una factura con
-      «Compartir → MonAvi», el archivo se lee en tu dispositivo solo para encontrar su código QR o su
+      «Compartir → MonAvi» o eliges una foto, el archivo se lee en tu dispositivo solo para encontrar su código QR o su
       CUFE, y luego se borra. No subimos ni guardamos el archivo; solo el código de la factura, igual que
       si la escanearas con la cámara.</li>
-    <li><strong>Cashback, cupones y canjes:</strong> el cashback que ganas por tus facturas, los
+    <li><strong>Cashback, beneficios y canjes:</strong> el cashback que ganas por tus facturas, los
       cupones que ganas por tus buenos hábitos (los calculamos en nuestros servidores a partir de los
-      movimientos, presupuestos y metas de ahorro que registras), los descuentos de comercios aliados que
-      usas y los productos que canjeas (qué producto, en qué comercio, el código, cuándo vence y si ya se
-      entregó).</li>
+      movimientos, presupuestos y metas de ahorro que registras), los descuentos y bonos que desbloqueas con tu cashback,
+      los descuentos gratis que usas y los productos que canjeas (qué beneficio, en qué comercio, el código, cuándo vence y
+      si ya se usó).</li>
     <li><strong>Invitaciones:</strong> si invitas a alguien con tu código o te unes con el código de
       otra persona, guardamos quién invitó a quién para darles el cashback de la invitación.</li>
     <li><strong>Perfil (opcional):</strong> tu nombre, teléfono, edad, género y otros datos que decidas darnos en el
       estudio inicial (estado civil, dependientes, ocupación, metas). Puedes dejarlos en blanco o
       cambiarlos en Ajustes &gt; Mi perfil.</li>
-    <li><strong>Notificaciones:</strong> si las permites, un identificador de tu dispositivo que
-      Apple nos entrega para enviarte avisos (por ejemplo, «ganaste cashback» o «ya puedes canjear un
-      premio», «tu cupón vence mañana»). Se borra al cerrar
-      sesión.</li>
+    <li><strong>Permisos que das:</strong> si aceptaste el uso de inteligencia artificial, recibir promociones o los
+      estudios anónimos, guardamos tu respuesta y la fecha, para respetarla.</li>
+    <li><strong>Notificaciones:</strong> si las permites, el identificador de tu dispositivo que
+      Apple nos entrega para enviarte avisos (por ejemplo, «ganaste cashback», «descuento desbloqueado» o
+      «tu cupón vence mañana»). Se borra al cerrar sesión.</li>
     <li><strong>Suscripción:</strong> el estado de tu suscripción. Las compras las procesa Apple;
       nosotros solo recibimos la confirmación.</li>
-    <li><strong>Datos técnicos:</strong> registros de error, versión de la app y modelo de
-      dispositivo, para mantener la app funcionando.</li>
+    <li><strong>Uso de la app:</strong> la fecha de tus registros, facturas y canjes, los avisos que abres y cuántas
+      veces usas las funciones de inteligencia artificial (para aplicar los límites de uso justo).</li>
+    <li><strong>Diagnóstico y errores:</strong> los informes diarios de MetricKit de Apple (fallos, cierres inesperados,
+      rendimiento, versión de la app y de iOS). No incluyen tus movimientos.</li>
     <li><strong>Soporte y sugerencias:</strong> lo que nos escribes por correo o desde la app.</li>
   </ul>
-  <p>No recopilamos tu ubicación, tus contactos ni datos de salud.</p>
-  <p><strong>Apple Wallet:</strong> si agregas un cupón a Apple Wallet, el pase lo genera nuestro
-  servidor con el código, el comercio, el vencimiento y la ubicación del local del comercio (no la tuya).
-  Es tu iPhone, sin enviarnos nada, el que decide mostrarte el pase cuando estás cerca de ese local.</p>
-  <p><strong>Widgets y Atajos:</strong> el widget de la pantalla bloqueada y el botón del Centro de
-  control solo abren la cámara de MonAvi; no leen ni envían datos. Los Atajos (como «Anotar gasto
-  rápido») corren en tu dispositivo y solo nos envían el movimiento que tú escribes, igual que si lo
-  anotaras dentro de la app.</p>
-  <p><strong>Avisos de tu banco (opcional):</strong> si armas en la app Atajos una automatización que le
-  pasa a MonAvi el texto de una notificación, un SMS o un correo de tu banco o billetera, ese texto se lee
-  en tu dispositivo solo para encontrar el monto, el comercio o quien te envió el dinero y los últimos 4
-  dígitos de la tarjeta. El texto no se sube a nuestros servidores ni se guarda; los códigos de seguridad,
-  las compras rechazadas y las promociones se ignoran. El movimiento queda por confirmar en tu teléfono y
-  solo se guarda en tu cuenta de MonAvi cuando tú lo registras. Puedes borrar la automatización cuando
-  quieras desde la app Atajos.</p>
 
-  <h2>2. Para qué usamos tus datos</h2>
+  <h3>Lo que se queda en tu iPhone</h3>
+  <ul>
+    <li><strong>Avisos de tu banco (opcional):</strong> si armas en la app Atajos una automatización que le
+      pasa a MonAvi el texto de una notificación, un SMS o un correo de tu banco o billetera, ese texto se lee
+      en tu dispositivo solo para encontrar el monto, el comercio o quien te envió el dinero y los últimos 4
+      dígitos de la tarjeta. El texto no se sube ni se guarda; los códigos de seguridad,
+      las compras rechazadas y las promociones se ignoran. El movimiento queda por confirmar en tu teléfono y
+      solo se guarda en tu cuenta cuando tú lo registras. Para sugerirte la cuenta, tu iPhone recuerda qué cuenta
+      usaste con esos 4 dígitos.</li>
+    <li><strong>Pagos con Apple Pay (opcional):</strong> si armas la automatización «Transacción» de la app Atajos,
+      MonAvi recibe el monto y el comercio que Atajos le entrega y te muestra «Pago detectado» para que lo
+      registres. MonAvi no tiene acceso a Apple Pay ni a tu Wallet.</li>
+    <li><strong>Widgets:</strong> el widget «Tu día» muestra en tu pantalla de inicio lo que gastaste hoy y en el mes,
+      lo que te queda y tus últimos movimientos. Esos datos se guardan en tu iPhone para el widget (puedes ocultar los
+      montos con el ojo) y se borran al cerrar sesión o eliminar la app. Los widgets de la pantalla bloqueada y el botón
+      del Centro de control solo abren MonAvi.</li>
+    <li><strong>Apple Wallet:</strong> si agregas un cupón a Apple Wallet, el pase lo genera nuestro servidor con el
+      código, el comercio, el vencimiento y la ubicación del local del comercio (no la tuya). Es tu iPhone, sin enviarnos
+      nada, el que decide mostrarte el pase cuando estás cerca de ese local.</li>
+  </ul>
+
+  <h2>3. Para qué usamos tus datos</h2>
   <ul>
     <li>Para mostrarte tu información financiera y que la app funcione.</li>
     <li>Para generar los consejos, resúmenes y respuestas de inteligencia artificial que pides en
       la app (por ejemplo, «¿cuánto gasté en comida este mes?» o qué pagar primero).</li>
-    <li>Para verificar tus facturas con la DGI, acreditar tu cashback, entregarte cupones por buenos
-      hábitos y gestionar tus canjes y descuentos.</li>
+    <li>Para verificar tus facturas con la DGI, calcular y acreditar tu cashback, entregarte cupones por buenos
+      hábitos y gestionar tus beneficios, canjes y descuentos.</li>
     <li>Para enviarte los recordatorios y avisos que tú activas: vencimientos y pagos (los programa
-      tu propio dispositivo) y avisos como «ganaste cashback», «tienes un cupón nuevo» o «tu cupón vence
+      tu propio dispositivo) y avisos como «ganaste cashback», «descuento desbloqueado» o «tu cupón vence
       mañana» (los envía nuestro servidor a través de Apple).</li>
     <li>Para verificar tu suscripción y darte acceso a las funciones pagas.</li>
+    <li>Para encontrar y corregir errores y mejorar la app (diagnóstico y datos de uso).</li>
+    <li>Para prevenir el fraude y el abuso (por ejemplo, facturas duplicadas o cuentas falsas).</li>
     <li>Solo si lo aceptas: para elaborar estudios de mercado con datos <strong>anónimos y
-      agregados</strong>, como se explica en la sección 5.</li>
+      agregados</strong>, como se explica en la sección 6.</li>
     <li>Para aplicar las campañas de marcas («compra X y gana más»): revisamos el detalle de tus
       facturas verificadas para saber si compraste el producto de la campaña y darte el premio.</li>
     <li>Solo si lo aceptas («Recibir promociones y regalos»): para enviarte notificaciones de
@@ -118,15 +250,15 @@
   </ul>
   <p>Nunca vendemos tus datos personales ni los usamos para mostrarte publicidad de terceros.</p>
 
-  <h2>3. Reconocimiento de voz</h2>
+  <h2>4. Reconocimiento de voz</h2>
   <p>Si anotas un movimiento por voz, el audio se convierte en texto con el reconocimiento de voz
   de iOS (en tu dispositivo cuando es compatible). Solo el texto se envía a nuestro servidor para
   interpretar el movimiento. MonAvi nunca guarda ni transmite grabaciones de audio.</p>
 
-  <h2>4. Con quién compartimos datos</h2>
+  <h2>5. Con quién compartimos datos</h2>
   <p>Solo con los proveedores que necesitamos para operar la app:</p>
   <ul>
-    <li><strong>Supabase</strong> — aloja nuestra base de datos y la autenticación.</li>
+    <li><strong>Supabase</strong> — aloja nuestra base de datos, la autenticación y las funciones del servidor.</li>
     <li><strong>Anthropic</strong> — procesa la información financiera necesaria para responder lo
       que pides a la inteligencia artificial (insights, preguntas, consejo de pagos, interpretación de
       un movimiento dictado). Solo se envía si nos das permiso en la app (puedes retirarlo en
@@ -136,20 +268,21 @@
       restablecer tu contraseña). Solo recibe tu correo electrónico y el contenido de ese mensaje.</li>
     <li><strong>Vercel</strong> — aloja nuestras páginas web (esta política, la página de soporte
       y la página de canje que usan los comercios aliados).</li>
-    <li><strong>Apple</strong> — inicio de sesión con Apple, compras dentro de la app y entrega de
-      notificaciones y pases de Apple Wallet (si eliges agregar un cupón).</li>
+    <li><strong>Apple</strong> — inicio de sesión con Apple, compras dentro de la app, informes de diagnóstico
+      (MetricKit) y entrega de notificaciones y pases de Apple Wallet (si eliges agregar un cupón).</li>
     <li><strong>Dirección General de Ingresos (DGI) de Panamá</strong> — consultamos el CUFE de las
-      facturas que escaneas en su sitio público para confirmar que son reales.</li>
+      facturas que escaneas en su sitio público para confirmar que son reales. No le enviamos tus datos personales.</li>
     <li><strong>Marcas con campañas</strong> — solo reciben totales de la campaña (cuántas ventas
       verificadas, unidades y monto, por semana y por comercio con al menos 5 personas). Nunca
       reciben tu nombre, tu correo ni tus facturas.</li>
-    <li><strong>El comercio aliado donde canjeas</strong> — solo si tienes un canje o regalo pendiente
-      en ese comercio, la caja puede ver tu nombre de pila con la inicial del apellido, los últimos 4
-      dígitos de tu teléfono, el código y el producto, para encontrarte y entregártelo. Nunca ve tu
+    <li><strong>El comercio aliado donde usas un beneficio</strong> — solo si tienes un canje, un beneficio desbloqueado
+      o un regalo pendiente en ese comercio, la caja puede ver tu nombre de pila con la inicial del apellido, los últimos 4
+      dígitos de tu teléfono, el código y el beneficio, para encontrarte y aplicártelo. Nunca ve tu
       correo completo, tu saldo ni tus movimientos.</li>
+    <li><strong>Autoridades</strong> — solo si una ley o una orden judicial nos obliga.</li>
   </ul>
 
-  <h2>5. Estudios de mercado con datos anónimos</h2>
+  <h2>6. Estudios de mercado con datos anónimos</h2>
   <p><strong>Solo participas si lo aceptas.</strong> La app te lo pregunta con una pantalla aparte
   («Tus compras, anónimas») y guardamos tu respuesta con la fecha. Puedes cambiarla cuando quieras
   en Ajustes &gt; Privacidad; si no aceptas, igual ganas cashback y cupones.</p>
@@ -170,44 +303,52 @@
       También puedes pedirlo a <a href="mailto:hola@maday.app">hola@maday.app</a>.</li>
   </ul>
 
-  <h2>6. Seguridad</h2>
+  <h2>7. Seguridad</h2>
   <p>Tu sesión se guarda cifrada en el Keychain de tu dispositivo. Cada usuario solo puede leer y
   modificar sus propios datos: está impuesto en la base de datos (Row Level Security), no solo en la
-  app. Puedes proteger la app con Face ID, Touch ID o el código de tu iPhone en Ajustes &gt; Seguridad.</p>
+  app. Todas las conexiones van cifradas. Puedes proteger la app con Face ID, Touch ID o el código de tu iPhone en
+  Ajustes &gt; Seguridad. Más detalles en <a href="/legal/proteccion-de-datos">Protección de datos</a>.</p>
 
-  <h2>Conservación de tus datos</h2>
-  <p>Guardamos tus datos mientras tengas tu cuenta. Si la eliminas, se borran de inmediato de nuestra base de
-  datos, salvo la información que una ley nos obligue a conservar. Las copias de seguridad cifradas de nuestro
-  proveedor de base de datos se sobrescriben de forma periódica. Nuestros servidores están en Estados Unidos;
-  ver <a href="/legal/ley-81">Ley 81 de 2019</a> y <a href="/legal/proteccion-de-datos">Protección de datos</a>.</p>
+  <h2>8. Conservación de tus datos</h2>
+  <p>Guardamos tus datos mientras tengas tu cuenta. Los informes de diagnóstico se usan solo para corregir errores. Si
+  eliminas tu cuenta, tus datos se borran de inmediato de nuestra base de datos, salvo la información que una ley nos
+  obligue a conservar y los estudios anónimos ya elaborados (que no te identifican). Las copias de seguridad cifradas de
+  nuestro proveedor de base de datos se sobrescriben de forma periódica.</p>
+  <p><strong>Transferencia internacional:</strong> nuestros servidores y proveedores están en Estados Unidos. Al usar
+  MonAvi tus datos se transfieren allí, con las medidas de seguridad de esta política; ver
+  <a href="/legal/ley-81">Ley 81 de 2019</a>.</p>
 
-  <h2>7. Tus derechos</h2>
+  <h2>9. Tus derechos</h2>
   <p>Puedes pedirnos en cualquier momento, escribiendo a
   <a href="mailto:hola@maday.app">hola@maday.app</a>:</p>
   <ul>
-    <li>Una copia de los datos que tenemos sobre ti (también puedes exportar tus movimientos a CSV
+    <li>Acceso: una copia de los datos que tenemos sobre ti (también puedes exportar tus movimientos a CSV
       desde Ajustes).</li>
-    <li>La corrección de datos incorrectos.</li>
-    <li>La eliminación completa de tu cuenta y tus datos (también puedes hacerlo tú en Ajustes &gt;
+    <li>Rectificación: la corrección de datos incorrectos.</li>
+    <li>Cancelación: la eliminación completa de tu cuenta y tus datos (también puedes hacerlo tú en Ajustes &gt;
       Eliminar cuenta).</li>
-    <li>Que tus datos no se incluyan en los estudios de mercado anónimos.</li>
+    <li>Oposición: que tus datos no se usen para promociones ni se incluyan en los estudios de mercado anónimos.</li>
+    <li>Portabilidad: tus movimientos en un formato que puedas llevar a otro servicio (CSV).</li>
+    <li>Retirar los permisos que diste (inteligencia artificial, promociones, estudios) en Ajustes &gt; Privacidad.</li>
   </ul>
   <p>Respondemos dentro de los plazos que establecen la Ley 81 de 2019 de Protección de Datos Personales de
-  Panamá y su reglamento. Más detalles en <a href="/legal/ley-81">Ley 81 de 2019</a>.</p>
+  Panamá y su reglamento. Si no quedas conforme, puedes acudir a la Autoridad Nacional de Transparencia y Acceso a la
+  Información (ANTAI). Más detalles en <a href="/legal/ley-81">Ley 81 de 2019</a>.</p>
 
-  <h2>8. Menores de edad</h2>
+  <h2>10. Menores de edad</h2>
   <p>MonAvi tiene clasificación 4+ en la App Store. Las personas menores de 18 años deben usarla con la
   autorización y supervisión de su padre, madre o tutor, quien acepta esta política en su nombre y puede ejercer
   sus derechos o pedir la eliminación de la cuenta en cualquier momento escribiendo a hola@maday.app. Las
   compras quedan sujetas a los controles parentales de Apple.</p>
 
-  <h2>9. Cambios a esta política</h2>
+  <h2>11. Cambios a esta política</h2>
   <p>Si hacemos cambios importantes, actualizaremos la fecha de «Última actualización» en esta
   página y, cuando corresponda, te avisaremos dentro de la app.</p>
 
-  <h2>10. Contacto</h2>
+  <h2>12. Contacto</h2>
   <p>Para cualquier pregunta sobre privacidad, escríbenos a
-  <a href="mailto:hola@maday.app">hola@maday.app</a>.</p>
+  <a href="mailto:hola@maday.app">hola@maday.app</a>. Responsable: David Muñoz Duncan, RUC 8-NT-2-793713 DV 95,
+  República de Panamá.</p>
 
   <nav class="legal" aria-label="Documentos legales"><strong>Documentos legales de MonAvi</strong><ul><li><a href="/legal/guia-del-consumidor">Guía del consumidor</a></li><li><a href="/privacy" aria-current="page">Política de privacidad</a></li><li><a href="/terms">Términos y condiciones</a></li><li><a href="/legal/politica-de-compras">Política de compras</a></li><li><a href="/legal/cancelaciones-y-reembolsos">Cancelaciones, devoluciones y reembolsos</a></li><li><a href="/legal/ley-81">Ley 81 de 2019 – Datos personales</a></li><li><a href="/legal/proteccion-de-datos">Protección de datos</a></li><li><a href="/legal">Todos</a></li></ul></nav>
   <div class="footer-note">MonAvi — operada por David Muñoz Duncan, RUC 8-NT-2-793713 DV 95, Panamá.</div>

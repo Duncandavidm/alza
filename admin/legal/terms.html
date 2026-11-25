@@ -24,6 +24,19 @@
   nav.legal { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); }
   nav.legal ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 16px; }
   nav.legal a { font-size: 14px; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 4px; font-size: 14px; }
+  th, td { text-align: left; vertical-align: top; padding: 7px 10px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; }
+  .tablewrap { overflow-x: auto; }
+  h3 { font-size: 16px; margin-top: 22px; }
+  @media (max-width: 600px) {
+    table thead { display: none; }
+    table, table tbody, table tr, table td { display: block; width: 100%; }
+    table tr { padding: 10px 0; border-bottom: 1px solid var(--border); }
+    table td { border: none; padding: 2px 0; }
+    table td:empty { display: none; }
+    table td:last-child { color: var(--muted); }
+  }
 </style>
 </head>
 <body>
@@ -32,8 +45,9 @@
   <h1>Términos de Uso</h1>
   <p class="updated">Última actualización: 25 de noviembre de 2026</p>
 
-  <p>Al usar MonAvi aceptas estos términos. Léelos con calma; si algo no te queda claro,
-  escríbenos a <a href="mailto:hola@maday.app">hola@maday.app</a>.</p>
+  <p>Al descargar o usar MonAvi aceptas estos términos y la <a href="/privacy">Política de Privacidad</a>. Léelos con
+  calma; si algo no te queda claro, escríbenos a <a href="mailto:hola@maday.app">hola@maday.app</a>. Si no estás de
+  acuerdo, no uses la app.</p>
 
   <p>MonAvi es operada por <strong>David Muñoz Duncan</strong>, persona natural, RUC 8-NT-2-793713 DV 95,
   República de Panamá. Contacto: <a href="mailto:hola@maday.app">hola@maday.app</a>.</p>
@@ -42,21 +56,66 @@
   <p>MonAvi es una aplicación de finanzas personales: te ayuda a registrar movimientos,
   cuentas, tarjetas de crédito, cuentas por pagar, deudas, presupuestos y metas de ahorro, a
   priorizar tus pagos, a ganar cashback por tus facturas electrónicas verificadas, cupones por tus
-  buenos hábitos financieros y descuentos en comercios aliados. MonAvi no es un banco,
-  no mueve dinero real entre cuentas y no sustituye asesoría financiera o legal profesional.</p>
+  buenos hábitos financieros y descuentos y bonos en comercios aliados. MonAvi no es un banco ni una billetera:
+  no guarda tu dinero, no mueve dinero real entre cuentas, no se conecta a tus cuentas bancarias y no sustituye
+  asesoría financiera, contable o legal profesional.</p>
 
   <h2>2. Tu cuenta</h2>
-  <p>Eres responsable de mantener segura tu cuenta y de la información que registras en ella.
-  Puedes iniciar sesión con correo y contraseña o con Apple. Cada persona puede tener una sola
-  cuenta.</p>
+  <ul>
+    <li>Puedes iniciar sesión con correo y contraseña o con Apple. Cada persona puede tener una sola cuenta, y la cuenta
+      es personal: no la compartas ni la vendas.</li>
+    <li>Eres responsable de mantener segura tu cuenta y tu dispositivo, y de la información que registras.</li>
+    <li>La información que des (por ejemplo, tu nombre y tu teléfono) debe ser verdadera: la usamos, entre otras cosas,
+      para que el comercio te encuentre al entregarte un beneficio.</li>
+  </ul>
 
   <h2>Menores de edad</h2>
   <p>MonAvi tiene clasificación 4+ en la App Store. Si tienes menos de 18 años, debes usarla con la autorización y
   supervisión de tu padre, madre o tutor, quien acepta estos términos en tu nombre.</p>
 
-  <h2>3. Suscripción</h2>
+  <h2>3. Reglas de uso de la app</h2>
+  <p>Así funciona MonAvi y esto es lo que esperamos de cada persona que la usa:</p>
+  <h3>Registrar tu dinero</h3>
   <ul>
-    <li>MonAvi se ofrece mediante una suscripción con renovación automática, al precio vigente
+    <li>Anota tus ingresos, gastos, transferencias, ahorros y pagos a mano, por voz, escaneando una factura o con los
+      Atajos de Apple. Cada movimiento se guarda en la cuenta que elijas y mueve su saldo dentro de la app (no en tu
+      banco).</li>
+    <li>Los movimientos que la app detecta (un pago con Apple Pay o un aviso de tu banco) <strong>nunca se guardan
+      solos</strong>: aparecen «por confirmar» y tú decides si registrarlos, editarlos o descartarlos.</li>
+    <li>Los recordatorios de pagos («¿Ya pagaste…?») siguen apareciendo hasta que respondas si lo pagaste o no. La «x»
+      solo los oculta por ahora.</li>
+    <li>Registra solo tus propias finanzas o las de tu hogar con su permiso. No registres datos de terceros sin su
+      consentimiento.</li>
+  </ul>
+  <h3>Facturas</h3>
+  <ul>
+    <li>Escanea el código QR de la factura con la cámara, elige una foto o compártela en PDF con MonAvi.</li>
+    <li>Solo registra <strong>facturas de compras que tú hiciste</strong>. No escanees facturas ajenas, recogidas de otras
+      personas o de un comercio.</li>
+    <li>Cada factura se registra una sola vez en todo MonAvi. Las reglas de fechas y de cashback están en la sección 5.</li>
+  </ul>
+  <h3>Beneficios en comercios</h3>
+  <ul>
+    <li>Los códigos de canje, de descuentos y de bonos son personales: muéstralos en caja desde tu teléfono. No los
+      vendas, no los publiques y no los compartas.</li>
+    <li>Respeta las condiciones de cada beneficio (vigencia, compra mínima, usos por persona y sucursales).</li>
+  </ul>
+  <h3>Lo que no está permitido</h3>
+  <ul>
+    <li>Usar MonAvi para actividades ilegales o para lavar dinero.</li>
+    <li>Registrar facturas falsas, alteradas o que no son tuyas, crear cuentas duplicadas o falsas, o invitarte a ti
+      mismo.</li>
+    <li>Modificar la app, automatizar su uso con programas (bots), copiar su contenido o intentar vulnerar su seguridad o
+      la de los comercios aliados.</li>
+    <li>Revender, transferir o cambiar por dinero el cashback, los cupones o los beneficios.</li>
+    <li>Molestar o engañar al personal de los comercios aliados.</li>
+  </ul>
+  <p>Si no cumples estas reglas podemos anular el cashback, los cupones y los beneficios obtenidos de esa forma, y
+  suspender o cerrar la cuenta (ver sección 13).</p>
+
+  <h2>4. Suscripción</h2>
+  <ul>
+    <li>MonAvi se ofrece mediante una suscripción con renovación automática (mensual o anual), al precio vigente
       mostrado en la app y en App Store al momento de suscribirte.</li>
     <li>El cobro se procesa a través de tu cuenta de Apple (App Store); MonAvi nunca ve ni
       almacena los datos de tu tarjeta.</li>
@@ -64,21 +123,36 @@
       canceles al menos 24 horas antes de que termine el periodo actual.</li>
     <li>Puedes cancelar en cualquier momento desde Ajustes de tu iPhone &gt; tu nombre &gt;
       Suscripciones, o desde «Administrar suscripción» dentro de MonAvi.</li>
-    <li>Si ofrecemos una prueba gratuita, se convierte automáticamente en suscripción paga al
-      terminar el periodo de prueba, salvo que la canceles antes.</li>
+    <li>Si ofrecemos una prueba gratuita o una oferta (por ejemplo, con un código de oferta), se convierte automáticamente
+      en suscripción paga al terminar, salvo que la canceles antes.</li>
+    <li>Si cambia el precio, Apple te avisa según sus reglas antes de aplicarlo.</li>
     <li>Los reembolsos los gestiona Apple según sus políticas; ver
       <a href="/legal/cancelaciones-y-reembolsos">Cancelaciones, devoluciones y reembolsos</a> y la
       <a href="/legal/politica-de-compras">Política de compras</a>.</li>
   </ul>
 
-  <h2>4. Programa de cashback</h2>
+  <h2>5. Facturas y cashback</h2>
   <ul>
-    <li><strong>Cómo se gana:</strong> al escanear el código QR de una factura electrónica
-      emitida en Panamá, MonAvi la verifica con la Dirección General de Ingresos (DGI). Cuando la
-      DGI la confirma, recibes un cashback equivalente al <strong>1% del total pagado</strong>
-      (por ejemplo, $0.84 por una factura de $84.25). La factura se verifica al momento de
-      escanearla; si la DGI aún no la tiene publicada, se vuelve a consultar cada 24 horas por
+    <li><strong>Cómo se gana:</strong> al registrar una factura electrónica emitida en Panamá, MonAvi la verifica con la
+      Dirección General de Ingresos (DGI). Cuando la DGI la confirma, recibes un cashback de hasta el
+      <strong>1% del total pagado</strong> (por ejemplo, $0.84 por una factura de $84.25 registrada el mismo día). La
+      factura se verifica al registrarla; si la DGI aún no la tiene publicada, se vuelve a consultar cada 24 horas por
       hasta 7 días, y el cashback queda pendiente hasta confirmarla.</li>
+    <li><strong>Qué facturas se pueden registrar y cuánto cashback ganan</strong> (según los días entre la fecha de la
+      factura y el día en que la registras, en hora de Panamá):
+      <div class="tablewrap">
+      <table>
+        <thead><tr><th>Cuándo la registras</th><th>¿Se registra?</th><th>Cashback</th></tr></thead>
+        <tbody>
+          <tr><td>En el mismo mes, hasta 3 días después de la compra</td><td>Sí</td><td>Completo (1%)</td></tr>
+          <tr><td>En el mismo mes, de 4 a 7 días después</td><td>Sí</td><td>La mitad</td></tr>
+          <tr><td>En el mismo mes, 8 días o más después</td><td>Sí</td><td>Un cuarto</td></tr>
+          <tr><td>Factura del mes anterior, registrada del día 1 al 3 del mes</td><td>Sí, con la fecha de la factura</td><td>Sin cashback</td></tr>
+          <tr><td>Factura del mes anterior después del día 3, o más antigua</td><td>No</td><td>—</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </li>
     <li><strong>Respaldo con ingresos:</strong> el cashback se acredita cuando los ingresos que
       registras en MonAvi respaldan tus compras. La factura y el gasto se registran siempre, pero
       si no tienes ingresos registrados que respalden la compra, el cashback queda pendiente. Un
@@ -87,19 +161,19 @@
       horas después de registrarlos. El cashback que no se respalde con ingresos dentro de 45
       días vence.</li>
     <li>Cada factura solo puede registrarse una vez y por una sola cuenta. Las facturas que la DGI
-      no confirma dentro de 7 días no generan cashback.</li>
+      no confirma dentro de 7 días no generan cashback. El monto que vale es el que confirma la DGI.</li>
     <li>Hay un tope de cashback por persona y por día. Los porcentajes y topes pueden cambiar; los
       cambios no afectan el cashback que ya ganaste.</li>
-    <li><strong>No es dinero en efectivo:</strong> el cashback solo se usa para canjear productos
-      en los comercios aliados que aparecen en la app. No se puede retirar, transferir a otra
-      persona, ni cambiar por dinero.</li>
+    <li><strong>No es dinero en efectivo:</strong> el cashback solo se usa en los comercios aliados que aparecen en la app
+      (para canjear productos o desbloquear descuentos y bonos). No se puede retirar, transferir a otra persona, ni
+      cambiar por dinero.</li>
     <li>Si detectamos fraude o abuso (por ejemplo, facturas que no son tuyas, cuentas duplicadas o
       manipulación de la app), podemos anular el cashback obtenido de esa forma y suspender la
       cuenta.</li>
     <li>Si eliminas tu cuenta, el cashback que no hayas usado se pierde.</li>
   </ul>
 
-  <h2>5. Cupones por buenos hábitos</h2>
+  <h2>6. Cupones por buenos hábitos</h2>
   <ul>
     <li><strong>Cómo se ganan:</strong> MonAvi revisa en sus servidores, una vez al día, si cumpliste
       las reglas de los cupones vigentes: por ejemplo, ahorrar un porcentaje de tus ingresos en el mes,
@@ -115,50 +189,45 @@
       cashback. Si un cupón vence sin usarse, se pierde.</li>
     <li>Si detectamos registros falsos o manipulación para ganar cupones, podemos anularlos y
       suspender la cuenta.</li>
-    <li>Desde la versión 1.0.3 MonAvi ya no otorga puntos por hábitos: los buenos hábitos se premian
-      con estos cupones.</li>
   </ul>
 
-  <h2>6. Canjes en comercios aliados</h2>
+  <h2>7. Beneficios y canjes en comercios aliados</h2>
   <ul>
-    <li>Al canjear un producto con tu cashback, se descuenta su valor y recibes un código de 6
-      caracteres que muestras en el comercio. El comercio lo valida y te entrega el producto sin
-      costo.</li>
-    <li>El código de un canje con cashback vence a los 7 días. Si no lo usas, el valor se devuelve
-      automáticamente a tu cashback. Los cupones y regalos (por buenos hábitos o enviados por MonAvi)
-      vencen en la fecha que muestra la app y, si no se usan, se pierden. Te avisamos antes de que
-      venzan.</li>
-    <li><strong>Descuentos por ser de MonAvi:</strong> algunos comercios aliados ofrecen un descuento
-      gratis a los usuarios de MonAvi (por ejemplo, 10% en tu compra). Se usa mostrando el código en
-      caja, con el límite de usos por persona y por periodo que indica la app. El descuento lo da el
-      comercio.</li>
+    <li><strong>Productos con cashback:</strong> al canjear un producto se descuenta su valor de tu cashback y recibes un
+      código de 6 caracteres que muestras en el comercio. El comercio lo valida y te entrega el producto sin costo. El
+      código vence a los 7 días; si no lo usas, el valor se devuelve automáticamente a tu cashback.</li>
     <li><strong>Descuentos y bonos que se desbloquean con cashback:</strong> algunos comercios aliados ofrecen un
-      descuento (por ejemplo, 20%) o un bono (por ejemplo, $20) que se desbloquea con el cashback que indica la app.
-      Al desbloquearlo se descuenta ese cashback y recibes un código para usarlo en caja dentro de los días que
-      muestra la app, con las condiciones que se indiquen (por ejemplo, una compra mínima). Si no lo usas a tiempo,
-      el cashback se devuelve. El descuento lo aplica el comercio; un bono puede pagarlo el comercio o MonAvi, sin
-      costo adicional para ti. También hay descuentos y bonos gratis que no necesitan cashback. No son dinero, no se
-      pueden cambiar por efectivo y pueden tener cupos y fechas.</li>
+      descuento (por ejemplo, 20%) o un bono (por ejemplo, $20) que se desbloquea con el cashback que indica la app. La
+      app te muestra cuánto te falta para desbloquearlo. Al desbloquearlo se descuenta ese cashback y el beneficio queda
+      disponible para usarlo en caja dentro de los días que muestra la app, con las condiciones que se indiquen (por
+      ejemplo, una compra mínima). Al usarlo en caja se genera un código que dura 15 minutos. Si no lo usas a tiempo, el
+      cashback se devuelve. El descuento lo aplica el comercio; un bono puede pagarlo el comercio o MonAvi, sin costo
+      adicional para ti.</li>
+    <li><strong>Descuentos y bonos gratis por ser de MonAvi:</strong> algunos comercios ofrecen beneficios que no
+      necesitan cashback. Se usan mostrando el código en caja, con el límite de usos por persona y por periodo que indica
+      la app.</li>
+    <li>Los cupones y regalos (por buenos hábitos o enviados por MonAvi) vencen en la fecha que muestra la app y, si no se
+      usan, se pierden. Te avisamos antes de que venzan.</li>
+    <li>Ningún beneficio es dinero: no se cambia por efectivo, no se transfiere y puede tener cupos, fechas y sucursales.
+      Los beneficios disponibles pueden cambiar en cualquier momento; los que ya desbloqueaste se respetan hasta su
+      vencimiento.</li>
     <li>Puedes agregar tus códigos vigentes a Apple Wallet. El pase es solo una copia del código: el
       que vale es el de la app, y un código ya usado o vencido deja de servir aunque siga en Wallet.</li>
     <li>Cada comercio aliado es responsable de su producto, su disponibilidad y su atención. Si
       tienes un problema con un canje, escríbenos y lo resolvemos con el comercio.</li>
-    <li>Los productos y comercios disponibles pueden cambiar en cualquier momento. Si quieres, te
-      avisamos con una notificación cuando te alcance para un premio.</li>
   </ul>
 
-  <h2>7. Campañas de marcas</h2>
+  <h2>8. Campañas de marcas</h2>
   <ul>
     <li>Algunas marcas ofrecen premios extra por comprar sus productos (por ejemplo, «doble cashback
       comprando la marca X»). El premio se da cuando la DGI verifica tu factura y el producto aparece
       en su detalle.</li>
     <li>Cada campaña tiene fechas, un máximo de unidades por factura y un presupuesto; al agotarse,
       termina aunque no haya llegado la fecha final.</li>
-    <li>El premio de una campaña se suma a tu cashback, con las mismas reglas de uso de las
-      secciones 4 y 6.</li>
+    <li>El premio de una campaña se suma a tu cashback, con las mismas reglas de las secciones 5 y 7.</li>
   </ul>
 
-  <h2>Invita amigos</h2>
+  <h2>9. Invita amigos</h2>
   <ul>
     <li>Cada cuenta tiene un código de invitación. Si una persona nueva se une con tu código, los dos
       reciben cashback cuando la DGI confirma su primera factura escaneada en MonAvi. Los montos vigentes
@@ -166,59 +235,71 @@
     <li>Hay un máximo de invitaciones premiadas por persona cada 30 días. Las invitaciones a uno
       mismo, las cuentas duplicadas o falsas no generan premio, y podemos anular el cashback obtenido
       así.</li>
-    <li>El cashback de las invitaciones sigue las reglas de la sección 4.</li>
+    <li>El cashback de las invitaciones sigue las reglas de la sección 5.</li>
   </ul>
 
-  <h2>8. Uso aceptable</h2>
-  <p>No uses MonAvi para actividades ilegales, no intentes vulnerar su seguridad y no registres
-  datos financieros de terceros sin su consentimiento.</p>
-
-  <h3>Uso justo de las funciones de inteligencia artificial</h3>
+  <h2>10. Inteligencia artificial y uso justo</h2>
   <p>Las funciones con inteligencia artificial (anotar por voz, Pregúntale a tu dinero, insights y
-  planes de pago) tienen límites de uso justo para mantener el servicio disponible para todos:
+  planes de pago) solo se usan si das tu permiso en la app. Sus respuestas son orientativas y pueden equivocarse:
+  revísalas antes de tomar decisiones. Tienen límites de uso justo para mantener el servicio disponible para todos:
   300 notas por voz y 100 preguntas al mes, y un análisis de insights y un plan de pago con IA al
   día. Las frases simples dichas por voz se interpretan en tu teléfono y no cuentan para el límite.
   Al llegar a un límite, puedes seguir registrando tus movimientos a mano y el límite se renueva
   al iniciar el siguiente periodo. Por alta demanda, estas funciones pueden pausarse
   temporalmente. Los límites pueden ajustarse con aviso previo en la app.</p>
 
-  <h2>9. Exactitud de la información</h2>
-  <p>Los cálculos, consejos de pago y cuotas sugeridas que muestra MonAvi se basan en los datos
-  que tú ingresas. Eres responsable de verificar que esos datos sean correctos; MonAvi no se hace
-  responsable por decisiones financieras tomadas a partir de información incompleta o
-  incorrecta.</p>
+  <h2>11. Exactitud de la información</h2>
+  <p>Los saldos, cálculos, consejos de pago y cuotas sugeridas que muestra MonAvi se basan en los datos
+  que tú ingresas o que lee de tus facturas y avisos. Eres responsable de verificar que esos datos sean correctos;
+  MonAvi no se hace responsable por decisiones financieras tomadas a partir de información incompleta o
+  incorrecta, ni reemplaza los estados de cuenta de tu banco.</p>
 
-  <h2>10. Atajos, widgets y automatizaciones de Apple</h2>
-  <p>MonAvi ofrece acciones para la app Atajos y para Siri (por ejemplo, «Anotar gasto rápido» o
-  «Escanear factura»), un widget para la pantalla bloqueada y un botón para el Centro de control. Si
-  las usas con Tocar atrás, con el botón de Acción o en una automatización (por ejemplo, al pagar con
-  Apple Pay), corren en tu dispositivo y bajo tu control. MonAvi no tiene acceso a Apple Pay ni a los
-  pases de tu Wallet; solo recibe el movimiento (monto, categoría, descripción o comercio) que tú o tu
-  automatización le entregan. Revisa lo que se anota: si algo se registró mal, puedes editarlo o
-  borrarlo en la app.</p>
-  <p>La acción «Detectar movimiento del banco» lee el aviso que tu automatización le entrega (una
-  notificación, un SMS o un correo de tu banco o billetera) y te pregunta si quieres registrar el
-  movimiento: nada se guarda sin tu confirmación. La lectura es automática y puede equivocarse o no
-  encontrar un movimiento; revisa el monto, la cuenta y la categoría antes de registrarlo. iOS decide
-  cuándo ejecuta las automatizaciones y puede no ejecutarlas con todos los avisos.</p>
+  <h2>12. Atajos, widgets y automatizaciones de Apple</h2>
+  <p>MonAvi ofrece acciones para la app Atajos y para Siri (por ejemplo, «Anotar gasto rápido», «Escanear factura» o
+  «Detectar movimiento del banco»), widgets para la pantalla de inicio y la pantalla bloqueada, y un botón para el
+  Centro de control. Si las usas con Tocar atrás, con el botón de Acción o en una automatización (por ejemplo, al pagar
+  con Apple Pay o al recibir un aviso de tu banco), corren en tu dispositivo y bajo tu control. MonAvi no tiene acceso
+  a Apple Pay, a tu Wallet ni a tus notificaciones; solo recibe lo que tu automatización le entrega.</p>
+  <ul>
+    <li>Lo detectado queda «por confirmar» y te avisamos con «Pago detectado» o «Ingreso detectado»: nada se guarda sin
+      tu confirmación.</li>
+    <li>La lectura es automática y puede equivocarse o no encontrar un movimiento; revisa el monto, la cuenta y la
+      categoría antes de registrarlo. iOS decide cuándo ejecuta las automatizaciones y puede no ejecutarlas siempre.</li>
+    <li>El widget «Tu día» muestra tus montos en la pantalla de inicio; cualquier persona que vea tu teléfono podrá verlos.
+      Puedes ocultarlos con el ojo del widget o quitar el widget.</li>
+  </ul>
 
-  <h2>11. Propiedad</h2>
-  <p>MonAvi y su marca son propiedad de sus desarrolladores. Tus datos financieros son tuyos; el
-  uso que hacemos de ellos se explica en la <a href="/privacy">Política de Privacidad</a>.</p>
+  <h2>13. Suspensión y cierre de cuenta</h2>
+  <ul>
+    <li>Puedes eliminar tu cuenta y tus datos en cualquier momento desde Ajustes &gt; Eliminar cuenta,
+      o escribiendo a <a href="mailto:hola@maday.app">hola@maday.app</a>. Eliminar la cuenta no cancela la suscripción
+      de Apple: cancélala también en Ajustes &gt; Suscripciones.</li>
+    <li>Podemos suspender o cerrar una cuenta que no cumpla estos términos (sección 3), con aviso cuando sea posible. Si
+      no estás de acuerdo, escríbenos y lo revisamos.</li>
+  </ul>
 
-  <h2>12. Cambios al servicio y a estos términos</h2>
+  <h2>14. Disponibilidad y responsabilidad</h2>
+  <p>Trabajamos para que MonAvi funcione siempre, pero puede tener pausas por mantenimiento, fallas de internet, de
+  nuestros proveedores o de la DGI. La verificación de facturas depende del sitio público de la DGI. En la medida que la
+  ley lo permita, MonAvi no responde por daños indirectos ni por pérdidas derivadas de decisiones tomadas con la
+  información de la app. Nada de esto limita los derechos que te da la ley de protección al consumidor.</p>
+
+  <h2>15. Propiedad intelectual</h2>
+  <p>MonAvi, su marca, su diseño y su contenido son propiedad de su operador. Te damos una licencia personal, no
+  exclusiva e intransferible para usar la app en tus dispositivos Apple. Tus datos financieros son tuyos; el uso que
+  hacemos de ellos se explica en la <a href="/privacy">Política de Privacidad</a>.</p>
+
+  <h2>16. Cambios al servicio y a estos términos</h2>
   <p>Podemos actualizar o mejorar MonAvi con el tiempo. Si un cambio afecta de forma importante
   estos términos, actualizaremos la fecha al inicio de esta página y, cuando corresponda, te
-  avisaremos dentro de la app.</p>
+  avisaremos dentro de la app. Si sigues usando la app después del cambio, lo aceptas.</p>
 
-  <h2>13. Cancelación de cuenta</h2>
-  <p>Puedes eliminar tu cuenta y tus datos en cualquier momento desde Ajustes &gt; Eliminar cuenta,
-  o escribiendo a <a href="mailto:hola@maday.app">hola@maday.app</a>.</p>
+  <h2>17. Ley aplicable y reclamos</h2>
+  <p>Estos términos se rigen por las leyes de la República de Panamá. Si tienes un reclamo, escríbenos primero a
+  <a href="mailto:hola@maday.app">hola@maday.app</a>; también puedes acudir a la Autoridad de Protección al Consumidor y
+  Defensa de la Competencia (ACODECO). Ver la <a href="/legal/guia-del-consumidor">Guía del consumidor</a>.</p>
 
-  <h2>Ley aplicable</h2>
-  <p>Estos términos se rigen por las leyes de la República de Panamá.</p>
-
-  <h2>14. Contacto</h2>
+  <h2>18. Contacto</h2>
   <p><a href="mailto:hola@maday.app">hola@maday.app</a></p>
 
   <nav class="legal" aria-label="Documentos legales"><strong>Documentos legales de MonAvi</strong><ul><li><a href="/legal/guia-del-consumidor">Guía del consumidor</a></li><li><a href="/privacy">Política de privacidad</a></li><li><a href="/terms" aria-current="page">Términos y condiciones</a></li><li><a href="/legal/politica-de-compras">Política de compras</a></li><li><a href="/legal/cancelaciones-y-reembolsos">Cancelaciones, devoluciones y reembolsos</a></li><li><a href="/legal/ley-81">Ley 81 de 2019 – Datos personales</a></li><li><a href="/legal/proteccion-de-datos">Protección de datos</a></li><li><a href="/legal">Todos</a></li></ul></nav>

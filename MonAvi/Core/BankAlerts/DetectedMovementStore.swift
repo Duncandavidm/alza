@@ -117,6 +117,15 @@ final class DetectedMovementStore: ObservableObject {
         NotificationCenter.default.post(name: .detectedMovementsChanged, object: nil)
     }
 
+    /// Al cerrar sesion: borra los movimientos por confirmar y lo que se
+    /// recordo de cada tarjeta (pertenecen a la cuenta anterior).
+    func clearAll() {
+        pending = []
+        defaults.removeObject(forKey: Self.storageKey)
+        defaults.removeObject(forKey: Self.cardAccountsKey)
+        NotificationCenter.default.post(name: .detectedMovementsChanged, object: nil)
+    }
+
     // MARK: - Tarjeta → cuenta
 
     /// La cuenta que el usuario eligio la ultima vez para esos 4 digitos.

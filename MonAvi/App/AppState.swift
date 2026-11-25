@@ -1,6 +1,7 @@
 import Foundation
 import Supabase
 import StoreKit
+import WidgetKit
 
 enum OnboardingStatus: Equatable {
     case unknown
@@ -98,6 +99,17 @@ final class AppState: ObservableObject {
         if supabase.auth.currentSession != nil {
             try? await supabase.auth.signOut(scope: .local)
         }
+        clearLocalAccountData()
+    }
+
+    /// Lo que la cuenta deja guardado en este iPhone fuera de la sesion:
+    /// los widgets ("Tu día", presupuestos) y los movimientos detectados
+    /// por confirmar. Se borra al cerrar sesion o eliminar la cuenta.
+    private func clearLocalAccountData() {
+        DayWidgetSnapshot.clear()
+        BudgetWidgetSnapshot.clear()
+        WidgetCenter.shared.reloadAllTimelines()
+        DetectedMovementStore.shared.clearAll()
     }
 
     /// La sesion guardada pertenece a una cuenta que ya no existe (borrada
@@ -106,6 +118,7 @@ final class AppState: ObservableObject {
     /// inicio de sesion.
     private func discardDeadSession() async {
         try? await supabase.auth.signOut(scope: .local)
+        clearLocalAccountData()
         session = nil
         onboardingStatus = .unknown
         mfaStatus = .unknown

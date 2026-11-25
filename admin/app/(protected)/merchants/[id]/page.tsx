@@ -298,7 +298,7 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
               {rewardItems.length === 0 && (
                 <tr>
                   <td colSpan={7} className="text-dim">
-                    Este comercio todavía no tiene productos canjeables.
+                    Este comercio todavía no tiene beneficios (productos, descuentos o bonos).
                   </td>
                 </tr>
               )}
@@ -321,14 +321,14 @@ export default async function MerchantDetailPage({ params }: { params: Promise<{
           </details>
         ))}
 
-        <h3 style={{ marginTop: 20 }}>Nuevo producto canjeable</h3>
+        <h3 style={{ marginTop: 20 }}>Nuevo beneficio: producto, descuento o bono</h3>
         <RewardItemForm
           action={createRewardItem.bind(null, merchant.id)}
           merchantName={merchant.name}
           logoUrl={merchant.logo_url}
           hasMaps={hasMaps}
           currency={currency}
-          submitLabel="Agregar producto"
+          submitLabel="Agregar beneficio"
         />
 
         {rewardItems.length > 0 && (

@@ -155,7 +155,7 @@ export default function RewardItemForm({ action, merchantName, logoUrl, hasMaps,
           </>
         )}
         <div className="field">
-          <label>Qué se canjea</label>
+          <label>Qué recibe el cliente</label>
           <select
             name="reward_type"
             value={rewardType}

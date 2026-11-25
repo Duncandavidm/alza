@@ -16,12 +16,8 @@ struct FinancialHealthView: View {
             } else if let errorMessage {
                 ContentUnavailableView("No se pudo cargar", systemImage: "wifi.exclamationmark", description: Text(errorMessage))
             } else {
-                HStack {
-                    Spacer()
-                    ProgressView("Analizando tus números…")
-                    Spacer()
-                }
-                .padding(.vertical, 40)
+                MonAviCatLoader(message: "Analizando tus números…")
+                    .padding(.vertical, 40)
             }
         }
         .navigationTitle("Tu salud financiera")

@@ -33,34 +33,48 @@ struct ScanInvoiceView: View {
     @State private var draft: ScanDraft?
     @State private var galleryItem: PhotosPickerItem?
 
+    /// La factura llego como archivo (PDF o imagen compartida): no hace
+    /// falta la camara, solo esperar la lectura con el gato.
+    private var isFromFile: Bool { initialPayload != nil }
+
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                cameraSection
-                    .overlay(alignment: .bottom) { photoButton }
-                    .overlay(alignment: .top) { savedBanner }
+            Group {
+                if isFromFile {
+                    fileSection
+                } else {
+                    VStack(spacing: 0) {
+                        cameraSection
+                            .overlay(alignment: .bottom) { photoButton }
+                            .overlay(alignment: .top) { savedBanner }
 
-                if let invalidMessage {
-                    Text(invalidMessage)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
-                        .padding(.horizontal)
-                        .padding(.bottom, 8)
-                }
+                        if let invalidMessage {
+                            Text(invalidMessage)
+                                .font(.footnote)
+                                .foregroundStyle(.red)
+                                .padding(.horizontal)
+                                .padding(.bottom, 8)
+                        }
 
-                if isProcessing {
-                    ProgressView(progressText)
-                        .padding(.bottom, 8)
+                        if isProcessing {
+                            ProgressView(progressText)
+                                .padding(.bottom, 8)
+                        }
+                    }
                 }
             }
-            .navigationTitle("Escanear factura")
+            .navigationTitle(isFromFile ? "Tu factura" : "Escanear factura")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(savedCount > 0 ? "Listo" : "Cancelar") { dismiss() }
                 }
             }
-            .sheet(item: $draft) { scanDraft in
+            .sheet(item: $draft, onDismiss: {
+                // Factura compartida: si cierra la revision sin guardar, no
+                // hay camara detras a la que volver.
+                if isFromFile { dismiss() }
+            }) { scanDraft in
                 ScanReviewView(
                     viewModel: viewModel,
                     accounts: accounts,
@@ -74,6 +88,31 @@ struct ScanInvoiceView: View {
                 handleScan(initialPayload)
             }
         }
+    }
+
+    /// Factura compartida: el gato juega mientras se lee; si falla, el
+    /// motivo y un boton para cerrar.
+    private var fileSection: some View {
+        VStack(spacing: 20) {
+            Spacer()
+            if let invalidMessage, !isProcessing {
+                Image(systemName: "doc.text.magnifyingglass")
+                    .font(.system(size: 48))
+                    .foregroundStyle(MonAviBrand.primary)
+                Text(invalidMessage)
+                    .font(.body)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+                Button("Cerrar") { dismiss() }
+                    .buttonStyle(.borderedProminent)
+                    .tint(MonAviBrand.primary)
+            } else {
+                MonAviCatLoader(message: isProcessing ? progressText : "Abriendo tu factura…")
+            }
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemBackground))
     }
 
     private var cameraSection: some View {
@@ -144,7 +183,7 @@ struct ScanInvoiceView: View {
         Task {
             guard let userId = appState.currentUserId else { return }
             isProcessing = true
-            progressText = "Validando..."
+            progressText = isFromFile ? "Revisando tu factura…" : "Validando..."
             invalidMessage = nil
             defer { isProcessing = false }
 

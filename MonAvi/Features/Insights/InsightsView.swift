@@ -42,6 +42,11 @@ struct InsightsView: View {
                         .disabled(question.trimmingCharacters(in: .whitespaces).isEmpty || viewModel.isAsking)
                     }
 
+                    if viewModel.isAsking {
+                        MonAviCatLoader(message: "Pensando tu respuesta…", size: 170)
+                            .padding(.vertical, 8)
+                    }
+
                     if let answer = viewModel.lastAnswer {
                         VStack(alignment: .leading, spacing: 6) {
                             Text(answer)
@@ -54,7 +59,10 @@ struct InsightsView: View {
                 }
 
                 Section("Análisis") {
-                    if viewModel.insights.isEmpty && !viewModel.isLoading {
+                    if viewModel.isGenerating {
+                        MonAviCatLoader(message: "Analizando tus cuentas y movimientos…", size: 200)
+                            .padding(.vertical, 12)
+                    } else if viewModel.insights.isEmpty && !viewModel.isLoading {
                         Text("Genera un análisis con IA de tus cuentas y movimientos.")
                             .foregroundStyle(.secondary)
                     }

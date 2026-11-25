@@ -47,10 +47,12 @@ struct RecordByVoiceIntent: AppIntent {
 /// Si el comercio coincide con un comercio aliado activo, ademas avisa
 /// (notificacion local, una por comercio por dia) que escanee la factura:
 /// la factura DGI es la prueba del pago con tarjeta para el bono.
+// Apple rechaza (ITMS-90626) titulos y descripciones de intents que digan
+// "Apple" o "iPhone": no usar marcas de Apple aqui.
 struct AddMonAviExpenseIntent: AppIntent {
     static var title: LocalizedStringResource = "Anotar un gasto en MonAvi"
     static var description = IntentDescription(
-        "Detecta un pago (por ejemplo, cuando pagas con Apple Pay) y te pregunta si quieres registrarlo en MonAvi, con la categoría adivinada por el nombre del comercio."
+        "Detecta un pago con tu tarjeta y te pregunta si quieres registrarlo en MonAvi, con la categoría adivinada por el nombre del comercio."
     )
 
     @Parameter(title: "Monto")

@@ -2524,7 +2524,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
   min-height: 40px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.35);
   background: rgba(255, 255, 255, 0.14); color: #fff; font: inherit; font-weight: 700; cursor: pointer;
 }
-.caja-icon-btn { width: 40px; font-size: 18px; }
+.caja-icon-btn { width: 40px; font-size: 18px; display: grid; place-items: center; }
 .caja-close { padding: 0 12px; font-size: 14px; }
 .caja-icon-btn:focus-visible, .caja-close:focus-visible, .caja-tile:focus-visible, .caja-scan-btn:focus-visible {
   outline: 3px solid #5df2c4; outline-offset: 2px;

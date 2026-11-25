@@ -244,16 +244,23 @@ function ShiftHeader({ merchant, onClosed }: { merchant: string; onClosed: () =>
         </button>
         <button
           type="button"
-          className="caja-close"
+          className="caja-icon-btn"
           disabled={isPending}
-          onClick={() =>
+          aria-label="Cerrar turno"
+          title="Cerrar turno"
+          onClick={() => {
+            // Con el turno de 30 dias, un toque sin querer no debe sacar al cajero.
+            if (!window.confirm("¿Cerrar el turno en este equipo? Para volver a entrar se pide el RUC y el PIN.")) return;
             startTransition(async () => {
               await endShift();
               onClosed();
-            })
-          }
+            });
+          }}
         >
-          {isPending ? "Cerrando…" : "Cerrar turno"}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+            <path d="M12 3v8" />
+            <path d="M6.3 7.3a8 8 0 1 0 11.4 0" />
+          </svg>
         </button>
       </div>
     </header>

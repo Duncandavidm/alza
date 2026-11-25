@@ -2859,3 +2859,28 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .shell .card, .shell .tile, .shell .attention-item, .shell .funnel-fill { animation: none; }
 }
+
+/* MonAvi Caja: mantener conectado + ayuda para instalar */
+.caja-remember {
+  display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 14px;
+  background: var(--surface); border: 2px solid var(--border); cursor: pointer; text-align: left;
+}
+.caja-remember input { width: 22px; height: 22px; margin-top: 2px; accent-color: var(--primary); flex: none; }
+.caja-remember span { display: flex; flex-direction: column; gap: 2px; }
+.caja-remember strong { font-size: 15px; }
+.caja-remember small { font-size: 13px; color: var(--text-dim); }
+.caja-install-help {
+  display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: 16px; text-align: left;
+  background: rgba(2, 122, 100, 0.07); border: 1px dashed rgba(2, 122, 100, 0.35); font-size: 14px;
+}
+.caja-install-help strong { font-size: 15px; color: var(--primary); }
+
+/* Tablet en horizontal: la caja usa mas ancho */
+@media (min-width: 900px) and (orientation: landscape) {
+  .caja-main { max-width: 760px; }
+  .caja-home { display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: 18px; }
+  .caja-home > .caja-hero { grid-column: 1 / -1; }
+  .caja-home > .caja-steps, .caja-home > .caja-type, .caja-home > .caja-error { grid-column: 1 / -1; }
+  .caja-confirm { display: grid; grid-template-columns: 1fr 1fr; }
+  .caja-confirm .caja-photo { height: 100%; aspect-ratio: auto; }
+}

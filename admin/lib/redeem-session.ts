@@ -10,6 +10,9 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const REDEEM_SESSION_COOKIE = "monavi_caja";
 export const REDEEM_SESSION_TTL_SECONDS = 60 * 60 * 12;
+/// "Mantener este equipo conectado": la tablet o el celular de la caja
+/// queda con el turno abierto 30 dias (se cierra con "Cerrar turno").
+export const REDEEM_SESSION_REMEMBER_TTL_SECONDS = 60 * 60 * 24 * 30;
 const TOKEN_CONTEXT = "monavi-canjear-turno:v1";
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -26,11 +29,15 @@ function sign(payload: string): Buffer {
   return createHmac("sha256", secret()).update(`${TOKEN_CONTEXT}.${payload}`).digest();
 }
 
-export function createRedeemSessionToken(merchantId: string, branchId?: string | null): string {
+export function createRedeemSessionToken(
+  merchantId: string,
+  branchId?: string | null,
+  ttlSeconds: number = REDEEM_SESSION_TTL_SECONDS
+): string {
   const session: RedeemSession = {
     merchant_id: merchantId,
     branch_id: branchId && UUID_RE.test(branchId) ? branchId : null,
-    exp: Math.floor(Date.now() / 1000) + REDEEM_SESSION_TTL_SECONDS,
+    exp: Math.floor(Date.now() / 1000) + ttlSeconds,
   };
   const payload = Buffer.from(JSON.stringify(session)).toString("base64url");
   return `${payload}.${sign(payload).toString("base64url")}`;
@@ -63,3 +70,7 @@ export const REDEEM_SESSION_COOKIE_OPTIONS = {
   path: "/canjear",
   maxAge: REDEEM_SESSION_TTL_SECONDS,
 };
+
+export function redeemSessionCookieOptions(ttlSeconds: number) {
+  return { ...REDEEM_SESSION_COOKIE_OPTIONS, maxAge: ttlSeconds };
+}

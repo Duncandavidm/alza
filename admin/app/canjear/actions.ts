@@ -9,7 +9,10 @@ import { isDiscountType } from "@/lib/reward-type";
 import {
   REDEEM_SESSION_COOKIE,
   REDEEM_SESSION_COOKIE_OPTIONS,
+  REDEEM_SESSION_REMEMBER_TTL_SECONDS,
+  REDEEM_SESSION_TTL_SECONDS,
   createRedeemSessionToken,
+  redeemSessionCookieOptions,
   readRedeemSessionToken,
 } from "@/lib/redeem-session";
 
@@ -204,7 +207,7 @@ export type StartShiftResult = { ok: true; merchant: string } | { ok: false; err
 
 /// "Iniciar turno": RUC + PIN del comercio (merchant_login). Si es correcto
 /// se abre la cookie firmada de 12 horas.
-export async function startShift(input: { ruc: string; pin: string }): Promise<StartShiftResult> {
+export async function startShift(input: { ruc: string; pin: string; remember?: boolean }): Promise<StartShiftResult> {
   const ruc = String(input?.ruc ?? "").trim().slice(0, 40);
   const pin = String(input?.pin ?? "").trim();
   if (ruc.length < 3) return { ok: false, error: "Escribe el RUC del comercio." };
@@ -226,11 +229,12 @@ export async function startShift(input: { ruc: string; pin: string }): Promise<S
     }
     const merchant =
       typeof result.merchant === "string" ? result.merchant : (result.merchant?.name ?? "");
+    const ttl = input?.remember === true ? REDEEM_SESSION_REMEMBER_TTL_SECONDS : REDEEM_SESSION_TTL_SECONDS;
     const store = await cookies();
     store.set(
       REDEEM_SESSION_COOKIE,
-      createRedeemSessionToken(result.merchant_id, result.branch_id ?? null),
-      REDEEM_SESSION_COOKIE_OPTIONS
+      createRedeemSessionToken(result.merchant_id, result.branch_id ?? null, ttl),
+      redeemSessionCookieOptions(ttl)
     );
     const place = [merchant || "tu comercio", result.branch ?? ""].filter(Boolean).join(" · ");
     return { ok: true, merchant: place };

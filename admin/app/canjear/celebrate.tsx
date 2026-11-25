@@ -136,3 +136,107 @@ export function EmojiBurst({ count = 42 }: { count?: number }) {
     document.body
   );
 }
+
+/// "Bip" corto al leer un QR (antes de verificarlo).
+export function playScanBeep() {
+  if (!soundEnabled()) return;
+  primeAudio();
+  const ctx = audioCtx;
+  if (!ctx) return;
+  try {
+    const t = ctx.currentTime + 0.01;
+    tone(ctx, 1760, t, 0.09, "sine", 0.18);
+  } catch {
+    // sin audio
+  }
+}
+
+/// Dos tonos graves cuando el codigo no sirve (vencido, usado, de otro comercio).
+export function playErrorSound() {
+  if (!soundEnabled()) return;
+  primeAudio();
+  const ctx = audioCtx;
+  if (!ctx) return;
+  try {
+    const t = ctx.currentTime + 0.01;
+    tone(ctx, 330, t, 0.16, "square", 0.07);
+    tone(ctx, 247, t + 0.18, 0.28, "square", 0.07);
+  } catch {
+    // sin audio
+  }
+}
+
+/// Vibracion. Android usa navigator.vibrate; en iPhone (iOS 18+), que no
+/// tiene esa funcion, se usa el toque de un interruptor nativo oculto, que
+/// produce la vibracion del sistema. Si nada funciona, no pasa nada.
+export function haptic(kind: "light" | "success" | "error" = "light") {
+  try {
+    if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+      const pattern = kind === "success" ? [60, 40, 120] : kind === "error" ? [120, 60, 120] : 30;
+      if (navigator.vibrate(pattern)) return;
+    }
+  } catch {
+    // sigue con el plan B
+  }
+  iosHapticTick();
+  if (kind !== "light") setTimeout(iosHapticTick, 140);
+}
+
+function iosHapticTick() {
+  try {
+    const label = document.createElement("label");
+    label.setAttribute("aria-hidden", "true");
+    label.style.cssText = "position:fixed;left:-100px;top:0;opacity:0;pointer-events:none;";
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.setAttribute("switch", "");
+    label.appendChild(input);
+    document.body.appendChild(label);
+    label.click();
+    label.remove();
+  } catch {
+    // sin vibracion
+  }
+}
+
+/// Mantiene la pantalla encendida mientras la caja esta abierta (Screen
+/// Wake Lock). El sistema lo suelta al pasar a segundo plano; se vuelve a
+/// pedir al regresar. Devuelve la funcion para soltarlo.
+export function keepScreenAwake(): () => void {
+  type Sentinel = { release: () => Promise<void> };
+  type WakeLockApi = { request: (type: "screen") => Promise<Sentinel> };
+  const api = (navigator as Navigator & { wakeLock?: WakeLockApi }).wakeLock;
+  if (!api) return () => {};
+  let sentinel: Sentinel | null = null;
+  let active = true;
+  const request = async () => {
+    if (!active || document.visibilityState !== "visible") return;
+    try {
+      sentinel = await api.request("screen");
+    } catch {
+      sentinel = null;
+    }
+  };
+  const onVisible = () => {
+    if (document.visibilityState === "visible") void request();
+  };
+  void request();
+  document.addEventListener("visibilitychange", onVisible);
+  return () => {
+    active = false;
+    document.removeEventListener("visibilitychange", onVisible);
+    void sentinel?.release().catch(() => {});
+  };
+}
+
+/// La caja corre como app instalada (pantalla de inicio).
+export function isInstalledApp(): boolean {
+  try {
+    return (
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (navigator as Navigator & { standalone?: boolean }).standalone === true
+    );
+  } catch {
+    return false;
+  }
+}

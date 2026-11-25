@@ -13,7 +13,12 @@ import Scanner from "./Scanner";
 import {
   EmojiBurst,
   bumpTodayCount,
+  haptic,
+  isInstalledApp,
+  keepScreenAwake,
   playCelebration,
+  playErrorSound,
+  playScanBeep,
   primeAudio,
   setSoundEnabled,
   soundEnabled,
@@ -72,6 +77,12 @@ export default function CajaApp({ initialCode, initialMerchant }: Props) {
     if (initialMerchant) clearUrlCode();
   }, [initialMerchant]);
 
+  // Con el turno abierto la pantalla no se apaga (tablet en el mostrador).
+  useEffect(() => {
+    if (!merchant) return;
+    return keepScreenAwake();
+  }, [merchant]);
+
   const goHome = useCallback((message?: string) => {
     setFlash(message ?? null);
     setScreen({ kind: "home" });
@@ -84,6 +95,10 @@ export default function CajaApp({ initialCode, initialMerchant }: Props) {
   }, []);
 
   const openConfirm = useCallback((code: string, origin: Origin, customer: string | null = null) => {
+    if (origin === "scan") {
+      playScanBeep();
+      haptic("light");
+    }
     setFlash(null);
     setScreen({ kind: "confirm", code, origin, customer });
   }, []);
@@ -139,10 +154,12 @@ export default function CajaApp({ initialCode, initialMerchant }: Props) {
           <HomeScreen
             notice={flash}
             onScan={() => {
+              primeAudio();
               setFlash(null);
               setScreen({ kind: "scan" });
             }}
             onSearch={() => {
+              primeAudio();
               setFlash(null);
               setScreen({ kind: "search" });
             }}
@@ -258,8 +275,12 @@ function LoginScreen({
 }) {
   const [ruc, setRuc] = useState("");
   const [pin, setPin] = useState("");
+  const [remember, setRemember] = useState(true);
+  const [installed, setInstalled] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => setInstalled(isInstalledApp()), []);
 
   const canSubmit = ruc.trim().length >= 3 && pin.length === 6 && !isPending;
 
@@ -286,12 +307,15 @@ function LoginScreen({
         onSubmit={(event) => {
           event.preventDefault();
           if (!canSubmit) return;
+          primeAudio();
           setError(null);
           startTransition(async () => {
-            const result = await startShift({ ruc, pin });
+            const result = await startShift({ ruc, pin, remember });
             if (!result.ok) {
               setError(result.error);
               setPin("");
+              playErrorSound();
+              haptic("error");
               return;
             }
             onLoggedIn(result.merchant);
@@ -328,6 +352,13 @@ function LoginScreen({
             required
           />
         </label>
+        <label className="caja-remember">
+          <input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} />
+          <span>
+            <strong>Mantener este equipo conectado</strong>
+            <small>El turno queda abierto 30 días en esta tablet o celular. Ciérralo con “Cerrar turno”.</small>
+          </span>
+        </label>
         {error && (
           <p className="caja-error" role="alert">
             {error}
@@ -337,6 +368,18 @@ function LoginScreen({
           {isPending ? "Entrando…" : "Entrar"}
         </button>
       </form>
+
+      {!installed && (
+        <div className="caja-install-help">
+          <strong>📲 Instálala como app en este equipo</strong>
+          <span>
+            <b>iPhone o iPad (Safari):</b> toca Compartir <span aria-hidden>⬆︎</span> y luego “Agregar a inicio”.
+          </span>
+          <span>
+            <b>Android (Chrome):</b> toca el menú ⋮ y luego “Instalar app” o “Agregar a la pantalla principal”.
+          </span>
+        </div>
+      )}
 
       {pendingCode.length === 6 && (
         <button type="button" className="caja-link" onClick={onUsePin}>
@@ -634,6 +677,8 @@ function ConfirmScreen({
       if (!active) return;
       if (!result.ok) {
         if (result.sessionExpired) return onExpiredRef.current();
+        playErrorSound();
+        haptic("error");
         setState({ kind: "error", message: result.product ? `${result.error} (${result.product})` : result.error });
         return;
       }
@@ -656,14 +701,12 @@ function ConfirmScreen({
     const result = await redeemCode({ code: data.code, confirm: true, requireSession: true });
     if (!result.ok) {
       if (result.sessionExpired) return onExpiredRef.current();
+      playErrorSound();
+      haptic("error");
       setState({ kind: "error", message: result.product ? `${result.error} (${result.product})` : result.error });
       return;
     }
-    try {
-      navigator.vibrate?.([60, 40, 120]);
-    } catch {
-      // sin vibracion
-    }
+    haptic("success");
     playCelebration();
     bumpTodayCount();
     setState({ kind: "done", data: result });
@@ -811,16 +854,19 @@ function PinFallback({
   }, [done]);
 
   function run(confirm: boolean) {
-    if (confirm) primeAudio();
+    primeAudio();
     setError(null);
     startTransition(async () => {
       const result = await redeemCode({ code, pin, confirm });
       if (!result.ok) {
+        playErrorSound();
+        haptic("error");
         setError(result.product ? `${result.error} (${result.product})` : result.error);
         setVerified(null);
         return;
       }
       if (result.delivered) {
+        haptic("success");
         playCelebration();
         bumpTodayCount();
         setDone(result);

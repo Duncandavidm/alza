@@ -2,7 +2,7 @@
 // Solo hace la app instalable y muestra un aviso si no hay internet: los
 // canjes SIEMPRE se validan en linea (nunca se guardan ni se confirman
 // sin conexion).
-const CACHE = "monavi-caja-v1";
+const CACHE = "monavi-caja-v2";
 const OFFLINE_URL = "/canjear-offline.html";
 
 self.addEventListener("install", (event) => {

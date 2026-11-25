@@ -14,12 +14,18 @@ type DgiReceiptRow = {
   dgi_checked_at: string | null;
 };
 
+// Las facturas de la cuenta de revision de Apple (CUFE "DEMO-...") no se
+// muestran ni se cuentan aqui; siguen en la base para que esa cuenta
+// funcione.
+const DEMO_CUFE = "DEMO-%";
+
 async function countReceipts(status: string): Promise<number> {
   const supabase = supabaseAdmin();
   const { count } = await supabase
     .from("dgi_receipts")
     .select("id", { count: "exact", head: true })
-    .eq("status", status);
+    .eq("status", status)
+    .not("cufe", "like", DEMO_CUFE);
   return count ?? 0;
 }
 
@@ -38,6 +44,7 @@ export default async function DgiVerificationPage() {
     supabase
       .from("dgi_receipts")
       .select("id, cufe, ruc, status, confirmed_amount, payment_method, scanned_at, dgi_checked_at")
+      .not("cufe", "like", DEMO_CUFE)
       .order("scanned_at", { ascending: false })
       .limit(50)
       .returns<DgiReceiptRow[]>(),
@@ -130,6 +137,7 @@ export default async function DgiVerificationPage() {
 
       <div className="card">
         <h3>Últimas facturas escaneadas</h3>
+        <p className="text-dim" style={{ marginTop: -4 }}>No se muestran las facturas de prueba de la cuenta de revisión de Apple (DEMO).</p>
         <table>
           <thead>
             <tr>

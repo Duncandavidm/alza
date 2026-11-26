@@ -138,6 +138,20 @@ struct AccountDetailView: View {
     @State private var isEditingBalance = false
     @State private var balanceText = ""
     @State private var balanceMessage: String?
+    @Environment(\.dismiss) private var dismiss
+
+    // Nombre y eliminar (1.0.8)
+    @State private var shownName: String?
+    @State private var isRenaming = false
+    @State private var renameText = ""
+    @State private var otherAccounts: [Account] = []
+    @State private var movementCount = 0
+    @State private var isShowingDeleteOptions = false
+    @State private var isShowingLastAccountNotice = false
+    @State private var isDeleting = false
+    @State private var actionMessage: String?
+
+    private var name: String { shownName ?? account.name }
 
     var body: some View {
         Form {
@@ -159,6 +173,12 @@ struct AccountDetailView: View {
                 }
                 if let balanceMessage {
                     Text(balanceMessage).font(.footnote).foregroundStyle(.secondary)
+                }
+                Button {
+                    renameText = name
+                    isRenaming = true
+                } label: {
+                    Label("Cambiar nombre", systemImage: "character.cursor.ibeam")
                 }
             } footer: {
                 Text(account.type == .creditCard
@@ -192,8 +212,52 @@ struct AccountDetailView: View {
                     .disabled(account.balance <= 0)
                 }
             }
+
+            Section {
+                Button(role: .destructive) {
+                    if otherAccounts.isEmpty {
+                        isShowingLastAccountNotice = true
+                    } else {
+                        isShowingDeleteOptions = true
+                    }
+                } label: {
+                    Label(isDeleting ? "Eliminando…" : "Eliminar esta cuenta", systemImage: "trash")
+                }
+                .disabled(isDeleting)
+                if let actionMessage {
+                    Text(actionMessage).font(.footnote).foregroundStyle(.secondary)
+                }
+            }
         }
-        .navigationTitle(account.name)
+        .navigationTitle(name)
+        .task { await loadDeleteContext() }
+        .alert("Cambiar nombre", isPresented: $isRenaming) {
+            TextField("Nombre de la cuenta", text: $renameText)
+            Button("Guardar") { Task { await rename() } }
+            Button("Cancelar", role: .cancel) {}
+        } message: {
+            Text("Ponle el nombre que quieras, ej. \"Ahorro viaje\".")
+        }
+        .alert("No se puede eliminar", isPresented: $isShowingLastAccountNotice) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Necesitas al menos una cuenta en MonAvi. Crea otra antes de eliminar esta.")
+        }
+        .confirmationDialog("¿Eliminar \(name)?", isPresented: $isShowingDeleteOptions, titleVisibility: .visible) {
+            if movementCount > 0 {
+                ForEach(otherAccounts.prefix(4)) { other in
+                    Button("Pasar movimientos a \(other.name) y eliminar") {
+                        Task { await delete(moveTo: other.id) }
+                    }
+                }
+            }
+            Button(movementCount > 0 ? "Eliminar con sus movimientos" : "Eliminar", role: .destructive) {
+                Task { await delete(moveTo: nil) }
+            }
+            Button("Cancelar", role: .cancel) {}
+        } message: {
+            Text(deleteMessage)
+        }
         .onAppear {
             if let date = SavingsAvailability.date(from: account.availableOn) {
                 isLocked = true
@@ -202,6 +266,69 @@ struct AccountDetailView: View {
         }
         .sheet(isPresented: $showingTransfer) {
             AccountTransferView(sourceAccountId: account.id) { onChange?() }
+        }
+    }
+
+    private var deleteMessage: String {
+        var parts: [String] = []
+        if movementCount > 0 {
+            parts.append("Tiene \(movementCount) \(movementCount == 1 ? "movimiento" : "movimientos"). Puedes pasarlos a otra cuenta para no perder tu historial (el saldo de esa cuenta no cambia).")
+        }
+        if !account.type.isLiability, account.balance != 0 {
+            parts.append("Su saldo deja de contarse; si ese dinero sigue existiendo, pásalo antes con «Pasar a otra cuenta».")
+        }
+        parts.append("Esto no se puede deshacer.")
+        return parts.joined(separator: " ")
+    }
+
+    private struct DeleteParams: Encodable {
+        let pAccountId: UUID
+        let pMoveTo: UUID?
+        enum CodingKeys: String, CodingKey {
+            case pAccountId = "p_account_id"
+            case pMoveTo = "p_move_to"
+        }
+    }
+
+    private func loadDeleteContext() async {
+        guard let userId = appState.currentUserId else { return }
+        let supabase = SupabaseManager.shared.client
+        if let accounts: [Account] = try? await supabase
+            .from("accounts").select().eq("user_id", value: userId).execute().value {
+            otherAccounts = accounts.filter { $0.id != account.id }
+        }
+        if let response = try? await supabase
+            .from("transactions").select("id", head: true, count: .exact)
+            .eq("account_id", value: account.id).execute() {
+            movementCount = response.count ?? 0
+        }
+    }
+
+    private func rename() async {
+        let trimmed = String(renameText.trimmingCharacters(in: .whitespacesAndNewlines).prefix(80))
+        guard !trimmed.isEmpty, trimmed != name else { return }
+        do {
+            try await SupabaseManager.shared.client
+                .from("accounts").update(["name": trimmed]).eq("id", value: account.id).execute()
+            shownName = trimmed
+            actionMessage = nil
+            onChange?()
+        } catch {
+            actionMessage = "No se pudo cambiar el nombre: \(error.localizedDescription)"
+        }
+    }
+
+    private func delete(moveTo: UUID?) async {
+        isDeleting = true
+        defer { isDeleting = false }
+        do {
+            try await SupabaseManager.shared.client
+                .rpc("delete_finance_account", params: DeleteParams(pAccountId: account.id, pMoveTo: moveTo))
+                .execute()
+            onChange?()
+            dismiss()
+        } catch {
+            actionMessage = "No se pudo eliminar: \(error.localizedDescription)"
         }
     }
 

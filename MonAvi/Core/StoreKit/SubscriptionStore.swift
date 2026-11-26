@@ -232,49 +232,6 @@ final class SubscriptionStore: ObservableObject {
         }
     }
 
-    /// «Pasar a Pro ya» durante la prueba gratis: Apple no deja adelantar
-    /// el cobro del MISMO plan, pero un plan de nivel mas alto en el grupo
-    /// (groupLevel menor) se activa al instante: termina la prueba y se
-    /// cobra hoy. nil si el plan actual ya es el de nivel mas alto.
-    func upgradeProduct(fromProductId currentId: String?) -> Product? {
-        guard let currentId,
-              let current = products.values.first(where: { $0.id == currentId }),
-              let currentLevel = current.subscription?.groupLevel else { return nil }
-        return products.values
-            .filter { ($0.subscription?.groupLevel ?? Int.max) < currentLevel }
-            .min { ($0.subscription?.groupLevel ?? 0) > ($1.subscription?.groupLevel ?? 0) }
-    }
-
-    /// Compra un producto concreto (el de «Pasar a Pro ya»). true si se
-    /// completo y verifico.
-    @discardableResult
-    func purchase(_ product: Product, appAccountToken: UUID) async -> Bool {
-        purchaseError = nil
-        do {
-            let result = try await product.purchase(options: [.appAccountToken(appAccountToken)])
-            switch result {
-            case .success(let verification):
-                guard case .verified(let transaction) = verification else {
-                    purchaseError = "No se pudo verificar la compra."
-                    return false
-                }
-                await onVerifiedTransaction?(transaction)
-                await transaction.finish()
-                return true
-            case .userCancelled:
-                return false
-            case .pending:
-                purchaseError = "La compra quedo pendiente de aprobacion (ej. control parental)."
-                return false
-            @unknown default:
-                return false
-            }
-        } catch {
-            purchaseError = "La compra fallo: \(error.localizedDescription)"
-            return false
-        }
-    }
-
     func restore() async {
         purchaseError = nil
         do {

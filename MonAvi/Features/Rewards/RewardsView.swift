@@ -54,8 +54,6 @@ struct RewardsView: View {
     @State private var isChoosingBranch = false
     /// Codigo recien generado: se abre con la celebracion de billetes.
     @State private var celebrateRedemptionId: UUID?
-    /// «Pasar a Pro ya» al tocar algo bloqueado por la prueba gratis.
-    @State private var isShowingUnlock = false
 
     var body: some View {
         ScrollView {
@@ -77,7 +75,7 @@ struct RewardsView: View {
                     categoryChips
                 }
                 content
-                    .trialLocked(appState.isInFreeTrial) { isShowingUnlock = true }
+                    .trialLocked(appState.isInFreeTrial)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
@@ -95,10 +93,6 @@ struct RewardsView: View {
         .refreshable { await refresh() }
         .task { await refresh() }
         .overlay { redeemingOverlay }
-        .sheet(isPresented: $isShowingUnlock) {
-            UpgradeNowSheet(store: appState.subscriptionStore)
-                .presentationDetents([.medium, .large])
-        }
         .confirmationDialog(
             confirmationTitle,
             isPresented: $isConfirming,

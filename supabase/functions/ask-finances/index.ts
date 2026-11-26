@@ -294,12 +294,15 @@ function compactTransactions(rows: Record<string, unknown>[]): string {
 /// Método MonAvi: las enseñanzas activas del panel (finance_teachings con
 /// use_in_ai) que la IA aplica a los números de la persona. Las escribe el
 /// equipo de MonAvi desde el panel. Si falla la lectura, sigue sin ellas.
-async function methodPrompt(supabase: ReturnType<typeof createClient>): Promise<string> {
+async function methodPrompt(supabase: ReturnType<typeof createClient>, country: string): Promise<string> {
+  // Generales (country null) + las del pais de la cuenta (PA o CO).
+  const code = country === "CO" ? "CO" : "PA";
   const { data, error } = await supabase
     .from("finance_teachings")
     .select("step, title, body, ai_note")
     .eq("active", true)
     .eq("use_in_ai", true)
+    .or(`country.is.null,country.eq.${code}`)
     .order("step", { ascending: true, nullsFirst: false })
     .order("sort", { ascending: true })
     .limit(80);
@@ -325,6 +328,9 @@ sus numeros que falta primero (ej. "primero termina de pagar la tarjeta: te \
 cobra 24% al ano y ninguna inversion segura te paga eso"). Nunca recomiendes un \
 producto, accion, fondo o entidad especifica ni prometas rentabilidad: es \
 educacion financiera, no asesoria de inversion.
+${code === "CO"
+    ? "La persona vive en Colombia: habla en pesos colombianos (sin centavos, ej. $50.000), menciona la prima en vez del decimo tercer mes y CDT en vez de plazo fijo."
+    : "La persona vive en Panama: habla en dolares (USD) y usa referencias locales como la quincena y el decimo tercer mes."}
 ${lines.length > 0 ? `\nEnsenanzas del metodo (aplicalas cuando vengan al caso, con los numeros del usuario):\n${lines.join("\n")}` : ""}`;
 }
 
@@ -343,7 +349,7 @@ async function askClaude(
   today: string,
   byVoice: boolean,
 ): Promise<string> {
-  const method = await methodPrompt(supabase);
+  const method = await methodPrompt(supabase, String((profile as { country?: string } | null)?.country ?? "PA"));
   const prompt = `Eres el asesor financiero personal de la app MonAvi. El \
 usuario te esta preguntando algo sobre sus finanzas. Respondele en espanol,\
  en lenguaje sencillo (nada de jerga contable), con los numeros exactos que \

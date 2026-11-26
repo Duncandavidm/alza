@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 
 type Teaching = {
   id: string;
+  country: "PA" | "CO" | null;
   step: number | null;
   title: string;
   body: string;
@@ -36,6 +37,14 @@ function TeachingFields({ t }: { t?: Teaching }) {
           {Object.entries(STEPS).map(([value, label]) => (
             <option key={value} value={value}>{label}</option>
           ))}
+        </select>
+      </div>
+      <div className="field">
+        <label>País</label>
+        <select name="country" defaultValue={t?.country ?? ""}>
+          <option value="">Todos (Panamá y Colombia)</option>
+          <option value="PA">Solo Panamá 🇵🇦</option>
+          <option value="CO">Solo Colombia 🇨🇴</option>
         </select>
       </div>
       <div className="field">
@@ -73,7 +82,7 @@ function TeachingFields({ t }: { t?: Teaching }) {
 export default async function EnsenanzasPage() {
   const { data } = await supabaseAdmin()
     .from("finance_teachings")
-    .select("id, step, title, body, ai_note, source, show_in_app, use_in_ai, active, sort")
+    .select("id, country, step, title, body, ai_note, source, show_in_app, use_in_ai, active, sort")
     .order("step", { ascending: true, nullsFirst: false })
     .order("sort", { ascending: true })
     .returns<Teaching[]>();
@@ -89,7 +98,7 @@ export default async function EnsenanzasPage() {
       <p className="text-dim">
         Estas enseñanzas son la base de la asesoría de MonAvi. Las que marcas como lección aparecen en la app, en “Tu plan
         en 7 pasos”. Las que marcas para la IA se aplican en el análisis y en las respuestas, usando los números de cada
-        persona. Si lees algo valioso en un libro, escríbelo con tus propias palabras y agrégalo aquí: la app lo empieza a
+        persona, y cada persona solo recibe las generales y las de su país (Panamá o Colombia). Si lees algo valioso en un libro, escríbelo con tus propias palabras y agrégalo aquí: la app lo empieza a
         usar de inmediato, sin publicar una versión nueva.
       </p>
 
@@ -110,6 +119,8 @@ export default async function EnsenanzasPage() {
             <details key={t.id} style={{ borderTop: "1px solid var(--border)", padding: "10px 0" }}>
               <summary style={{ cursor: "pointer" }}>
                 <strong>{t.title}</strong>{" "}
+                {t.country === "PA" && <span className="badge">🇵🇦 Panamá</span>}{" "}
+                {t.country === "CO" && <span className="badge">🇨🇴 Colombia</span>}{" "}
                 {!t.active && <span className="badge paused">apagada</span>}{" "}
                 {t.active && t.show_in_app && <span className="badge active">app</span>}{" "}
                 {t.active && t.use_in_ai && <span className="badge active">IA</span>}

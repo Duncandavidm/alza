@@ -13,7 +13,7 @@ final class FinancialPlanTests: XCTestCase {
         snapshot.realSpending = realSpending
         snapshot.realMonths = realSpending == nil ? 0 : 3
         return FinancialPlan(.init(snapshot: snapshot, accountsCount: accounts, recentTransactions: transactions,
-                                   trackedDays30: days, budgetsCount: budgets))
+                                   trackedDays30: days, budgetsCount: budgets), country: .panama)
     }
 
     func testNewUserStartsAtStepOne() {
@@ -59,6 +59,20 @@ final class FinancialPlanTests: XCTestCase {
     func testOverspendingBlocks() {
         let p = plan(cash: 9000, realSpending: 1800, realIncome: 1500)
         XCTAssertTrue(p.readiness.blockers.contains { $0.contains("gastas") })
+    }
+
+    func testColombiaUsesHigherExpensiveThreshold() {
+        var snapshot = FinancialSnapshot(monthlyIncome: 3_000_000, fixedExpenses: 1_200_000,
+                                         debts: [.init(name: "Crédito", balance: 2_000_000, monthlyRate: Decimal(string: "1.7"))],
+                                         cash: 0, savings: 0)
+        snapshot.realSpending = 2_000_000
+        snapshot.realIncome = 3_000_000
+        snapshot.realMonths = 3
+        let inputs = FinancialPlan.Inputs(snapshot: snapshot, accountsCount: 1, recentTransactions: 40, trackedDays30: 22, budgetsCount: 3)
+        XCTAssertTrue(FinancialPlan(inputs, country: .colombia).expensiveDebts.isEmpty)
+        XCTAssertEqual(FinancialPlan(inputs, country: .panama).expensiveDebts.count, 1)
+        // Colombia redondea lo que hay que apartar a montos en pesos.
+        XCTAssertTrue(FinancialPlan(inputs, country: .colombia).steps[3].mission.contains("000"))
     }
 
     func testTrackedDaysCountsDistinctDays() {

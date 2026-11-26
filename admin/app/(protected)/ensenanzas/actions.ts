@@ -17,10 +17,13 @@ function fields(formData: FormData) {
   const body = text(formData, "body", 1500);
   const aiNote = text(formData, "ai_note", 800);
   const source = text(formData, "source", 200);
+  const countryRaw = String(formData.get("country") ?? "");
+  const country = countryRaw === "PA" || countryRaw === "CO" ? countryRaw : null;
   const sort = Math.max(0, Math.min(10000, Math.round(Number(formData.get("sort") ?? 100)) || 100));
   if (title.length < 3) throw new Error("El título debe tener al menos 3 caracteres.");
   if (body.length < 10) throw new Error("La enseñanza debe tener al menos 10 caracteres.");
   return {
+    country,
     step,
     title,
     body,

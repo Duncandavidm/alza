@@ -55,8 +55,11 @@ struct FinancialPlan {
 
     // MARK: - Reglas
 
-    /// Tasa mensual desde la que una deuda se considera cara (≈18% al año).
-    static let expensiveMonthlyRate: Decimal = Decimal(string: "1.5")!
+    /// Tasa mensual desde la que una deuda se considera cara: ≈18% al año
+    /// en Panamá y ≈24% en Colombia (allá las tasas de consumo son más altas).
+    static func expensiveMonthlyRate(for country: AppCountry) -> Decimal {
+        country == .colombia ? 2 : Decimal(string: "1.5")!
+    }
     static let trackedDaysGoal = 20
     static let budgetsGoal = 3
     static let transactionsGoal = 30
@@ -64,10 +67,16 @@ struct FinancialPlan {
     static let investReadyMonths: Decimal = 3
 
     let inputs: Inputs
+    let country: AppCountry
 
-    init(_ inputs: Inputs) {
+    init(_ inputs: Inputs, country: AppCountry = AppCountry.current) {
         self.inputs = inputs
+        self.country = country
     }
+
+    /// Ingreso extra de fin de año para el colchón: el décimo tercer mes en
+    /// Panamá, la prima en Colombia.
+    private var bonusName: String { country == .colombia ? "la prima" : "el décimo tercer mes" }
 
     private var snapshot: FinancialSnapshot { inputs.snapshot }
 
@@ -93,7 +102,7 @@ struct FinancialPlan {
     /// Deudas caras, de la tasa más alta a la más baja (método avalancha).
     var expensiveDebts: [FinancialSnapshot.DebtInput] {
         snapshot.debts
-            .filter { $0.balance > 0 && ($0.monthlyRate ?? 0) >= Self.expensiveMonthlyRate }
+            .filter { $0.balance > 0 && ($0.monthlyRate ?? 0) >= Self.expensiveMonthlyRate(for: country) }
             .sorted { ($0.monthlyRate ?? 0) > ($1.monthlyRate ?? 0) }
     }
 
@@ -175,11 +184,14 @@ struct FinancialPlan {
         )
     }
 
-    /// Cuánto apartar por quincena para llegar a `target` en ~3 meses.
+    /// Cuánto apartar por quincena para llegar a `target` en ~3 meses,
+    /// redondeado a montos fáciles: de $5 en $5 (mínimo $10) en Panamá y de
+    /// $5.000 en $5.000 (mínimo $20.000) en Colombia.
     private func perQuincena(toReach target: Decimal) -> Decimal {
         let missing = max(0, target - saved)
         let raw = NSDecimalNumber(decimal: missing / 6).doubleValue
-        let rounded = max(10, (raw / 5).rounded(.up) * 5)
+        let (step, minimum): (Double, Double) = country == .colombia ? (5000, 20000) : (5, 10)
+        let rounded = max(minimum, (raw / step).rounded(.up) * step)
         return Decimal(rounded)
     }
 
@@ -245,7 +257,7 @@ struct FinancialPlan {
                 goal: "Tener \(months) meses de gastos guardados.",
                 status: .upcoming, progress: 0,
                 detail: "Anota un mes de gastos para calcular tu meta.",
-                mission: "Usa el décimo tercer mes y los bonos para tu fondo."
+                mission: "Usa \(bonusName) y los bonos para tu fondo."
             )
         }
         let target = need * months
@@ -260,7 +272,7 @@ struct FinancialPlan {
             detail: "Tienes \(money(saved)) de \(money(target)).",
             mission: done
                 ? "Tu colchón está completo: protégelo y no lo uses para gustos."
-                : "Aparta \(money(perQuincena(toReach: target))) cada quincena y usa al menos la mitad del décimo tercer mes y de los bonos."
+                : "Aparta \(money(perQuincena(toReach: target))) cada quincena y usa al menos la mitad de \(bonusName) y de los bonos."
         )
     }
 

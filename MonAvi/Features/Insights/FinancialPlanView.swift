@@ -250,9 +250,11 @@ enum FinancialPlanLoader {
     }
 
     static func teachings() async throws -> [FinanceTeaching] {
+        // Las generales (country nil) y las del país de la cuenta.
         try await SupabaseManager.shared.client
             .from("finance_teachings")
             .select("id, step, title, body")
+            .or("country.is.null,country.eq.\(AppCountry.current.rawValue)")
             .order("step", ascending: true)
             .order("sort", ascending: true)
             .execute()

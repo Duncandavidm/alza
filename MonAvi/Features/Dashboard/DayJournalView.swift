@@ -69,6 +69,12 @@ struct DayJournalView: View {
     /// "Sí, otro monto" en un gasto que se repite.
     @State private var otherAmountSuggestion: RecurringDetector.Suggestion?
     @State private var suggestionAmountText = ""
+    /// El guardián: movimientos de los ultimos meses para comparar.
+    @State private var guardTransactions: [FinanceTransaction] = []
+    /// «Anotar el ingreso» desde una alerta del guardián.
+    @State private var incomeRequest: IncomeRequest?
+    @State private var isShowingSpending = false
+    @State private var isShowingBills = false
 
     var body: some View {
         NavigationStack {
@@ -89,6 +95,10 @@ struct DayJournalView: View {
 
                         if let alert = healthAlert, viewModel.isViewingToday && !isSearching {
                             debtAlertBanner(alert)
+                        }
+
+                        if viewModel.isViewingToday && !isSearching {
+                            moneyGuardRows
                         }
 
                         if !viewModel.accounts.isEmpty && !isSearching {
@@ -343,6 +353,14 @@ struct DayJournalView: View {
             }) {
                 AddBudgetView(viewModel: budgetsViewModel)
             }
+            .sheet(item: $incomeRequest, onDismiss: { Task { await refreshGuard() } }) { request in
+                QuickAddView(viewModel: viewModel, initialMovementType: .ingreso, initialAccountId: request.accountId)
+            }
+            .onChange(of: isQuickAdding) { _, isPresented in
+                if !isPresented { Task { await refreshGuard() } }
+            }
+            .navigationDestination(isPresented: $isShowingSpending) { SpendingInsightsView() }
+            .navigationDestination(isPresented: $isShowingBills) { BillsView() }
             .sheet(item: $editingTransaction) { transaction in
                 QuickAddView(viewModel: viewModel, existingTransaction: transaction)
             }
@@ -865,6 +883,90 @@ struct DayJournalView: View {
         await refresh()
     }
 
+    // MARK: - El guardián de tu dinero
+
+    private var moneyGuard: MoneyGuard {
+        MoneyGuard(
+            accounts: viewModel.accounts,
+            transactions: guardTransactions,
+            budgets: budgetsViewModel.progresses,
+            pendingBills: billsViewModel.pending
+        )
+    }
+
+    /// Alertas de peligro (cuenta en negativo, gastar más de lo que entra,
+    /// categorías disparadas, pagos que no alcanzan). Máximo 3 a la vez;
+    /// la X las oculta solo por ahora.
+    @ViewBuilder
+    private var moneyGuardRows: some View {
+        let warnings = moneyGuard.warnings.filter { !hiddenForNow.contains("g-\($0.id)") }.prefix(3)
+        ForEach(Array(warnings)) { warning in
+            moneyGuardRow(warning)
+                .overlay(alignment: .topTrailing) { hideForNowButton("g-\(warning.id)") }
+        }
+    }
+
+    private func moneyGuardRow(_ warning: MoneyGuard.Warning) -> some View {
+        let tint = guardTint(warning.severity)
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 10) {
+                Text(warning.emoji)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(warning.title)
+                        .font(.subheadline.weight(.semibold))
+                    Text(warning.message)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 24)
+            }
+            if let action = warning.action, let title = warning.actionTitle {
+                Button(title) { perform(action) }
+                    .buttonStyle(.borderedProminent)
+                    .tint(tint)
+                    .font(.footnote.weight(.semibold))
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 14).fill(tint.opacity(warning.severity == .danger ? 0.1 : 0.12)))
+    }
+
+    private func guardTint(_ severity: MoneyGuard.Warning.Severity) -> Color {
+        switch severity {
+        case .danger: return .red
+        case .caution: return .orange
+        case .info: return MonAviBrand.primary
+        }
+    }
+
+    private func perform(_ action: MoneyGuard.Warning.Action) {
+        switch action {
+        case .recordIncome(let accountId):
+            incomeRequest = IncomeRequest(accountId: accountId)
+        case .openBudget(let budgetId):
+            selectedBudgetProgress = budgetsViewModel.progresses.first { $0.budget.id == budgetId }
+        case .openSpending:
+            isShowingSpending = true
+        case .openBills:
+            isShowingBills = true
+        }
+    }
+
+    /// Movimientos desde 3 meses antes del inicio de este mes (para
+    /// comparar con el promedio) y el aviso de cuenta en negativo.
+    private func refreshGuard() async {
+        guard let userId = appState.currentUserId else { return }
+        let calendar = Calendar.current
+        if let monthStart = calendar.dateInterval(of: .month, for: Date())?.start,
+           let since = calendar.date(byAdding: .month, value: -3, to: monthStart),
+           let items = try? await TransactionsRepository.shared.fetchSince(userId: userId, date: since, limit: 3000) {
+            guardTransactions = items
+        }
+        NotificationManager.scheduleNegativeBalanceReminder(moneyGuard.negativeAccounts)
+    }
+
     private func refreshHealthAlert() async {
         guard let userId = appState.currentUserId,
               let result = try? await FinancialHealthLoader.load(userId: userId) else { return }
@@ -1197,6 +1299,7 @@ struct DayJournalView: View {
         )
         // Widget "Tu día": gastado hoy y en el mes, y ultimos movimientos.
         await DayWidgetUpdater.refresh(userId: userId)
+        await refreshGuard()
     }
 
     /// Abre la revision del movimiento detectado que se toco en la
@@ -1444,4 +1547,10 @@ private struct AccountBalanceChip: View {
         .padding(12)
         .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemBackground)))
     }
+}
+
+/// «Anotar el ingreso» desde el guardián: en qué cuenta.
+private struct IncomeRequest: Identifiable {
+    let id = UUID()
+    let accountId: UUID?
 }

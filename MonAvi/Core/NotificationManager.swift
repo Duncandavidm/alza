@@ -316,6 +316,27 @@ enum NotificationManager {
         UserDefaults.standard.set(ids, forKey: savingsIdsKey)
     }
 
+    // MARK: - El guardián: cuenta en negativo
+
+    static let negativeBalanceId = "guard-negative-balance"
+
+    /// Si una cuenta (banco, efectivo, ahorros) quedó en negativo, al día
+    /// siguiente a las 9 se recuerda: no se puede gastar dinero que no hay.
+    /// Se reprograma cada vez que se abre Hoy; si ya se corrigió, se borra.
+    static func scheduleNegativeBalanceReminder(_ negativeAccounts: [Account], now: Date = Date()) {
+        removePending(ids: [negativeBalanceId])
+        guard let account = negativeAccounts.min(by: { $0.balance < $1.balance }),
+              let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: now))
+        else { return }
+        let others = negativeAccounts.count - 1
+        schedule(
+            id: negativeBalanceId,
+            title: "«\(account.name)» sigue en negativo",
+            body: "Está en -\(formattedAmount(abs(account.balance)))\(others > 0 ? " y hay \(others) cuenta\(others == 1 ? "" : "s") más en negativo" : ""). No se puede gastar dinero que no hay: ¿te falta anotar un ingreso o el gasto salió de otra cuenta? Toca para revisarlo.",
+            date: atReminderHour(tomorrow)
+        )
+    }
+
     static func removeSavingsAvailability(accountId: UUID) {
         removePending(ids: [savingsId(accountId)])
     }

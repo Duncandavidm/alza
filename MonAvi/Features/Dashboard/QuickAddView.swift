@@ -20,6 +20,10 @@ struct QuickAddView: View {
     /// escanear su factura para ganar cashback. Hoy recibe el gasto y abre
     /// la camara cuando esta hoja termina de cerrarse.
     var onScanInvoice: ((FinanceTransaction) -> Void)? = nil
+    /// «Anotar el ingreso» desde el guardián de Hoy: abre ya como ingreso
+    /// y en la cuenta que quedó en negativo.
+    var initialMovementType: MovementType? = nil
+    var initialAccountId: UUID? = nil
     @AppStorage("monavi.askInvoiceAfterExpense") private var askInvoiceAfterExpense = true
     @State private var expenseAwaitingInvoice: FinanceTransaction?
     @StateObject private var voiceRecognizer = VoiceTransactionRecognizer()
@@ -61,6 +65,13 @@ struct QuickAddView: View {
     @State private var showingAdvice = false
     @State private var adviceText = ""
     @State private var adviceItems: [PaymentAdviceItem] = []
+    /// El gasto dejaria la cuenta en negativo: se pregunta de donde sale el
+    /// dinero antes de guardar.
+    @State private var showingNoMoneyDialog = false
+    /// Eligio «Guardar igual» para este monto y esta cuenta.
+    @State private var negativeConfirmed = false
+    /// «Primero anoto el ingreso»: recordatorio de anotar luego el gasto.
+    @State private var guardNote: String?
 
     private var enteredMagnitude: Decimal {
         AppCountry.parseAmount(amountText) ?? 0
@@ -96,6 +107,7 @@ struct QuickAddView: View {
                         accountChip
                     }
                     creditHint
+                    balanceHint
                     budgetHint
 
                     if viewModel.defaultAccountId == nil {
@@ -157,7 +169,28 @@ struct QuickAddView: View {
                     loadExistingTransaction(existingTransaction)
                 } else if autoStartVoice {
                     Task { await startVoice() }
+                } else {
+                    if let initialMovementType { movementType = initialMovementType }
+                    if let initialAccountId { selectedAccountId = initialAccountId }
                 }
+            }
+            .onChange(of: amountText) { _, _ in negativeConfirmed = false }
+            .onChange(of: selectedAccountId) { _, _ in negativeConfirmed = false }
+            .confirmationDialog("Esta cuenta no tiene ese dinero", isPresented: $showingNoMoneyDialog, titleVisibility: .visible) {
+                ForEach(alternativeAccounts.prefix(3)) { other in
+                    Button("Lo pagué con \(other.name)") {
+                        selectedAccountId = other.id
+                        Task { await save() }
+                    }
+                }
+                Button("Primero anoto el ingreso") { startIncomeFirst() }
+                Button("Guardar igual", role: .destructive) {
+                    negativeConfirmed = true
+                    Task { await save() }
+                }
+                Button("Cancelar", role: .cancel) {}
+            } message: {
+                Text(noMoneyMessage)
             }
             .onDisappear {
                 cancelVoice()
@@ -288,6 +321,68 @@ struct QuickAddView: View {
     }
 
     private var accountId: UUID? { selectedAccountId ?? viewModel.defaultAccountId }
+
+    private var selectedAccount: Account? { viewModel.accounts.first { $0.id == accountId } }
+
+    /// Saldo con el que quedaria la cuenta (banco, efectivo, ahorros) con
+    /// este gasto. nil si no aplica: ingresos, ediciones, tarjetas y
+    /// prestamos (en esas el saldo es lo que se debe).
+    private var balanceAfterSave: Decimal? {
+        guard existingTransaction == nil, !movementType.isInflow, enteredMagnitude > 0,
+              let account = selectedAccount, !account.type.isLiability else { return nil }
+        return account.balance - enteredMagnitude
+    }
+
+    /// Otras cuentas que si alcanzan para este gasto (o tarjetas con cupo).
+    private var alternativeAccounts: [Account] {
+        viewModel.accounts.filter { other in
+            guard other.id != accountId, other.type != .loan else { return false }
+            if other.type == .creditCard {
+                return (viewModel.availableCredit(for: other) ?? 0) >= enteredMagnitude
+            }
+            return other.balance >= enteredMagnitude
+        }
+    }
+
+    private var noMoneyMessage: String {
+        guard let account = selectedAccount, let after = balanceAfterSave else { return "" }
+        let code = account.currency
+        return "«\(account.name)» tiene \(account.balance.formatted(.currency(code: code))) y este gasto es de \(enteredMagnitude.formatted(.currency(code: code))): quedaría en -\(abs(after).formatted(.currency(code: code))). No se puede gastar dinero que no hay. ¿De dónde salió?"
+    }
+
+    /// Cambia a ingreso para anotar primero de donde vino el dinero.
+    private func startIncomeFirst() {
+        movementType = .ingreso
+        amountText = ""
+        description = ""
+        category = nil
+        userPickedCategory = false
+        guardNote = "Anota primero de dónde vino el dinero (sueldo, venta, préstamo…). Después anota el gasto."
+    }
+
+    /// Aviso en vivo: la cuenta quedaria en negativo o casi vacia.
+    @ViewBuilder
+    private var balanceHint: some View {
+        if let after = balanceAfterSave, let account = selectedAccount {
+            if after < 0 {
+                Label("«\(account.name)» quedaría en -\(abs(after).formatted(.currency(code: account.currency))). ¿De dónde sale este dinero?", systemImage: "exclamationmark.triangle.fill")
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(MonAviBrand.alert)
+                    .multilineTextAlignment(.center)
+            } else if account.balance > 0, after < account.balance * Decimal(string: "0.1")! {
+                Text("Te quedarían solo \(after.formatted(.currency(code: account.currency))) en «\(account.name)».")
+                    .font(.footnote)
+                    .foregroundStyle(.orange)
+                    .multilineTextAlignment(.center)
+            }
+        }
+        if let guardNote, movementType.isInflow {
+            Text(guardNote)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+    }
 
     private func accountMenuTitle(_ account: Account) -> String {
         let money = account.displayAmount.formatted(.currency(code: account.currency))
@@ -688,6 +783,13 @@ struct QuickAddView: View {
             let userId = appState.currentUserId,
             let accountId = accountId
         else { return }
+
+        // El guardián: no se gasta dinero que no hay sin decir de donde sale.
+        if let after = balanceAfterSave, after < 0, !negativeConfirmed {
+            UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            showingNoMoneyDialog = true
+            return
+        }
 
         isSaving = true
         // Que el teclado no tape el recibo / carrito de la animacion.

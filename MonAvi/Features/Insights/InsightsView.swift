@@ -11,6 +11,11 @@ struct InsightsView: View {
             List {
                 Section {
                     NavigationLink {
+                        FinancialPlanView()
+                    } label: {
+                        Label("Tu plan en 7 pasos", systemImage: "map.fill")
+                    }
+                    NavigationLink {
                         FinancialHealthView()
                     } label: {
                         Label("Tu salud financiera", systemImage: "heart.text.square.fill")

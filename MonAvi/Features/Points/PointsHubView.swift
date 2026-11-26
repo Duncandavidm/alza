@@ -31,6 +31,7 @@ struct PointsHubView: View {
     /// Cupones, regalos y canjes listos para usar: "Mis cupones y canjes"
     /// solo se activa cuando hay alguno, con el numero como un aviso.
     @State private var activeCodesCount = 0
+    @State private var isShowingUnlock = false
 
     var body: some View {
         List {
@@ -38,6 +39,15 @@ struct PointsHubView: View {
                 RewardBalancesHeader(balance: viewModel.balance)
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
+            }
+
+            // Prueba gratis: se ven, pero se desbloquean con el plan pagado.
+            if appState.isInFreeTrial {
+                Section {
+                    TrialLockedBanner()
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                }
             }
 
             // Una sola entrada para canjear: "Dónde canjear" abre los
@@ -91,6 +101,7 @@ struct PointsHubView: View {
                 Section {
                     ForEach(brandCampaigns) { campaign in
                         BrandCampaignCard(campaign: campaign)
+                            .trialLocked(appState.isInFreeTrial) { isShowingUnlock = true }
                     }
                 } header: {
                     Text("Ofertas de marcas")
@@ -116,6 +127,10 @@ struct PointsHubView: View {
             }
         }
         .navigationTitle("Cashback y cupones")
+        .sheet(isPresented: $isShowingUnlock) {
+            UpgradeNowSheet(store: appState.subscriptionStore)
+                .presentationDetents([.medium, .large])
+        }
         .refreshable { await refresh() }
         .task { await refresh() }
         .task { await promptMarketStudyConsentIfNeeded() }

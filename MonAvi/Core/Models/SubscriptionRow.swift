@@ -28,11 +28,22 @@ struct EntitlementRow: Decodable, Hashable {
     let status: String
     let productId: String?
     let expiresAt: Date?
+    /// En prueba gratis (0097): descuentos, bonos y canjes bloqueados.
+    var isTrial: Bool = false
 
     enum CodingKeys: String, CodingKey {
         case status
         case productId = "product_id"
         case expiresAt = "expires_at"
+        case isTrial = "is_trial"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        status = try container.decode(String.self, forKey: .status)
+        productId = try container.decodeIfPresent(String.self, forKey: .productId)
+        expiresAt = try container.decodeIfPresent(Date.self, forKey: .expiresAt)
+        isTrial = try container.decodeIfPresent(Bool.self, forKey: .isTrial) ?? false
     }
 }
 

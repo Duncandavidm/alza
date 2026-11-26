@@ -34,6 +34,9 @@ final class AppState: ObservableObject {
     /// product_id de la suscripcion que da el acceso actual (mensual o
     /// anual). nil si no hay ninguna.
     @Published private(set) var entitlementProductId: String?
+    /// Suscripcion en prueba gratis: los descuentos, bonos y canjes se ven
+    /// en gris y se desbloquean al empezar el plan pagado (0096/0097).
+    @Published private(set) var isInFreeTrial = false
     @Published private(set) var onboardingStatus: OnboardingStatus = .unknown
     @Published private(set) var mfaStatus: MFAChallengeStatus = .unknown
     /// true mientras PasswordResetSheet esta abierta: verifyOTP(.recovery)
@@ -142,6 +145,7 @@ final class AppState: ObservableObject {
         mfaStatus = .unknown
         subscriptionStatus = .none
         entitlementProductId = nil
+        isInFreeTrial = false
     }
 
     /// "Reintentar" de la pantalla de error de arranque.
@@ -175,6 +179,7 @@ final class AppState: ObservableObject {
         guard session?.user.id != nil else {
             subscriptionStatus = .none
             entitlementProductId = nil
+            isInFreeTrial = false
             return
         }
         isCheckingSubscription = true
@@ -187,9 +192,11 @@ final class AppState: ObservableObject {
             if let row = rows.first {
                 subscriptionStatus = SubscriptionStatus(status: row.status, expiresAt: row.expiresAt)
                 entitlementProductId = row.productId
+                isInFreeTrial = row.isTrial && subscriptionStatus.isEntitled
             } else {
                 subscriptionStatus = .none
                 entitlementProductId = nil
+                isInFreeTrial = false
             }
         } catch {
             subscriptionStatus = .unknown

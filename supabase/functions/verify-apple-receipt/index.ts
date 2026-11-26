@@ -140,6 +140,7 @@ Deno.serve(async (req) => {
       apple_transaction_id: decoded.transactionId,
       apple_original_transaction_id: decoded.originalTransactionId,
       expires_at: expiresAt,
+      is_trial: isFreeTrial(decoded),
     });
     if (error) throw error;
 
@@ -149,6 +150,14 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: String(error) }, 500);
   }
 });
+
+/** Prueba gratis: la transaccion vigente es la oferta introductoria
+ * (offerType 1) gratuita (offerDiscountType FREE_TRIAL o precio 0). Durante
+ * la prueba no se pueden canjear descuentos ni bonos (migracion 0096). */
+function isFreeTrial(transaction: unknown): boolean {
+  const t = (transaction ?? {}) as Record<string, unknown>;
+  return Number(t.offerType) === 1 && (t.offerDiscountType === "FREE_TRIAL" || Number(t.price) === 0);
+}
 
 /** Estados del App Store Server API (campo "status" en lastTransactions):
  * 1 activa, 2 expirada, 3 en reintento de cobro (sin gracia configurada o

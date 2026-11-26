@@ -29,6 +29,14 @@ function ok(body: unknown = { ok: true }): Response {
   return new Response(JSON.stringify(body), { headers: { "Content-Type": "application/json" } });
 }
 
+/** Prueba gratis: la transaccion vigente es la oferta introductoria
+ * (offerType 1) gratuita (offerDiscountType FREE_TRIAL o precio 0). Durante
+ * la prueba no se pueden canjear descuentos ni bonos (migracion 0096). */
+function isFreeTrial(transaction: unknown): boolean {
+  const t = (transaction ?? {}) as Record<string, unknown>;
+  return Number(t.offerType) === 1 && (t.offerDiscountType === "FREE_TRIAL" || Number(t.price) === 0);
+}
+
 function decodeJWSPayload<T = Record<string, unknown>>(jws: string): T {
   const [, payload] = jws.split(".");
   const b64 = payload.replace(/-/g, "+").replace(/_/g, "/");
@@ -207,6 +215,7 @@ Deno.serve(async (req) => {
         apple_transaction_id: tx.transactionId,
         apple_original_transaction_id: tx.originalTransactionId,
         expires_at: expiresMillis ? new Date(expiresMillis).toISOString() : null,
+        is_trial: isFreeTrial(tx),
       });
       if (error) throw error;
     }

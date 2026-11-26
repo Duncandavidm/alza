@@ -17,10 +17,13 @@ struct BudgetsView: View {
                     )
                 }
 
-                ForEach(viewModel.progresses) { progress in
+                ForEach(Array(viewModel.progresses.enumerated()), id: \.element.id) { index, progress in
                     budgetRow(progress)
                         .contentShape(Rectangle())
                         .onTapGesture { selectedProgress = progress }
+                        .listRowBackground(
+                            BudgetColorPalette.color(for: progress.budget, index: index).opacity(0.14)
+                        )
                 }
                 .onDelete { indexSet in
                     Task { await delete(at: indexSet) }

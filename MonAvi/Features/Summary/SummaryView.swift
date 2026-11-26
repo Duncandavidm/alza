@@ -433,20 +433,18 @@ struct SummaryView: View {
                         categoryRow(item, snapshot: snapshot)
                     }
                     .buttonStyle(.plain)
-
-                    if item.id != snapshot.categories.last?.id {
-                        Divider().padding(.leading, 66)
-                    }
                 }
             }
         }
-        .padding(.vertical, 6)
+        .padding(8)
         .background(cardBackground)
     }
 
     private func categoryRow(_ item: SummaryCategoryTotal, snapshot: SummarySnapshot) -> some View {
         let tint = color(for: item)
         let isSelected = selectedCategoryKey == item.key
+
+        let share = min(max(snapshot.share(of: item).doubleValue / 100, 0), 1)
 
         return HStack(spacing: 12) {
             CategoryIcon(emoji: item.emoji, color: tint)
@@ -472,12 +470,31 @@ struct SummaryView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .background(isSelected ? tint.opacity(0.10) : Color.clear)
+        .background(pastelBackground(tint: tint, share: share, isSelected: isSelected))
+        .padding(.vertical, 3)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    /// Fondo pastel del color de la categoria (estilo tarjetas suaves): un
+    /// tono muy claro en toda la fila y otro un poco mas intenso que llena
+    /// la parte que esa categoria pesa en el total.
+    private func pastelBackground(tint: Color, share: Double, isSelected: Bool) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+        return shape
+            .fill(tint.opacity(isSelected ? 0.16 : 0.09))
+            .overlay(alignment: .leading) {
+                GeometryReader { proxy in
+                    shape
+                        .fill(tint.opacity(isSelected ? 0.22 : 0.14))
+                        .frame(width: max(28, proxy.size.width * share))
+                }
+            }
+            .clipShape(shape)
+            .overlay(shape.strokeBorder(tint.opacity(isSelected ? 0.55 : 0), lineWidth: 1.5))
     }
 
     private struct DayGroup: Identifiable {

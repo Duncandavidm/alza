@@ -16,6 +16,10 @@ struct BudgetCandyBar: View {
         VStack(spacing: 8) {
             ZStack(alignment: .bottom) {
                 Capsule()
+                    .fill(color.opacity(0.12))
+                    .frame(width: 56, height: height)
+
+                Capsule()
                     .strokeBorder(color.opacity(0.6), style: StrokeStyle(lineWidth: 1.5, dash: [4, 4]))
                     .frame(width: 56, height: height)
 

@@ -9,6 +9,7 @@ struct MonAviWidgetBundle: WidgetBundle {
         InvoiceScanWidget()
         if #available(iOS 18.0, *) {
             InvoiceScanControl()
+            QuickAddControl()
         }
     }
 }

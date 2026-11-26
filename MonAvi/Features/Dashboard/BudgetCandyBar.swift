@@ -43,7 +43,7 @@ struct BudgetCandyBar: View {
     }
 
     private var categoryEmoji: String {
-        TransactionCategory(rawValue: progress.budget.category)?.emoji ?? "🛍️"
+        CategoryDisplay.emoji(for: progress.budget.category) ?? "🛍️"
     }
 
     /// "$1.2k", "$834" — sin depender de un FormatStyle cuya version minima

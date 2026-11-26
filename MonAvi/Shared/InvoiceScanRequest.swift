@@ -62,3 +62,42 @@ struct OpenInvoiceScannerIntent: AppIntent {
         return .result()
     }
 }
+
+// MARK: - Anotar gasto (Centro de control)
+
+/// Pedido de "abrir Anotar movimiento" desde el botón del Centro de control
+/// o de la pantalla bloqueada. Mismo mecanismo que InvoiceScanRequest: el
+/// control deja la marca en el App Group y la app abre Anotar movimiento
+/// en cuanto aparece la pantalla principal.
+enum QuickAddRequest {
+    private static let key = "monavi.quickAddRequestedAt"
+    private static var defaults: UserDefaults? { UserDefaults(suiteName: InvoiceScanRequest.appGroup) }
+    static let notification = Notification.Name("monavi.quickAddRequested")
+
+    static func request(at date: Date = Date()) {
+        defaults?.set(date.timeIntervalSince1970, forKey: key)
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: notification, object: nil)
+        }
+    }
+
+    /// true (y borra la marca) si hay un pedido vigente.
+    static func consume(now: Date = Date()) -> Bool {
+        guard let defaults, let stamp = defaults.object(forKey: key) as? Double else { return false }
+        defaults.removeObject(forKey: key)
+        return InvoiceScanRequest.isFresh(requestedAt: Date(timeIntervalSince1970: stamp), now: now)
+    }
+}
+
+/// "Anotar gasto": abre MonAvi en Anotar movimiento. Lo usa el botón del
+/// Centro de control / pantalla bloqueada (iOS 18).
+struct OpenQuickAddIntent: AppIntent {
+    static var title: LocalizedStringResource = "Anotar gasto"
+    static var description = IntentDescription("Abre MonAvi listo para anotar un gasto o un ingreso.")
+    static var openAppWhenRun: Bool = true
+
+    func perform() async throws -> some IntentResult {
+        QuickAddRequest.request()
+        return .result()
+    }
+}

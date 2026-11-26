@@ -266,11 +266,22 @@ final class OnboardingViewModel: ObservableObject {
                 )
             }
 
+            // Presupuestos: una categoria con nombre propio (o renombrada) se
+            // crea como categoria del usuario para poder elegirla al anotar.
+            let existingCustom = Set(((try? await UserCategoriesRepository.shared.fetchAll()) ?? []).map { $0.name.lowercased() })
+            var createdCustom = Set<String>()
             for budget in budgets {
-                guard let limit = Self.amount(budget.limitText), limit > 0 else { continue }
+                let name = budget.trimmedName
+                guard !name.isEmpty, let limit = Self.amount(budget.limitText), limit > 0 else { continue }
+                if budget.builtIn == nil, !existingCustom.contains(name.lowercased()), !createdCustom.contains(name.lowercased()) {
+                    if let created = try? await UserCategoriesRepository.shared.add(name: name, emoji: budget.emoji, kind: .gasto) {
+                        UserCategoriesStore.shared.upsert(created)
+                        createdCustom.insert(name.lowercased())
+                    }
+                }
                 _ = try? await supabase
                     .from("budgets")
-                    .insert(NewBudget(userId: userId, category: budget.category.rawValue, period: .monthly, limitAmount: limit))
+                    .insert(NewBudget(userId: userId, category: budget.builtIn?.rawValue ?? name, period: .monthly, limitAmount: limit))
                     .execute()
             }
 

@@ -34,12 +34,17 @@ struct DashboardTabView: View {
             if phase == .active {
                 Task { await refreshReminders() }
                 presentPendingInvoiceScan()
+                presentPendingQuickAdd()
             }
         }
         .invoiceScanner(isPresented: $isScanningInvoice, payload: sharedPayload) {
             sharedPayload = nil
         }
         .task { presentPendingInvoiceScan() }
+        .task { presentPendingQuickAdd() }
+        .onReceive(NotificationCenter.default.publisher(for: QuickAddRequest.notification)) { _ in
+            presentPendingQuickAdd()
+        }
         .onReceive(NotificationCenter.default.publisher(for: InvoiceScanRequest.notification)) { _ in
             presentPendingInvoiceScan()
         }
@@ -104,6 +109,13 @@ struct DashboardTabView: View {
         } else {
             isScanningInvoice = true
         }
+    }
+
+    /// Botón "Anotar gasto" del Centro de control: Hoy abre Anotar movimiento.
+    private func presentPendingQuickAdd() {
+        guard QuickAddRequest.consume() else { return }
+        router.destination = nil
+        router.quickAddRequestedAt = Date()
     }
 
     private func presentPendingVoiceCapture() {

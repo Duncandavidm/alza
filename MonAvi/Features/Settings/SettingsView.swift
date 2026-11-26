@@ -75,6 +75,11 @@ struct SettingsView: View {
                         Label("Registra con doble toque", systemImage: "hand.tap.fill")
                     }
                     NavigationLink {
+                        ControlCenterGuideView()
+                    } label: {
+                        Label("Botones del Centro de control", systemImage: "switch.2")
+                    }
+                    NavigationLink {
                         WalletAutomationGuideView()
                     } label: {
                         Label("Pagos con Apple Pay", systemImage: "wallet.pass.fill")

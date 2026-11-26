@@ -43,7 +43,7 @@ final class BudgetsViewModel: ObservableObject {
         let items = progresses.enumerated().map { index, progress in
             BudgetWidgetSnapshot.Item(
                 category: progress.budget.category,
-                emoji: TransactionCategory(rawValue: progress.budget.category)?.emoji ?? "🛍️",
+                emoji: CategoryDisplay.emoji(for: progress.budget.category) ?? "🛍️",
                 colorHex: BudgetColorPalette.color(for: progress.budget, index: index).hexString,
                 spent: NSDecimalNumber(decimal: progress.spent).doubleValue,
                 limitAmount: NSDecimalNumber(decimal: progress.budget.limitAmount).doubleValue,

@@ -51,13 +51,37 @@ struct DebtDraft: Identifiable {
 /// Un presupuesto mensual por categoria ("" = sin presupuesto ahi).
 struct BudgetDraft: Identifiable {
     let id = UUID()
-    let category: TransactionCategory
+    /// Nombre de la categoria: se puede cambiar. Si no coincide con una
+    /// categoria fija, al guardar se crea como categoria propia.
+    var name: String
+    var emoji: String
     var limitText: String = ""
+
+    init(category: TransactionCategory) {
+        name = category.rawValue
+        emoji = category.emoji
+    }
+
+    init(customName: String = "", emoji: String = "🏷️") {
+        name = customName
+        self.emoji = emoji
+    }
+
+    var trimmedName: String { String(name.trimmingCharacters(in: .whitespacesAndNewlines).prefix(40)) }
+
+    /// La categoria fija con ese nombre, o nil si es propia.
+    var builtIn: TransactionCategory? { TransactionCategory(rawValue: trimmedName) }
 
     /// Las categorias donde mas se suele gastar dia a dia.
     static func defaults() -> [BudgetDraft] {
         [.food, .groceries, .transport, .goingOut, .shopping, .entertainment].map { BudgetDraft(category: $0) }
     }
+
+    /// Categorias fijas de gasto que se pueden agregar al presupuesto.
+    static let addable: [TransactionCategory] = [
+        .food, .groceries, .transport, .goingOut, .shopping, .entertainment, .housing, .utilities,
+        .clothing, .subscriptions, .health, .education, .pets, .gifts, .travel, .other,
+    ]
 }
 
 /// Una meta de texto libre (corto o largo plazo), ej. "liquidar las

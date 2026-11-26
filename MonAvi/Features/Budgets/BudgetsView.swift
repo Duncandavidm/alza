@@ -57,7 +57,7 @@ struct BudgetsView: View {
     private func budgetRow(_ progress: BudgetProgress) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(TransactionCategory(rawValue: progress.budget.category)?.emoji ?? "🛍️")
+                Text(CategoryDisplay.emoji(for: progress.budget.category) ?? "🛍️")
                 Text(progress.budget.category)
                     .font(.headline)
                 Spacer()

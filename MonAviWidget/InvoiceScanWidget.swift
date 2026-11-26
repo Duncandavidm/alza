@@ -108,3 +108,20 @@ struct InvoiceScanControl: ControlWidget {
         .description("Abre MonAvi con la cámara lista para tu factura.")
     }
 }
+
+/// Botón "Anotar gasto" del Centro de control y de la pantalla bloqueada
+/// (iOS 18+): abre MonAvi en Anotar movimiento.
+@available(iOS 18.0, *)
+struct QuickAddControl: ControlWidget {
+    static let kind = "app.monavi.widget.quick-add"
+
+    var body: some ControlWidgetConfiguration {
+        StaticControlConfiguration(kind: Self.kind) {
+            ControlWidgetButton(action: OpenQuickAddIntent()) {
+                Label("Anotar gasto", systemImage: "plus.circle.fill")
+            }
+        }
+        .displayName("Anotar gasto")
+        .description("Abre MonAvi listo para anotar un gasto.")
+    }
+}

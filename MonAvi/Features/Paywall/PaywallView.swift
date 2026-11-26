@@ -35,7 +35,7 @@ struct PaywallView: View {
                 }
 
                 VStack(spacing: 20) {
-                    Text("Todo tu dinero bajo control: dashboard completo, metas, consejos de IA y cashback por tus compras. Realiza cotizaciones.")
+                    Text("Todo tu dinero bajo control: dashboard completo, metas, consejos de IA y cashback por tus compras.")
                         .font(.system(.subheadline, design: MonAviBrand.fontDesign))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -142,7 +142,7 @@ struct PaywallView: View {
     /// con el total real aparte en `commitmentCaption`.
     private func planOption(plan: SubscriptionPlan, product: Product, badge: String?) -> some View {
         let isSelected = subscriptionStore.selectedPlan == plan
-        let priceText = subscriptionStore.monthlyEquivalentPrice(for: product) ?? product.displayPrice
+        let priceText = subscriptionStore.monthlyEquivalentPrice(for: product) ?? subscriptionStore.formattedPrice(product)
 
         return Button {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
@@ -196,7 +196,7 @@ struct PaywallView: View {
         if let product = subscriptionStore.selectedProduct {
             Group {
                 if subscriptionStore.selectedPlan == .annual {
-                    Text("Cobro anual — compromiso de 12 meses, \(product.displayPrice) en total")
+                    Text("Cobro anual — compromiso de 12 meses, \(subscriptionStore.formattedPrice(product)) en total")
                 } else {
                     Text("Cobro mensual, cancela cuando quieras")
                 }
@@ -214,7 +214,7 @@ struct PaywallView: View {
         } label: {
             HStack {
                 if let duration = subscriptionStore.freeTrialDurationText {
-                    Text("Empieza por USD 0.00")
+                    Text("Empieza gratis")
                         .font(.system(.headline, design: MonAviBrand.fontDesign, weight: .bold))
                     Spacer()
                     Text("\(duration) gratis")
@@ -240,8 +240,9 @@ struct PaywallView: View {
 
     @ViewBuilder
     private var confirmationNote: some View {
-        if let price = subscriptionStore.selectedProduct?.displayPrice,
+        if let product = subscriptionStore.selectedProduct,
            subscriptionStore.freeTrialDurationText != nil {
+            let price = subscriptionStore.formattedPrice(product)
             let cadence = subscriptionStore.selectedPlan == .annual ? "al año" : "al mes"
             VStack(spacing: 4) {
                 Label("Hoy no pagas nada.", systemImage: "checkmark.seal.fill")

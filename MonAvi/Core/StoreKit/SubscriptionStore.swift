@@ -117,9 +117,16 @@ final class SubscriptionStore: ObservableObject {
     /// Precio mensual equivalente del plan anual (total / 12), para mostrar
     /// "$X.XX / mes" en la tarjeta de "12 meses" igual que el precio
     /// mensual, en vez del total del año de una sola vez.
+    /// Precio con el mismo formato en toda la pantalla (displayPrice y el
+    /// precio por mes calculado salian distintos, ej. "$ 39.900,00" y
+    /// "$ 29.158" en pesos colombianos).
+    func formattedPrice(_ product: Product) -> String {
+        product.price.formatted(product.priceFormatStyle)
+    }
+
     func monthlyEquivalentPrice(for product: Product) -> String? {
         guard let subscriptionInfo = product.subscription, subscriptionInfo.subscriptionPeriod.unit == .year else {
-            return product.displayPrice
+            return formattedPrice(product)
         }
         let monthly = product.price / 12
         return monthly.formatted(product.priceFormatStyle)

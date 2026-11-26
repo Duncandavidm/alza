@@ -127,7 +127,7 @@ struct BudgetDetailSheet: View {
     }
 
     private var categoryEmoji: String {
-        TransactionCategory(rawValue: progress.budget.category)?.emoji ?? "🛍️"
+        CategoryDisplay.emoji(for: progress.budget.category) ?? "🛍️"
     }
 
     private func loadAverage() async {

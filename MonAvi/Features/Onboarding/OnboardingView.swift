@@ -12,7 +12,7 @@ struct OnboardingView: View {
     /// Cuentas ya creadas: falta solo el paso de la primera factura.
     @State private var isShowingFirstInvoice = false
 
-    private let totalSteps = 15
+    private let totalSteps = 16
 
     var body: some View {
         NavigationStack {
@@ -37,6 +37,7 @@ struct OnboardingView: View {
                     case 11: shortTermGoalsStep
                     case 12: longTermGoalsStep
                     case 13: budgetsStep
+                    case 14: shortcutsStep
                     default: summaryStep
                     }
                 }
@@ -359,17 +360,55 @@ struct OnboardingView: View {
                     .foregroundStyle(MonAviBrand.primary)
             }
             ForEach($viewModel.budgets) { $budget in
-                LabeledContent("\(budget.category.emoji) \(budget.category.rawValue)") {
+                HStack(spacing: 8) {
+                    Text(budget.emoji)
+                    TextField("Nombre de la categoría", text: $budget.name)
+                        .textInputAutocapitalization(.sentences)
                     AmountField(placeholder: "Sin límite", text: $budget.limitText)
                         .multilineTextAlignment(.trailing)
                         .frame(maxWidth: 140)
                 }
             }
+            .onDelete { viewModel.budgets.remove(atOffsets: $0) }
+
+            Menu {
+                ForEach(BudgetDraft.addable.filter { category in
+                    !viewModel.budgets.contains { $0.trimmedName == category.rawValue }
+                }) { category in
+                    Button("\(category.emoji) \(category.rawValue)") {
+                        viewModel.budgets.append(BudgetDraft(category: category))
+                    }
+                }
+                Button("🏷️ Otra (escribe el nombre)") {
+                    viewModel.budgets.append(BudgetDraft())
+                }
+            } label: {
+                Label("Agregar categoría", systemImage: "plus.circle")
+            }
         } header: {
             Text("¿Quieres agregar presupuestos?")
         } footer: {
-            Text("Es opcional: deja vacío lo que no quieras limitar. Puedes agregar o cambiar presupuestos cuando quieras en la pestaña Presupuestos.")
+            Text("Es opcional: deja vacío lo que no quieras limitar. Toca un nombre para cambiarlo o desliza para quitarlo. Puedes agregar o cambiar presupuestos cuando quieras en la pestaña Presupuestos.")
         }
+    }
+
+    /// «Registra sin esfuerzo»: muestra los atajos que ya tiene MonAvi
+    /// (Centro de control, doble toque atrás, widgets y avisos del banco).
+    /// Solo informa; se configuran después en Ajustes > Automatizaciones.
+    private var shortcutsStep: some View {
+        Section {
+            ControlCenterShowcase()
+                .listRowInsets(EdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12))
+            Label("Botones en el Centro de control: «Anotar gasto» y «Escanear factura».", systemImage: "switch.2")
+            Label("Toca dos veces atrás del iPhone y dilo con tu voz, aun con la pantalla bloqueada.", systemImage: "hand.tap.fill")
+            Label("Widgets «Tu día» y «Escanear factura» en la pantalla de inicio y la bloqueada.", systemImage: "apps.iphone")
+            Label("Los avisos de tu banco y tus pagos con Apple Pay quedan listos para confirmar.", systemImage: "bell.badge.fill")
+        } header: {
+            Text("Registra sin esfuerzo")
+        } footer: {
+            Text("Configúralos cuando quieras en Ajustes > Automatizaciones.")
+        }
+        .font(.subheadline)
     }
 
     private var savingsStep: some View {

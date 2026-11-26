@@ -30,7 +30,8 @@ function fields(formData: FormData) {
     ai_note: aiNote || null,
     source: source || null,
     sort,
-    show_in_app: formData.get("show_in_app") === "on",
+    // La app no muestra lecciones: las enseñanzas son solo para la IA.
+    show_in_app: false,
     use_in_ai: formData.get("use_in_ai") === "on",
   };
 }

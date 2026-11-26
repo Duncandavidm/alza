@@ -52,7 +52,7 @@ function TeachingFields({ t }: { t?: Teaching }) {
         <input type="text" name="title" defaultValue={t?.title} maxLength={120} required placeholder="Ej. La regla de las 48 horas" />
       </div>
       <div className="field" style={{ gridColumn: "1 / -1" }}>
-        <label>Enseñanza (lo que verá la persona en la app)</label>
+        <label>Enseñanza</label>
         <textarea name="body" defaultValue={t?.body} maxLength={1500} rows={4} required placeholder="Explícalo en lenguaje sencillo, como se lo dirías a un amigo." />
       </div>
       <div className="field" style={{ gridColumn: "1 / -1" }}>
@@ -68,9 +68,6 @@ function TeachingFields({ t }: { t?: Teaching }) {
         <input type="number" name="sort" defaultValue={t?.sort ?? 100} min={0} max={10000} />
       </div>
       <div className="field">
-        <label>
-          <input type="checkbox" name="show_in_app" defaultChecked={t?.show_in_app ?? true} /> Mostrar como lección en la app
-        </label>
         <label>
           <input type="checkbox" name="use_in_ai" defaultChecked={t?.use_in_ai ?? true} /> Que la IA la aplique
         </label>
@@ -96,10 +93,10 @@ export default async function EnsenanzasPage() {
     <>
       <h1>Método MonAvi · Enseñanzas</h1>
       <p className="text-dim">
-        Estas enseñanzas son la base de la asesoría de MonAvi. Las que marcas como lección aparecen en la app, en “Tu plan
-        en 7 pasos”. Las que marcas para la IA se aplican en el análisis y en las respuestas, usando los números de cada
-        persona, y cada persona solo recibe las generales y las de su país (Panamá o Colombia). Si lees algo valioso en un libro, escríbelo con tus propias palabras y agrégalo aquí: la app lo empieza a
-        usar de inmediato, sin publicar una versión nueva.
+        Estas enseñanzas son la base de la asesoría de MonAvi. La IA las aplica en el análisis y en las respuestas,
+        usando los números de cada persona, y cada persona solo recibe las generales y las de su país (Panamá o
+        Colombia). No se muestran como lecciones en la app. Si lees algo valioso en un libro, escríbelo con tus propias
+        palabras y agrégalo aquí: la IA lo empieza a usar de inmediato, sin publicar una versión nueva.
       </p>
 
       <div className="card">
@@ -122,7 +119,6 @@ export default async function EnsenanzasPage() {
                 {t.country === "PA" && <span className="badge">🇵🇦 Panamá</span>}{" "}
                 {t.country === "CO" && <span className="badge">🇨🇴 Colombia</span>}{" "}
                 {!t.active && <span className="badge paused">apagada</span>}{" "}
-                {t.active && t.show_in_app && <span className="badge active">app</span>}{" "}
                 {t.active && t.use_in_ai && <span className="badge active">IA</span>}
                 <div className="text-dim" style={{ marginTop: 4 }}>{t.body}</div>
               </summary>

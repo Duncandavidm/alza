@@ -1,21 +1,12 @@
 import SwiftUI
 import Supabase
 
-/// Enseñanza del Método MonAvi (finance_teachings), administrada desde el
-/// panel. La app solo ve las activas que se muestran como lección.
-struct FinanceTeaching: Decodable, Identifiable, Hashable {
-    let id: UUID
-    let step: Int?
-    let title: String
-    let body: String
-}
-
 /// Análisis > "Tu plan en 7 pasos": en qué paso va la persona, qué hacer
-/// esta semana, lecciones de cada paso y "¿Estás listo para invertir?".
+/// esta semana y "¿Estás listo para invertir?". Las enseñanzas del método
+/// no se muestran aquí: las aplica la IA en el análisis y las respuestas.
 struct FinancialPlanView: View {
     @EnvironmentObject private var appState: AppState
     @State private var plan: FinancialPlan?
-    @State private var teachings: [FinanceTeaching] = []
     @State private var expandedStep: Int?
     @State private var errorMessage: String?
 
@@ -25,7 +16,6 @@ struct FinancialPlanView: View {
                 headerSection(plan)
                 stepsSection(plan)
                 readinessSection(plan.readiness)
-                lessonsSection
                 Section {
                     Text("El Método MonAvi es educación financiera general. No es asesoría de inversión ni recomienda productos o entidades.")
                         .font(.caption)
@@ -119,9 +109,6 @@ struct FinancialPlanView: View {
                             Label(step.mission, systemImage: "flag")
                                 .font(.subheadline)
                                 .foregroundStyle(MonAviBrand.primaryDark)
-                            ForEach(teachings.filter { $0.step == step.number }.prefix(2)) { lesson in
-                                lessonCard(lesson)
-                            }
                         }
                         .padding(.leading, 46)
                         .transition(.opacity)
@@ -165,38 +152,6 @@ struct FinancialPlanView: View {
         }
     }
 
-    @ViewBuilder
-    private var lessonsSection: some View {
-        if !teachings.isEmpty {
-            Section("Lecciones") {
-                ForEach(1...7, id: \.self) { step in
-                    let lessons = teachings.filter { $0.step == step }
-                    if !lessons.isEmpty {
-                        DisclosureGroup("Paso \(step)") {
-                            ForEach(lessons) { lessonCard($0) }
-                        }
-                    }
-                }
-                let general = teachings.filter { $0.step == nil }
-                if !general.isEmpty {
-                    DisclosureGroup("Para todos los días") {
-                        ForEach(general) { lessonCard($0) }
-                    }
-                }
-            }
-        }
-    }
-
-    private func lessonCard(_ lesson: FinanceTeaching) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("💡 \(lesson.title)").font(.subheadline.weight(.semibold))
-            Text(lesson.body).font(.footnote).foregroundStyle(.secondary)
-        }
-        .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 10))
-    }
-
     private func circleColor(_ status: FinancialPlan.Status) -> Color {
         switch status {
         case .done: return MonAviBrand.primary
@@ -215,8 +170,6 @@ struct FinancialPlanView: View {
         } catch {
             if plan == nil { errorMessage = error.localizedDescription }
         }
-        // Las lecciones son un extra: si fallan, el plan igual se muestra.
-        teachings = (try? await FinancialPlanLoader.teachings()) ?? teachings
     }
 }
 
@@ -247,17 +200,5 @@ enum FinancialPlanLoader {
     static func trackedDays(_ dates: [Date], now: Date = Date(), calendar: Calendar = .current) -> Int {
         guard let start = calendar.date(byAdding: .day, value: -30, to: now) else { return 0 }
         return Set(dates.filter { $0 >= start && $0 <= now }.map { calendar.startOfDay(for: $0) }).count
-    }
-
-    static func teachings() async throws -> [FinanceTeaching] {
-        // Las generales (country nil) y las del país de la cuenta.
-        try await SupabaseManager.shared.client
-            .from("finance_teachings")
-            .select("id, step, title, body")
-            .or("country.is.null,country.eq.\(AppCountry.current.rawValue)")
-            .order("step", ascending: true)
-            .order("sort", ascending: true)
-            .execute()
-            .value
     }
 }

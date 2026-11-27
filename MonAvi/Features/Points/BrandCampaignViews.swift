@@ -9,13 +9,16 @@ struct BrandCampaignCard: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top, spacing: 12) {
                 if let urlString = campaign.imageUrl, let url = URL(string: urlString) {
+                    // Suele ser el logo de la marca: completo, sin recortar.
                     AsyncImage(url: url) { image in
-                        image.resizable().scaledToFill()
+                        image.resizable().scaledToFit().padding(5)
                     } placeholder: {
                         Color(.tertiarySystemFill)
                     }
                     .frame(width: 52, height: 52)
+                    .background(Color.white)
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(MonAviBrand.border, lineWidth: 1))
                 }
 
                 VStack(alignment: .leading, spacing: 3) {

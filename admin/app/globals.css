@@ -276,6 +276,14 @@ a.secondary-link {
   font-size: 15px;
 }
 
+/* Logos de comercios: cualquier forma (redondo, cuadrado o alargado) se ve
+   completo dentro del círculo, sin recortarse. Igual que en la app. */
+img.thumb.round {
+  object-fit: contain;
+  background: #fff;
+  padding: 12%;
+}
+
 .thumb.large {
   width: 56px;
   height: 56px;
@@ -420,7 +428,9 @@ a.secondary-link {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  object-fit: cover;
+  object-fit: contain;
+  background: #fff;
+  padding: 3px;
   flex-shrink: 0;
   border: 1px solid #e5e5ea;
 }

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Foto del producto en 4:3 con esquinas redondeadas. Mientras carga (o
 /// si falla / no hay foto) se ve un fondo con el tinte de marca.
@@ -53,39 +54,57 @@ struct RewardPhotoView: View {
     }
 }
 
-/// Logo redondo del comercio; si no hay logo (o no carga), la inicial
-/// del nombre sobre el tinte de marca.
+/// Logo redondo del comercio. Los logos llegan de todas las formas
+/// (redondos, cuadrados, alargados como "Bungla", con fondo o
+/// transparentes), asi que antes de mostrarlo se mira la imagen:
+/// - Cuadrado con fondo parejo o tipo foto: llena el circulo.
+/// - Alargado, o con dibujo hasta las esquinas: se ve COMPLETO dentro del
+///   circulo, sobre su mismo color de fondo (blanco si es transparente).
+/// Si no hay logo (o no carga), la inicial del nombre sobre el tinte de marca.
 struct MerchantLogoView: View {
     let urlString: String?
     let name: String
     var size: CGFloat = 36
 
+    @State private var loaded: MerchantLogoCache.Logo?
+
     var body: some View {
         ZStack {
             Circle()
-                .fill(MonAviBrand.primary.opacity(0.15))
-            logo
+                .fill(loaded.map { Color(uiColor: $0.background) } ?? MonAviBrand.primary.opacity(0.15))
+            if let loaded {
+                logoImage(loaded)
+            } else {
+                initial
+            }
         }
         .frame(width: size, height: size)
         .clipShape(Circle())
         .overlay(Circle().stroke(MonAviBrand.border, lineWidth: 1))
         .accessibilityHidden(true)
+        .task(id: urlString) {
+            guard let url = RewardsMath.webURL(from: urlString) else {
+                loaded = nil
+                return
+            }
+            loaded = await MerchantLogoCache.shared.logo(for: url)
+        }
     }
 
     @ViewBuilder
-    private var logo: some View {
-        if let url = RewardsMath.webURL(from: urlString) {
-            AsyncImage(url: url) { phase in
-                if let image = phase.image {
-                    image
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    initial
-                }
-            }
+    private func logoImage(_ logo: MerchantLogoCache.Logo) -> some View {
+        let image = Image(uiImage: logo.image).resizable()
+        if logo.fillsCircle {
+            image.scaledToFill()
         } else {
-            initial
+            // El rectangulo mas grande que cabe dentro del circulo con la
+            // proporcion del logo, con un pequeño margen.
+            let ratio = max(logo.aspectRatio, 0.01)
+            let diagonal = (1 + ratio * ratio).squareRoot()
+            let inner = size * 0.9
+            image
+                .scaledToFit()
+                .frame(width: inner * ratio / diagonal, height: inner / diagonal)
         }
     }
 
@@ -93,6 +112,103 @@ struct MerchantLogoView: View {
         Text(String(name.prefix(1)).uppercased())
             .font(.system(size: size * 0.45, weight: .bold, design: MonAviBrand.fontDesign))
             .foregroundStyle(MonAviBrand.primary)
+    }
+}
+
+/// Descarga y analiza cada logo una sola vez (se reusa en todas las listas).
+actor MerchantLogoCache {
+    static let shared = MerchantLogoCache()
+
+    final class Logo: @unchecked Sendable {
+        let image: UIImage
+        let background: UIColor
+        let fillsCircle: Bool
+        let aspectRatio: CGFloat
+
+        init(image: UIImage, background: UIColor, fillsCircle: Bool, aspectRatio: CGFloat) {
+            self.image = image
+            self.background = background
+            self.fillsCircle = fillsCircle
+            self.aspectRatio = aspectRatio
+        }
+    }
+
+    private var cache: [URL: Logo] = [:]
+    private var inFlight: [URL: Task<Logo?, Never>] = [:]
+
+    func logo(for url: URL) async -> Logo? {
+        if let cached = cache[url] { return cached }
+        if let task = inFlight[url] { return await task.value }
+        let task = Task<Logo?, Never> {
+            guard let (data, response) = try? await URLSession.shared.data(from: url),
+                  (response as? HTTPURLResponse)?.statusCode ?? 200 < 400,
+                  let image = UIImage(data: data) else { return nil }
+            return Self.analyze(image)
+        }
+        inFlight[url] = task
+        let result = await task.value
+        inFlight[url] = nil
+        if let result { cache[url] = result }
+        return result
+    }
+
+    /// Mira las esquinas de la imagen (reducida a 32x32) para saber si es
+    /// transparente, si tiene un fondo parejo y de que color.
+    static func analyze(_ image: UIImage) -> Logo {
+        let width = max(image.size.width, 1)
+        let height = max(image.size.height, 1)
+        let ratio = width / height
+        let isSquare = ratio > 0.85 && ratio < 1.18
+
+        let side = 32
+        var pixels = [UInt8](repeating: 0, count: side * side * 4)
+        let drewPixels: Bool = pixels.withUnsafeMutableBytes { buffer in
+            guard let context = CGContext(
+                data: buffer.baseAddress, width: side, height: side, bitsPerComponent: 8, bytesPerRow: side * 4,
+                space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ), let cgImage = image.cgImage else { return false }
+            context.draw(cgImage, in: CGRect(x: 0, y: 0, width: side, height: side))
+            return true
+        }
+        guard drewPixels else {
+            return Logo(image: image, background: .white, fillsCircle: false, aspectRatio: ratio)
+        }
+
+        func pixel(_ x: Int, _ y: Int) -> (r: CGFloat, g: CGFloat, b: CGFloat, a: CGFloat) {
+            let i = (y * side + x) * 4
+            let a = CGFloat(pixels[i + 3]) / 255
+            guard a > 0 else { return (1, 1, 1, 0) }
+            // Quita el premultiplicado para comparar colores reales.
+            return (CGFloat(pixels[i]) / 255 / a, CGFloat(pixels[i + 1]) / 255 / a, CGFloat(pixels[i + 2]) / 255 / a, a)
+        }
+
+        let corners = [pixel(1, 1), pixel(side - 2, 1), pixel(1, side - 2), pixel(side - 2, side - 2)]
+        let first = corners[0]
+        func sameColor(_ p: (r: CGFloat, g: CGFloat, b: CGFloat, a: CGFloat)) -> Bool {
+            p.a > 0.9 && abs(p.r - first.r) + abs(p.g - first.g) + abs(p.b - first.b) < 0.12
+        }
+        let cornersUniform = corners.allSatisfy(sameColor)
+        let background: UIColor = cornersUniform
+            ? UIColor(red: first.r, green: first.g, blue: first.b, alpha: 1)
+            : .white
+
+        // Llenar el circulo solo si lo que queda FUERA del circulo (las
+        // esquinas) es fondo parejo o transparente: asi no se corta nada.
+        // Un logo redondo o un icono cuadrado con margen llena; un nombre
+        // alargado o un dibujo hasta las esquinas se muestra completo.
+        var fills = false
+        if isSquare {
+            let center = CGFloat(side - 1) / 2
+            var outside: [(r: CGFloat, g: CGFloat, b: CGFloat, a: CGFloat)] = []
+            for y in 0..<side {
+                for x in 0..<side {
+                    let dx = CGFloat(x) - center, dy = CGFloat(y) - center
+                    if (dx * dx + dy * dy).squareRoot() > center + 0.5 { outside.append(pixel(x, y)) }
+                }
+            }
+            fills = outside.allSatisfy { $0.a < 0.2 } || (cornersUniform && outside.allSatisfy(sameColor))
+        }
+        return Logo(image: image, background: background, fillsCircle: fills, aspectRatio: ratio)
     }
 }
 

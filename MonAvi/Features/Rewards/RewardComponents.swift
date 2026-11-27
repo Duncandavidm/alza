@@ -154,7 +154,7 @@ actor MerchantLogoCache {
 
     /// Mira las esquinas de la imagen (reducida a 32x32) para saber si es
     /// transparente, si tiene un fondo parejo y de que color.
-    static func analyze(_ image: UIImage) -> Logo {
+    static func analyze(_ image: UIImage, trimMargins: Bool = true) -> Logo {
         let width = max(image.size.width, 1)
         let height = max(image.size.height, 1)
         let ratio = width / height
@@ -191,6 +191,41 @@ actor MerchantLogoCache {
         let background: UIColor = cornersUniform
             ? UIColor(red: first.r, green: first.g, blue: first.b, alpha: 1)
             : .white
+
+        // Muchos logos traen mucho espacio vacio alrededor y se ven chiquitos:
+        // se recorta al dibujo (con un pequeño margen) y se analiza de nuevo.
+        if trimMargins, let cgImage = image.cgImage, cornersUniform || corners.allSatisfy({ $0.a < 0.2 }) {
+            let transparentCorners = !cornersUniform
+            var minX = side, minY = side, maxX = -1, maxY = -1
+            for y in 0..<side {
+                for x in 0..<side {
+                    let p = pixel(x, y)
+                    let isContent = transparentCorners ? p.a >= 0.2 : !sameColor(p)
+                    if isContent {
+                        minX = min(minX, x); maxX = max(maxX, x)
+                        minY = min(minY, y); maxY = max(maxY, y)
+                    }
+                }
+            }
+            if maxX >= minX, maxY >= minY {
+                let margin = 1
+                let x0 = max(minX - margin, 0), y0 = max(minY - margin, 0)
+                let x1 = min(maxX + margin + 1, side), y1 = min(maxY + margin + 1, side)
+                let keptArea = CGFloat((x1 - x0) * (y1 - y0)) / CGFloat(side * side)
+                if keptArea < 0.8 {
+                    let scaleX = CGFloat(cgImage.width) / CGFloat(side)
+                    let scaleY = CGFloat(cgImage.height) / CGFloat(side)
+                    let rect = CGRect(
+                        x: CGFloat(x0) * scaleX, y: CGFloat(y0) * scaleY,
+                        width: CGFloat(x1 - x0) * scaleX, height: CGFloat(y1 - y0) * scaleY
+                    ).integral
+                    if let cropped = cgImage.cropping(to: rect) {
+                        let trimmed = analyze(UIImage(cgImage: cropped, scale: image.scale, orientation: .up), trimMargins: false)
+                        return Logo(image: trimmed.image, background: background, fillsCircle: trimmed.fillsCircle, aspectRatio: trimmed.aspectRatio)
+                    }
+                }
+            }
+        }
 
         // Llenar el circulo solo si lo que queda FUERA del circulo (las
         // esquinas) es fondo parejo o transparente: asi no se corta nada.

@@ -284,13 +284,21 @@ img.thumb.round {
   padding: 5px;
 }
 
-/* Logo grande en la ficha del comercio. */
+/* Logo grande en la ficha del comercio: tarjeta con la forma real del
+   logo (redondo, cuadrado o alargado), para verlo bien. */
 .thumb.round.large {
   width: 96px;
   height: 96px;
   font-size: 36px;
 }
-img.thumb.round.large { padding: 10px; }
+img.thumb.round.large {
+  width: auto;
+  min-width: 96px;
+  max-width: 260px;
+  height: 96px;
+  border-radius: 16px;
+  padding: 8px;
+}
 
 /* Logo actual en el formulario. */
 .thumb.round.medium {

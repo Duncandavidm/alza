@@ -76,7 +76,7 @@ export default function MerchantFieldsInputs({
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           {defaults.logo_url && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={defaults.logo_url} alt="Logo actual" className="thumb round" />
+            <img src={defaults.logo_url} alt="Logo actual" className="thumb round medium" />
           )}
           <input type="file" name="logo" accept="image/jpeg,image/png,image/webp" />
         </div>

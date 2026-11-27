@@ -281,8 +281,23 @@ a.secondary-link {
 img.thumb.round {
   object-fit: contain;
   background: #fff;
-  padding: 12%;
+  padding: 5px;
 }
+
+/* Logo grande en la ficha del comercio. */
+.thumb.round.large {
+  width: 96px;
+  height: 96px;
+  font-size: 36px;
+}
+img.thumb.round.large { padding: 10px; }
+
+/* Logo actual en el formulario. */
+.thumb.round.medium {
+  width: 64px;
+  height: 64px;
+}
+img.thumb.round.medium { padding: 7px; }
 
 .thumb.large {
   width: 56px;

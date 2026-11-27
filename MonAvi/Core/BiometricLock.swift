@@ -2,9 +2,8 @@ import SwiftUI
 import LocalAuthentication
 
 /// Bloqueo de la app con Face ID / Touch ID (o el código del iPhone si la
-/// biometría falla). Activo por defecto (es una app de finanzas) si el
-/// iPhone tiene biometría o código; se apaga en Ajustes > Seguridad y esa
-/// decisión se respeta.
+/// biometría falla). Apagado por defecto: cada persona lo activa en
+/// Ajustes > Seguridad si lo quiere, y esa decisión se respeta.
 /// - Al abrir la app con sesión iniciada, pide desbloquear.
 /// - Al volver a la app desde otra app o la pantalla de inicio, también.
 /// - Mientras la app no está activa (selector de apps), tapa el contenido.
@@ -21,10 +20,11 @@ final class BiometricLock: ObservableObject {
     private var backgroundedAt: Date?
 
     private init() {
-        // Sin decision guardada -> activo. Nunca en un iPhone sin Face ID,
-        // Touch ID ni codigo: no habria con que desbloquear.
+        // Sin decision guardada -> apagado (se activa en Ajustes > Seguridad).
+        // Nunca en un iPhone sin Face ID, Touch ID ni codigo: no habria con
+        // que desbloquear.
         let stored = UserDefaults.standard.object(forKey: Self.enabledKey) as? Bool
-        let enabled = (stored ?? true) && Self.availableKind != .none
+        let enabled = (stored ?? false) && Self.availableKind != .none
         isEnabled = enabled
         isLocked = enabled
     }

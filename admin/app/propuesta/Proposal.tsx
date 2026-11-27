@@ -272,11 +272,13 @@ function ScreenCode({ brand }: { brand: Brand }) {
 }
 
 function ScreenLock({ brand }: { brand: Brand }) {
-  const name = brand.name || PLACEHOLDER;
+  // La notificacion la "firma" la marca; el texto habla en primera persona
+  // para no repetir "Tu marca aqui" dentro del mensaje.
+  const sender = brand.name.trim() || "Tu marca";
   const notes = [
-    { when: "ahora", title: `${name} ya está en MonAvi 🎉`, body: `${offerTitle(brand)}: ${offerDetail(brand).toLowerCase()}.` },
-    { when: "hace 2 h", title: "Te alcanza para un premio", body: `Con tu cashback ya puedes canjear en ${name}.` },
-    { when: "ayer", title: "Factura verificada ✅", body: `Ganaste cashback por tu compra en ${name}.` },
+    { when: "ahora", title: "¡Ya estamos en MonAvi! 🎉", body: `${offerTitle(brand)}: ${offerDetail(brand).toLowerCase()}.` },
+    { when: "hace 2 h", title: "Te alcanza para un premio", body: "Con tu cashback ya puedes canjearlo en nuestra tienda." },
+    { when: "ayer", title: "Factura verificada ✅", body: "Ganaste cashback por tu compra con nosotros. ¡Gracias!" },
   ];
   return (
     <div className="pp-lock">
@@ -291,12 +293,9 @@ function ScreenLock({ brand }: { brand: Brand }) {
           viewport={{ once: true }}
           transition={{ delay: 0.15 + i * 0.25 }}
         >
-          <span className="pp-note-icon">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/monavi-mark.svg" alt="" />
-          </span>
+          <BrandMark brand={brand} size={30} />
           <div>
-            <div className="pp-note-top"><b>MonAvi</b><span>{n.when}</span></div>
+            <div className="pp-note-top"><b>{sender}</b><span>{n.when}</span></div>
             <strong>{n.title}</strong>
             <p>{n.body}</p>
           </div>

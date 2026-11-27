@@ -2980,7 +2980,9 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .pp-note-icon { width: 30px; height: 30px; border-radius: 8px; background: #00A585; padding: 6px; flex-shrink: 0; display: inline-flex; }
 .pp-note-icon img, .pp-final-lockup .pp-mm img { width: 100%; height: 100%; filter: brightness(0) invert(1); }
 .pp-note > div { min-width: 0; }
-.pp-note-top { display: flex; justify-content: space-between; font-size: 11px; opacity: .8; }
+.pp-note-top { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; opacity: .8; }
+.pp-note-top b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pp-note > div { flex: 1; }
 .pp-note strong { display: block; font-size: 13px; margin-top: 1px; }
 .pp-note p { margin: 1px 0 0; font-size: 12px; opacity: .9; line-height: 1.3; }
 

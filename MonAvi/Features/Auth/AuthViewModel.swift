@@ -123,7 +123,13 @@ final class AuthViewModel: ObservableObject {
                 // una (RootView reacciona a authStateChanges). El correo se
                 // verifica con un codigo de 6 digitos solo antes del primer
                 // canje (EmailVerificationSheet).
-                let response = try await supabase.auth.signUp(email: trimmedEmail, password: password)
+                // El idioma viaja en los datos del usuario: las plantillas de correo de
+                // Supabase (confirmación, códigos) lo usan para escribir en inglés o español.
+                let response = try await supabase.auth.signUp(
+                    email: trimmedEmail,
+                    password: password,
+                    data: ["language": .string(AppLanguage.current.rawValue)]
+                )
                 if response.session == nil {
                     // Respaldo por si "Confirm email" sigue encendido: no
                     // hay sesion, se vuelve al formulario con el aviso.

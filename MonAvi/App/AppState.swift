@@ -268,6 +268,9 @@ final class AppState: ObservableObject {
             .update(Update(language: language.rawValue))
             .eq("id", value: userId)
             .execute()
+        // También en los datos del usuario de Auth: las plantillas de correo
+        // (códigos de verificación y de contraseña) eligen el idioma con él.
+        _ = try? await supabase.auth.update(user: UserAttributes(data: ["language": .string(language.rawValue)]))
     }
 
     /// Banderas que se prenden desde el panel (por ahora, Colombia). Si

@@ -37,6 +37,7 @@ final class AppState: ObservableObject {
     /// Suscripcion en prueba gratis: los descuentos, bonos y canjes se ven
     /// en gris y se desbloquean al empezar el plan pagado (0096/0097).
     @Published private(set) var isInFreeTrial = false
+    private var didRegisterDevice = false
     @Published private(set) var onboardingStatus: OnboardingStatus = .unknown
     @Published private(set) var mfaStatus: MFAChallengeStatus = .unknown
     /// true mientras PasswordResetSheet esta abierta: verifyOTP(.recovery)
@@ -249,6 +250,11 @@ final class AppState: ObservableObject {
                 applyCountry(saved)
             }
             onboardingStatus = row.onboardingCompletedAt != nil ? .completed : .pending
+            // Revisión de muchas cuentas en el mismo iPhone (0100).
+            if !didRegisterDevice {
+                didRegisterDevice = true
+                Task { await IncomeVerificationService.registerDevice() }
+            }
             // La IA, los avisos y los correos hablan en el idioma de la app.
             if row.language != AppLanguage.current.rawValue {
                 await saveLanguagePreference(AppLanguage.current)

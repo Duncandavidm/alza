@@ -46,7 +46,7 @@
 <header><div class="wrap" style="padding:0"><div class="brand"><img src="/monavi-mark.svg" alt="" width="24" height="28">MonAvi</div></div></header>
 <div class="wrap">
   <h1>Política de Privacidad</h1>
-  <p class="updated">Última actualización: 25 de noviembre de 2026</p>
+  <p class="updated">Última actualización: 28 de noviembre de 2026</p>
 
   <p>MonAvi («nosotros», «la app») es una aplicación de finanzas personales
   desarrollada y operada por David Muñoz Duncan, persona natural, RUC 8-NT-2-793713 DV 95, en
@@ -94,10 +94,11 @@
       <tr><td><strong>Identificadores</strong></td>
         <td>ID de usuario (el identificador de tu cuenta, o el que entrega «Iniciar sesión con Apple»)</td>
         <td><span class="tag yes">Sí</span></td><td>Funcionalidad de la app, analítica</td></tr>
-      <tr><td></td><td>ID del dispositivo (el identificador de notificaciones que entrega Apple)</td>
-        <td><span class="tag yes">Sí</span><br>Solo si permites las notificaciones</td>
-        <td>Funcionalidad de la app (enviarte avisos). Se borra al cerrar sesión. No usamos el identificador de publicidad
-          (IDFA)</td></tr>
+      <tr><td></td><td>ID del dispositivo (el identificador de notificaciones que entrega Apple y un identificador aleatorio
+        que crea la app)</td>
+        <td><span class="tag yes">Sí</span></td>
+        <td>Funcionalidad de la app: enviarte avisos (solo si permites las notificaciones) y prevenir fraude con el cashback
+          (detectar varias cuentas en un mismo teléfono). No usamos el identificador de publicidad (IDFA)</td></tr>
       <tr><td><strong>Datos de uso</strong></td>
         <td>Interacción con el producto: cuándo registras movimientos y facturas, qué beneficios desbloqueas y usas, qué
           avisos abres, cuántas veces usas las funciones de inteligencia artificial</td>
@@ -114,9 +115,9 @@
           descripciones que pones a tus movimientos</td>
         <td><span class="tag yes">Sí</span></td><td>Soporte, funcionalidad de la app</td></tr>
       <tr><td></td><td>Fotos o videos</td>
-        <td><span class="tag">No</span></td>
-        <td>La cámara y las fotos que eliges se leen en tu iPhone solo para encontrar el código de la factura; la imagen no
-          se sube</td></tr>
+        <td><span class="tag yes">Sí</span><br>Solo si verificas tus ingresos</td>
+        <td>La foto o el PDF del documento de ingresos que eliges subir, para verificar tus ingresos; se borra al terminar
+          la revisión. Las fotos de facturas se leen en tu iPhone solo para encontrar el código y no se suben</td></tr>
       <tr><td></td><td>Datos de audio</td>
         <td><span class="tag">No</span></td><td>La voz se convierte en texto con iOS; nunca guardamos ni enviamos el audio</td></tr>
       <tr><td></td><td>Correos o mensajes de texto</td>
@@ -160,6 +161,15 @@
 
   <h2>2. Qué datos recopilamos, en detalle</h2>
   <ul>
+    <li><strong>Verificación de ingresos (opcional):</strong> si decides verificar tus ingresos para el
+      cashback, el documento que subes (talonario, carta de trabajo, constancia de la CSS, estado de cuenta o
+      declaración de renta). Se guarda en un almacenamiento privado, solo lo ve el equipo de MonAvi y, si
+      permitiste el uso de IA, lo lee nuestro proveedor de IA (Anthropic) únicamente para sugerir tu nombre y tu
+      ingreso mensual. <strong>El documento se borra al terminar la revisión</strong>: solo conservamos el monto
+      aprobado, la fecha y el tipo de documento.</li>
+    <li><strong>Prevención de fraude:</strong> un identificador aleatorio de tu dispositivo, creado por la app y
+      guardado en el llavero del iPhone, para detectar varias cuentas en un mismo teléfono. No es el identificador
+      publicitario, no te identifica fuera de MonAvi y no se comparte con terceros.</li>
     <li><strong>Cuenta:</strong> tu correo electrónico o, si inicias sesión con Apple, el
       identificador que Apple nos entrega (si eliges ocultar tu correo, nunca lo vemos).</li>
     <li><strong>Datos financieros que tú ingresas:</strong> cuentas, movimientos, presupuestos,

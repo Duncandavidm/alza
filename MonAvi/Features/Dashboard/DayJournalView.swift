@@ -75,6 +75,9 @@ struct DayJournalView: View {
     @State private var incomeRequest: IncomeRequest?
     @State private var isShowingSpending = false
     @State private var isShowingBills = false
+    /// Tope de ingresos para el cashback y revisión (1.1.0, 0100).
+    @State private var incomeStatus: IncomeStatus?
+    @State private var isShowingIncomeVerification = false
 
     var body: some View {
         NavigationStack {
@@ -361,6 +364,7 @@ struct DayJournalView: View {
             }
             .navigationDestination(isPresented: $isShowingSpending) { SpendingInsightsView() }
             .navigationDestination(isPresented: $isShowingBills) { BillsView() }
+            .navigationDestination(isPresented: $isShowingIncomeVerification) { IncomeVerificationView() }
             .sheet(item: $editingTransaction) { transaction in
                 QuickAddView(viewModel: viewModel, existingTransaction: transaction)
             }
@@ -899,6 +903,25 @@ struct DayJournalView: View {
     /// la X las oculta solo por ahora.
     @ViewBuilder
     private var moneyGuardRows: some View {
+        if let incomeStatus, !hiddenForNow.contains("g-income") {
+            if incomeStatus.inReview {
+                incomeNotice(
+                    emoji: "🛡️",
+                    title: L("Tu cashback está en revisión"),
+                    message: L("Revisamos algunos movimientos recientes. Lo nuevo queda pendiente hasta que terminemos; tu cuenta sigue igual."),
+                    action: nil
+                )
+                .overlay(alignment: .topTrailing) { hideForNowButton("g-income") }
+            } else if incomeStatus.shouldOfferVerification {
+                incomeNotice(
+                    emoji: "✅",
+                    title: L("Verifica tus ingresos"),
+                    message: L("Tus ingresos pasan de %@ al mes. Verifícalos para que cuenten completos para tu cashback.", incomeStatus.cap.formatted(.appCurrency)),
+                    action: L("Verificar ahora")
+                )
+                .overlay(alignment: .topTrailing) { hideForNowButton("g-income") }
+            }
+        }
         let warnings = moneyGuard.warnings.filter { !hiddenForNow.contains("g-\($0.id)") }.prefix(3)
         ForEach(Array(warnings)) { warning in
             moneyGuardRow(warning)
@@ -933,6 +956,31 @@ struct DayJournalView: View {
         .background(RoundedRectangle(cornerRadius: 14).fill(tint.opacity(warning.severity == .danger ? 0.1 : 0.12)))
     }
 
+    private func incomeNotice(emoji: String, title: String, message: String, action: String?) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 10) {
+                Text(emoji)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).font(.subheadline.weight(.semibold))
+                    Text(message)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 24)
+            }
+            if let action {
+                Button(action) { isShowingIncomeVerification = true }
+                    .buttonStyle(.borderedProminent)
+                    .tint(MonAviBrand.primary)
+                    .font(.footnote.weight(.semibold))
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 14).fill(MonAviBrand.primary.opacity(0.1)))
+    }
+
     private func guardTint(_ severity: MoneyGuard.Warning.Severity) -> Color {
         switch severity {
         case .danger: return .red
@@ -965,6 +1013,7 @@ struct DayJournalView: View {
             guardTransactions = items
         }
         NotificationManager.scheduleNegativeBalanceReminder(moneyGuard.negativeAccounts)
+        incomeStatus = try? await IncomeVerificationService.status()
     }
 
     private func refreshHealthAlert() async {

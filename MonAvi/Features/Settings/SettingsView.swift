@@ -42,6 +42,16 @@ struct SettingsView: View {
                     }
                 }
 
+                Section {
+                    NavigationLink {
+                        IncomeVerificationView()
+                    } label: {
+                        Label("Verificar ingresos", systemImage: "checkmark.seal")
+                    }
+                } footer: {
+                    Text("Para el cashback, tus ingresos cuentan hasta $3,000 al mes sin verificar.")
+                }
+
                 Section("Preferencias") {
                     Picker(selection: $language) {
                         ForEach(AppLanguage.allCases) { option in

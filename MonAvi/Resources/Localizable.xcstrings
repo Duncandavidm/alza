@@ -1071,6 +1071,16 @@
         }
       }
     },
+    "Acepto que MonAvi revise este documento, con ayuda de IA, solo para verificar mis ingresos. Se borra al terminar la revisión.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I agree that MonAvi may review this document, with the help of AI, only to verify my income. It's deleted when the review is done."
+          }
+        }
+      }
+    },
     "Acreedor (ej. Tarjeta de crédito)": {
       "localizations": {
         "en": {
@@ -1851,6 +1861,16 @@
         }
       }
     },
+    "Asegúrate de que se vean tu nombre y el monto. Solo el equipo de MonAvi lo ve.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Make sure your name and the amount are visible. Only the MonAvi team sees it."
+          }
+        }
+      }
+    },
     "Así cada pago con Apple Pay te llega como «Pago detectado» y lo agregas con un toque.": {
       "localizations": {
         "en": {
@@ -2311,6 +2331,16 @@
         }
       }
     },
+    "Carta de trabajo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Employment letter"
+          }
+        }
+      }
+    },
     "Casado/a": {
       "localizations": {
         "en": {
@@ -2337,6 +2367,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cashback earned"
+          }
+        }
+      }
+    },
+    "Cashback pendiente: registra tus ingresos (o verifícalos si pasan del tope) para recibirlo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cashback pending: log your income (or verify it if it's above the limit) to receive it"
           }
         }
       }
@@ -2867,6 +2907,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "MonAvi tip"
+          }
+        }
+      }
+    },
+    "Constancia de la CSS": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Social Security (CSS) certificate"
           }
         }
       }
@@ -3521,6 +3571,16 @@
         }
       }
     },
+    "Declaración de renta": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tax return"
+          }
+        }
+      }
+    },
     "Deja de sobregirarte: necesitas gastar %@ menos al mes o ganar eso de más. Empieza por lo que no es necesario.": {
       "localizations": {
         "en": {
@@ -3851,6 +3911,16 @@
         }
       }
     },
+    "Documento": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Document"
+          }
+        }
+      }
+    },
     "Donde más compraste": {
       "localizations": {
         "en": {
@@ -4021,6 +4091,16 @@
         }
       }
     },
+    "El PDF pesa más de 10 MB. Prueba con una foto o un PDF más liviano.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The PDF is larger than 10 MB. Try a photo or a smaller PDF."
+          }
+        }
+      }
+    },
     "El asistente de IA no está disponible en este momento. Intenta de nuevo más tarde.": {
       "localizations": {
         "en": {
@@ -4161,12 +4241,32 @@
         }
       }
     },
+    "Elegir PDF": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose PDF"
+          }
+        }
+      }
+    },
     "Elegir archivo CSV": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Choose CSV file"
+          }
+        }
+      }
+    },
+    "Elegir foto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose photo"
           }
         }
       }
@@ -4387,6 +4487,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sending code…"
+          }
+        }
+      }
+    },
+    "Enviar para revisión": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send for review"
           }
         }
       }
@@ -4727,6 +4837,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Marital status"
+          }
+        }
+      }
+    },
+    "Estado de cuenta (últimos 2 meses)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bank statement (last 2 months)"
           }
         }
       }
@@ -5077,6 +5197,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Payment method: %lld"
+          }
+        }
+      }
+    },
+    "Foto lista para enviar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo ready to send"
           }
         }
       }
@@ -5521,12 +5651,32 @@
         }
       }
     },
+    "Ingreso verificado: %@ al mes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verified income: %@ a month"
+          }
+        }
+      }
+    },
     "Ingresos": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Income"
+          }
+        }
+      }
+    },
+    "Ingresos anotados en los últimos 30 días: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Income logged in the last 30 days: %@"
           }
         }
       }
@@ -6701,6 +6851,16 @@
         }
       }
     },
+    "No pudimos verificar tu último documento.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't verify your last document."
+          }
+        }
+      }
+    },
     "No puedes retirar más de lo que tienes ahorrado en esta meta.": {
       "localizations": {
         "en": {
@@ -6997,6 +7157,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Couldn't send the code. Try again in a moment."
+          }
+        }
+      }
+    },
+    "No se pudo enviar el documento. Revisa tu conexión e intenta de nuevo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The document couldn't be sent. Check your connection and try again."
           }
         }
       }
@@ -7621,12 +7791,32 @@
         }
       }
     },
+    "Otro documento": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other document"
+          }
+        }
+      }
+    },
     "PAGADO": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "PAID"
+          }
+        }
+      }
+    },
+    "PDF listo para enviar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF ready to send"
           }
         }
       }
@@ -7897,6 +8087,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "To redeem rewards, confirm your email. We sent you a 6-digit code."
+          }
+        }
+      }
+    },
+    "Para el cashback, tus ingresos cuentan hasta $3,000 al mes sin verificar.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For cashback, your income counts up to $3,000 a month without verification."
           }
         }
       }
@@ -9051,6 +9251,16 @@
         }
       }
     },
+    "Revisamos algunos movimientos recientes. Lo nuevo queda pendiente hasta que terminemos; tu cuenta sigue igual.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We're reviewing some recent activity. New cashback stays pending until we finish; your account stays the same."
+          }
+        }
+      }
+    },
     "Revisar": {
       "localizations": {
         "en": {
@@ -9811,6 +10021,16 @@
         }
       }
     },
+    "Talonario o comprobante de pago": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pay stub or payroll receipt"
+          }
+        }
+      }
+    },
     "Tarjeta de credito": {
       "localizations": {
         "en": {
@@ -10561,6 +10781,36 @@
         }
       }
     },
+    "Tu cashback está en revisión": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your cashback is under review"
+          }
+        }
+      }
+    },
+    "Tu cashback está en revisión: lo nuevo queda pendiente hasta que terminemos.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your cashback is under review: new cashback stays pending until we finish."
+          }
+        }
+      }
+    },
+    "Tu cashback se respalda con lo que ganas. Sin verificar, cuentan hasta %@ al mes. Si ganas más, sube un documento y, al aprobarlo, cuenta tu ingreso completo durante 6 meses.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your cashback is backed by what you earn. Without verification, up to %@ a month counts. If you earn more, upload a document and, once approved, your full income counts for 6 months."
+          }
+        }
+      }
+    },
     "Tu colchón está completo: protégelo y no lo uses para gustos.": {
       "localizations": {
         "en": {
@@ -10611,6 +10861,16 @@
         }
       }
     },
+    "Tu documento está en revisión. Te avisaremos.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your document is under review. We'll let you know."
+          }
+        }
+      }
+    },
     "Tu día": {
       "localizations": {
         "en": {
@@ -10627,6 +10887,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your day in numbers: how much did you spend today? Log it and keep up your good habits."
+          }
+        }
+      }
+    },
+    "Tu estado": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your status"
           }
         }
       }
@@ -10867,6 +11137,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your fixed expenses add up to %@ a month."
+          }
+        }
+      }
+    },
+    "Tus ingresos pasan de %@ al mes. Verifícalos para que cuenten completos para tu cashback.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your income is above %@ a month. Verify it so it fully counts toward your cashback."
           }
         }
       }
@@ -11381,6 +11661,16 @@
         }
       }
     },
+    "Verifica tus ingresos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify your income"
+          }
+        }
+      }
+    },
     "Verificación en 2 pasos": {
       "localizations": {
         "en": {
@@ -11411,12 +11701,32 @@
         }
       }
     },
+    "Verificar ahora": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify now"
+          }
+        }
+      }
+    },
     "Verificar correo": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Verify email"
+          }
+        }
+      }
+    },
+    "Verificar ingresos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify income"
           }
         }
       }

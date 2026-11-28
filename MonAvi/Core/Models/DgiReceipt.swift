@@ -41,7 +41,7 @@ enum DgiCashbackStatus: String, Codable, CaseIterable, Hashable {
     var explanation: String {
         switch self {
         case .acreditado: return "Cashback acreditado"
-        case .sinIngreso: return L("Cashback pendiente: registra tus ingresos para recibirlo")
+        case .sinIngreso: return L("Cashback pendiente: registra tus ingresos (o verifícalos si pasan del tope) para recibirlo")
         case .vencido: return "Cashback vencido (sin ingresos registrados)"
         }
     }

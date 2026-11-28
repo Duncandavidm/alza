@@ -233,7 +233,7 @@ enum DetectedMovementActions {
         if let source = movement.source { content.subtitle = source }
         content.body = movement.notificationBody + (movement.possibleDuplicate
             ? L(" · Parece que ya lo anotaste: revísalo antes de guardarlo.")
-            : L(" · Toca para registrar.")
+            : L(" · Toca para registrar."))
         content.sound = NotificationManager.brandSound
         content.categoryIdentifier = notificationCategory
         content.threadIdentifier = "monavi-detectados"

@@ -58,6 +58,8 @@ export default async function ProtectedLayout({ children }: { children: React.Re
         { href: "/campaigns", label: "Campañas de marcas", icon: "megaphone" },
         { href: "/insights", label: "Estudio de mercado", icon: "chart" },
         { href: "/dgi-verification", label: "Facturas DGI", icon: "receipt" },
+        { href: "/revision-cashback", label: "Revisión de cashback", icon: "shield" },
+        { href: "/verificacion-ingresos", label: "Verificación de ingresos", icon: "wallet" },
       ],
     },
     {

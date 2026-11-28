@@ -223,9 +223,11 @@ final class AppState: ObservableObject {
         struct Row: Decodable {
             let onboardingCompletedAt: Date?
             let country: String?
+            let language: String?
             enum CodingKeys: String, CodingKey {
                 case onboardingCompletedAt = "onboarding_completed_at"
                 case country
+                case language
             }
         }
         do {
@@ -234,7 +236,7 @@ final class AppState: ObservableObject {
             // con la cuenta por trigger y se borra en cascada con ella).
             let rows: [Row] = try await supabase
                 .from("profiles")
-                .select("onboarding_completed_at, country")
+                .select("onboarding_completed_at, country, language")
                 .eq("id", value: userId)
                 .limit(1)
                 .execute()
@@ -247,9 +249,25 @@ final class AppState: ObservableObject {
                 applyCountry(saved)
             }
             onboardingStatus = row.onboardingCompletedAt != nil ? .completed : .pending
+            // La IA, los avisos y los correos hablan en el idioma de la app.
+            if row.language != AppLanguage.current.rawValue {
+                await saveLanguagePreference(AppLanguage.current)
+            }
         } catch {
             onboardingStatus = .failed
         }
+    }
+
+    /// Guarda el idioma en el perfil (profiles.language, 0098): la IA, las
+    /// notificaciones del servidor y los correos responden en ese idioma.
+    func saveLanguagePreference(_ language: AppLanguage) async {
+        guard let userId = session?.user.id else { return }
+        struct Update: Encodable { let language: String }
+        _ = try? await supabase
+            .from("profiles")
+            .update(Update(language: language.rawValue))
+            .eq("id", value: userId)
+            .execute()
     }
 
     /// Banderas que se prenden desde el panel (por ahora, Colombia). Si

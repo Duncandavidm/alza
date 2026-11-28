@@ -14,6 +14,9 @@ struct SettingsView: View {
     @AppStorage(NotificationManager.dailyLogReminderKey) private var dailyLogReminder = true
     @AppStorage(NotificationManager.dailyLogTimeKey) private var dailyLogMinutes = NotificationManager.defaultDailyLogMinutes
     @State private var testNotificationSent = false
+    /// Idioma de la app (1.1.0): se aplica completo al volver a abrir MonAvi.
+    @State private var language = AppLanguage.current
+    @State private var isShowingLanguageNotice = false
     /// Hoja de App Store para canjear un codigo de oferta de suscripcion.
     @State private var isRedeemingOfferCode = false
 
@@ -40,6 +43,19 @@ struct SettingsView: View {
                 }
 
                 Section("Preferencias") {
+                    Picker(selection: $language) {
+                        ForEach(AppLanguage.allCases) { option in
+                            Text(verbatim: option.nativeName).tag(option)
+                        }
+                    } label: {
+                        Label("Idioma", systemImage: "globe")
+                    }
+                    .onChange(of: language) { _, newValue in
+                        guard newValue != AppLanguage.current else { return }
+                        AppLanguage.choose(newValue)
+                        Task { await appState.saveLanguagePreference(newValue) }
+                        isShowingLanguageNotice = true
+                    }
                     Toggle("Modo avanzado", isOn: $isAdvancedMode)
                     Text(isAdvancedMode
                         ? "Ves categoría y etiquetas al anotar un movimiento detallado."
@@ -305,6 +321,13 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Ajustes")
+            .alert(Text(verbatim: language == .english ? "Language changed" : "Idioma cambiado"), isPresented: $isShowingLanguageNotice) {
+                Button(role: .cancel) {} label: { Text(verbatim: "OK") }
+            } message: {
+                Text(verbatim: language == .english
+                    ? "Close MonAvi and open it again to see the whole app in English."
+                    : "Cierra MonAvi y vuelve a abrirla para ver toda la app en español.")
+            }
             .offerCodeRedemption(isPresented: $isRedeemingOfferCode) { _ in
                 Task {
                     await appState.subscriptionStore.syncCurrentEntitlements()

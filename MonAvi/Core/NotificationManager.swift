@@ -390,7 +390,7 @@ enum NotificationManager {
             let what = debt.isCard ? "tu \(debt.creditor)" : debt.creditor
             let amounts = "Debes \(formattedAmount(debt.balance)) (mínimo \(formattedAmount(debt.estimatedMinimum)))."
             let userInfo: [AnyHashable: Any] = ["screen": "card_payment", "debtId": debt.id.uuidString]
-            let dayText = date.formatted(.dateTime.day().month(.wide).locale(Locale(identifier: "es_PA")))
+            let dayText = date.formatted(.dateTime.day().month(.wide).locale(.monavi))
             if let before = calendar.date(byAdding: .day, value: -3, to: date), atReminderHour(before) > now {
                 let id = "card-before-\(debt.id)"
                 schedule(id: id, title: "En 3 días vence \(what)", body: "\(amounts) Vence el \(dayText). Toca para registrar el pago y de qué cuenta sale.", date: atReminderHour(before), userInfo: userInfo)

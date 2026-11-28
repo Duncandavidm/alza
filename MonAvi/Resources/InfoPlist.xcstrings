@@ -1,0 +1,91 @@
+{
+  "sourceLanguage": "es",
+  "strings": {
+    "CFBundleDisplayName": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MonAvi"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MonAvi"
+          }
+        }
+      }
+    },
+    "NSMicrophoneUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MonAvi usa el micrófono para que anotes un ingreso o gasto diciéndolo en voz alta."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MonAvi uses the microphone so you can log income or an expense by saying it out loud."
+          }
+        }
+      }
+    },
+    "NSSpeechRecognitionUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MonAvi transcribe lo que dices para llenar el monto, la descripción y la categoría del movimiento por ti."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MonAvi transcribes what you say to fill in the amount, description, and category of the transaction for you."
+          }
+        }
+      }
+    },
+    "NSFaceIDUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MonAvi usa Face ID para que desbloquees la app de forma rápida y segura."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MonAvi uses Face ID so you can unlock the app quickly and securely."
+          }
+        }
+      }
+    },
+    "NSCameraUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MonAvi usa la cámara para escanear el código QR de tus facturas electrónicas y registrar el gasto automáticamente."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MonAvi uses the camera to scan the QR code on your e-invoices and log the expense automatically."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

@@ -91,18 +91,20 @@ final class VoiceTransactionRecognizer: NSObject, ObservableObject {
         let normalize = { (id: String) in id.replacingOccurrences(of: "_", with: "-").lowercased() }
         let supported = Set(SFSpeechRecognizer.supportedLocales().map { normalize($0.identifier) })
 
+        // Idioma de la app (1.1.0): en inglés se escucha en inglés.
+        let language = AppLanguage.current
         var candidates: [String] = []
-        if Locale.current.language.languageCode?.identifier == "es" {
+        if Locale.current.language.languageCode?.identifier == language.rawValue {
             candidates.append(Locale.current.identifier)
         }
-        candidates += ["es-PA", "es-419", "es-MX", "es-US", "es-CO", "es-ES"]
+        candidates += language.speechLocales
 
         for identifier in candidates where supported.contains(normalize(identifier)) {
             if let recognizer = SFSpeechRecognizer(locale: Locale(identifier: identifier)) {
                 return recognizer
             }
         }
-        return SFSpeechRecognizer(locale: Locale(identifier: "es-MX"))
+        return SFSpeechRecognizer(locale: Locale(identifier: language == .english ? "en-US" : "es-MX"))
     }
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?

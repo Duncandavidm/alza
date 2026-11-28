@@ -1,7 +1,8 @@
 import Foundation
 
 extension Locale {
-    /// La app es en espanol de Panama: fechas y meses siempre en espanol,
-    /// aunque el iPhone este configurado en otro idioma.
-    static let monavi = Locale(identifier: "es_PA")
+    /// Formato de la app: español de Panamá, o inglés (EE. UU.) si la
+    /// persona eligió English (1.1.0). Fechas y meses en el idioma de la app
+    /// aunque el iPhone esté en otro.
+    static var monavi: Locale { AppLanguage.current.formattingLocale }
 }

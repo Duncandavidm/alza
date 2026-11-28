@@ -36,7 +36,7 @@ enum SavingsAvailability {
         let style = sameYear
             ? Date.FormatStyle().day().month(.wide)
             : Date.FormatStyle().day().month(.wide).year()
-        return date.formatted(style.locale(Locale(identifier: "es_PA")))
+        return date.formatted(style.locale(.monavi))
     }
 
     /// Fecha sugerida para un ahorro bloqueado: el 1 de diciembre (de este

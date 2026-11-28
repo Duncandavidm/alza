@@ -153,7 +153,7 @@ enum BrandCampaignText {
     /// "Válida hasta el 30 de noviembre".
     static func endsText(_ endsAt: Date?, calendar: Calendar = .current) -> String? {
         guard let endsAt else { return nil }
-        let style = Date.FormatStyle(date: .omitted, time: .omitted, locale: Locale(identifier: "es_PA"), calendar: calendar, timeZone: calendar.timeZone)
+        let style = Date.FormatStyle(date: .omitted, time: .omitted, locale: .monavi, calendar: calendar, timeZone: calendar.timeZone)
             .day()
             .month(.wide)
         return "Válida hasta el \(endsAt.formatted(style))"

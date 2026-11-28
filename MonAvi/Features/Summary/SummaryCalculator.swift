@@ -341,7 +341,7 @@ struct SummaryCalculator {
 
     private func formatted(_ date: Date, _ format: String) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "es")
+        formatter.locale = .monavi
         formatter.calendar = calendar
         formatter.timeZone = calendar.timeZone
         formatter.dateFormat = format

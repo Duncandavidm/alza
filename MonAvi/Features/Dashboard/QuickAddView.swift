@@ -347,7 +347,7 @@ struct QuickAddView: View {
     private var noMoneyMessage: String {
         guard let account = selectedAccount, let after = balanceAfterSave else { return "" }
         let code = account.currency
-        return "«\(account.name)» tiene \(account.balance.formatted(.currency(code: code))) y este gasto es de \(enteredMagnitude.formatted(.currency(code: code))): quedaría en -\(abs(after).formatted(.currency(code: code))). No se puede gastar dinero que no hay. ¿De dónde salió?"
+        return L("«%@» tiene %@ y este gasto es de %@: quedaría en -%@. No se puede gastar dinero que no hay. ¿De dónde salió?", "\(account.name)", "\(account.balance.formatted(.currency(code: code)))", "\(enteredMagnitude.formatted(.currency(code: code)))", "\(abs(after).formatted(.currency(code: code)))")
     }
 
     /// Cambia a ingreso para anotar primero de donde vino el dinero.
@@ -357,7 +357,7 @@ struct QuickAddView: View {
         description = ""
         category = nil
         userPickedCategory = false
-        guardNote = "Anota primero de dónde vino el dinero (sueldo, venta, préstamo…). Después anota el gasto."
+        guardNote = L("Anota primero de dónde vino el dinero (sueldo, venta, préstamo…). Después anota el gasto.")
     }
 
     /// Aviso en vivo: la cuenta quedaria en negativo o casi vacia.
@@ -438,9 +438,9 @@ struct QuickAddView: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: AccountIcon.symbol(for: current?.type ?? .checking))
-                Text(movementType.isInflow ? "A:" : "De:")
+                Text(movementType.isInflow ? L("A:") : L("De:"))
                     .foregroundStyle(.secondary)
-                Text(current?.name ?? "Elegir cuenta")
+                Text(current?.name ?? L("Elegir cuenta"))
                     .fontWeight(.semibold)
                     .lineLimit(1)
                 Image(systemName: "chevron.down")
@@ -453,7 +453,7 @@ struct QuickAddView: View {
             .padding(.vertical, 8)
             .background(Capsule().stroke(Color(.separator), lineWidth: 1))
         }
-        .accessibilityLabel("Cuenta: \(current?.name ?? "sin elegir"). Toca para cambiar")
+        .accessibilityLabel(L("Cuenta: %@. Toca para cambiar", current?.name ?? L("sin elegir")))
     }
 
     /// Debajo del monto: la categoria elegida (o sugerida) y lo que se
@@ -503,7 +503,7 @@ struct QuickAddView: View {
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Monto: \(amountText.isEmpty ? "0" : amountText) dólares")
+        .accessibilityLabel(L("Monto: %@ dólares", amountText.isEmpty ? "0" : amountText))
     }
 
     /// +/− del teclado: cambia entre gasto e ingreso.

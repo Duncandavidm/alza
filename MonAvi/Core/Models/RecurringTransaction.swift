@@ -99,7 +99,7 @@ struct RecurringTransaction: Codable, Identifiable, Hashable {
     var scheduleDescription: String {
         switch frequency {
         case .monthly:
-            return "día \(dayOfMonth)"
+            return L("día %@", "\(dayOfMonth)")
         case .weekly:
             return "cada \(Self.weekdayName(weekday ?? 2))"
         case .daily:
@@ -109,7 +109,7 @@ struct RecurringTransaction: Codable, Identifiable, Hashable {
 
     /// 1 = domingo ... 7 = sabado.
     static func weekdayName(_ weekday: Int) -> String {
-        let names = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"]
+        let names = [L("domingo"), L("lunes"), L("martes"), L("miércoles"), L("jueves"), L("viernes"), L("sábado")]
         return names[(min(max(weekday, 1), 7)) - 1]
     }
 }

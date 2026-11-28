@@ -33,7 +33,7 @@ struct DetectedMovement: Codable, Identifiable, Hashable {
     }
 
     /// "Pago detectado" / "Ingreso detectado".
-    var notificationTitle: String { isIncome ? "Ingreso detectado" : "Pago detectado" }
+    var notificationTitle: String { isIncome ? L("Ingreso detectado") : L("Pago detectado") }
 
     /// "Café La Esquina · $12.40 (•4021)".
     var notificationBody: String {

@@ -24,11 +24,11 @@ struct VoiceListeningView: View {
     }
 
     private var title: String {
-        if recognizer.isAnswering { return "Buscando la respuesta…" }
-        if recognizer.isProcessing { return "Entendiendo lo que dijiste…" }
-        if recognizer.isRecording { return recognizer.liveTranscript.isEmpty ? "Te escucho…" : "Sigue, te escucho…" }
-        if hasError { return "No te entendí" }
-        return "Preparando el micrófono…"
+        if recognizer.isAnswering { return L("Buscando la respuesta…") }
+        if recognizer.isProcessing { return L("Entendiendo lo que dijiste…") }
+        if recognizer.isRecording { return recognizer.liveTranscript.isEmpty ? L("Te escucho…") : L("Sigue, te escucho…") }
+        if hasError { return L("No te entendí") }
+        return L("Preparando el micrófono…")
     }
 
     var body: some View {

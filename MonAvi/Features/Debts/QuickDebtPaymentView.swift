@@ -51,10 +51,10 @@ struct QuickDebtPaymentView: View {
                         if let debt = selectedDebt {
                             LabeledContent("Debes", value: debt.balance.formatted(.appCurrency))
                             if let limit = debt.creditLimit, limit > 0, let available = debt.availableCredit {
-                                LabeledContent("Cupo disponible", value: "\(available.formatted(.appCurrency)) de \(limit.formatted(.appCurrency))")
+                                LabeledContent("Cupo disponible", value: L("%@ de %@", "\(available.formatted(.appCurrency))", "\(limit.formatted(.appCurrency))"))
                             }
                             if let day = debt.paymentDay {
-                                LabeledContent("Vence", value: "el día \(day) de cada mes")
+                                LabeledContent("Vence", value: L("el día %@ de cada mes", "\(day)"))
                             }
                         }
                     }
@@ -62,12 +62,12 @@ struct QuickDebtPaymentView: View {
                     Section("¿Cuánto pagas?") {
                         if let debt = selectedDebt {
                             HStack(spacing: 8) {
-                                quickAmount("Mínimo", debt.estimatedMinimum)
+                                quickAmount(L("Mínimo"), debt.estimatedMinimum)
                                 quickAmount("Todo", debt.balance)
                             }
                             .buttonStyle(.bordered)
                         }
-                        AmountField(placeholder: "Monto del pago", text: $amountText)
+                        AmountField(placeholder: L("Monto del pago"), text: $amountText)
                         if let debt = selectedDebt, amount > 0, amount < debt.estimatedMinimum {
                             Text("Es menos que el mínimo: puede generar recargos e intereses de mora.")
                                 .font(.caption)

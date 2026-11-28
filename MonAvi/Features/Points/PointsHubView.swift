@@ -62,8 +62,8 @@ struct PointsHubView: View {
                 myCouponsRow
             } footer: {
                 Text(activeCodesCount > 0
-                     ? "Toca Mis cupones y canjes para ver tu código y muéstralo en caja. Pide siempre tu factura fiscal."
-                     : "Mis cupones y canjes se activa cuando ganes un cupón o canjees un premio. Te avisaremos.")
+                     ? L("Toca Mis cupones y canjes para ver tu código y muéstralo en caja. Pide siempre tu factura fiscal.")
+                     : L("Mis cupones y canjes se activa cuando ganes un cupón o canjees un premio. Te avisaremos."))
             }
 
             Section {

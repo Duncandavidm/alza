@@ -68,7 +68,7 @@ struct DeleteAccountView: View {
         do {
             try await appState.deleteAccount()
         } catch {
-            errorMessage = "No se pudo eliminar la cuenta: \(error.localizedDescription)"
+            errorMessage = L("No se pudo eliminar la cuenta: %@", "\(error.localizedDescription)")
         }
     }
 }

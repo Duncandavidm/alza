@@ -54,7 +54,7 @@ struct HabitEngine {
         var title: String {
             switch self {
             case .logging: return L("Anotar tus movimientos")
-            case .savings: return "Ahorro constante"
+            case .savings: return L("Ahorro constante")
             case .budgets: return "Presupuestos cumplidos"
             }
         }
@@ -395,22 +395,22 @@ struct HabitEngine {
             HabitBadge(id: "streak_7", emoji: "🔥", title: L("Una semana seguida"),
                        detail: L("Anota algo 7 días seguidos."),
                        current: bestStreak, target: 7),
-            HabitBadge(id: "streak_30", emoji: "⚡", title: "Mes imparable",
+            HabitBadge(id: "streak_30", emoji: "⚡", title: L("Mes imparable"),
                        detail: L("Anota algo 30 días seguidos."),
                        current: bestStreak, target: 30),
-            HabitBadge(id: "full_month", emoji: "📅", title: "Mes completo",
+            HabitBadge(id: "full_month", emoji: "📅", title: L("Mes completo"),
                        detail: L("Anota movimientos en 20 días de un mismo mes."),
                        current: maxDaysInAMonth, target: 20),
-            HabitBadge(id: "first_goal", emoji: "🎯", title: "Primera meta",
+            HabitBadge(id: "first_goal", emoji: "🎯", title: L("Primera meta"),
                        detail: L("Crea una meta de ahorro."),
                        current: input.goals.isEmpty ? 0 : 1, target: 1),
-            HabitBadge(id: "saver_4", emoji: "🐷", title: "Ahorro constante",
+            HabitBadge(id: "saver_4", emoji: "🐷", title: L("Ahorro constante"),
                        detail: L("4 semanas seguidas con un aporte que madura."),
                        current: bestSavingsRun, target: 4),
             HabitBadge(id: "saver_12", emoji: "🏦", title: L("Ahorrador de hierro"),
                        detail: L("12 semanas seguidas con un aporte que madura."),
                        current: bestSavingsRun, target: 12),
-            HabitBadge(id: "goal_done", emoji: "🏆", title: "Meta cumplida",
+            HabitBadge(id: "goal_done", emoji: "🏆", title: L("Meta cumplida"),
                        detail: L("Completa una meta solo con aportes maduros."),
                        current: completedGoal ? 1 : 0, target: 1),
             HabitBadge(id: "budget_1", emoji: "✅", title: "Presupuesto cumplido",

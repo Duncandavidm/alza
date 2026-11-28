@@ -178,6 +178,6 @@ final class RewardsRepository {
                 return message
             }
         }
-        return "No se pudo completar el canje. Revisa tu conexión e inténtalo de nuevo."
+        return L("No se pudo completar el canje. Revisa tu conexión e inténtalo de nuevo.")
     }
 }

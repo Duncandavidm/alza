@@ -64,8 +64,8 @@ struct FinancialSnapshotSections: View {
             Text("Cómo vamos a mejorar")
         } footer: {
             Text(showRevisitHint
-                 ? "MonAvi te va a recordar tus pagos fijos y te avisará cómo vas. Puedes volver a ver este análisis en Análisis > Tu salud financiera."
-                 : "Se calcula con tus pagos fijos, deudas y cuentas en MonAvi. Si algo cambió, actualízalo y vuelve aquí.")
+                 ? L("MonAvi te va a recordar tus pagos fijos y te avisará cómo vas. Puedes volver a ver este análisis en Análisis > Tu salud financiera.")
+                 : L("Se calcula con tus pagos fijos, deudas y cuentas en MonAvi. Si algo cambió, actualízalo y vuelve aquí."))
         }
     }
 }
@@ -168,7 +168,7 @@ struct CreditUseRow: View {
             }
             ProgressView(value: min(utilization, 1))
                 .tint(color)
-            Text(utilization > 0.3 ? "Lo ideal es usar menos del 30%: cuida tu historial de crédito." : "Bien: estás por debajo del 30% recomendado.")
+            Text(utilization > 0.3 ? L("Lo ideal es usar menos del 30%: cuida tu historial de crédito.") : L("Bien: estás por debajo del 30% recomendado."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

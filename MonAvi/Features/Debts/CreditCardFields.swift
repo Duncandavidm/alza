@@ -43,7 +43,7 @@ struct CreditCardFieldsSections: View {
 
     var body: some View {
         Section {
-            LabeledContent(limitIsOptional ? "Cupo (si es tarjeta)" : "Cupo total") {
+            LabeledContent(limitIsOptional ? L("Cupo (si es tarjeta)") : L("Cupo total")) {
                 AmountField(placeholder: "ej. 2000", text: $draft.limitText)
                     .multilineTextAlignment(.trailing)
             }
@@ -85,14 +85,14 @@ struct CreditCardFieldsSections: View {
             }
             Toggle("Tiene día de pago cada mes", isOn: $draft.hasPaymentDay)
             if draft.hasPaymentDay {
-                DayOfMonthField(label: "Día de pago", day: $draft.paymentDay)
+                DayOfMonthField(label: L("Día de pago"), day: $draft.paymentDay)
             }
         } header: {
             Text("Pago")
         } footer: {
             Text(draft.hasPaymentDay
-                 ? "Te avisamos 3 días antes y el mismo día, y registras de qué cuenta salió el pago."
-                 : "Búscala en tu estado de cuenta: los bancos suelen dar la tasa al año.")
+                 ? L("Te avisamos 3 días antes y el mismo día, y registras de qué cuenta salió el pago.")
+                 : L("Búscala en tu estado de cuenta: los bancos suelen dar la tasa al año."))
         }
     }
 }

@@ -7,7 +7,7 @@ struct ControlCenterShowcase: View {
     var body: some View {
         VStack(spacing: 12) {
             HStack(spacing: 12) {
-                tile(symbol: "plus.circle.fill", title: "Anotar gasto", highlighted: true)
+                tile(symbol: "plus.circle.fill", title: L("Anotar gasto"), highlighted: true)
                 tile(symbol: "qrcode.viewfinder", title: "Escanear factura", highlighted: true)
             }
             HStack(spacing: 12) {
@@ -54,10 +54,10 @@ struct ControlCenterShowcase: View {
 /// estilo que VoiceBackTapGuideView.
 struct ControlCenterGuideView: View {
     private let steps: [String] = [
-        "Desliza hacia abajo desde la esquina superior derecha de la pantalla para abrir el **Centro de control**.",
-        "Toca **+** arriba a la izquierda y luego **Agregar un control**.",
-        "Busca **MonAvi** y elige **Anotar gasto** o **Escanear factura** (puedes agregar los dos).",
-        "¡Listo! Desde cualquier pantalla, incluso la bloqueada, toca el botón y MonAvi se abre listo.",
+        L("Desliza hacia abajo desde la esquina superior derecha de la pantalla para abrir el **Centro de control**."),
+        L("Toca **+** arriba a la izquierda y luego **Agregar un control**."),
+        L("Busca **MonAvi** y elige **Anotar gasto** o **Escanear factura** (puedes agregar los dos)."),
+        L("¡Listo! Desde cualquier pantalla, incluso la bloqueada, toca el botón y MonAvi se abre listo."),
     ]
 
     var body: some View {

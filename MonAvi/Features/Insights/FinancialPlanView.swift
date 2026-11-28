@@ -24,7 +24,7 @@ struct FinancialPlanView: View {
             } else if let errorMessage {
                 ContentUnavailableView("No se pudo cargar", systemImage: "wifi.exclamationmark", description: Text(errorMessage))
             } else {
-                MonAviCatLoader(message: "Armando tu plan…")
+                MonAviCatLoader(message: L("Armando tu plan…"))
                     .padding(.vertical, 40)
             }
         }
@@ -43,7 +43,7 @@ struct FinancialPlanView: View {
                     .font(.caption.weight(.bold))
                     .textCase(.uppercase)
                     .foregroundStyle(MonAviBrand.primary)
-                Text(plan.currentStep.map { "Vas en el paso \($0.number): \($0.title)" } ?? "¡Completaste los 7 pasos! 🎉")
+                Text(plan.currentStep.map { L("Vas en el paso %@: %@", "\($0.number)", "\($0.title)") } ?? L("¡Completaste los 7 pasos! 🎉"))
                     .font(.title3.weight(.bold))
                 ProgressView(value: Double(plan.completedCount), total: 7)
                     .tint(MonAviBrand.primary)
@@ -122,7 +122,7 @@ struct FinancialPlanView: View {
     private func readinessSection(_ readiness: FinancialPlan.Readiness) -> some View {
         Section {
             VStack(alignment: .leading, spacing: 10) {
-                Text(readiness.isReady ? "✅ ¿Estás listo para invertir?" : "🌱 ¿Estás listo para invertir?")
+                Text(readiness.isReady ? L("✅ ¿Estás listo para invertir?") : L("🌱 ¿Estás listo para invertir?"))
                     .font(.headline)
                 Text(readiness.headline)
                     .font(.subheadline.weight(.semibold))

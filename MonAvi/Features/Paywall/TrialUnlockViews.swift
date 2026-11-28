@@ -37,7 +37,7 @@ extension View {
             .grayscale(locked ? 1 : 0)
             .opacity(locked ? 0.5 : 1)
             .allowsHitTesting(!locked)
-            .accessibilityHint(locked ? "Se desbloquea con tu plan Pro" : "")
+            .accessibilityHint(locked ? L("Se desbloquea con tu plan Pro") : "")
     }
 }
 
@@ -48,9 +48,9 @@ enum TrialUnlockText {
 
     static func bannerDetail(endDate: Date?) -> String {
         if let endDate {
-            return "Durante la prueba gratis puedes verlos. El \(dayText(endDate)) empieza tu plan y se activan solos."
+            return L("Durante la prueba gratis puedes verlos. El %@ empieza tu plan y se activan solos.", "\(dayText(endDate))")
         }
-        return "Durante la prueba gratis puedes verlos. Cuando empiece tu plan se activan solos."
+        return L("Durante la prueba gratis puedes verlos. Cuando empiece tu plan se activan solos.")
     }
 }
 

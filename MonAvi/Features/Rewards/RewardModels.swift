@@ -369,7 +369,7 @@ enum RewardsMath {
 
     /// "Tienes 150 pts".
     static func pointsBalanceText(points: Int) -> String {
-        "Tienes \(RewardCurrency.formatPoints(max(0, points)))"
+        L("Tienes %@", "\(RewardCurrency.formatPoints(max(0, points)))")
     }
 
     /// "Te faltan $1.20" / "Te faltan 30 pts" — nil si ya le alcanza.

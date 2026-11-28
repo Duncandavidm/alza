@@ -10,17 +10,17 @@ struct PaywallView: View {
     @State private var isRedeemingOfferCode = false
 
     private static let topChips = [
-        MarqueeChip(icon: "💬", text: "Pregunta lo que sea sobre tu dinero"),
-        MarqueeChip(icon: "🔔", text: "Alertas antes de que venza una cuenta"),
-        MarqueeChip(icon: "📈", text: "Prioriza qué deuda pagar primero"),
-        MarqueeChip(icon: "🎁", text: "Cashback por tus facturas"),
+        MarqueeChip(icon: "💬", text: L("Pregunta lo que sea sobre tu dinero")),
+        MarqueeChip(icon: "🔔", text: L("Alertas antes de que venza una cuenta")),
+        MarqueeChip(icon: "📈", text: L("Prioriza qué deuda pagar primero")),
+        MarqueeChip(icon: "🎁", text: L("Cashback por tus facturas")),
     ]
 
     private static let bottomChips = [
         MarqueeChip(icon: "♾️", text: "Transacciones y cuentas ilimitadas"),
-        MarqueeChip(icon: "🤖", text: "Análisis con IA de tus gastos"),
-        MarqueeChip(icon: "🎙️", text: "Anota gastos con tu voz"),
-        MarqueeChip(icon: "🎯", text: "Metas de ahorro que sí se cumplen"),
+        MarqueeChip(icon: "🤖", text: L("Análisis con IA de tus gastos")),
+        MarqueeChip(icon: "🎙️", text: L("Anota gastos con tu voz")),
+        MarqueeChip(icon: "🎯", text: L("Metas de ahorro que sí se cumplen")),
     ]
 
     var body: some View {

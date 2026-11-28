@@ -31,7 +31,7 @@ struct DebtsView: View {
                     }
                     .pickerStyle(.segmented)
                 } footer: {
-                    Text(payoffStrategy.explanation + " Solo afecta el orden entre tus deudas en el plan de \"qué pagar primero\" al registrar un ingreso.")
+                    Text(payoffStrategy.explanation + L(" Solo afecta el orden entre tus deudas en el plan de \"qué pagar primero\" al registrar un ingreso."))
                 }
             }
 

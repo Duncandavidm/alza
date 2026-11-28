@@ -71,7 +71,7 @@ struct BudgetDetailSheet: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Límite \(progress.budget.period.displayName.lowercased())")
                         .font(.subheadline.weight(.semibold))
-                    AmountField(placeholder: "Límite", text: $limitText)
+                    AmountField(placeholder: L("Límite"), text: $limitText)
                         .font(.title2)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -137,7 +137,7 @@ struct BudgetDetailSheet: View {
 
     private func save() async {
         guard let limit = AppCountry.parseAmount(limitText), limit > 0 else {
-            errorMessage = "Pon un límite válido."
+            errorMessage = L("Pon un límite válido.")
             return
         }
         isSaving = true
@@ -146,7 +146,7 @@ struct BudgetDetailSheet: View {
             try await viewModel.updateBudget(progress.budget, limitAmount: limit, color: selectedColor.hexString)
             dismiss()
         } catch {
-            errorMessage = "No se pudo guardar: \(error.localizedDescription)"
+            errorMessage = L("No se pudo guardar: %@", "\(error.localizedDescription)")
         }
     }
 
@@ -157,7 +157,7 @@ struct BudgetDetailSheet: View {
             try await viewModel.deleteBudget(progress.budget)
             dismiss()
         } catch {
-            errorMessage = "No se pudo eliminar: \(error.localizedDescription)"
+            errorMessage = L("No se pudo eliminar: %@", "\(error.localizedDescription)")
         }
     }
 }

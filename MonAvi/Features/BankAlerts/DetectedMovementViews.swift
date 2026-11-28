@@ -176,14 +176,14 @@ struct DetectedMovementReviewView: View {
                             .multilineTextAlignment(.trailing)
                             .font(.body.weight(.semibold))
                     }
-                    TextField(isIncome ? "¿De quién?" : "¿Dónde? (ej. Café La Esquina)", text: $descriptionText)
+                    TextField(isIncome ? L("¿De quién?") : L("¿Dónde? (ej. Café La Esquina)"), text: $descriptionText)
                     if !isIncome, let amount, amount <= 10 {
                         Label("Gasto hormiga: pequeño, pero suma cada mes", systemImage: "ant.fill")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 } header: {
-                    Text(isIncome ? "Ingreso detectado" : "Pago detectado")
+                    Text(isIncome ? L("Ingreso detectado") : L("Pago detectado"))
                 } footer: {
                     Text(footerText)
                 }
@@ -238,7 +238,7 @@ struct DetectedMovementReviewView: View {
                     Button("Cerrar") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(isIncome ? "Agregar ingreso" : "Agregar gasto") { Task { await save() } }
+                    Button(isIncome ? L("Agregar ingreso") : L("Agregar gasto")) { Task { await save() } }
                         .disabled(isSaving || amount == nil || accountId == nil || userId == nil)
                 }
             }
@@ -256,8 +256,8 @@ struct DetectedMovementReviewView: View {
     }
 
     private var queueTitle: String {
-        if let position, let total, total > 1 { return "Por confirmar · \(position) de \(total)" }
-        return "Por confirmar"
+        if let position, let total, total > 1 { return L("Por confirmar · %@ de %@", "\(position)", "\(total)") }
+        return L("Por confirmar")
     }
 
     /// "Límite de gasto": como queda el presupuesto del mes de esa
@@ -281,8 +281,8 @@ struct DetectedMovementReviewView: View {
                     ProgressView(value: min(max(ratio, 0), 1))
                         .tint(ratio >= 1 ? MonAviBrand.alert : (ratio >= 0.8 ? Color.orange : MonAviBrand.primary))
                     Text(ratio >= 1
-                         ? "Con este gasto pasas tu presupuesto del mes."
-                         : "Con este gasto llegas al \(Int((ratio * 100).rounded()))% de tu presupuesto del mes.")
+                         ? L("Con este gasto pasas tu presupuesto del mes.")
+                         : L("Con este gasto llegas al %@%% de tu presupuesto del mes.", "\(Int((ratio * 100).rounded()))"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -291,10 +291,10 @@ struct DetectedMovementReviewView: View {
     }
 
     private var footerText: String {
-        var parts = ["Leído de un aviso"]
-        if let source = movement.source { parts[0] += " de \(source)" }
+        var parts = [L("Leído de un aviso")]
+        if let source = movement.source { parts[0] += L(" de %@", "\(source)") }
         parts.append(movement.detectedAt.formatted(date: .abbreviated, time: .shortened))
-        return parts.joined(separator: " · ") + ". Nada se guarda hasta que toques Registrar."
+        return parts.joined(separator: " · ") + L(". Nada se guarda hasta que toques Registrar.")
     }
 
     private func save() async {
@@ -315,7 +315,7 @@ struct DetectedMovementReviewView: View {
             onDone()
             dismiss()
         } catch {
-            errorMessage = "No se pudo registrar. Revisa tu conexión e inténtalo de nuevo."
+            errorMessage = L("No se pudo registrar. Revisa tu conexión e inténtalo de nuevo.")
         }
     }
 }

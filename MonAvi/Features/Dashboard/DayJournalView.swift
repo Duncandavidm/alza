@@ -211,7 +211,7 @@ struct DayJournalView: View {
                                 }
                             }
                     }
-                    .accessibilityLabel(activeGiftsCount > 0 ? "Canjear premios. Tienes regalos sin usar" : "Canjear premios")
+                    .accessibilityLabel(activeGiftsCount > 0 ? L("Canjear premios. Tienes regalos sin usar") : L("Canjear premios"))
                 }
                 ToolbarItem(placement: .primaryAction) {
                     if viewModel.isViewingToday {
@@ -417,7 +417,7 @@ struct DayJournalView: View {
     private var header: some View {
         HStack(alignment: .center, spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(viewModel.isViewingToday ? "Hoy" : dateLabel)
+                Text(viewModel.isViewingToday ? L("Hoy") : dateLabel)
                     .font(.system(.title2, design: MonAviBrand.fontDesign, weight: .bold))
                 if !viewModel.isViewingToday {
                     Button("Volver a hoy") {
@@ -686,11 +686,11 @@ struct DayJournalView: View {
             HStack(alignment: .top, spacing: 10) {
                 Text("🔁")
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(suggestion.paidThisMonth ? "¿\(suggestion.name) es un gasto fijo?" : "¿Ya pagaste \(suggestion.name) este mes?")
+                    Text(suggestion.paidThisMonth ? L("¿%@ es un gasto fijo?", "\(suggestion.name)") : L("¿Ya pagaste %@ este mes?", "\(suggestion.name)"))
                         .font(.subheadline.weight(.semibold))
                     Text(suggestion.paidThisMonth
-                         ? "Lo pagaste \(suggestion.datesText) (\(amount)). Si lo guardamos como fijo, te lo recordamos cada mes."
-                         : "Lo pagaste \(suggestion.datesText) (\(amount)). ¿Lo registramos este mes?")
+                         ? L("Lo pagaste %@ (%@). Si lo guardamos como fijo, te lo recordamos cada mes.", "\(suggestion.datesText)", "\(amount)")
+                         : L("Lo pagaste %@ (%@). ¿Lo registramos este mes?", "\(suggestion.datesText)", "\(amount)"))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -765,7 +765,7 @@ struct DayJournalView: View {
             try await suggestionsModel.accept(suggestion, userId: userId, paidAmount: paidAmount, using: recurringViewModel)
             if paidAmount != nil { await refresh() }
         } catch {
-            viewModel.errorMessage = "No se pudo guardar el pago fijo: \(error.localizedDescription)"
+            viewModel.errorMessage = L("No se pudo guardar el pago fijo: %@", "\(error.localizedDescription)")
         }
     }
 
@@ -849,7 +849,7 @@ struct DayJournalView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("¿Ya está disponible tu dinero de \(account.name)?")
                                 .font(.subheadline.weight(.semibold))
-                            Text("Marcaste que se liberaba el \(SavingsAvailability.label(account.availableOn) ?? "día de hoy"). Tienes \(account.balance.formatted(.currency(code: account.currency))).")
+                            Text(L("Marcaste que se liberaba el %@. Tienes %@.", SavingsAvailability.label(account.availableOn) ?? L("día de hoy"), account.balance.formatted(.currency(code: account.currency))))
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                         }
@@ -881,7 +881,7 @@ struct DayJournalView: View {
         do {
             try await AccountTransfers.setAvailableOn(snoozeDate, accountId: account.id)
         } catch {
-            viewModel.errorMessage = "No se pudo cambiar la fecha: \(error.localizedDescription)"
+            viewModel.errorMessage = L("No se pudo cambiar la fecha: %@", "\(error.localizedDescription)")
         }
         snoozeAccount = nil
         await refresh()
@@ -1059,7 +1059,7 @@ struct DayJournalView: View {
 
     private var amountPromptTitle: String {
         guard let item = amountPromptItem else { return "" }
-        return item.movementType.isInflow ? "¿Cuánto recibiste de \(item.name)?" : "¿Cuánto pagaste de \(item.name)?"
+        return item.movementType.isInflow ? L("¿Cuánto recibiste de %@?", "\(item.name)") : L("¿Cuánto pagaste de %@?", "\(item.name)")
     }
 
     private var isAmountPromptShown: Binding<Bool> {
@@ -1081,7 +1081,7 @@ struct DayJournalView: View {
             HStack(alignment: .top, spacing: 10) {
                 Text(isIncome ? "💵" : "🧾")
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(isIncome ? "¿Recibiste \(item.name) hoy?" : "¿Pagaste \(item.name) hoy?")
+                    Text(isIncome ? L("¿Recibiste %@ hoy?", "\(item.name)") : L("¿Pagaste %@ hoy?", "\(item.name)"))
                         .font(.subheadline.weight(.semibold))
                     Text("Normalmente son \(item.amount, format: .appCurrency). ¿Fue lo mismo?")
                         .font(.footnote)
@@ -1138,7 +1138,7 @@ struct DayJournalView: View {
         } else {
             VStack(alignment: .leading, spacing: 4) {
                 if viewModel.todayTransactions.isEmpty && !viewModel.isLoading {
-                    Text(viewModel.isViewingToday ? "Todavía no has anotado nada hoy. Toca el + para empezar." : "No hay movimientos ese día.")
+                    Text(viewModel.isViewingToday ? L("Todavía no has anotado nada hoy. Toca el + para empezar.") : L("No hay movimientos ese día."))
                         .foregroundStyle(.secondary)
                         .padding(.vertical, 8)
                 } else {
@@ -1512,7 +1512,7 @@ struct DayJournalView: View {
         do {
             try await recurringViewModel.confirmPayment(for: item, userId: userId, amount: amount)
         } catch {
-            viewModel.errorMessage = "No se pudo registrar el pago: \(error.localizedDescription)"
+            viewModel.errorMessage = L("No se pudo registrar el pago: %@", "\(error.localizedDescription)")
         }
         await refresh()
     }

@@ -133,7 +133,7 @@ final class ProfileSettingsViewModel: ObservableObject {
         case .success:
             return nil
         case .failure:
-            return "Escribe un teléfono válido: de 7 a 20 dígitos; puede llevar +, espacios, guiones o paréntesis."
+            return L("Escribe un teléfono válido: de 7 a 20 dígitos; puede llevar +, espacios, guiones o paréntesis.")
         }
     }
 
@@ -168,7 +168,7 @@ final class ProfileSettingsViewModel: ObservableObject {
             occupation = row.occupation ?? ""
             didSave = false
         } catch {
-            errorMessage = "No se pudo cargar tu perfil: \(error.localizedDescription)"
+            errorMessage = L("No se pudo cargar tu perfil: %@", "\(error.localizedDescription)")
         }
     }
 
@@ -188,7 +188,7 @@ final class ProfileSettingsViewModel: ObservableObject {
         case .success(let value):
             cleanPhone = value
         case .failure:
-            errorMessage = "Revisa tu teléfono: de 7 a 20 dígitos; puede llevar +, espacios, guiones o paréntesis."
+            errorMessage = L("Revisa tu teléfono: de 7 a 20 dígitos; puede llevar +, espacios, guiones o paréntesis.")
             return
         }
 
@@ -212,7 +212,7 @@ final class ProfileSettingsViewModel: ObservableObject {
                 .execute()
             didSave = true
         } catch {
-            errorMessage = "No se pudo guardar tu perfil: \(error.localizedDescription)"
+            errorMessage = L("No se pudo guardar tu perfil: %@", "\(error.localizedDescription)")
         }
     }
 }
@@ -267,7 +267,7 @@ struct ProfileSettingsView: View {
     private var accountSection: some View {
         Section("Cuenta") {
             LabeledContent("Correo") {
-                Text(email ?? "Sin correo")
+                Text(email ?? L("Sin correo"))
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
                     .lineLimit(1)
@@ -376,7 +376,7 @@ struct ProfileSettingsView: View {
 
             Stepper(value: dependentsBinding, in: ProfileSettingsViewModel.dependentsRange) {
                 LabeledContent("Dependientes") {
-                    Text(viewModel.dependentsCount.map { String($0) } ?? "Sin especificar")
+                    Text(viewModel.dependentsCount.map { String($0) } ?? L("Sin especificar"))
                         .foregroundStyle(.secondary)
                 }
             }

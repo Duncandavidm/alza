@@ -14,16 +14,16 @@ struct VoiceBackTapGuideView: View {
     private let steps: [Step] = [
         Step(
             id: 1,
-            text: "Abre la app **Atajos**, toca **+**, busca **MonAvi** y elige **Registrar gasto o ingreso con voz**. Guarda el atajo con el nombre **MonAvi voz**.",
-            note: "Las acciones de MonAvi también aparecen solas en Atajos, en la sección de apps."
+            text: L("Abre la app **Atajos**, toca **+**, busca **MonAvi** y elige **Registrar gasto o ingreso con voz**. Guarda el atajo con el nombre **MonAvi voz**."),
+            note: L("Las acciones de MonAvi también aparecen solas en Atajos, en la sección de apps.")
         ),
         Step(
             id: 2,
-            text: "Ve a **Ajustes > Accesibilidad > Tocar > Tocar atrás > Doble toque** y elige **MonAvi voz**."
+            text: L("Ve a **Ajustes > Accesibilidad > Tocar > Tocar atrás > Doble toque** y elige **MonAvi voz**.")
         ),
         Step(
             id: 3,
-            text: "¡Listo! Toca dos veces la parte de atrás del iPhone (sobre la manzana), di por ejemplo «gasté 12 dólares en almuerzo» o «me pagaron 500 de salario» y MonAvi lo anota."
+            text: L("¡Listo! Toca dos veces la parte de atrás del iPhone (sobre la manzana), di por ejemplo «gasté 12 dólares en almuerzo» o «me pagaron 500 de salario» y MonAvi lo anota.")
         )
     ]
 
@@ -32,16 +32,16 @@ struct VoiceBackTapGuideView: View {
     private let typedSteps: [Step] = [
         Step(
             id: 1,
-            text: "En **Atajos**, toca **+**, busca **MonAvi** y elige **Anotar gasto rápido**. Guárdalo como **MonAvi gasto**.",
-            note: "Deja Monto, Categoría y Qué fue en «Preguntar cada vez» (así vienen)."
+            text: L("En **Atajos**, toca **+**, busca **MonAvi** y elige **Anotar gasto rápido**. Guárdalo como **MonAvi gasto**."),
+            note: L("Deja Monto, Categoría y Qué fue en «Preguntar cada vez» (así vienen).")
         ),
         Step(
             id: 2,
-            text: "En **Ajustes > Accesibilidad > Tocar > Tocar atrás**, elige **Triple toque** (o Doble toque) y selecciona **MonAvi gasto**."
+            text: L("En **Ajustes > Accesibilidad > Tocar > Tocar atrás**, elige **Triple toque** (o Doble toque) y selecciona **MonAvi gasto**.")
         ),
         Step(
             id: 3,
-            text: "Toca atrás del iPhone, aun con la pantalla bloqueada: escribe el monto, elige la categoría y qué fue. MonAvi lo anota **sin abrir la app**."
+            text: L("Toca atrás del iPhone, aun con la pantalla bloqueada: escribe el monto, elige la categoría y qué fue. MonAvi lo anota **sin abrir la app**.")
         )
     ]
 
@@ -119,11 +119,11 @@ struct VoiceBackTapGuideView: View {
             Section {
                 benefit(
                     icon: "waveform",
-                    text: "También funciona con Siri: di «Oye Siri, anota en MonAvi»."
+                    text: L("También funciona con Siri: di «Oye Siri, anota en MonAvi».")
                 )
                 benefit(
                     icon: "checkmark.circle.fill",
-                    text: "MonAvi lo guarda en tu cuenta principal y te muestra lo que anotó, con **Deshacer** y **Editar** por si algo salió mal."
+                    text: L("MonAvi lo guarda en tu cuenta principal y te muestra lo que anotó, con **Deshacer** y **Editar** por si algo salió mal.")
                 )
             } header: {
                 Text("Bueno saber")

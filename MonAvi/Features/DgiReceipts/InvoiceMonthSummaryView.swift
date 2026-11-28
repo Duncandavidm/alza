@@ -72,25 +72,25 @@ enum InvoiceMonthSummaryText {
 
     /// "Este mes" o "En octubre".
     static func when(_ month: String, isCurrent: Bool) -> String {
-        isCurrent ? "Este mes" : "En \(monthName(month))"
+        isCurrent ? L("Este mes") : L("En %@", "\(monthName(month))")
     }
 
     /// Titular de la tarjeta para compartir.
     static func headline(_ summary: InvoiceMonthSummary, isCurrent: Bool) -> String {
         let when = when(summary.month, isCurrent: isCurrent)
         if summary.cashbackCents > 0 {
-            return "\(when) gané \(money(cents: summary.cashbackCents)) de cashback con mis facturas"
+            return L("%@ gané %@ de cashback con mis facturas", "\(when)", "\(money(cents: summary.cashbackCents))")
         }
-        let facturas = summary.receipts == 1 ? "1 factura" : "\(summary.receipts) facturas"
-        return "\(when) escaneé \(facturas) con MonAvi"
+        let facturas = summary.receipts == 1 ? L("1 factura") : L("%@ facturas", "\(summary.receipts)")
+        return L("%@ escaneé %@ con MonAvi", "\(when)", "\(facturas)")
     }
 
     static func shareText(_ summary: InvoiceMonthSummary, isCurrent: Bool, code: String?) -> String {
         var text = headline(summary, isCurrent: isCurrent) + " 💸"
         if let code, !code.isEmpty {
-            text += "\nÚnete a MonAvi con mi código \(code) y gana cashback tú también: \(Config.appStoreURL.absoluteString)"
+            text += L("\nÚnete a MonAvi con mi código %@ y gana cashback tú también: %@", "\(code)", "\(Config.appStoreURL.absoluteString)")
         } else {
-            text += "\nDescarga MonAvi y gana cashback con tus facturas: \(Config.appStoreURL.absoluteString)"
+            text += L("\nDescarga MonAvi y gana cashback con tus facturas: %@", "\(Config.appStoreURL.absoluteString)")
         }
         return text
     }
@@ -180,8 +180,8 @@ struct InvoiceMonthSummaryView: View {
                     .disabled(summary.receipts == 0)
                 } footer: {
                     Text(referralCode == nil
-                         ? "Se comparte como imagen con el enlace de descarga."
-                         : "Se comparte como imagen con tu código de invitación: si tus amigos se unen con él, los dos ganan cashback.")
+                         ? L("Se comparte como imagen con el enlace de descarga.")
+                         : L("Se comparte como imagen con tu código de invitación: si tus amigos se unen con él, los dos ganan cashback."))
                 }
             } else if isLoading {
                 ProgressView().frame(maxWidth: .infinity)

@@ -34,7 +34,7 @@ struct QuickSavingsContributionView: View {
                         }
                     }
 
-                    AmountField(placeholder: "Monto del aporte", text: $amountText)
+                    AmountField(placeholder: L("Monto del aporte"), text: $amountText)
                 }
 
                 if let errorMessage {

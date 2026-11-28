@@ -105,7 +105,7 @@ struct CategoriesView: View {
                 try await UserCategoriesRepository.shared.delete(category)
                 store.remove(category)
             } catch {
-                errorMessage = "No se pudo borrar la categoría: \(error.localizedDescription)"
+                errorMessage = L("No se pudo borrar la categoría: %@", "\(error.localizedDescription)")
             }
         }
     }
@@ -258,7 +258,7 @@ struct UserCategoryEditorView: View {
             $0.rawValue.compare(trimmedName, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
         }
         if duplicateBuiltIn {
-            errorMessage = "Ya existe una categoría de MonAvi con ese nombre."
+            errorMessage = L("Ya existe una categoría de MonAvi con ese nombre.")
             return
         }
 
@@ -276,9 +276,9 @@ struct UserCategoryEditorView: View {
         } catch {
             let text = String(describing: error)
             if text.contains("23505") || text.localizedCaseInsensitiveContains("duplicate") {
-                errorMessage = "Ya tienes una categoría con ese nombre."
+                errorMessage = L("Ya tienes una categoría con ese nombre.")
             } else {
-                errorMessage = "No se pudo guardar: \(error.localizedDescription)"
+                errorMessage = L("No se pudo guardar: %@", "\(error.localizedDescription)")
             }
         }
     }

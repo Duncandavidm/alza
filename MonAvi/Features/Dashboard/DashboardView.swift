@@ -134,7 +134,7 @@ struct DashboardView: View {
     private func accountSubtitle(_ account: Account) -> String {
         if account.type == .creditCard { return "Tarjeta de crédito · \(account.balanceCaption.lowercased())" }
         if SavingsAvailability.isLocked(account), let label = SavingsAvailability.label(account.availableOn) {
-            return "\(account.type.displayName) · disponible el \(label)"
+            return L("%@ · disponible el %@", "\(account.type.displayName)", "\(label)")
         }
         return account.type.displayName
     }

@@ -23,12 +23,12 @@ struct MovementSavingOverlay: View {
             ReceiptStampView(
                 description: description,
                 amount: amount,
-                message: "Imprimiendo tu recibo..."
+                message: L("Imprimiendo tu recibo...")
             )
         } else {
             CartLoadingView(
                 itemEmoji: itemEmoji,
-                message: "Anotando tu \(movementType.displayName.lowercased())..."
+                message: L("Anotando tu %@...", "\(movementType.displayName.lowercased())")
             )
         }
     }

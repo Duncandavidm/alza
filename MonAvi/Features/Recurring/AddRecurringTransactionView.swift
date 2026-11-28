@@ -41,7 +41,7 @@ struct AddRecurringTransactionView: View {
                     }
                 }
 
-                DayOfMonthField(label: "Día del mes", day: $dayOfMonth)
+                DayOfMonthField(label: L("Día del mes"), day: $dayOfMonth)
 
                 if let errorMessage {
                     Text(errorMessage).foregroundStyle(.red)

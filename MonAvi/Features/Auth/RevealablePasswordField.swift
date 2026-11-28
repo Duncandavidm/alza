@@ -38,7 +38,7 @@ struct RevealablePasswordField: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(isRevealed ? "Ocultar contraseña" : "Mostrar contraseña")
+            .accessibilityLabel(isRevealed ? L("Ocultar contraseña") : L("Mostrar contraseña"))
         }
         .padding(.leading, 16)
         .padding(.trailing, 8)

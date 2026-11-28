@@ -143,7 +143,7 @@ struct OnboardingView: View {
         }
 
         Section {
-            AmountField(placeholder: "¿Cuánto tienes hoy ahí?", text: $viewModel.accountBalanceText)
+            AmountField(placeholder: L("¿Cuánto tienes hoy ahí?"), text: $viewModel.accountBalanceText)
         } header: {
             Text("¿Cuánto tienes hoy en esa cuenta?")
         } footer: {
@@ -168,7 +168,7 @@ struct OnboardingView: View {
 
                 switch viewModel.fixedIncomeFrequency {
                 case .monthly:
-                    DayOfMonthField(label: "Día de pago", day: $viewModel.fixedIncomeDay)
+                    DayOfMonthField(label: L("Día de pago"), day: $viewModel.fixedIncomeDay)
                 case .biweekly:
                     DayOfMonthField(label: "Primera quincena", day: $viewModel.fixedIncomeDay)
                     DayOfMonthField(label: "Segunda quincena", day: $viewModel.fixedIncomeSecondDay)
@@ -219,7 +219,7 @@ struct OnboardingView: View {
                     }
                     if bill.isEnabled {
                         AmountField(placeholder: "Monto mensual", text: $bill.amountText)
-                        DayOfMonthField(label: "Día aproximado", day: $bill.dayOfMonth)
+                        DayOfMonthField(label: L("Día aproximado"), day: $bill.dayOfMonth)
                     }
                 }
                 .padding(.vertical, 2)
@@ -246,7 +246,7 @@ struct OnboardingView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     TextField("Nombre (ej. Netflix)", text: $item.name)
                     AmountField(placeholder: "Monto mensual", text: $item.amountText)
-                    DayOfMonthField(label: "Día de cobro", day: $item.dayOfMonth)
+                    DayOfMonthField(label: L("Día de cobro"), day: $item.dayOfMonth)
                 }
                 .padding(.vertical, 2)
             }
@@ -270,7 +270,7 @@ struct OnboardingView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     TextField("Nombre (ej. Colegio)", text: $item.name)
                     AmountField(placeholder: "Monto mensual", text: $item.amountText)
-                    DayOfMonthField(label: "Día de pago", day: $item.dayOfMonth)
+                    DayOfMonthField(label: L("Día de pago"), day: $item.dayOfMonth)
                 }
                 .padding(.vertical, 2)
             }
@@ -324,10 +324,10 @@ struct OnboardingView: View {
             ForEach($viewModel.debts) { $debt in
                 VStack(alignment: .leading, spacing: 6) {
                     TextField("Acreedor (ej. Tarjeta de crédito)", text: $debt.creditor)
-                    LabeledField(label: "¿Cuánto debes hoy?") {
+                    LabeledField(label: L("¿Cuánto debes hoy?")) {
                         AmountField(placeholder: "Saldo actual", text: $debt.balanceText)
                     }
-                    LabeledField(label: "Cupo total (si es tarjeta)") {
+                    LabeledField(label: L("Cupo total (si es tarjeta)")) {
                         AmountField(placeholder: "ej. 3000", text: $debt.creditLimitText)
                     }
                     if let use = DebtDraftMath.utilization(debt) {
@@ -335,11 +335,11 @@ struct OnboardingView: View {
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(use > 0.3 ? .orange : MonAviBrand.primary)
                     }
-                    LabeledField(label: "Día de pago de cada mes (opcional)") {
+                    LabeledField(label: L("Día de pago de cada mes (opcional)")) {
                         TextField("ej. 15", text: $debt.paymentDayText)
                             .keyboardType(.numberPad)
                     }
-                    LabeledField(label: "Tasa de interés (opcional)") {
+                    LabeledField(label: L("Tasa de interés (opcional)")) {
                         HStack {
                             PercentField(placeholder: debt.interestPeriod == .annual ? "ej. 24" : "ej. 2", text: $debt.interestRateText)
                             Picker("", selection: $debt.interestPeriod) {
@@ -351,7 +351,7 @@ struct OnboardingView: View {
                             .frame(maxWidth: 170)
                         }
                     }
-                    LabeledField(label: "Pago mínimo (opcional)") {
+                    LabeledField(label: L("Pago mínimo (opcional)")) {
                         AmountField(placeholder: "ej. 60", text: $debt.minimumPaymentText)
                     }
                     Toggle("Está en mora / atrasada", isOn: $debt.isOverdue)
@@ -361,7 +361,7 @@ struct OnboardingView: View {
             .onDelete { viewModel.debts.remove(atOffsets: $0) }
 
             Button {
-                viewModel.debts.append(DebtDraft(creditor: viewModel.debts.isEmpty ? "Tarjeta de crédito" : ""))
+                viewModel.debts.append(DebtDraft(creditor: viewModel.debts.isEmpty ? L("Tarjeta de crédito") : ""))
             } label: {
                 Label("Agregar deuda", systemImage: "plus.circle")
             }
@@ -384,7 +384,7 @@ struct OnboardingView: View {
                     Text(budget.emoji)
                     TextField("Nombre de la categoría", text: $budget.name)
                         .textInputAutocapitalization(.sentences)
-                    AmountField(placeholder: "Sin límite", text: $budget.limitText)
+                    AmountField(placeholder: L("Sin límite"), text: $budget.limitText)
                         .multilineTextAlignment(.trailing)
                         .frame(maxWidth: 140)
                 }
@@ -435,7 +435,7 @@ struct OnboardingView: View {
         Section("¿Tienes ahorros o inversiones actuales?") {
             Toggle("Si, tengo algo ahorrado", isOn: $viewModel.hasSavings)
             if viewModel.hasSavings {
-                AmountField(placeholder: "¿Cuánto tienes ahorrado/invertido?", text: $viewModel.savingsAmountText)
+                AmountField(placeholder: L("¿Cuánto tienes ahorrado/invertido?"), text: $viewModel.savingsAmountText)
                 TextField("¿Dónde lo tienes? (ej. Ahorros Banco General)", text: $viewModel.savingsNote)
                 Toggle("Está bloqueado hasta una fecha", isOn: $viewModel.savingsLocked)
                 if viewModel.savingsLocked {
@@ -509,7 +509,10 @@ struct OnboardingView: View {
         FinancialSnapshotSections(snapshot: viewModel.snapshot, name: viewModel.fullName.trimmingCharacters(in: .whitespaces))
 
         Section {
-            Text("Al tocar Empezar creamos tu cuenta \"\(viewModel.accountName)\"\(viewModel.hasSavings ? " y tu cuenta de ahorros" : ""), y anotamos tus pagos fijos para recordártelos\(viewModel.budgets.contains { (OnboardingViewModel.amount($0.limitText) ?? 0) > 0 } ? ", además de tus presupuestos del mes" : "").")
+            Text(L("Al tocar Empezar creamos tu cuenta \"%@\"%@, y anotamos tus pagos fijos para recordártelos%@.",
+                   viewModel.accountName,
+                   viewModel.hasSavings ? L(" y tu cuenta de ahorros") : "",
+                   viewModel.budgets.contains { (OnboardingViewModel.amount($0.limitText) ?? 0) > 0 } ? L(", además de tus presupuestos del mes") : ""))
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }

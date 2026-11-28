@@ -201,7 +201,7 @@ struct MoneyGuard {
             title: L("No te alcanza para los pagos de la semana"),
             message: "Tienes \(count) por \(Self.money(total))\(overdue > 0 ? " (\(overdue == 1 ? "uno vencido" : "\(overdue) vencidos"))" : "") y solo \(Self.money(cash)) disponible. Paga primero lo esencial (casa, luz, agua, comida) y evita gastos extra hasta cubrirlos.",
             action: .openBills,
-            actionTitle: "Ver pagos"
+            actionTitle: L("Ver pagos")
         )]
     }
 
@@ -220,7 +220,7 @@ struct MoneyGuard {
                     title: L("Te pasaste en %@", "\(progress.budget.category)"),
                     message: L("Gastaste %@ de %@: %@ por encima de tu límite. Lo que gastes de más aquí sale de otra cosa.", "\(Self.money(progress.spent))", "\(Self.money(progress.budget.limitAmount))", "\(Self.money(progress.spent - progress.budget.limitAmount))"),
                     action: .openBudget(budgetId: progress.budget.id),
-                    actionTitle: "Ver presupuesto"
+                    actionTitle: L("Ver presupuesto")
                 )
             }
     }
@@ -285,7 +285,7 @@ struct MoneyGuard {
                 title: L("Mucho gasto en %@", "\(spike.category)"),
                 message: L("Este mes llevas %@, un %@%% más que tu promedio (%@ al mes). ¿Vale la pena? Bájale un poco o ponle un presupuesto.", "\(Self.money(spike.current))", "\(spike.percentAbove)", "\(Self.money(spike.average))"),
                 action: .openSpending,
-                actionTitle: "Ver detalle"
+                actionTitle: L("Ver detalle")
             )
         }
     }

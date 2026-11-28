@@ -82,7 +82,7 @@ final class AVFoundationQRScannerViewController: UIViewController, AVCaptureMeta
                 ?? AVCaptureDevice.default(for: .video),
             let input = try? AVCaptureDeviceInput(device: device)
         else {
-            onError("No se pudo acceder a la cámara.")
+            onError(L("No se pudo acceder a la cámara."))
             return
         }
 
@@ -92,7 +92,7 @@ final class AVFoundationQRScannerViewController: UIViewController, AVCaptureMeta
         }
         guard session.canAddInput(input) else {
             session.commitConfiguration()
-            onError("No se pudo acceder a la cámara.")
+            onError(L("No se pudo acceder a la cámara."))
             return
         }
         session.addInput(input)
@@ -100,7 +100,7 @@ final class AVFoundationQRScannerViewController: UIViewController, AVCaptureMeta
         let output = AVCaptureMetadataOutput()
         guard session.canAddOutput(output) else {
             session.commitConfiguration()
-            onError("No se pudo configurar el escaneo.")
+            onError(L("No se pudo configurar el escaneo."))
             return
         }
         session.addOutput(output)

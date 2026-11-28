@@ -98,7 +98,7 @@ struct AddDebtView: View {
             }
             dismiss()
         } catch {
-            errorMessage = "No se pudo guardar: \(error.localizedDescription)"
+            errorMessage = L("No se pudo guardar: %@", "\(error.localizedDescription)")
         }
     }
 }

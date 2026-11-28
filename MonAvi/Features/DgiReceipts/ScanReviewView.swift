@@ -46,12 +46,12 @@ struct ScanReviewView: View {
         NavigationStack {
             Form {
                 Section("Factura") {
-                    LabeledContent("Comercio", value: draft.merchantDisplayName ?? "Sin identificar (RUC \(draft.parsed.fields.ruc))")
+                    LabeledContent("Comercio", value: draft.merchantDisplayName ?? L("Sin identificar (RUC %@)", "\(draft.parsed.fields.ruc)"))
                     LabeledContent("Fecha", value: dateText)
                     LabeledContent("Sucursal", value: draft.parsed.fields.sucursal)
                     if let details = draft.invoiceDetails, !details.paymentMethods.isEmpty {
                         LabeledContent(
-                            details.paymentMethods.count > 1 ? "Formas de pago" : "Forma de pago",
+                            details.paymentMethods.count > 1 ? L("Formas de pago") : L("Forma de pago"),
                             value: details.paymentMethods.joined(separator: ", ")
                         )
                     }
@@ -73,7 +73,7 @@ struct ScanReviewView: View {
                     amountRow
 
                     if let linked = draft.linkedTransaction {
-                        LabeledContent("Se une a tu gasto", value: linked.description ?? "Gasto de hoy")
+                        LabeledContent("Se une a tu gasto", value: linked.description ?? L("Gasto de hoy"))
                     } else {
                         if !isSplitting {
                             Picker("Categoría", selection: $draft.category) {
@@ -152,7 +152,7 @@ struct ScanReviewView: View {
     @ViewBuilder
     private var amountRow: some View {
         if draft.isAmountEditable {
-            AmountField(placeholder: "Monto de la factura", text: $draft.amountText)
+            AmountField(placeholder: L("Monto de la factura"), text: $draft.amountText)
                 .onChange(of: draft.amountText) { _, _ in
                     Task { await checkMerge() }
                 }

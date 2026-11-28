@@ -48,7 +48,7 @@ struct AccountTransferView: View {
                 }
 
                 Section {
-                    AmountField(placeholder: "¿Cuánto pasas?", text: $amountText)
+                    AmountField(placeholder: L("¿Cuánto pasas?"), text: $amountText)
                     if let source, source.balance > 0 {
                         Button("Pasar todo (\(source.balance.formatted(.currency(code: source.currency))))") {
                             amountText = NSDecimalNumber(decimal: source.balance).stringValue
@@ -58,8 +58,8 @@ struct AccountTransferView: View {
                     if let source, let destination, amount > 0 {
                         let left = source.balance - amount
                         Text(left <= 0
-                             ? "\(source.name) queda en $0 y \(destination.name) sube \(amount.formatted(.appCurrency))."
-                             : "\(source.name) queda en \(left.formatted(.appCurrency)) y \(destination.name) sube \(amount.formatted(.appCurrency)).")
+                             ? L("%@ queda en $0 y %@ sube %@.", "\(source.name)", "\(destination.name)", "\(amount.formatted(.appCurrency))")
+                             : L("%@ queda en %@ y %@ sube %@.", "\(source.name)", "\(left.formatted(.appCurrency))", "\(destination.name)", "\(amount.formatted(.appCurrency))"))
                     } else {
                         Text("Es dinero tuyo que cambia de cuenta: no cuenta como gasto ni como ingreso.")
                     }
@@ -116,7 +116,7 @@ struct AccountTransferView: View {
             onDone?()
             dismiss()
         } catch {
-            errorMessage = "No se pudo hacer la transferencia: \(error.localizedDescription)"
+            errorMessage = L("No se pudo hacer la transferencia: %@", "\(error.localizedDescription)")
         }
     }
 }
@@ -160,7 +160,7 @@ struct AccountDetailView: View {
                 LabeledContent(account.type == .creditCard ? "Debes" : "Saldo", value: (shownAmount ?? account.displayAmount).formatted(.currency(code: account.currency)))
                 if isEditingBalance {
                     AmountField(placeholder: account.type == .creditCard ? "Lo que debes hoy" : "Saldo de hoy", text: $balanceText)
-                    Button(isSaving ? "Guardando…" : "Guardar saldo") { Task { await saveBalance() } }
+                    Button(isSaving ? L("Guardando…") : L("Guardar saldo")) { Task { await saveBalance() } }
                         .disabled(isSaving || RecurringAmountParser.parse(balanceText) == nil)
                 } else {
                     Button {
@@ -182,8 +182,8 @@ struct AccountDetailView: View {
                 }
             } footer: {
                 Text(account.type == .creditCard
-                     ? "Escribe lo que debes según tu banco. No se anota como gasto ni como pago."
-                     : "Escribe el saldo que ves en tu banco. No se anota como gasto ni como ingreso.")
+                     ? L("Escribe lo que debes según tu banco. No se anota como gasto ni como pago.")
+                     : L("Escribe el saldo que ves en tu banco. No se anota como gasto ni como ingreso."))
             }
 
             if !account.type.isLiability {
@@ -192,7 +192,7 @@ struct AccountDetailView: View {
                     if isLocked {
                         DatePicker("Disponible desde", selection: $availableOn, displayedComponents: .date)
                     }
-                    Button(isSaving ? "Guardando…" : "Guardar") { Task { await saveAvailability() } }
+                    Button(isSaving ? L("Guardando…") : L("Guardar")) { Task { await saveAvailability() } }
                         .disabled(isSaving)
                     if let message {
                         Text(message).font(.footnote).foregroundStyle(.secondary)
@@ -251,7 +251,7 @@ struct AccountDetailView: View {
                     }
                 }
             }
-            Button(movementCount > 0 ? "Eliminar con sus movimientos" : "Eliminar", role: .destructive) {
+            Button(movementCount > 0 ? L("Eliminar con sus movimientos") : L("Eliminar"), role: .destructive) {
                 Task { await delete(moveTo: nil) }
             }
             Button("Cancelar", role: .cancel) {}
@@ -275,9 +275,9 @@ struct AccountDetailView: View {
             parts.append("Tiene \(movementCount) \(movementCount == 1 ? "movimiento" : "movimientos"). Puedes pasarlos a otra cuenta para no perder tu historial (el saldo de esa cuenta no cambia).")
         }
         if !account.type.isLiability, account.balance != 0 {
-            parts.append("Su saldo deja de contarse; si ese dinero sigue existiendo, pásalo antes con «Pasar a otra cuenta».")
+            parts.append(L("Su saldo deja de contarse; si ese dinero sigue existiendo, pásalo antes con «Pasar a otra cuenta»."))
         }
-        parts.append("Esto no se puede deshacer.")
+        parts.append(L("Esto no se puede deshacer."))
         return parts.joined(separator: " ")
     }
 
@@ -314,7 +314,7 @@ struct AccountDetailView: View {
             actionMessage = nil
             onChange?()
         } catch {
-            actionMessage = "No se pudo cambiar el nombre: \(error.localizedDescription)"
+            actionMessage = L("No se pudo cambiar el nombre: %@", "\(error.localizedDescription)")
         }
     }
 
@@ -328,7 +328,7 @@ struct AccountDetailView: View {
             onChange?()
             dismiss()
         } catch {
-            actionMessage = "No se pudo eliminar: \(error.localizedDescription)"
+            actionMessage = L("No se pudo eliminar: %@", "\(error.localizedDescription)")
         }
     }
 
@@ -340,10 +340,10 @@ struct AccountDetailView: View {
             try await AccountBalanceAdjustment.save(entered: entered, account: account)
             shownAmount = account.type == .creditCard ? abs(entered) : entered
             isEditingBalance = false
-            balanceMessage = "Listo: saldo actualizado."
+            balanceMessage = L("Listo: saldo actualizado.")
             onChange?()
         } catch {
-            balanceMessage = "No se pudo guardar: \(error.localizedDescription)"
+            balanceMessage = L("No se pudo guardar: %@", "\(error.localizedDescription)")
         }
     }
 
@@ -353,13 +353,13 @@ struct AccountDetailView: View {
         do {
             try await AccountTransfers.setAvailableOn(isLocked ? availableOn : nil, accountId: account.id)
             if isLocked, let label = SavingsAvailability.label(SavingsAvailability.string(from: availableOn)) {
-                message = "Listo: el \(label) te preguntamos si ya está disponible."
+                message = L("Listo: el %@ te preguntamos si ya está disponible.", "\(label)")
             } else {
-                message = "Listo: sin bloqueo, el dinero siempre está disponible."
+                message = L("Listo: sin bloqueo, el dinero siempre está disponible.")
             }
             onChange?()
         } catch {
-            message = "No se pudo guardar: \(error.localizedDescription)"
+            message = L("No se pudo guardar: %@", "\(error.localizedDescription)")
         }
     }
 }

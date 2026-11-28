@@ -12,10 +12,10 @@ struct CommonBillDraft: Identifiable {
 
     static func defaults() -> [CommonBillDraft] {
         [
-            CommonBillDraft(name: "Luz", category: .housing),
-            CommonBillDraft(name: "Alquiler / Renta", category: .housing),
-            CommonBillDraft(name: "Agua", category: .housing),
-            CommonBillDraft(name: "Teléfono", category: .other),
+            CommonBillDraft(name: L("Luz"), category: .housing),
+            CommonBillDraft(name: L("Alquiler / Renta"), category: .housing),
+            CommonBillDraft(name: L("Agua"), category: .housing),
+            CommonBillDraft(name: L("Teléfono"), category: .other),
             CommonBillDraft(name: "Internet", category: .other),
         ]
     }
@@ -113,10 +113,10 @@ enum PayFrequency: String, CaseIterable, Identifiable {
 
     var amountPlaceholder: String {
         switch self {
-        case .monthly: return "¿Cuánto te pagan al mes?"
-        case .biweekly: return "¿Cuánto te pagan cada quincena?"
-        case .weekly: return "¿Cuánto te pagan cada semana?"
-        case .daily: return "¿Cuánto ganas por día, más o menos?"
+        case .monthly: return L("¿Cuánto te pagan al mes?")
+        case .biweekly: return L("¿Cuánto te pagan cada quincena?")
+        case .weekly: return L("¿Cuánto te pagan cada semana?")
+        case .daily: return L("¿Cuánto ganas por día, más o menos?")
         }
     }
 }

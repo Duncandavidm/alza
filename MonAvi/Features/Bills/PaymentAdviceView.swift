@@ -86,7 +86,7 @@ struct PaymentAdviceView: View {
             try await PaymentAdviceActions.markPaid(item: item, userId: userId)
             items.removeAll { $0.id == item.id }
         } catch {
-            errorMessage = "No se pudo registrar el pago: \(error.localizedDescription)"
+            errorMessage = L("No se pudo registrar el pago: %@", "\(error.localizedDescription)")
         }
     }
 }

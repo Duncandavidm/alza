@@ -21,7 +21,7 @@ final class OnboardingViewModel: ObservableObject {
     @Published var occupation = ""
 
     // Paso 2: cuenta principal
-    @Published var accountName = "Cuenta principal"
+    @Published var accountName = L("Cuenta principal")
     /// Cuanto tiene hoy en esa cuenta: la cuenta ya no arranca en $0.
     @Published var accountBalanceText = ""
 
@@ -141,7 +141,7 @@ final class OnboardingViewModel: ObservableObject {
 
         switch fixedIncomeFrequency {
         case .monthly:
-            return [income("Salario / ingreso fijo", day: fixedIncomeDay)]
+            return [income(L("Salario / ingreso fijo"), day: fixedIncomeDay)]
         case .biweekly:
             let days = [fixedIncomeDay, fixedIncomeSecondDay].map { min(max($0, 1), 31) }
             let first = days.min() ?? 15
@@ -155,7 +155,7 @@ final class OnboardingViewModel: ObservableObject {
         case .weekly:
             return [income("Salario semanal", day: 1, frequency: .weekly, weekday: min(max(fixedIncomeWeekday, 1), 7))]
         case .daily:
-            return [income("Ingreso diario", day: 1, frequency: .daily)]
+            return [income(L("Ingreso diario"), day: 1, frequency: .daily)]
         }
     }
 
@@ -169,7 +169,7 @@ final class OnboardingViewModel: ObservableObject {
             try await accountsViewModel.addAccount(
                 NewAccount(
                     userId: userId,
-                    name: accountName.isEmpty ? "Cuenta principal" : accountName,
+                    name: accountName.isEmpty ? L("Cuenta principal") : accountName,
                     type: .checking,
                     balance: Self.amount(accountBalanceText) ?? 0,
                     currency: AppCountry.current.currencyCode

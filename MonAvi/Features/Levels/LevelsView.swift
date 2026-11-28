@@ -78,7 +78,7 @@ struct LevelsView: View {
                 Divider().frame(height: 32).overlay(MonAviBrand.onDarkSurface.opacity(0.3))
                 stat(value: "\(progress.earnedBadges.count)/\(progress.badges.count)", label: "insignias")
                 Divider().frame(height: 32).overlay(MonAviBrand.onDarkSurface.opacity(0.3))
-                stat(value: "\(progress.xpThisMonth)/\(HabitEngine.Rules.monthlyXPCap)", label: "puntos este mes")
+                stat(value: "\(progress.xpThisMonth)/\(HabitEngine.Rules.monthlyXPCap)", label: L("puntos este mes"))
             }
         }
         .padding(20)
@@ -172,7 +172,7 @@ struct LevelsView: View {
     // MARK: - Como se ganan puntos
 
     private func sourcesSection(_ progress: HabitEngine.Progress) -> some View {
-        section(title: "Cómo ganas puntos") {
+        section(title: L("Cómo ganas puntos")) {
             VStack(spacing: 0) {
                 ForEach(HabitEngine.XPSource.allCases) { source in
                     HStack(alignment: .top, spacing: 12) {
@@ -209,7 +209,7 @@ struct LevelsView: View {
     // MARK: - Ahorro
 
     private func savingsSection(_ progress: HabitEngine.Progress) -> some View {
-        section(title: "Tus aportes de ahorro") {
+        section(title: L("Tus aportes de ahorro")) {
             VStack(alignment: .leading, spacing: 0) {
                 if progress.contributionReviews.isEmpty {
                     Text("Todavía no tienes aportes. Crea una meta y aparta algo cada semana: cada aporte que se quede 30 días sin retirarse te da puntos.")
@@ -246,7 +246,7 @@ struct LevelsView: View {
             Text(goal?.emoji ?? "🎯")
                 .font(.title3)
             VStack(alignment: .leading, spacing: 2) {
-                Text(goal?.name ?? "Meta eliminada")
+                Text(goal?.name ?? L("Meta eliminada"))
                     .font(.subheadline.weight(.medium))
                     .lineLimit(1)
                 Label(text, systemImage: icon)
@@ -264,24 +264,24 @@ struct LevelsView: View {
     private func statusInfo(_ status: HabitEngine.ContributionStatus) -> (String, String, Color) {
         switch status {
         case .matured:
-            return ("Maduró: cuenta para tu nivel", "checkmark.seal.fill", MonAviBrand.primary)
+            return (L("Maduró: cuenta para tu nivel"), "checkmark.seal.fill", MonAviBrand.primary)
         case .maturing(let date):
-            return ("Madura el \(date.formatted(.dateTime.day().month(.abbreviated).locale(.monavi)))", "hourglass", Color.secondary)
+            return (L("Madura el %@", "\(date.formatted(.dateTime.day().month(.abbreviated).locale(.monavi)))"), "hourglass", Color.secondary)
         case .broken:
-            return ("No cuenta: retiraste antes de 30 días", "xmark.circle", MonAviBrand.alert)
+            return (L("No cuenta: retiraste antes de 30 días"), "xmark.circle", MonAviBrand.alert)
         case .unbacked:
-            return ("No cuenta: no cuadra con tus ingresos y gastos de ese mes", "exclamationmark.circle", MonAviBrand.alert)
+            return (L("No cuenta: no cuadra con tus ingresos y gastos de ese mes"), "exclamationmark.circle", MonAviBrand.alert)
         }
     }
 
     private var rulesSection: some View {
-        section(title: "Para que tu ahorro cuente") {
+        section(title: L("Para que tu ahorro cuente")) {
             VStack(alignment: .leading, spacing: 8) {
-                ruleRow("Se premia la constancia, no el monto: apartar $5 cada semana vale lo mismo que apartar $500.")
-                ruleRow("Lo que ahorras en un mes tiene que caber en lo que registraste ese mes (ingresos menos gastos). Anota tus ingresos.")
-                ruleRow("Un aporte cuenta cuando pasan 30 días sin retirar dinero de esa meta.")
-                ruleRow("Los días anotados se cuentan el día que anotas, no la fecha que le pones al movimiento.")
-                ruleRow("Puedes ganar hasta \(HabitEngine.Rules.monthlyXPCap) puntos por mes.")
+                ruleRow(L("Se premia la constancia, no el monto: apartar $5 cada semana vale lo mismo que apartar $500."))
+                ruleRow(L("Lo que ahorras en un mes tiene que caber en lo que registraste ese mes (ingresos menos gastos). Anota tus ingresos."))
+                ruleRow(L("Un aporte cuenta cuando pasan 30 días sin retirar dinero de esa meta."))
+                ruleRow(L("Los días anotados se cuentan el día que anotas, no la fecha que le pones al movimiento."))
+                ruleRow(L("Puedes ganar hasta %@ puntos por mes.", "\(HabitEngine.Rules.monthlyXPCap)"))
             }
         }
     }

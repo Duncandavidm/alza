@@ -79,24 +79,24 @@ enum HabitCouponsMath {
 
     /// Como va este mes frente a la regla: "Vas en 12% de ahorro (meta 20%)".
     static func progressText(rule: HabitCouponRule, month: FinancialMonth?) -> String {
-        guard let month else { return "Empieza a anotar tus movimientos para ver cómo vas." }
+        guard let month else { return L("Empieza a anotar tus movimientos para ver cómo vas.") }
         switch rule.ruleType {
         case "ahorro_ingresos":
-            guard let rate = month.savingsRate else { return "Anota tus ingresos del mes para medir tu ahorro (meta \(number(rule.threshold))%)." }
-            return "Este mes vas en \(number(rate))% de ahorro (meta \(number(rule.threshold))%)."
+            guard let rate = month.savingsRate else { return L("Anota tus ingresos del mes para medir tu ahorro (meta %@%%).", "\(number(rule.threshold))") }
+            return L("Este mes vas en %@%% de ahorro (meta %@%%).", "\(number(rate))", "\(number(rule.threshold))")
         case "presupuestos":
             if month.budgets == 0 { return "Crea al menos \(max(1, Int(rule.threshold))) presupuestos y cúmplelos este mes." }
-            return "Vas cumpliendo \(month.budgetsMet) de \(month.budgets) presupuestos."
+            return L("Vas cumpliendo %@ de %@ presupuestos.", "\(month.budgetsMet)", "\(month.budgets)")
         case "dias_registrados":
-            return "Llevas \(month.loggedDays) de \(Int(rule.threshold)) días anotados este mes."
+            return L("Llevas %@ de %@ días anotados este mes.", "\(month.loggedDays)", "\(Int(rule.threshold))")
         case "salud_financiera":
-            return "Tu salud financiera este mes: \(number(month.score))/100 (meta \(number(rule.threshold)))."
+            return L("Tu salud financiera este mes: %@/100 (meta %@).", "\(number(month.score))", "\(number(rule.threshold))")
         case "todos":
             return rule.earnedCount > 0
-                ? "Ya está en Mis cupones y canjes con su código."
-                : "Es para todos los clientes de MonAvi: te llega en la próxima entrega."
+                ? L("Ya está en Mis cupones y canjes con su código.")
+                : L("Es para todos los clientes de MonAvi: te llega en la próxima entrega.")
         case "meta_a_tiempo":
-            return "Llega al monto de una meta de al menos $\(number(rule.threshold)) antes de su fecha."
+            return L("Llega al monto de una meta de al menos $%@ antes de su fecha.", "\(number(rule.threshold))")
         default:
             return rule.reason
         }
@@ -107,14 +107,14 @@ enum HabitCouponsMath {
         guard rule.minLoggedDays > 0, rule.ruleType != "dias_registrados", rule.ruleType != "todos" else { return nil }
         let logged = month?.loggedDays ?? 0
         guard logged < rule.minLoggedDays else { return nil }
-        return "Anota tus movimientos al menos \(rule.minLoggedDays) días del mes (llevas \(logged))."
+        return L("Anota tus movimientos al menos %@ días del mes (llevas %@).", "\(rule.minLoggedDays)", "\(logged)")
     }
 
     /// "¡Ganado!" / "Ganado 3 veces" / nil.
     static func earnedText(_ count: Int) -> String? {
         switch count {
         case ..<1: return nil
-        case 1: return "¡Ya lo ganaste!"
+        case 1: return L("¡Ya lo ganaste!")
         default: return "Ganado \(count) veces"
         }
     }
@@ -206,8 +206,8 @@ struct HabitCouponsView: View {
             ProgressView(value: min(max(month.score, 0), 100), total: 100)
                 .tint(MonAviBrand.accentOnDark)
             HStack(spacing: 14) {
-                metric("Ahorro", month.savingsRate.map { "\(Int($0.rounded()))%" } ?? "—")
-                metric("Días", "\(month.loggedDays)")
+                metric(L("Ahorro"), month.savingsRate.map { "\(Int($0.rounded()))%" } ?? "—")
+                metric(L("Días"), "\(month.loggedDays)")
                 metric("Presupuestos", "\(month.budgetsMet)/\(month.budgets)")
                 metric("Facturas", "\(month.receipts)")
             }

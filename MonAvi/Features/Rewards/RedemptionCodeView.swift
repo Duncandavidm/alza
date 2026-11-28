@@ -116,7 +116,7 @@ struct RedemptionCodeView: View {
             VStack(spacing: 14) {
                 Text("🎉")
                     .font(.system(size: 64))
-                Text(redemption.isDiscount ? "¡Descuento aplicado!" : "¡Canje listo!")
+                Text(redemption.isDiscount ? L("¡Descuento aplicado!") : L("¡Canje listo!"))
                     .font(.system(.title, design: MonAviBrand.fontDesign, weight: .heavy))
                     .multilineTextAlignment(.center)
                 Text("\(redemption.itemName) en \(redemption.merchantName)")
@@ -287,8 +287,8 @@ struct RedemptionCodeView: View {
         } else {
             VStack(spacing: 6) {
                 Text(redemption.isDiscount
-                     ? "Muéstralo en caja antes de pagar: te aplican el beneficio."
-                     : "Muéstralo en caja: el comercio escanea el código y te lo entrega.")
+                     ? L("Muéstralo en caja antes de pagar: te aplican el beneficio.")
+                     : L("Muéstralo en caja: el comercio escanea el código y te lo entrega."))
                     .font(.headline)
                     .multilineTextAlignment(.center)
                 if let minPurchase = redemption.item?.minPurchaseText {
@@ -315,8 +315,8 @@ struct RedemptionCodeView: View {
                     Text("Pide tu factura fiscal")
                         .font(.subheadline.weight(.bold))
                     Text(redemption.isBenefit
-                         ? "Escanéala después de pagar y ganas cashback además del descuento."
-                         : "Si compras algo más, escanea la factura y gana cashback.")
+                         ? L("Escanéala después de pagar y ganas cashback además del descuento.")
+                         : L("Si compras algo más, escanea la factura y gana cashback."))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)

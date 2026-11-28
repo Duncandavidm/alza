@@ -28,7 +28,7 @@ struct AmountKeypad: View {
             Button(action: onToggleSign) {
                 HStack(spacing: 6) {
                     Image(systemName: "plusminus")
-                    Text(isInflow ? "Ingreso" : "Gasto")
+                    Text(isInflow ? L("Ingreso") : L("Gasto"))
                 }
                 .font(.subheadline.weight(.semibold))
                 .padding(.horizontal, 16)
@@ -36,7 +36,7 @@ struct AmountKeypad: View {
                 .background(Capsule().fill(Color(.tertiarySystemFill)))
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(isInflow ? "Cambiar a gasto" : "Cambiar a ingreso")
+            .accessibilityLabel(isInflow ? L("Cambiar a gasto") : L("Cambiar a ingreso"))
 
             Grid(horizontalSpacing: 8, verticalSpacing: 6) {
                 ForEach(Self.rows, id: \.self) { row in

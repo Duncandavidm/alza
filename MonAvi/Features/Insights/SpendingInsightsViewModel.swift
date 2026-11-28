@@ -8,7 +8,7 @@ enum SpendingPeriod: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .thisMonth: return "Este mes"
+        case .thisMonth: return L("Este mes")
         case .last3Months: return L("Últimos 3 meses")
         }
     }

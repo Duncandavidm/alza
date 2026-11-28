@@ -98,7 +98,7 @@ private struct StartupErrorView: View {
 
     var body: some View {
         ZStack {
-            BrandLoadingView(message: "No pudimos cargar tu cuenta")
+            BrandLoadingView(message: L("No pudimos cargar tu cuenta"))
 
             VStack(spacing: 12) {
                 Spacer()

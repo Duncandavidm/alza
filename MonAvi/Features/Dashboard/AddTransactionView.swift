@@ -193,7 +193,7 @@ struct AddTransactionView: View {
                 originalAmount = magnitude
             } catch {
                 isConverting = false
-                errorMessage = "No se pudo convertir \(selectedCurrency) a \(accountCurrency): \(error.localizedDescription)"
+                errorMessage = L("No se pudo convertir %@ a %@: %@", "\(selectedCurrency)", "\(accountCurrency)", "\(error.localizedDescription)")
                 return
             }
             isConverting = false

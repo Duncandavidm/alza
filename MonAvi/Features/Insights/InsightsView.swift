@@ -48,7 +48,7 @@ struct InsightsView: View {
                     }
 
                     if viewModel.isAsking {
-                        MonAviCatLoader(message: "Pensando tu respuesta…", size: 170)
+                        MonAviCatLoader(message: L("Pensando tu respuesta…"), size: 170)
                             .padding(.vertical, 8)
                     }
 
@@ -65,7 +65,7 @@ struct InsightsView: View {
 
                 Section("Análisis") {
                     if viewModel.isGenerating {
-                        MonAviCatLoader(message: "Analizando tus cuentas y movimientos…", size: 200)
+                        MonAviCatLoader(message: L("Analizando tus cuentas y movimientos…"), size: 200)
                             .padding(.vertical, 12)
                     } else if viewModel.insights.isEmpty && !viewModel.isLoading {
                         Text("Genera un análisis con IA de tus cuentas y movimientos.")

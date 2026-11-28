@@ -26,23 +26,23 @@ struct MarketStudyConsentView: View {
 
                     item(
                         icon: "doc.text.magnifyingglass",
-                        title: "Qué usamos",
-                        text: "Tus facturas verificadas: comercio, productos, monto, medio de pago, fecha y hora. También tu edad y género, si nos los diste."
+                        title: L("Qué usamos"),
+                        text: L("Tus facturas verificadas: comercio, productos, monto, medio de pago, fecha y hora. También tu edad y género, si nos los diste.")
                     )
                     item(
                         icon: "person.3.fill",
-                        title: "Cómo lo usamos",
-                        text: "Solo en estudios agregados y anónimos de al menos 5 personas. Nunca tu nombre, tu correo ni tus compras individuales. Los comercios y marcas ven tendencias, no personas."
+                        title: L("Cómo lo usamos"),
+                        text: L("Solo en estudios agregados y anónimos de al menos 5 personas. Nunca tu nombre, tu correo ni tus compras individuales. Los comercios y marcas ven tendencias, no personas.")
                     )
                     item(
                         icon: "gift.fill",
-                        title: "Qué ganas",
-                        text: "Ayudas a que haya más premios y campañas de marcas en MonAvi."
+                        title: L("Qué ganas"),
+                        text: L("Ayudas a que haya más premios y campañas de marcas en MonAvi.")
                     )
                     item(
                         icon: "arrow.uturn.backward.circle.fill",
-                        title: "Tú decides",
-                        text: "Puedes cambiar de opinión cuando quieras en Ajustes > Privacidad."
+                        title: L("Tú decides"),
+                        text: L("Puedes cambiar de opinión cuando quieras en Ajustes > Privacidad.")
                     )
 
                     offersCard
@@ -152,7 +152,7 @@ struct MarketStudyConsentView: View {
             onDecided(granted)
             dismiss()
         } catch {
-            errorMessage = "No se pudo guardar tu decisión. Revisa tu conexión e intenta de nuevo."
+            errorMessage = L("No se pudo guardar tu decisión. Revisa tu conexión e intenta de nuevo.")
         }
     }
 }
@@ -193,12 +193,12 @@ enum MarketStudyConsentPrompt {
 /// promociones y regalos (cada cambio guarda una fila nueva) y la
 /// politica de privacidad.
 struct PrivacySettingsSection: View {
-    static let offersFooter = "Te avisaremos de ofertas de comercios y marcas, y podrás recibir regalos como cashback o productos gratis. Puedes desactivarlo cuando quieras."
+    static let offersFooter = L("Te avisaremos de ofertas de comercios y marcas, y podrás recibir regalos como cashback o productos gratis. Puedes desactivarlo cuando quieras.")
 
     var body: some View {
         Section {
             ConsentToggleRow(
-                title: "Participar en el estudio de mercado anónimo",
+                title: L("Participar en el estudio de mercado anónimo"),
                 purpose: .estudioMercado
             )
 
@@ -223,7 +223,7 @@ struct PrivacySettingsSection: View {
 
         Section {
             ConsentToggleRow(
-                title: "Usar funciones con IA",
+                title: L("Usar funciones con IA"),
                 purpose: .ia
             )
         } footer: {
@@ -231,7 +231,7 @@ struct PrivacySettingsSection: View {
         }
     }
 
-    static let aiFooter = "Las preguntas, el análisis y las notas por voz usan Claude, la IA de Anthropic. Solo se envían los datos necesarios para responder y no se usan para entrenar modelos. Si lo desactivas, no se envía nada."
+    static let aiFooter = L("Las preguntas, el análisis y las notas por voz usan Claude, la IA de Anthropic. Solo se envían los datos necesarios para responder y no se usan para entrenar modelos. Si lo desactivas, no se envía nada.")
 }
 
 /// Un interruptor de consentimiento: lee la ultima decision y guarda una
@@ -278,7 +278,7 @@ private struct ConsentToggleRow: View {
             errorMessage = nil
         } catch {
             isLoaded = false
-            errorMessage = "No se pudo cargar tu preferencia. Intenta más tarde."
+            errorMessage = L("No se pudo cargar tu preferencia. Intenta más tarde.")
         }
     }
 
@@ -300,7 +300,7 @@ private struct ConsentToggleRow: View {
             errorMessage = nil
         } catch {
             granted = previous
-            errorMessage = "No se pudo guardar el cambio. Revisa tu conexión."
+            errorMessage = L("No se pudo guardar el cambio. Revisa tu conexión.")
         }
     }
 }

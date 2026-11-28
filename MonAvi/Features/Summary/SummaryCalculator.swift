@@ -292,7 +292,7 @@ struct SummaryCalculator {
 
     /// Encabezado de cada dia en la lista de movimientos.
     func dayTitle(for day: Date) -> String {
-        if calendar.isDate(day, inSameDayAs: now) { return "Hoy" }
+        if calendar.isDate(day, inSameDayAs: now) { return L("Hoy") }
         if let yesterday = calendar.date(byAdding: .day, value: -1, to: now),
            calendar.isDate(day, inSameDayAs: yesterday) {
             return L("Ayer")

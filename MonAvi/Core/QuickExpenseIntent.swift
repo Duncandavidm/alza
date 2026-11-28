@@ -124,8 +124,8 @@ struct QuickExpenseIntent: AppIntent {
             )
         )
 
-        let label = category.transactionCategory.map { "\($0.emoji) \($0.rawValue)" } ?? category.rawValue
+        let label = category.transactionCategory.map { "\($0.emoji) \($0.displayName)" } ?? L(category.rawValue)
         let what = description.isEmpty ? "" : " (\(description))"
-        return .result(dialog: "Anotado: \(amount.formatted(.appCurrency)) en \(label)\(what).")
+        return .result(dialog: "\(L("Anotado: %@ en %@%@.", amount.formatted(.appCurrency), label, what))")
     }
 }

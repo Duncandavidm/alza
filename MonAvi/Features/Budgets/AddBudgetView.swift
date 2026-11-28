@@ -73,7 +73,7 @@ struct AddBudgetView: View {
             )
             dismiss()
         } catch {
-            errorMessage = "Ya existe un presupuesto \(period.displayName.lowercased()) para esta categoría, o algo salió mal."
+            errorMessage = L("Ya existe un presupuesto %@ para esta categoría, o algo salió mal.", "\(period.displayName.lowercased())")
         }
     }
 }

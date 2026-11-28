@@ -137,7 +137,7 @@ struct FinancialSnapshot {
 
         var title: String {
             switch self {
-            case .none: return "Sin deudas"
+            case .none: return L("Sin deudas")
             case .healthy: return "Deuda sana"
             case .caution: return L("Cuidado")
             case .high: return L("Te estás sobreendeudando")

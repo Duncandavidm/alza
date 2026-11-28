@@ -202,19 +202,19 @@ enum DetectedMovementActions {
                 .execute()
                 .value
             guard let accountId = suggestedAccountId(for: movement, accounts: accounts) else {
-                sendSimple(id: "detected-failed-\(id)", title: "Falta una cuenta",
-                           body: "Crea una cuenta en MonAvi para registrar tus movimientos.", userInfo: ["screen": "home"])
+                sendSimple(id: "detected-failed-\(id)", title: L("Falta una cuenta"),
+                           body: L("Crea una cuenta en MonAvi para registrar tus movimientos."), userInfo: ["screen": "home"])
                 return
             }
             try await register(movement, userId: session.user.id, accountId: accountId,
                                category: suggestedCategory(for: movement), description: nil, rememberCard: false)
             let name = accounts.first { $0.id == accountId }?.name ?? L("tu cuenta")
-            sendSimple(id: "detected-done-\(id)", title: "Listo ✓",
-                       body: "Registramos \(movement.title) por \(abs(movement.amount).formatted(.appCurrency)) en \(name).")
+            sendSimple(id: "detected-done-\(id)", title: L("Listo ✓"),
+                       body: L("Registramos %@ por %@ en %@.", "\(movement.title)", "\(abs(movement.amount).formatted(.appCurrency))", "\(name)"))
             NotificationCenter.default.post(name: .recurringLoggedFromNotification, object: nil)
         } catch {
-            sendSimple(id: "detected-failed-\(id)", title: "No se pudo registrar",
-                       body: "Abre MonAvi para registrar este movimiento. Revisa tu conexión a internet.",
+            sendSimple(id: "detected-failed-\(id)", title: L("No se pudo registrar"),
+                       body: L("Abre MonAvi para registrar este movimiento. Revisa tu conexión a internet."),
                        userInfo: ["screen": "detected", idKey: idString])
         }
     }
@@ -264,7 +264,7 @@ enum DetectedMovementActions {
             identifier: notificationCategory,
             actions: [
                 UNNotificationAction(identifier: registerAction, title: "Registrar", options: []),
-                UNNotificationAction(identifier: reviewAction, title: "Revisar y editar", options: [.foreground]),
+                UNNotificationAction(identifier: reviewAction, title: L("Revisar y editar"), options: [.foreground]),
                 UNNotificationAction(identifier: dismissAction, title: "Descartar", options: [.destructive]),
             ],
             intentIdentifiers: [],

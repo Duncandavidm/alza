@@ -132,6 +132,6 @@ struct BrandCampaignsTodayRow: View {
         guard let first = campaigns.first else { return "" }
         let bonus = BrandCampaignText.bonusText(for: first).map { "\(first.brand): \($0)" } ?? first.brand
         let others = campaigns.count - 1
-        return others > 0 ? "\(bonus) y \(others) más" : bonus
+        return others > 0 ? L("%@ y %@ más", "\(bonus)", "\(others)") : bonus
     }
 }

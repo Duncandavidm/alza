@@ -134,15 +134,15 @@ struct MyRedemptionsView: View {
     private func detailText(_ redemption: RewardRedemption) -> String {
         let created = redemption.createdAt.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi))
         if redemption.isUsable() {
-            return "Código \(redemption.code) · vence el \(redemption.expiresAt.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi)))"
+            return L("Código %@ · vence el %@", "\(redemption.code)", "\(redemption.expiresAt.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi)))")
         }
         if redemption.status == .entregado, let deliveredAt = redemption.deliveredAt {
-            return "\(redemption.isDiscount ? "Aplicado" : "Entregado") el \(deliveredAt.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi)))"
+            return L(redemption.isDiscount ? "Aplicado el %@" : "Entregado el %@", deliveredAt.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi)))
         }
         if redemption.isGift {
-            return "Recibido el \(created)"
+            return L("Recibido el %@", "\(created)")
         }
-        return "Canjeado el \(created)"
+        return L("Canjeado el %@", "\(created)")
     }
 
     private func refresh() async {
@@ -156,7 +156,7 @@ struct MyRedemptionsView: View {
             redemptions = try await RewardsRepository.shared.fetchMyRedemptions(userId: userId)
             errorMessage = nil
         } catch {
-            errorMessage = "No pudimos cargar tus canjes. Desliza hacia abajo para intentar de nuevo."
+            errorMessage = L("No pudimos cargar tus canjes. Desliza hacia abajo para intentar de nuevo.")
         }
     }
 }

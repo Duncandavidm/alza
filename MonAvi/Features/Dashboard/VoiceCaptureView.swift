@@ -112,10 +112,10 @@ struct VoiceCaptureView: View {
 
     private var listeningTitle: String {
         if phase == .saving { return "Anotando…" }
-        if recognizer.isAnswering { return "Buscando la respuesta…" }
-        if recognizer.isProcessing { return "Entendiendo lo que dijiste…" }
-        if recognizer.isRecording { return recognizer.liveTranscript.isEmpty ? "Te escucho…" : "Sigue, te escucho…" }
-        return "Preparando el micrófono…"
+        if recognizer.isAnswering { return L("Buscando la respuesta…") }
+        if recognizer.isProcessing { return L("Entendiendo lo que dijiste…") }
+        if recognizer.isRecording { return recognizer.liveTranscript.isEmpty ? L("Te escucho…") : L("Sigue, te escucho…") }
+        return L("Preparando el micrófono…")
     }
 
     private var listeningContent: some View {
@@ -302,8 +302,8 @@ struct VoiceCaptureView: View {
         messageScreen(
             icon: "creditcard.trianglebadge.exclamationmark",
             iconColor: MonAviBrand.alert,
-            title: "Primero crea una cuenta",
-            message: "Necesitas una cuenta para guardar movimientos. Créala en Ajustes > Cuentas y vuelve a intentarlo.",
+            title: L("Primero crea una cuenta"),
+            message: L("Necesitas una cuenta para guardar movimientos. Créala en Ajustes > Cuentas y vuelve a intentarlo."),
             primaryTitle: "Entendido",
             primaryIcon: nil,
             primaryAction: close
@@ -314,9 +314,9 @@ struct VoiceCaptureView: View {
         messageScreen(
             icon: "mic.slash.fill",
             iconColor: MonAviBrand.alert,
-            title: "No te entendí",
+            title: L("No te entendí"),
             message: message,
-            primaryTitle: "Intentar de nuevo",
+            primaryTitle: L("Intentar de nuevo"),
             primaryIcon: "mic.fill",
             primaryAction: { Task { await startListening() } }
         )
@@ -441,11 +441,11 @@ struct VoiceCaptureView: View {
         // pago_proveedor / transferencia → gasto + Proveedores / Transferencias.
         let parsed = rawParsed.normalizedForQuickAdd()
         guard parsed.amount > 0 else {
-            phase = .failed("No escuché el monto. Intenta de nuevo, por ejemplo: «gasté 12 dólares en almuerzo».")
+            phase = .failed(L("No escuché el monto. Intenta de nuevo, por ejemplo: «gasté 12 dólares en almuerzo»."))
             return
         }
         guard let userId = appState.currentUserId else {
-            phase = .failed("Tu sesión se cerró. Entra de nuevo a MonAvi e inténtalo otra vez.")
+            phase = .failed(L("Tu sesión se cerró. Entra de nuevo a MonAvi e inténtalo otra vez."))
             return
         }
 
@@ -454,7 +454,7 @@ struct VoiceCaptureView: View {
         if !accountsLoaded {
             await loadAccounts()
             guard accountsLoaded else {
-                phase = .failed("No se pudieron cargar tus cuentas. Revisa tu conexión a internet e intenta de nuevo.")
+                phase = .failed(L("No se pudieron cargar tus cuentas. Revisa tu conexión a internet e intenta de nuevo."))
                 return
             }
         }
@@ -488,7 +488,7 @@ struct VoiceCaptureView: View {
             }
             phase = .saved(created)
         } catch {
-            phase = .failed("No se pudo guardar el movimiento: \(error.localizedDescription)")
+            phase = .failed(L("No se pudo guardar el movimiento: %@", "\(error.localizedDescription)"))
         }
     }
 
@@ -500,7 +500,7 @@ struct VoiceCaptureView: View {
             try await viewModel.deleteTransaction(transaction)
             close()
         } catch {
-            undoError = "No se pudo deshacer: \(error.localizedDescription)"
+            undoError = L("No se pudo deshacer: %@", "\(error.localizedDescription)")
         }
     }
 

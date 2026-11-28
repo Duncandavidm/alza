@@ -42,7 +42,7 @@ struct DayCloseSummaryView: View {
                     summaryRow(label: "Gastaste", value: -summary.expense, color: .red)
                     Divider()
                     summaryRow(
-                        label: "Te quedo en el bolsillo",
+                        label: L("Te quedo en el bolsillo"),
                         value: summary.net,
                         color: summary.net >= 0 ? .green : .red,
                         emphasized: true

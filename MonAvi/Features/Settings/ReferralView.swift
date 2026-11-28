@@ -28,7 +28,7 @@ final class ReferralViewModel: ObservableObject {
             loadErrorMessage = nil
         } catch {
             if summary == nil {
-                loadErrorMessage = "No se pudo cargar tu código. Revisa tu conexión e inténtalo de nuevo."
+                loadErrorMessage = L("No se pudo cargar tu código. Revisa tu conexión e inténtalo de nuevo.")
             }
         }
     }
@@ -171,7 +171,7 @@ struct ReferralView: View {
     }
 
     private func shareMessage(for code: String) -> String {
-        "Únete a MonAvi y gana \(viewModel.reward.refereeText) de cashback con mi código \(code): \(Config.appStoreURL.absoluteString)"
+        L("Únete a MonAvi y gana %@ de cashback con mi código %@: %@", "\(viewModel.reward.refereeText)", "\(code)", "\(Config.appStoreURL.absoluteString)")
     }
 
     private func copy(_ code: String) {
@@ -204,9 +204,9 @@ struct ReferralView: View {
 
     private var howItWorksSection: some View {
         Section {
-            ruleRow(icon: "square.and.arrow.up", text: "Comparte tu código con tus amigos.")
-            ruleRow(icon: "person.badge.plus", text: "Tu amigo lo usa al unirse y gana \(viewModel.reward.refereeText) de cashback.")
-            ruleRow(icon: "dollarsign.circle.fill", text: "Tú ganas \(viewModel.reward.referrerText) de cashback por cada amigo.")
+            ruleRow(icon: "square.and.arrow.up", text: L("Comparte tu código con tus amigos."))
+            ruleRow(icon: "person.badge.plus", text: L("Tu amigo lo usa al unirse y gana %@ de cashback.", "\(viewModel.reward.refereeText)"))
+            ruleRow(icon: "dollarsign.circle.fill", text: L("Tú ganas %@ de cashback por cada amigo.", "\(viewModel.reward.referrerText)"))
         } header: {
             Text("Cómo funciona")
         } footer: {

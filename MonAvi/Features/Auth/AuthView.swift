@@ -49,8 +49,8 @@ struct AuthView: View {
                         Text("Bienvenido")
                             .font(.system(.largeTitle, design: MonAviBrand.fontDesign, weight: .bold))
                         Text(viewModel.emailAuthMode == .signUp
-                             ? "Crea tu cuenta en segundos."
-                             : "Tus gastos, tu ahorro y tus premios, en un solo lugar.")
+                             ? L("Crea tu cuenta en segundos.")
+                             : L("Tus gastos, tu ahorro y tus premios, en un solo lugar."))
                             .font(.system(.subheadline, design: MonAviBrand.fontDesign))
                             .foregroundStyle(.secondary)
                     }
@@ -152,7 +152,7 @@ struct AuthView: View {
                 .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemBackground)))
 
             RevealablePasswordField(
-                title: "Contraseña",
+                title: L("Contraseña"),
                 text: $viewModel.password,
                 contentType: viewModel.emailAuthMode == .signUp ? .newPassword : .password
             )
@@ -166,7 +166,7 @@ struct AuthView: View {
 
             if viewModel.emailAuthMode == .signUp {
                 RevealablePasswordField(
-                    title: "Confirma tu contraseña",
+                    title: L("Confirma tu contraseña"),
                     text: $viewModel.confirmPassword,
                     contentType: .newPassword
                 )

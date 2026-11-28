@@ -16,14 +16,14 @@ struct WalletAutomationGuideView: View {
     }
 
     private let steps: [Step] = [
-        Step(id: 1, text: "Abre la app **Atajos** y toca **Automatización**."),
-        Step(id: 2, text: "Toca **Nueva automatización** (o el botón **+**)."),
-        Step(id: 3, text: "Elige **Transacción** (Wallet)."),
-        Step(id: 4, text: "Elige las tarjetas de Wallet con las que pagas."),
+        Step(id: 1, text: L("Abre la app **Atajos** y toca **Automatización**.")),
+        Step(id: 2, text: L("Toca **Nueva automatización** (o el botón **+**).")),
+        Step(id: 3, text: L("Elige **Transacción** (Wallet).")),
+        Step(id: 4, text: L("Elige las tarjetas de Wallet con las que pagas.")),
         Step(id: 5, text: "Marca **Ejecutar inmediatamente** y toca **Siguiente**."),
-        Step(id: 6, text: "Toca **Nueva automatización en blanco**, busca **MonAvi** y elige la acción **Anotar un gasto en MonAvi**."),
-        Step(id: 7, text: "En **Monto**, elige la variable **Cantidad** (o Monto) de la transacción; en **Comercio**, elige **Comercio**. Si quieres, elige también la cuenta."),
-        Step(id: 8, text: "Toca **Listo**. Cada vez que pagues te llegará «Pago detectado»: tócalo para revisarlo y agregarlo.")
+        Step(id: 6, text: L("Toca **Nueva automatización en blanco**, busca **MonAvi** y elige la acción **Anotar un gasto en MonAvi**.")),
+        Step(id: 7, text: L("En **Monto**, elige la variable **Cantidad** (o Monto) de la transacción; en **Comercio**, elige **Comercio**. Si quieres, elige también la cuenta.")),
+        Step(id: 8, text: L("Toca **Listo**. Cada vez que pagues te llegará «Pago detectado»: tócalo para revisarlo y agregarlo."))
     ]
 
     var body: some View {
@@ -71,15 +71,15 @@ struct WalletAutomationGuideView: View {
             Section {
                 benefit(
                     icon: "creditcard.fill",
-                    text: "Si pagas con tarjeta en un comercio aliado y escaneas la factura, ganas tu cashback más el bono extra del comercio."
+                    text: L("Si pagas con tarjeta en un comercio aliado y escaneas la factura, ganas tu cashback más el bono extra del comercio.")
                 )
                 benefit(
                     icon: "checkmark.seal.fill",
-                    text: "Tu factura es la prueba del pago: dice el comercio, el monto y que pagaste con tarjeta. Así nadie puede inventar compras."
+                    text: L("Tu factura es la prueba del pago: dice el comercio, el monto y que pagaste con tarjeta. Así nadie puede inventar compras.")
                 )
                 benefit(
                     icon: "bell.badge.fill",
-                    text: "Cuando pagues en un comercio aliado, te avisamos para que no se te olvide escanear la factura."
+                    text: L("Cuando pagues en un comercio aliado, te avisamos para que no se te olvide escanear la factura.")
                 )
             } header: {
                 Text("Pagar con tarjeta en comercios aliados")

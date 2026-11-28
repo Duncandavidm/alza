@@ -41,7 +41,7 @@ struct BankAlertsGuideView: View {
 
             Section {
                 Picker("Aviso", selection: $trigger) {
-                    ForEach(Trigger.allCases) { Text($0.rawValue).tag($0) }
+                    ForEach(Trigger.allCases) { Text(LocalizedStringKey($0.rawValue)).tag($0) }
                 }
                 .pickerStyle(.segmented)
                 ForEach(Array(steps(for: trigger).enumerated()), id: \.offset) { index, step in
@@ -105,26 +105,26 @@ struct BankAlertsGuideView: View {
 
     private func steps(for trigger: Trigger) -> [String] {
         let common = [
-            "Marca **Ejecutar inmediatamente** y apaga **Notificar al ejecutar**. Toca **Siguiente**.",
-            "Toca **Nueva automatización en blanco**, busca **MonAvi** y elige **Detectar movimiento del banco**.",
-            "En **Aviso**, elige la variable **Entrada del atajo**. Si quieres, escribe el nombre del banco en **App o banco**. Toca **Listo**.",
+            L("Marca **Ejecutar inmediatamente** y apaga **Notificar al ejecutar**. Toca **Siguiente**."),
+            L("Toca **Nueva automatización en blanco**, busca **MonAvi** y elige **Detectar movimiento del banco**."),
+            L("En **Aviso**, elige la variable **Entrada del atajo**. Si quieres, escribe el nombre del banco en **App o banco**. Toca **Listo**."),
         ]
         switch trigger {
         case .notification:
             return [
-                "Abre **Atajos**, ve a **Automatización** y toca **+**.",
-                "Elige **Notificación** y escoge la app de tu banco o **Yappy**.",
-                "Opcional: filtra por palabras como **compra**, **pagaste** o **recibiste**.",
+                L("Abre **Atajos**, ve a **Automatización** y toca **+**."),
+                L("Elige **Notificación** y escoge la app de tu banco o **Yappy**."),
+                L("Opcional: filtra por palabras como **compra**, **pagaste** o **recibiste**."),
             ] + common
         case .sms:
             return [
-                "Abre **Atajos**, ve a **Automatización** y toca **+**.",
-                "Elige **Mensaje**. En **Remitente**, escoge el número o contacto de tu banco (o usa **El mensaje contiene** «compra»).",
+                L("Abre **Atajos**, ve a **Automatización** y toca **+**."),
+                L("Elige **Mensaje**. En **Remitente**, escoge el número o contacto de tu banco (o usa **El mensaje contiene** «compra»)."),
             ] + common
         case .email:
             return [
-                "Abre **Atajos**, ve a **Automatización** y toca **+**.",
-                "Elige **Correo**. En **Remitente**, escribe el correo de avisos de tu banco.",
+                L("Abre **Atajos**, ve a **Automatización** y toca **+**."),
+                L("Elige **Correo**. En **Remitente**, escribe el correo de avisos de tu banco."),
             ] + common
         }
     }
@@ -132,11 +132,11 @@ struct BankAlertsGuideView: View {
     private func footer(for trigger: Trigger) -> String {
         switch trigger {
         case .notification:
-            return "Necesitas la versión más reciente de iOS. Si no ves «Notificación» en la lista, actualiza tu teléfono o usa SMS o correo."
+            return L("Necesitas la versión más reciente de iOS. Si no ves «Notificación» en la lista, actualiza tu teléfono o usa SMS o correo.")
         case .sms:
-            return "Funciona con los bancos que te mandan un SMS por cada compra o transferencia. El SMS tiene que llegar a la app Mensajes."
+            return L("Funciona con los bancos que te mandan un SMS por cada compra o transferencia. El SMS tiene que llegar a la app Mensajes.")
         case .email:
-            return "Funciona con la app Mail de Apple. Activa en tu banca en línea los avisos por correo de cada movimiento."
+            return L("Funciona con la app Mail de Apple. Activa en tu banca en línea los avisos por correo de cada movimiento.")
         }
     }
 
@@ -145,13 +145,13 @@ struct BankAlertsGuideView: View {
         isTesting = true
         defer { isTesting = false }
         guard BankAlertParser.parse(sampleText) != nil else {
-            testResult = "No encontramos un movimiento en ese texto. El aviso tiene que traer el monto con su moneda (B/., $ o USD) y decir si fue una compra, un pago o un dinero recibido."
+            testResult = L("No encontramos un movimiento en ese texto. El aviso tiene que traer el monto con su moneda (B/., $ o USD) y decir si fue una compra, un pago o un dinero recibido.")
             return
         }
         if await DetectedMovementActions.detect(text: sampleText, source: "Prueba") != nil {
-            testResult = "¡Listo! Te llegó «Pago detectado» y quedó en Hoy por confirmar."
+            testResult = L("¡Listo! Te llegó «Pago detectado» y quedó en Hoy por confirmar.")
         } else {
-            testResult = "Ya tienes uno igual por confirmar en Hoy (el mismo monto hace pocos minutos)."
+            testResult = L("Ya tienes uno igual por confirmar en Hoy (el mismo monto hace pocos minutos).")
         }
     }
 }

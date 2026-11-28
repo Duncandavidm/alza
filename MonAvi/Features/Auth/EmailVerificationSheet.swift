@@ -26,7 +26,7 @@ final class EmailVerificationViewModel: ObservableObject {
         hasStarted = true
         email = await service.currentEmail()
         guard email != nil else {
-            errorMessage = "No encontramos un correo en tu cuenta. Cierra sesión y vuelve a entrar."
+            errorMessage = L("No encontramos un correo en tu cuenta. Cierra sesión y vuelve a entrar.")
             return
         }
         await sendCode()
@@ -79,7 +79,7 @@ final class EmailVerificationViewModel: ObservableObject {
         } catch {
             UINotificationFeedbackGenerator().notificationOccurred(.error)
             if error is EmailVerificationError {
-                errorMessage = "Tu código se aceptó, pero no pudimos guardar la verificación. Pide un código nuevo e inténtalo otra vez."
+                errorMessage = L("Tu código se aceptó, pero no pudimos guardar la verificación. Pide un código nuevo e inténtalo otra vez.")
             } else {
                 errorMessage = EmailVerificationLogic.verifyErrorMessage(
                     forErrorText: EmailVerificationLogic.errorText(error)

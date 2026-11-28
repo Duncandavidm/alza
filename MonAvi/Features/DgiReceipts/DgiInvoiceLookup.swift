@@ -291,7 +291,7 @@ enum DgiInvoiceLookupLogic {
         case "duplicada":
             let message = response.message?.trimmingCharacters(in: .whitespacesAndNewlines)
             return .duplicate(
-                message: (message?.isEmpty ?? true) ? "Esta factura ya fue registrada." : (message ?? ""),
+                message: (message?.isEmpty ?? true) ? L("Esta factura ya fue registrada.") : (message ?? ""),
                 mine: response.mine ?? false
             )
         default:

@@ -68,8 +68,8 @@ struct SettingsView: View {
                     }
                     Toggle("Modo avanzado", isOn: $isAdvancedMode)
                     Text(isAdvancedMode
-                        ? "Ves categoría y etiquetas al anotar un movimiento detallado."
-                        : "Solo lo esencial al anotar: cuenta, tipo y monto.")
+                        ? L("Ves categoría y etiquetas al anotar un movimiento detallado.")
+                        : L("Solo lo esencial al anotar: cuenta, tipo y monto."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -153,7 +153,7 @@ struct SettingsView: View {
                         }
                     } label: {
                         Label(
-                            testNotificationSent ? "Llega en 5 segundos…" : "Probar sonido y vibración",
+                            testNotificationSent ? L("Llega en 5 segundos…") : L("Probar sonido y vibración"),
                             systemImage: "speaker.wave.2.fill"
                         )
                     }
@@ -279,13 +279,13 @@ struct SettingsView: View {
                             LabeledContent("Renueva", value: periodEndDate.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi)))
                         }
                     case .inGracePeriod:
-                        LabeledContent("Estado", value: "En periodo de gracia")
+                        LabeledContent("Estado", value: L("En periodo de gracia"))
                     case .expired:
                         LabeledContent("Estado", value: "Expirada")
                     case .revoked:
                         LabeledContent("Estado", value: "Revocada")
                     case .none, .unknown:
-                        LabeledContent("Estado", value: "Sin suscripción")
+                        LabeledContent("Estado", value: L("Sin suscripción"))
                     }
 
                     Button("Administrar suscripción") {

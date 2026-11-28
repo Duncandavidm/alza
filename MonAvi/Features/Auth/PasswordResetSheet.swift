@@ -73,7 +73,7 @@ final class PasswordResetViewModel: ObservableObject {
     func sendCode() async {
         let target = step == .email ? PasswordResetLogic.trimmedEmail(email) : sentToEmail
         guard PasswordResetLogic.isPlausibleEmail(target) else {
-            errorMessage = "Escribe un correo válido."
+            errorMessage = L("Escribe un correo válido.")
             return
         }
         guard !isSending, cooldownRemaining == 0 else { return }
@@ -143,7 +143,7 @@ final class PasswordResetViewModel: ObservableObject {
     func changePassword() async {
         guard !isWorking else { return }
         if !codeVerified && !EmailVerificationLogic.isComplete(code) {
-            errorMessage = "Escribe el código de 6 dígitos que te enviamos."
+            errorMessage = L("Escribe el código de 6 dígitos que te enviamos.")
             return
         }
         if let passwordError = PasswordResetLogic.newPasswordError(
@@ -193,13 +193,13 @@ final class PasswordResetViewModel: ObservableObject {
         defer { isWorking = false }
         do {
             guard let factor = try await MFAService.listVerifiedFactors().first else {
-                errorMessage = "No encontramos tu verificación en 2 pasos. Inténtalo de nuevo."
+                errorMessage = L("No encontramos tu verificación en 2 pasos. Inténtalo de nuevo.")
                 return
             }
             try await MFAService.verify(factorId: factor.id, code: submitted)
         } catch {
             UINotificationFeedbackGenerator().notificationOccurred(.error)
-            errorMessage = "El código de tu app de autenticación no es correcto. Inténtalo de nuevo."
+            errorMessage = L("El código de tu app de autenticación no es correcto. Inténtalo de nuevo.")
             twoFactorCode = ""
             return
         }
@@ -358,8 +358,8 @@ struct PasswordResetSheet: View {
         VStack(alignment: .leading, spacing: 20) {
             header(
                 icon: "key.fill",
-                title: "¿Olvidaste tu contraseña?",
-                subtitle: "Escribe tu correo y te enviaremos un código de 6 dígitos para crear una nueva."
+                title: L("¿Olvidaste tu contraseña?"),
+                subtitle: L("Escribe tu correo y te enviaremos un código de 6 dígitos para crear una nueva.")
             )
 
             TextField("Correo", text: $viewModel.email)
@@ -375,7 +375,7 @@ struct PasswordResetSheet: View {
             errorText
 
             primaryButton(
-                title: "Enviar código",
+                title: L("Enviar código"),
                 isLoading: viewModel.isSending,
                 isEnabled: viewModel.canSendFirstCode
             ) {
@@ -390,13 +390,13 @@ struct PasswordResetSheet: View {
         VStack(alignment: .leading, spacing: 20) {
             header(
                 icon: "envelope.badge.fill",
-                title: "Revisa tu correo",
+                title: L("Revisa tu correo"),
                 subtitle: viewModel.codeSentMessage
             )
 
             if !viewModel.codeVerified {
                 VStack(alignment: .leading, spacing: 10) {
-                    codeField(text: $viewModel.code, field: .code, label: "Código de 6 dígitos")
+                    codeField(text: $viewModel.code, field: .code, label: L("Código de 6 dígitos"))
 
                     HStack {
                         Button {
@@ -426,7 +426,7 @@ struct PasswordResetSheet: View {
                     .font(.system(.headline, design: MonAviBrand.fontDesign))
 
                 PasswordInputField(
-                    title: "Nueva contraseña",
+                    title: L("Nueva contraseña"),
                     text: $viewModel.newPassword,
                     isRevealed: isPasswordRevealed
                 )
@@ -435,7 +435,7 @@ struct PasswordResetSheet: View {
                 .onSubmit { focusedField = .confirmation }
 
                 PasswordInputField(
-                    title: "Confirma la contraseña",
+                    title: L("Confirma la contraseña"),
                     text: $viewModel.confirmPassword,
                     isRevealed: isPasswordRevealed
                 )
@@ -459,14 +459,14 @@ struct PasswordResetSheet: View {
                         Image(systemName: isPasswordRevealed ? "eye.slash" : "eye")
                             .font(.subheadline)
                     }
-                    .accessibilityLabel(isPasswordRevealed ? "Ocultar contraseña" : "Mostrar contraseña")
+                    .accessibilityLabel(isPasswordRevealed ? L("Ocultar contraseña") : L("Mostrar contraseña"))
                 }
             }
 
             errorText
 
             primaryButton(
-                title: "Cambiar contraseña",
+                title: L("Cambiar contraseña"),
                 isLoading: viewModel.isWorking,
                 isEnabled: viewModel.canSubmit
             ) {
@@ -481,11 +481,11 @@ struct PasswordResetSheet: View {
         VStack(alignment: .leading, spacing: 20) {
             header(
                 icon: "lock.shield.fill",
-                title: "Verificación en 2 pasos",
-                subtitle: "Para cambiar la contraseña, escribe el código de 6 dígitos de tu app de autenticación."
+                title: L("Verificación en 2 pasos"),
+                subtitle: L("Para cambiar la contraseña, escribe el código de 6 dígitos de tu app de autenticación.")
             )
 
-            codeField(text: $viewModel.twoFactorCode, field: .twoFactor, label: "Código de tu app de autenticación")
+            codeField(text: $viewModel.twoFactorCode, field: .twoFactor, label: L("Código de tu app de autenticación"))
 
             if viewModel.isWorking {
                 HStack(spacing: 8) {

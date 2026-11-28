@@ -135,9 +135,9 @@ enum PurchaseComparison {
     static func summary(_ product: ProductPrices) -> String {
         guard let cheapest = product.cheapest else { return "" }
         if product.offers.count > 1 {
-            return "Más barato en \(cheapest.merchant): \(price(cheapest.lastPrice))"
+            return L("Más barato en %@: %@", "\(cheapest.merchant)", "\(price(cheapest.lastPrice))")
         }
-        return "\(price(cheapest.lastPrice)) en \(cheapest.merchant)"
+        return L("%@ en %@", "\(price(cheapest.lastPrice))", "\(cheapest.merchant)")
     }
 }
 
@@ -238,10 +238,10 @@ private struct ProductPricesDetail: View {
     private func detail(_ offer: ProductPrices.Offer) -> String {
         var parts: [String] = [offer.purchases == 1 ? "1 compra" : "\(offer.purchases) compras"]
         if offer.lowestPrice < offer.lastPrice {
-            parts.append("lo más bajo: \(PurchaseComparison.price(offer.lowestPrice))")
+            parts.append(L("lo más bajo: %@", "\(PurchaseComparison.price(offer.lowestPrice))"))
         }
         if let date = offer.lastDate {
-            parts.append("última: \(date.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi)))")
+            parts.append(L("última: %@", "\(date.formatted(Date.FormatStyle(date: .abbreviated, time: .omitted, locale: .monavi)))"))
         }
         return parts.joined(separator: " · ")
     }

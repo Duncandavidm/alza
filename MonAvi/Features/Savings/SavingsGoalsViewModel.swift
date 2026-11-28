@@ -122,7 +122,7 @@ final class SavingsGoalsViewModel: ObservableObject {
                     amount: -amount,
                     movementType: .transferencia,
                     category: TransactionCategory.savings.rawValue,
-                    description: amount > 0 ? "Aporte a meta: \(goal.name)" : L("Retiro de meta: %@", "\(goal.name)"),
+                    description: amount > 0 ? L("Aporte a meta: %@", "\(goal.name)") : L("Retiro de meta: %@", "\(goal.name)"),
                     occurredAt: Date()
                 )
             )

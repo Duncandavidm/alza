@@ -180,7 +180,7 @@ enum NotificationManager {
                atReminderHour(lateDate) > Date() {
                 schedule(
                     id: "bill-late-\(bill.id)",
-                    title: "Cuenta vencida",
+                    title: L("Cuenta vencida"),
                     body: L("%@ por %@ venció ayer y sigue pendiente. ¿Ya la pagaste? Regístralo en MonAvi.", "\(bill.name)", "\(amountText)"),
                     date: atReminderHour(lateDate),
                     timeSensitive: true
@@ -248,7 +248,7 @@ enum NotificationManager {
                 let isIncome = item.movementType.isInflow
                 schedule(
                     id: "recurring-due-\(item.id)",
-                    title: isIncome ? "¿Ya recibiste \(item.name)?" : L("Hoy toca pagar %@", "\(item.name)"),
+                    title: isIncome ? L("¿Ya recibiste %@?", "\(item.name)") : L("Hoy toca pagar %@", "\(item.name)"),
                     body: isIncome
                         ? L("Hoy es el día de %@ (%@). ¿Ya lo recibiste? Mantén presionado para registrarlo.", "\(item.name)", "\(amountText)")
                         : L("%@, normalmente %@. ¿Ya lo pagaste? Mantén presionado para registrarlo; si fue otro monto, elige «Pagué otro monto».", "\(item.name)", "\(amountText)"),
@@ -387,7 +387,7 @@ enum NotificationManager {
 
         var ids: [String] = []
         for (debt, date) in due {
-            let what = debt.isCard ? "tu \(debt.creditor)" : debt.creditor
+            let what = debt.isCard ? L("tu %@", "\(debt.creditor)") : debt.creditor
             let amounts = L("Debes %@ (mínimo %@).", "\(formattedAmount(debt.balance))", "\(formattedAmount(debt.estimatedMinimum))")
             let userInfo: [AnyHashable: Any] = ["screen": "card_payment", "debtId": debt.id.uuidString]
             let dayText = date.formatted(.dateTime.day().month(.wide).locale(.monavi))
@@ -483,7 +483,7 @@ enum NotificationManager {
                 )
                 sendImmediate(
                     id: "suggested-done-\(key)",
-                    title: "Guardado como gasto fijo",
+                    title: L("Guardado como gasto fijo"),
                     body: L("Te recordaremos %@ el día %@ de cada mes. Cuando lo pagues, regístralo con un toque.", "\(name)", "\(day)")
                 )
             default:
@@ -506,7 +506,7 @@ enum NotificationManager {
                 )
                 sendImmediate(
                     id: "suggested-done-\(key)",
-                    title: "Listo",
+                    title: L("Listo"),
                     body: L("Registramos %@ por %@ y lo guardamos como gasto fijo: te lo recordaremos cada mes.", "\(name)", "\(formattedAmount(paid))")
                 )
             }
@@ -569,7 +569,7 @@ enum NotificationManager {
         let suggested = UNNotificationCategory(
             identifier: suggestedCategory,
             actions: [
-                UNNotificationAction(identifier: suggestedSameAction, title: "Sí, el mismo monto", options: []),
+                UNNotificationAction(identifier: suggestedSameAction, title: L("Sí, el mismo monto"), options: []),
                 UNTextInputNotificationAction(
                     identifier: suggestedOtherAction,
                     title: L("Sí, pero otro monto"),
@@ -577,8 +577,8 @@ enum NotificationManager {
                     textInputButtonTitle: "Registrar",
                     textInputPlaceholder: "Monto, ej. 52.30"
                 ),
-                UNNotificationAction(identifier: suggestedNotYetAction, title: "Aún no lo pago", options: []),
-                UNNotificationAction(identifier: suggestedDismissAction, title: "No es un gasto fijo", options: [.destructive]),
+                UNNotificationAction(identifier: suggestedNotYetAction, title: L("Aún no lo pago"), options: []),
+                UNNotificationAction(identifier: suggestedDismissAction, title: L("No es un gasto fijo"), options: [.destructive]),
             ],
             intentIdentifiers: [],
             options: []
@@ -586,8 +586,8 @@ enum NotificationManager {
         let savings = UNNotificationCategory(
             identifier: savingsCategory,
             actions: [
-                UNNotificationAction(identifier: savingsTransferAction, title: "Sí, pasarlo a otra cuenta", options: [.foreground]),
-                UNNotificationAction(identifier: savingsNotYetAction, title: "Aún no, pregúntame en una semana", options: []),
+                UNNotificationAction(identifier: savingsTransferAction, title: L("Sí, pasarlo a otra cuenta"), options: [.foreground]),
+                UNNotificationAction(identifier: savingsNotYetAction, title: L("Aún no, pregúntame en una semana"), options: []),
             ],
             intentIdentifiers: [],
             options: []
@@ -613,9 +613,9 @@ enum NotificationManager {
                Calendar.current.isDate(lastLoggedOn, equalTo: Date(), toGranularity: item.loggingGranularity) {
                 let period: String
                 switch item.frequency {
-                case .monthly: period = "este mes"
+                case .monthly: period = L("este mes")
                 case .weekly: period = "esta semana"
-                case .daily: period = "hoy"
+                case .daily: period = L("hoy")
                 }
                 sendImmediate(
                     id: "recurring-done-\(id)",
@@ -641,7 +641,7 @@ enum NotificationManager {
             try await RecurringTransactionsViewModel.logPayment(for: item, userId: session.user.id, amount: amount)
             sendImmediate(
                 id: "recurring-done-\(id)",
-                title: "Listo",
+                title: L("Listo"),
                 body: L("Listo: registramos %@ por %@.", "\(item.name)", "\(formattedAmount(amount ?? item.amount))")
             )
             // Si la app esta abierta, Hoy se recarga (DayJournalView).

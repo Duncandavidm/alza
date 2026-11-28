@@ -109,7 +109,7 @@ struct PartnerMerchantRow: View {
                 .tint(MonAviBrand.primary)
 
                 Button(action: onShowRewards) {
-                    Label(summary.items.isEmpty ? "Ver descuentos" : "Ver premios",
+                    Label(summary.items.isEmpty ? L("Ver descuentos") : L("Ver premios"),
                           systemImage: summary.items.isEmpty ? "percent" : "gift.fill")
                         .frame(maxWidth: .infinity)
                 }

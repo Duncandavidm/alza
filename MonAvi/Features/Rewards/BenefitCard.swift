@@ -113,7 +113,7 @@ struct BenefitCard: View {
     private var primaryTitle: String {
         switch state {
         case .locked: return L("Desbloquear")
-        case .active: return "Ver mi código"
+        case .active: return L("Ver mi código")
         case .available: return L("Usar")
         case .cooldown, .usedUp: return L("Usado")
         }
@@ -137,11 +137,11 @@ struct BenefitCard: View {
 
     private var footnote: String? {
         switch state {
-        case .locked: return "Escanea tu primera factura fiscal para usarlo"
-        case .active: return "Tienes un código listo para usar"
+        case .locked: return L("Escanea tu primera factura fiscal para usarlo")
+        case .active: return L("Tienes un código listo para usar")
         case .available: return nil
         case .cooldown(let date): return BenefitsMath.availableAgainText(date)
-        case .usedUp: return "Ya usaste este descuento"
+        case .usedUp: return L("Ya usaste este descuento")
         }
     }
 }
@@ -157,7 +157,7 @@ struct BenefitsUnlockCard: View {
             HStack(alignment: .top, spacing: 12) {
                 Text("🧾").font(.system(size: 34))
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(bestDiscount.map { "Desbloquea descuentos de \($0)" } ?? "Desbloquea tus descuentos")
+                    Text(bestDiscount.map { L("Desbloquea descuentos de %@", "\($0)") } ?? L("Desbloquea tus descuentos"))
                         .font(.system(.headline, design: MonAviBrand.fontDesign, weight: .bold))
                     Text("Pide tu factura fiscal en cualquier compra y escanéala en MonAvi. Con la primera se activan todos los descuentos y además ganas cashback.")
                         .font(.subheadline)

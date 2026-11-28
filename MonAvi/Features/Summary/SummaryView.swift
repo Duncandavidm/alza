@@ -400,7 +400,7 @@ struct SummaryView: View {
     private var accountTitle: String {
         guard let accountId = viewModel.accountId,
               let account = journalViewModel.accounts.first(where: { $0.id == accountId })
-        else { return "Todas las cuentas" }
+        else { return L("Todas las cuentas") }
         return account.name
     }
 
@@ -601,7 +601,7 @@ struct SummaryView: View {
         .padding(.vertical, 10)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
-        .accessibilityHint(transaction.isFromInvoice ? "Con factura. Toca para editar la categoría o la descripción" : "Toca para editar")
+        .accessibilityHint(transaction.isFromInvoice ? L("Con factura. Toca para editar la categoría o la descripción") : L("Toca para editar"))
     }
 
     private func emptyState(_ snapshot: SummarySnapshot) -> some View {
@@ -658,7 +658,7 @@ struct SummaryView: View {
         do {
             try await journalViewModel.deleteTransaction(transaction)
         } catch {
-            viewModel.errorMessage = "No se pudo eliminar: \(error.localizedDescription)"
+            viewModel.errorMessage = L("No se pudo eliminar: %@", "\(error.localizedDescription)")
         }
         await reload()
     }

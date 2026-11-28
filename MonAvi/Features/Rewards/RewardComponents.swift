@@ -324,7 +324,7 @@ struct RewardBalancesHeader: View {
 
     /// El cashback pendiente se libera cuando los ingresos registrados
     /// respaldan las compras (ver migracion 0045).
-    static let pendingHint = "Se libera cuando tus ingresos registrados respalden tus compras."
+    static let pendingHint = L("Se libera cuando tus ingresos registrados respalden tus compras.")
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -343,7 +343,7 @@ struct RewardBalancesHeader: View {
     /// puntos).
     private var tiles: some View {
         RewardBalanceTile(
-            title: "Tu cashback",
+            title: L("Tu cashback"),
             value: Cashback.format(cents: max(0, balance.confirmedPoints)),
             subtitle: cashbackSubtitle,
             systemImage: RewardCurrency.cashback.systemImage
@@ -354,7 +354,7 @@ struct RewardBalancesHeader: View {
         if balance.pendingPoints > 0 {
             return "+\(Cashback.format(cents: balance.pendingPoints)) pendiente"
         }
-        return "de tus facturas"
+        return L("de tus facturas")
     }
 }
 
@@ -562,7 +562,7 @@ struct RewardProgressBar: View {
             .accessibilityHidden(true)
 
             if let missingText {
-                Text(compact ? missingText : "\(currency.format(max(0, balance))) de \(currency.format(cost)) · \(missingText)")
+                Text(compact ? missingText : L("%@ de %@ · %@", "\(currency.format(max(0, balance)))", "\(currency.format(cost))", "\(missingText)"))
                     .font(compact ? .caption2.weight(.semibold) : .caption.weight(.medium))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)

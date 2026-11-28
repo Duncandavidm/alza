@@ -47,7 +47,7 @@ enum WalletPassService {
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
             struct Failure: Decodable { let error: String }
             let message = (try? JSONDecoder().decode(Failure.self, from: data))?.error
-            throw PassError.server(message ?? "No se pudo crear el pase. Inténtalo de nuevo.")
+            throw PassError.server(message ?? L("No se pudo crear el pase. Inténtalo de nuevo."))
         }
         return data
     }

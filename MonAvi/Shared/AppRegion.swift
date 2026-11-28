@@ -21,7 +21,7 @@ enum AppCountry: String, Codable, CaseIterable, Identifiable, Hashable {
 
     var name: String {
         switch self {
-        case .panama: return "Panamá"
+        case .panama: return NSLocalizedString("Panamá", comment: "")
         case .colombia: return "Colombia"
         }
     }
@@ -35,8 +35,8 @@ enum AppCountry: String, Codable, CaseIterable, Identifiable, Hashable {
 
     var currencyName: String {
         switch self {
-        case .panama: return "Dólar estadounidense (USD)"
-        case .colombia: return "Peso colombiano (COP)"
+        case .panama: return NSLocalizedString("Dólar estadounidense (USD)", comment: "")
+        case .colombia: return NSLocalizedString("Peso colombiano (COP)", comment: "")
         }
     }
 

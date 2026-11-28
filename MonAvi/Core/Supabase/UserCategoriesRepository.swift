@@ -11,8 +11,8 @@ enum UserCategoryKind: String, Codable, CaseIterable, Identifiable, Hashable {
 
     var displayName: String {
         switch self {
-        case .gasto: return "Gasto"
-        case .ingreso: return "Ingreso"
+        case .gasto: return L("Gasto")
+        case .ingreso: return L("Ingreso")
         case .ambos: return "Ambos"
         }
     }

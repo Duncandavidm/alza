@@ -85,13 +85,13 @@ struct MFAChallengeView: View {
 
         do {
             guard let factor = try await MFAService.listVerifiedFactors().first else {
-                errorMessage = "No se encontró tu factor de verificación."
+                errorMessage = L("No se encontró tu factor de verificación.")
                 return
             }
             try await MFAService.verify(factorId: factor.id, code: code)
             await appState.refreshMFAStatus()
         } catch {
-            errorMessage = "Código incorrecto o expirado. Intenta de nuevo."
+            errorMessage = L("Código incorrecto o expirado. Intenta de nuevo.")
         }
     }
 }

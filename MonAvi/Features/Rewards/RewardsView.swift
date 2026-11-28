@@ -99,13 +99,13 @@ struct RewardsView: View {
             titleVisibility: .visible,
             presenting: pendingItem
         ) { (item: RewardItem) in
-            Button("\(item.isUnlockable ? "Desbloquear" : "Canjear") por \(item.formattedCost)") {
+            Button(item.isUnlockable ? L("Desbloquear por %@", item.formattedCost) : L("Canjear por %@", item.formattedCost)) {
                 Task { await redeem(item) }
             }
             Button("Cancelar", role: .cancel) {}
         }
         .confirmationDialog(
-            pendingBenefit.map(BenefitsMath.confirmationTitle(for:)) ?? "¿Usar este descuento?",
+            pendingBenefit.map(BenefitsMath.confirmationTitle(for:)) ?? L("¿Usar este descuento?"),
             isPresented: $isConfirmingBenefit,
             titleVisibility: .visible,
             presenting: pendingBenefit
@@ -238,7 +238,7 @@ struct RewardsView: View {
     private var categoryChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                categoryChip(title: "Todos", category: nil)
+                categoryChip(title: L("Todos"), category: nil)
                 ForEach(chipCategories, id: \.self) { (category: String) in
                     categoryChip(title: RewardsMath.categoryTitle(category, info: viewModel.categoryInfo), category: category)
                 }
@@ -265,9 +265,9 @@ struct RewardsView: View {
 
     private var navigationTitle: String {
         switch mode {
-        case .benefits: return "Descuentos para ti"
-        case .rewards: return "Canjea tus premios"
-        case .merchants: return "Dónde canjear"
+        case .benefits: return L("Descuentos para ti")
+        case .rewards: return L("Canjea tus premios")
+        case .merchants: return L("Dónde canjear")
         }
     }
 
@@ -330,7 +330,7 @@ struct RewardsView: View {
         let stores = PartnerMerchantSummary.group(viewModel.items, benefits: benefitItems)
         if !stores.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
-                marketplaceHeader("Comercios", actionTitle: "Ver todos") {
+                marketplaceHeader(L("Comercios"), actionTitle: L("Ver todos")) {
                     withAnimation(.snappy) { mode = .merchants }
                 }
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -376,7 +376,7 @@ struct RewardsView: View {
             return !known.contains(category)
         }
         marketplaceRow(
-            title: "Más beneficios",
+            title: L("Más beneficios"),
             entries: viewModel.benefits.benefits.filter { uncategorized($0.item) },
             items: viewModel.items.filter(uncategorized),
             unlocked: unlocked,
@@ -430,9 +430,9 @@ struct RewardsView: View {
             switch state {
             case .locked: return ("Desbloquear", true)
             case .available: return ("Usar", true)
-            case .active: return ("Ver código", true)
+            case .active: return (L("Ver código"), true)
             case .cooldown: return ("Disponible pronto", false)
-            case .usedUp: return ("Ya lo usaste", false)
+            case .usedUp: return (L("Ya lo usaste"), false)
             }
         }()
         return MarketplaceOfferTile(
@@ -458,7 +458,7 @@ struct RewardsView: View {
             merchantName: item.merchantName,
             title: item.name,
             costText: item.formattedCost,
-            buttonTitle: affordable ? (item.isUnlockable ? "Desbloquear" : "Canjear") : "Ver",
+            buttonTitle: affordable ? (item.isUnlockable ? L("Desbloquear") : L("Canjear")) : L("Ver"),
             buttonEnabled: !isRedeeming,
             progress: affordable ? nil : (balance: balance, cost: item.pointsCost, currency: item.currency),
             action: {
@@ -643,9 +643,9 @@ struct RewardsView: View {
     // MARK: - Acciones
 
     private var confirmationTitle: String {
-        guard let item = pendingItem else { return "¿Canjear este producto?" }
+        guard let item = pendingItem else { return L("¿Canjear este producto?") }
         if item.isUnlockable {
-            return "¿Desbloquear \(item.name) en \(item.merchantName) por \(item.formattedCost) de cashback? Lo usas en caja en los próximos \(item.unlockValidDays ?? 7) días."
+            return L("¿Desbloquear %@ en %@ por %@ de cashback? Lo usas en caja en los próximos %@ días.", "\(item.name)", "\(item.merchantName)", "\(item.formattedCost)", "\(item.unlockValidDays ?? 7)")
         }
         return RewardsMath.confirmationTitle(
             itemName: item.name,

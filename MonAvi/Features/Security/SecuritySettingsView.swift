@@ -19,7 +19,7 @@ struct SecuritySettingsView: View {
                             errorMessage = nil
                             let ok = await lock.setEnabled(newValue)
                             isSaving = false
-                            if !ok { errorMessage = "No se pudo verificar tu identidad. Intenta de nuevo." }
+                            if !ok { errorMessage = L("No se pudo verificar tu identidad. Intenta de nuevo.") }
                         }
                     }
                 )) {

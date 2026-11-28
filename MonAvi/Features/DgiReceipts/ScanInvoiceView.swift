@@ -63,11 +63,11 @@ struct ScanInvoiceView: View {
                     }
                 }
             }
-            .navigationTitle(isFromFile ? "Tu factura" : "Escanear factura")
+            .navigationTitle(isFromFile ? L("Tu factura") : L("Escanear factura"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(savedCount > 0 ? "Listo" : "Cancelar") { dismiss() }
+                    Button(savedCount > 0 ? L("Listo") : L("Cancelar")) { dismiss() }
                 }
             }
             .sheet(item: $draft, onDismiss: {
@@ -107,7 +107,7 @@ struct ScanInvoiceView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(MonAviBrand.primary)
             } else {
-                MonAviCatLoader(message: isProcessing ? progressText : "Abriendo tu factura…")
+                MonAviCatLoader(message: isProcessing ? progressText : L("Abriendo tu factura…"))
             }
             Spacer()
         }
@@ -129,8 +129,8 @@ struct ScanInvoiceView: View {
         if savedCount > 0 {
             Label(
                 savedCount == 1
-                    ? "1 factura guardada · escanea la siguiente"
-                    : "\(savedCount) facturas guardadas · escanea la siguiente",
+                    ? L("1 factura guardada · escanea la siguiente")
+                    : L("%@ facturas guardadas · escanea la siguiente", "\(savedCount)"),
                 systemImage: "checkmark.circle.fill"
             )
             .font(.subheadline.weight(.semibold))
@@ -176,14 +176,14 @@ struct ScanInvoiceView: View {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         guard !savedPayloads.contains(trimmed) else {
-            invalidMessage = "Esa factura ya la guardaste. Apunta a la siguiente."
+            invalidMessage = L("Esa factura ya la guardaste. Apunta a la siguiente.")
             return
         }
 
         Task {
             guard let userId = appState.currentUserId else { return }
             isProcessing = true
-            progressText = isFromFile ? "Revisando tu factura…" : "Validando..."
+            progressText = isFromFile ? L("Revisando tu factura…") : L("Validando...")
             invalidMessage = nil
             defer { isProcessing = false }
 
@@ -193,7 +193,7 @@ struct ScanInvoiceView: View {
             case .ready(let scanDraft):
                 // Intenta leer la factura completa (monto, comercio,
                 // productos); si no se puede, sigue el flujo manual.
-                progressText = "Leyendo tu factura…"
+                progressText = L("Leyendo tu factura…")
                 var enriched = await viewModel.lookupInvoice(for: scanDraft)
                 if let linkTo {
                     enriched.linkedTransaction = linkTo
@@ -208,7 +208,7 @@ struct ScanInvoiceView: View {
     private func handleGalleryPick(_ item: PhotosPickerItem?) async {
         guard let item, let data = try? await item.loadTransferable(type: Data.self) else { return }
         guard let payload = GalleryQRScanner.scan(imageData: data) else {
-            invalidMessage = "No se encontró un código QR en esa foto."
+            invalidMessage = L("No se encontró un código QR en esa foto.")
             return
         }
         handleScan(payload)

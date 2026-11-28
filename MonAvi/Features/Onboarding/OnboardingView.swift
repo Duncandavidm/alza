@@ -331,7 +331,7 @@ struct OnboardingView: View {
                         AmountField(placeholder: "ej. 3000", text: $debt.creditLimitText)
                     }
                     if let use = DebtDraftMath.utilization(debt) {
-                        Text(L("Usas el %@ de tu cupo%@", FinancialSnapshot.percent(use), use > 0.3 ? L(" — lo ideal es menos del 30%") : ""))
+                        Text(L("Usas el %@ de tu cupo%@", FinancialSnapshot.percent(use), use > 0.3 ? L(" — lo ideal es usar menos del 30% del cupo") : ""))
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(use > 0.3 ? .orange : MonAviBrand.primary)
                     }

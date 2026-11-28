@@ -161,12 +161,12 @@
         }
       }
     },
-    " — lo ideal es menos del 30%": {
+    " — lo ideal es usar menos del 30% del cupo": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": " — ideally less than 30%"
+            "value": " — ideally use less than 30% of your limit"
           }
         }
       }

@@ -22,8 +22,13 @@ enum Config {
     /// Privacidad y terminos (App Store Review Guideline 3.1.2), en el
     /// dominio de MonAvi. La version oficial vive en admin/legal/*.html y
     /// la sirve el panel; usa estas mismas URLs en App Store Connect.
-    static let privacyPolicyURL = URL(string: "https://monavi.maday.app/privacy")!
-    static let termsOfUseURL = URL(string: "https://monavi.maday.app/terms")!
+    /// En inglés (1.1.0) abre la traducción: /en/privacy y /en/terms.
+    static var privacyPolicyURL: URL {
+        URL(string: AppLanguage.current == .english ? "https://monavi.maday.app/en/privacy" : "https://monavi.maday.app/privacy")!
+    }
+    static var termsOfUseURL: URL {
+        URL(string: AppLanguage.current == .english ? "https://monavi.maday.app/en/terms" : "https://monavi.maday.app/terms")!
+    }
     /// Soporte/FAQ publico (tambien es la "URL de soporte" de App Store
     /// Connect). El mailto de abajo es el contacto directo.
     static let supportURL = URL(string: "https://monavi.maday.app/support")!

@@ -21,7 +21,7 @@ Track spending, earn cashback
 ## Promotional Text (máx. 170, se puede cambiar sin nueva versión)
 
 ```
-Log a purchase in seconds by voice, scan your invoice and get cashback at partner stores. Now in English.
+Log a purchase in seconds by voice, scan your receipt and get cashback at partner stores. Now in English.
 ```
 
 ## Keywords (máx. 100, separadas por coma, sin espacios)
@@ -41,7 +41,7 @@ LOG IN SECONDS
 • Detect payments from your bank's notifications and save them with one tap.
 
 CASHBACK AND DISCOUNTS
-• Scan the QR code on your electronic invoice and earn cashback at partner stores.
+• Scan the QR code on your receipt and earn cashback at partner stores.
 • Unlock discounts and bonuses from local businesses as you build good money habits.
 • Redeem your cashback right in the app.
 
@@ -124,7 +124,7 @@ Cómo sacarlas:
 |---|----------|---------------------------|
 | 1 | Today con el día lleno | **Know where your money goes** |
 | 2 | Registro por voz (mientras escucha) | **Just say it. MonAvi logs it.** |
-| 3 | Factura escaneada con cashback | **Scan your invoice, earn cashback** |
+| 3 | Factura escaneada con cashback | **Scan your receipt, earn cashback** |
 | 4 | Descuentos de comercios | **Discounts from stores you love** |
 | 5 | Presupuestos con la alerta de gasto | **Budgets that warn you in time** |
 | 6 | Pregúntale a MonAvi (respuesta de la IA) | **Ask about your money, get advice** |

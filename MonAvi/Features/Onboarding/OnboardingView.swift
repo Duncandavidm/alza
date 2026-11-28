@@ -9,8 +9,6 @@ struct OnboardingView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = OnboardingViewModel()
     @State private var step = 0
-    /// Cuentas ya creadas: falta solo el paso de la primera factura.
-    @State private var isShowingFirstInvoice = false
     /// Idioma de la app (1.1.0), elegible desde la primera pantalla.
     @State private var language = AppLanguage.current
     @State private var languageChanged = false
@@ -76,10 +74,6 @@ struct OnboardingView: View {
             }
         }
         .interactiveDismissDisabled()
-        .fullScreenCover(isPresented: $isShowingFirstInvoice) {
-            FirstInvoiceView { appState.markOnboardingCompleted() }
-                .environmentObject(appState)
-        }
     }
 
     // MARK: - Pasos
@@ -524,8 +518,10 @@ struct OnboardingView: View {
     private func finish() async {
         guard let userId = appState.currentUserId else { return }
         let success = await viewModel.finish(userId: userId)
+        // 1.1.0: ya no se pide escanear la primera factura al terminar; la
+        // persona recién empieza y todavía no ha gastado ni anotado ingresos.
         if success {
-            isShowingFirstInvoice = true
+            appState.markOnboardingCompleted()
         }
     }
 }

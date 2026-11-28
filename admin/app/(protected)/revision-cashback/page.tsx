@@ -22,6 +22,8 @@ const REASONS: Record<string, string> = {
   dispositivo_compartido: "Varias cuentas en el mismo iPhone",
   telefono_repetido: "Teléfono repetido en otra cuenta",
   apple_id_compartido: "Misma suscripción de Apple usada en otra cuenta",
+  dispositivo_reiniciado: "Cuenta nueva en un iPhone borrado que ya tuvo otra cuenta",
+  dispositivo_marcado: "iPhone de una cuenta con cashback anulado antes",
   manual: "Revisión manual",
 };
 
@@ -45,6 +47,10 @@ function detailText(review: Review): string {
       return `${d.accounts_on_device} cuentas en el mismo iPhone.`;
     case "telefono_repetido":
       return `Teléfono terminado en ${d.phone_tail}.`;
+    case "dispositivo_reiniciado":
+      return `Apple marcó este iPhone en ${d.last_update ?? "—"}; llegó con un identificador nuevo y la cuenta tiene menos de 30 días.`;
+    case "dispositivo_marcado":
+      return "Una cuenta que usó este iPhone tuvo su cashback anulado.";
     case "apple_id_compartido":
       return "Restauró una suscripción Pro que estaba en otra cuenta; Pro pasó a esta cuenta y la otra lo perdió.";
     default:

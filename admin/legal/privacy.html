@@ -98,7 +98,7 @@
         que crea la app)</td>
         <td><span class="tag yes">Sí</span></td>
         <td>Funcionalidad de la app: enviarte avisos (solo si permites las notificaciones) y prevenir fraude con el cashback
-          (detectar varias cuentas en un mismo teléfono). No usamos el identificador de publicidad (IDFA)</td></tr>
+          (detectar varias cuentas en un mismo teléfono, también con DeviceCheck de Apple). No usamos el identificador de publicidad (IDFA)</td></tr>
       <tr><td><strong>Datos de uso</strong></td>
         <td>Interacción con el producto: cuándo registras movimientos y facturas, qué beneficios desbloqueas y usas, qué
           avisos abres, cuántas veces usas las funciones de inteligencia artificial</td>
@@ -169,7 +169,10 @@
       aprobado, la fecha y el tipo de documento.</li>
     <li><strong>Prevención de fraude:</strong> un identificador aleatorio de tu dispositivo, creado por la app y
       guardado en el llavero del iPhone, para detectar varias cuentas en un mismo teléfono. No es el identificador
-      publicitario, no te identifica fuera de MonAvi y no se comparte con terceros.</li>
+      publicitario, no te identifica fuera de MonAvi y no se comparte con terceros. Además usamos DeviceCheck de
+      Apple: Apple guarda dos marcas de sí/no por iPhone (si ya tuvo una cuenta de MonAvi y si una cuenta de ese
+      iPhone tuvo cashback anulado). Apple no recibe tu nombre, tu correo ni ningún otro dato tuyo, y no ves ningún
+      aviso ni permiso por esto.</li>
     <li><strong>Cuenta:</strong> tu correo electrónico o, si inicias sesión con Apple, el
       identificador que Apple nos entrega (si eliges ocultar tu correo, nunca lo vemos).</li>
     <li><strong>Datos financieros que tú ingresas:</strong> cuentas, movimientos, presupuestos,

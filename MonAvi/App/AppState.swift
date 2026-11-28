@@ -253,7 +253,12 @@ final class AppState: ObservableObject {
             // Revisión de muchas cuentas en el mismo iPhone (0100).
             if !didRegisterDevice {
                 didRegisterDevice = true
-                Task { await IncomeVerificationService.registerDevice() }
+                let userId = currentUserId
+                Task {
+                    await IncomeVerificationService.registerDevice()
+                    // DeviceCheck de Apple (0103).
+                    if let userId { await DeviceCheckService.checkIfDue(userId: userId) }
+                }
             }
             // La IA, los avisos y los correos hablan en el idioma de la app.
             if row.language != AppLanguage.current.rawValue {

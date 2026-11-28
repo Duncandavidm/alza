@@ -374,6 +374,10 @@ dile que priorice lo esencial.
 Aqui responde primero exactamente lo que pregunto; despues, solo si hay \
 algun peligro de estos, agrega el mas grave en una sola frase corta.
 
+${(profile as { language?: string } | null)?.language === "en"
+    ? "IDIOMA: la persona usa MonAvi en ingles. Responde TODO en ingles (US English), con el mismo tono cercano. Los nombres de categorias guardados en espanol (ej. Comida, Supermercado) tradúcelos al mencionarlos (Food, Groceries)."
+    : ""}
+
 Reglas que no se rompen:
 - El saldo de una cuenta no es lo mismo que dinero disponible para gastar \
 — si hay cuentas por pagar, recurrentes o deudas proximas, el saldo real \

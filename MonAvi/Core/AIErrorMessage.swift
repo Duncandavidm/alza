@@ -23,6 +23,8 @@ enum AIErrorMessage {
     }
 
     /// Decodifica `{"error": "..."}`; nil si el cuerpo no trae un texto util.
+    /// El servidor lo escribe en español; en inglés (1.1.0) se usa el
+    /// equivalente según `code`.
     static func message(fromBody data: Data) -> String? {
         guard !data.isEmpty,
               let body = try? JSONDecoder().decode(Body.self, from: data),
@@ -30,7 +32,23 @@ enum AIErrorMessage {
               !message.isEmpty else {
             return nil
         }
+        if AppLanguage.current == .english {
+            return englishMessage(code: body.code)
+        }
         return message
+    }
+
+    static func englishMessage(code: String?) -> String {
+        switch code {
+        case "ai_consent":
+            return "To use this feature you need to allow AI. You can turn it on in Settings > Privacy."
+        case "ai_budget":
+            return "AI features are paused for today due to high demand. They'll be back tomorrow. You can keep logging by hand."
+        case "ai_quota":
+            return "You've reached the limit for this feature. It renews at the start of your next period."
+        default:
+            return "Too many requests. Please try again in a few minutes."
+        }
     }
 }
 
@@ -47,7 +65,7 @@ struct AIQuotaEntry: Decodable, Equatable {
     /// Texto discreto para mostrar bajo el campo de pregunta.
     var askCaption: String {
         let left = max(remaining, 0)
-        let when = period == "day" ? "hoy" : "este mes"
+        let when = period == "day" ? L("hoy") : L("este mes")
         switch left {
         case 0: return L("Ya no te quedan preguntas %@", "\(when)")
         case 1: return L("Te queda 1 pregunta %@", "\(when)")

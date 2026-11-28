@@ -208,7 +208,7 @@ enum DetectedMovementActions {
             }
             try await register(movement, userId: session.user.id, accountId: accountId,
                                category: suggestedCategory(for: movement), description: nil, rememberCard: false)
-            let name = accounts.first { $0.id == accountId }?.name ?? "tu cuenta"
+            let name = accounts.first { $0.id == accountId }?.name ?? L("tu cuenta")
             sendSimple(id: "detected-done-\(id)", title: "Listo ✓",
                        body: "Registramos \(movement.title) por \(abs(movement.amount).formatted(.appCurrency)) en \(name).")
             NotificationCenter.default.post(name: .recurringLoggedFromNotification, object: nil)
@@ -232,8 +232,8 @@ enum DetectedMovementActions {
         content.title = movement.notificationTitle
         if let source = movement.source { content.subtitle = source }
         content.body = movement.notificationBody + (movement.possibleDuplicate
-            ? " · Parece que ya lo anotaste: revísalo antes de guardarlo."
-            : " · Toca para registrar.")
+            ? L(" · Parece que ya lo anotaste: revísalo antes de guardarlo.")
+            : L(" · Toca para registrar.")
         content.sound = NotificationManager.brandSound
         content.categoryIdentifier = notificationCategory
         content.threadIdentifier = "monavi-detectados"

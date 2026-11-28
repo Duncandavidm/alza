@@ -51,6 +51,26 @@
         }
       }
     },
+    " · Parece que ya lo anotaste: revísalo antes de guardarlo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " · Looks like you already logged it: check it before saving."
+          }
+        }
+      }
+    },
+    " · Toca para registrar.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " · Tap to log."
+          }
+        }
+      }
+    },
     "#%lld": {
       "localizations": {
         "en": {
@@ -871,6 +891,66 @@
         }
       }
     },
+    "Abre MonAvi con la cámara lista para escanear el QR de tu factura y ganar cashback.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens MonAvi with the camera ready to scan your receipt's QR code and earn cashback."
+          }
+        }
+      }
+    },
+    "Abre MonAvi con la cámara lista para tu factura.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens MonAvi with the camera ready for your receipt."
+          }
+        }
+      }
+    },
+    "Abre MonAvi e inicia sesión primero.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open MonAvi and sign in first."
+          }
+        }
+      }
+    },
+    "Abre MonAvi escuchando: di un gasto o un ingreso (por ejemplo «gasté 12 dólares en almuerzo» o «me pagaron 500 de salario») y MonAvi lo anota solo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens MonAvi listening: say an expense or income (for example “I spent 12 dollars on lunch” or “I got paid 500 in salary”) and MonAvi logs it for you."
+          }
+        }
+      }
+    },
+    "Abre MonAvi listo para anotar un gasto o un ingreso.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens MonAvi ready to log an expense or income."
+          }
+        }
+      }
+    },
+    "Abre MonAvi listo para anotar un gasto.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opens MonAvi ready to log an expense."
+          }
+        }
+      }
+    },
     "Abre MonAvi para cambiar cuándo estará disponible tu dinero.": {
       "localizations": {
         "en": {
@@ -891,6 +971,16 @@
         }
       }
     },
+    "Abre MonAvi para registrar este movimiento. Revisa tu conexión a internet.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open MonAvi to log this transaction. Check your internet connection."
+          }
+        }
+      }
+    },
     "Abre MonAvi para registrar este pago fijo. Revisa tu conexión a internet.": {
       "localizations": {
         "en": {
@@ -901,12 +991,42 @@
         }
       }
     },
+    "Abre MonAvi para ver tu día": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open MonAvi to see your day"
+          }
+        }
+      }
+    },
+    "Abre MonAvi y crea un presupuesto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open MonAvi and create a budget"
+          }
+        }
+      }
+    },
     "Abre el código para mostrarlo en caja": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Open the code to show it at checkout"
+          }
+        }
+      }
+    },
+    "Abre la cámara de MonAvi desde la pantalla bloqueada para escanear tu factura.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open MonAvi's camera from the Lock Screen to scan your receipt."
           }
         }
       }
@@ -1057,6 +1177,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Add a pending bill or receipt so MonAvi can help you prioritize payments."
+          }
+        }
+      }
+    },
+    "Agregar": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add"
           }
         }
       }
@@ -1441,6 +1571,16 @@
         }
       }
     },
+    "Anotado: %@ en %@%@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logged: %@ in %@%@."
+          }
+        }
+      }
+    },
     "Anotar": {
       "localizations": {
         "en": {
@@ -1451,12 +1591,52 @@
         }
       }
     },
+    "Anotar %@ de %@ en MonAvi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log %@ of %@ in MonAvi"
+          }
+        }
+      }
+    },
+    "Anotar %@ en %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log %@ in %@"
+          }
+        }
+      }
+    },
     "Anotar el ingreso": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Log income"
+          }
+        }
+      }
+    },
+    "Anotar gasto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log expense"
+          }
+        }
+      }
+    },
+    "Anotar gasto rápido": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log quick expense"
           }
         }
       }
@@ -1507,6 +1687,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Log your transactions almost every day."
+          }
+        }
+      }
+    },
+    "Anotar un gasto en MonAvi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log an expense in MonAvi"
           }
         }
       }
@@ -2711,6 +2901,16 @@
         }
       }
     },
+    "Crea al menos una cuenta en MonAvi antes de anotar con el atajo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create at least one account in MonAvi before logging with the shortcut."
+          }
+        }
+      }
+    },
     "Crea categorías a tu medida, con el emoji que quieras. Aparecen al anotar un movimiento.": {
       "localizations": {
         "en": {
@@ -2757,6 +2957,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Create a MonAvi account to record this transaction."
+          }
+        }
+      }
+    },
+    "Crea una cuenta en MonAvi para registrar tus movimientos.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create an account in MonAvi to log your transactions."
           }
         }
       }
@@ -2857,6 +3067,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Account (optional)"
+          }
+        }
+      }
+    },
+    "Cuenta de MonAvi": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MonAvi account"
           }
         }
       }
@@ -3491,6 +3711,36 @@
         }
       }
     },
+    "Detecta un pago con tu tarjeta y te pregunta si quieres registrarlo en MonAvi, con la categoría adivinada por el nombre del comercio.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detects a card payment and asks if you want to log it in MonAvi, with the category guessed from the merchant's name."
+          }
+        }
+      }
+    },
+    "Detectar movimiento del banco": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detect bank transaction"
+          }
+        }
+      }
+    },
+    "Detectar movimiento en %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detect transaction in %@"
+          }
+        }
+      }
+    },
     "Deuda": {
       "localizations": {
         "en": {
@@ -3731,6 +3981,16 @@
         }
       }
     },
+    "Ej. Yappy, Banco General. Solo para mostrarlo.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E.g. Yappy, Banco General. For display only."
+          }
+        }
+      }
+    },
     "Ej. crear un fondo de emergencia, liquidar una deuda, organizar el presupuesto.": {
       "localizations": {
         "en": {
@@ -3851,6 +4111,16 @@
         }
       }
     },
+    "El monto tiene que ser mayor que cero.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The amount has to be greater than zero."
+          }
+        }
+      }
+    },
     "El pago baja de esa cuenta y reduce lo que debes. No cuenta como gasto nuevo: lo que compraste con la tarjeta ya se contó.": {
       "localizations": {
         "en": {
@@ -3867,6 +4137,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Voice recognition isn’t available right now. Check your internet connection and try again."
+          }
+        }
+      }
+    },
+    "El texto de la notificación, el SMS o el correo del banco.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The text of the bank's notification, SMS, or email."
           }
         }
       }
@@ -4701,6 +4981,16 @@
         }
       }
     },
+    "Falta una cuenta": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An account is missing"
+          }
+        }
+      }
+    },
     "Faltan %@ puntos para el nivel %@": {
       "localizations": {
         "en": {
@@ -4897,6 +5187,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Small daily expense: tiny, but it adds up every month"
+          }
+        }
+      }
+    },
+    "Gasto rápido": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick expense"
           }
         }
       }
@@ -5201,6 +5501,16 @@
         }
       }
     },
+    "Ingresa el monto": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the amount"
+          }
+        }
+      }
+    },
     "Ingreso": {
       "localizations": {
         "en": {
@@ -5407,6 +5717,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "The passwords don’t match."
+          }
+        }
+      }
+    },
+    "Lee el aviso de tu banco o billetera (notificación, SMS o correo) y, si es una compra o un dinero recibido, te pregunta si quieres registrarlo en MonAvi. El texto se lee en tu teléfono y no se guarda.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reads your bank or wallet alert (notification, SMS, or email) and, if it's a purchase or money received, asks if you want to log it in MonAvi. The text is read on your phone and isn't saved."
           }
         }
       }
@@ -8301,6 +8621,16 @@
         }
       }
     },
+    "Qué fue": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What it was"
+          }
+        }
+      }
+    },
     "Qué se envía": {
       "localizations": {
         "en": {
@@ -8397,6 +8727,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "I received a different amount"
+          }
+        }
+      }
+    },
+    "Recientes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recent"
           }
         }
       }
@@ -8501,6 +8841,16 @@
         }
       }
     },
+    "Registramos %@ por %@ en %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We logged %@ for %@ in %@."
+          }
+        }
+      }
+    },
     "Registramos %@ por %@ y lo guardamos como gasto fijo: te lo recordaremos cada mes.": {
       "localizations": {
         "en": {
@@ -8517,6 +8867,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Log"
+          }
+        }
+      }
+    },
+    "Registrar con voz": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log by voice"
+          }
+        }
+      }
+    },
+    "Registrar gasto o ingreso con voz": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log expense or income by voice"
           }
         }
       }
@@ -9651,6 +10021,16 @@
         }
       }
     },
+    "Te pide el monto, la categoría y qué fue, y anota el gasto en MonAvi sin abrir la app. Ideal para Tocar atrás.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asks for the amount, category, and what it was, and logs the expense in MonAvi without opening the app. Great for Back Tap."
+          }
+        }
+      }
+    },
     "Te preguntamos en una semana": {
       "localizations": {
         "en": {
@@ -10041,6 +10421,16 @@
         }
       }
     },
+    "Todavía no tienes movimientos este mes.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You don't have any transactions this month yet."
+          }
+        }
+      }
+    },
     "Todavía no tienes presupuestos.": {
       "localizations": {
         "en": {
@@ -10217,6 +10607,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your code: %@"
+          }
+        }
+      }
+    },
+    "Tu día": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your day"
           }
         }
       }
@@ -10437,6 +10837,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Your receipts"
+          }
+        }
+      }
+    },
+    "Tus gastos del día y del mes de un vistazo, con tus últimos movimientos.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your daily and monthly spending at a glance, with your latest transactions."
           }
         }
       }
@@ -10801,6 +11211,16 @@
         }
       }
     },
+    "Ve de un vistazo cuanto llevas gastado en cada categoria.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See at a glance how much you've spent in each category."
+          }
+        }
+      }
+    },
     "Vence": {
       "localizations": {
         "en": {
@@ -11081,6 +11501,16 @@
         }
       }
     },
+    "Voz": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voice"
+          }
+        }
+      }
+    },
     "Válida hasta el %@": {
       "localizations": {
         "en": {
@@ -11241,12 +11671,32 @@
         }
       }
     },
+    "este mes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "this month"
+          }
+        }
+      }
+    },
     "generar tu análisis": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "generate your insights"
+          }
+        }
+      }
+    },
+    "hoy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "today"
           }
         }
       }
@@ -11407,6 +11857,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "vs same period in %@"
+          }
+        }
+      }
+    },
+    "y gana cashback": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "and earn cashback"
           }
         }
       }
@@ -11751,6 +12211,16 @@
         }
       }
     },
+    "¿En qué categoría?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Which category?"
+          }
+        }
+      }
+    },
     "¿Es tarjeta? Agrega su cupo": {
       "localizations": {
         "en": {
@@ -11827,6 +12297,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "What are you saving for?"
+          }
+        }
+      }
+    },
+    "¿Qué fue? (ej. Almuerzo)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What was it? (e.g. Lunch)"
           }
         }
       }
@@ -12041,6 +12521,36 @@
         }
       }
     },
+    "✈️ Viajes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✈️ Travel"
+          }
+        }
+      }
+    },
+    "🍔 Comida": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🍔 Food"
+          }
+        }
+      }
+    },
+    "🍻 Salir": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🍻 Going out"
+          }
+        }
+      }
+    },
     "🎁 Regalo de MonAvi": {
       "localizations": {
         "en": {
@@ -12051,12 +12561,142 @@
         }
       }
     },
+    "🎁 Regalos": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🎁 Gifts"
+          }
+        }
+      }
+    },
+    "🎬 Entretenimiento": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🎬 Entertainment"
+          }
+        }
+      }
+    },
+    "🏠 Vivienda": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🏠 Housing"
+          }
+        }
+      }
+    },
     "🏷️ Otra (escribe el nombre)": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "🏷️ Other (type the name)"
+          }
+        }
+      }
+    },
+    "🏷️ Otro": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🏷️ Other"
+          }
+        }
+      }
+    },
+    "🐾 Mascotas": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🐾 Pets"
+          }
+        }
+      }
+    },
+    "👕 Ropa": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👕 Clothing"
+          }
+        }
+      }
+    },
+    "💊 Salud": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "💊 Health"
+          }
+        }
+      }
+    },
+    "💡 Servicios": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "💡 Utilities"
+          }
+        }
+      }
+    },
+    "📚 Educación": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📚 Education"
+          }
+        }
+      }
+    },
+    "📺 Suscripciones": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "📺 Subscriptions"
+          }
+        }
+      }
+    },
+    "🚗 Transporte": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🚗 Transportation"
+          }
+        }
+      }
+    },
+    "🛍️ Compras": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🛍️ Shopping"
+          }
+        }
+      }
+    },
+    "🛒 Supermercado": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🛒 Groceries"
           }
         }
       }

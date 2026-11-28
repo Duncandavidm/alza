@@ -75,6 +75,51 @@ export interface PushMessage {
   /// Datos extra para la app (ej. { screen: "points" }).
   data?: Record<string, unknown>;
   threadId?: string;
+  /// Imagen a la derecha del aviso (logo del comercio o foto del premio).
+  /// La baja la extension MonAviNotificationService de la app 1.0.3+; en
+  /// versiones viejas el aviso llega igual, sin imagen.
+  imageUrl?: string | null;
+  /// Versión en inglés (1.1.0): se usa si la persona tiene la app en inglés
+  /// (profiles.language = 'en'). Sin ella, todos reciben el texto en español.
+  en?: { title: string; body: string };
+}
+
+/// Ids de las personas con la app en inglés (profiles.language = 'en').
+export async function englishUserIds(supabase: SupabaseClient, userIds: string[]): Promise<Set<string>> {
+  const english = new Set<string>();
+  for (let i = 0; i < userIds.length; i += 300) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id")
+      .in("id", userIds.slice(i, i + 300))
+      .eq("language", "en");
+    if (error) {
+      console.error("profiles.language", error.message);
+      continue;
+    }
+    for (const row of (data ?? []) as { id: string }[]) english.add(row.id);
+  }
+  return english;
+}
+
+/// El mensaje en el idioma de la persona.
+function localized(message: PushMessage, english: boolean): PushMessage {
+  return english && message.en ? { ...message, title: message.en.title, body: message.en.body } : message;
+}
+
+function buildPayload(message: PushMessage, defaultThread: string): string {
+  const image = message.imageUrl && /^https:\/\//i.test(message.imageUrl) ? message.imageUrl : null;
+  return JSON.stringify({
+    aps: {
+      alert: { title: message.title, body: message.body },
+      sound: "monavi-alert.wav",
+      "thread-id": message.threadId ?? defaultThread,
+      "interruption-level": "active",
+      ...(image ? { "mutable-content": 1 } : {}),
+    },
+    ...(image ? { image_url: image } : {}),
+    ...(message.data ?? {}),
+  });
 }
 
 /// Envia `message` a todos los iPhone del usuario. Nunca lanza: un fallo
@@ -100,15 +145,8 @@ export async function sendPushToUser(
     return { sent: 0, failed: tokens.length, skipped: "bad_key" };
   }
 
-  const payload = JSON.stringify({
-    aps: {
-      alert: { title: message.title, body: message.body },
-      sound: "monavi-alert.wav",
-      "thread-id": message.threadId ?? "monavi-puntos",
-      "interruption-level": "active",
-    },
-    ...(message.data ?? {}),
-  });
+  const english = message.en ? (await englishUserIds(supabase, [userId])).has(userId) : false;
+  const payload = buildPayload(localized(message, english), "monavi-puntos");
 
   let sent = 0;
   let failed = 0;
@@ -148,4 +186,95 @@ export async function sendPushToUser(
     }
   }
   return { sent, failed };
+}
+
+/// Envio masivo: manda `message` a muchos usuarios a la vez (tokens en
+/// bloque y varios envios en paralelo). Devuelve cuantos iPhone lo
+/// recibieron y a cuantas personas les llego al menos uno.
+export async function sendPushToUsers(
+  supabase: SupabaseClient,
+  userIds: string[],
+  message: PushMessage,
+  concurrency = 20,
+): Promise<{ sent: number; failed: number; people: number; skipped?: string }> {
+  if (!apnsConfigured()) return { sent: 0, failed: 0, people: 0, skipped: "apns_not_configured" };
+  if (userIds.length === 0) return { sent: 0, failed: 0, people: 0 };
+
+  const rows: { token: string; environment: string; user_id: string }[] = [];
+  for (let i = 0; i < userIds.length; i += 300) {
+    const { data, error } = await supabase
+      .from("device_push_tokens")
+      .select("token, environment, user_id")
+      .in("user_id", userIds.slice(i, i + 300));
+    if (error) throw error;
+    rows.push(...((data ?? []) as typeof rows));
+  }
+  if (rows.length === 0) return { sent: 0, failed: 0, people: 0, skipped: "no_tokens" };
+
+  const jwt = await providerToken();
+  const english = message.en ? await englishUserIds(supabase, userIds) : new Set<string>();
+  const payloadEs = buildPayload(message, "monavi-ofertas");
+  const payloadEn = message.en ? buildPayload(localized(message, true), "monavi-ofertas") : payloadEs;
+
+  let sent = 0;
+  let failed = 0;
+  const reached = new Set<string>();
+  let index = 0;
+  async function worker() {
+    while (index < rows.length) {
+      const row = rows[index++];
+      const host = row.environment === "production" ? "https://api.push.apple.com" : "https://api.sandbox.push.apple.com";
+      try {
+        const response = await fetch(`${host}/3/device/${row.token}`, {
+          method: "POST",
+          headers: {
+            authorization: `bearer ${jwt}`,
+            "apns-topic": APNS_BUNDLE_ID,
+            "apns-push-type": "alert",
+            "apns-priority": "10",
+            "content-type": "application/json",
+          },
+          body: english.has(row.user_id) ? payloadEn : payloadEs,
+        });
+        if (response.ok) {
+          sent++;
+          reached.add(row.user_id);
+          continue;
+        }
+        failed++;
+        const reason = await response.text();
+        if (response.status === 410 || reason.includes("BadDeviceToken") || reason.includes("Unregistered")) {
+          await supabase.from("device_push_tokens").delete().eq("token", row.token);
+        }
+      } catch (_error) {
+        failed++;
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, rows.length) }, () => worker()));
+  return { sent, failed, people: reached.size };
+}
+
+/// Un aviso distinto para cada persona (ej. "te faltan $1.20 para tu
+/// capuchino"). Devuelve a cuantas personas les llego.
+export async function sendPersonalizedPushes(
+  supabase: SupabaseClient,
+  messages: { userId: string; title: string; body: string; imageUrl?: string | null; en?: { title: string; body: string } }[],
+  extra: { data?: Record<string, unknown>; threadId?: string },
+): Promise<{ people: number; failed: number }> {
+  let people = 0;
+  let failed = 0;
+  for (const message of messages) {
+    const result = await sendPushToUser(supabase, message.userId, {
+      title: message.title,
+      body: message.body,
+      imageUrl: message.imageUrl,
+      en: message.en,
+      data: extra.data,
+      threadId: extra.threadId,
+    });
+    if (result.sent > 0) people++;
+    failed += result.failed;
+  }
+  return { people, failed };
 }

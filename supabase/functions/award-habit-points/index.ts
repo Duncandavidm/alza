@@ -54,10 +54,11 @@ interface UnlockedItem {
 }
 
 /// "20% de descuento" / "un bono de $20.00" / el nombre del producto.
-function unlockLabel(item: UnlockedItem): string {
+function unlockLabel(item: UnlockedItem, en = false): string {
   const value = Number(item.value ?? 0);
-  if (item.type === "porcentaje" && value > 0) return `${Number.isInteger(value) ? value : value.toFixed(1)}% de descuento`;
-  if (item.type === "monto" && value > 0) return `un bono de $${value.toFixed(2)}`;
+  const pct = Number.isInteger(value) ? value : value.toFixed(1);
+  if (item.type === "porcentaje" && value > 0) return en ? `${pct}% off` : `${pct}% de descuento`;
+  if (item.type === "monto" && value > 0) return en ? `a $${value.toFixed(2)} bonus` : `un bono de $${value.toFixed(2)}`;
   return item.name;
 }
 
@@ -65,25 +66,39 @@ function isUnlockable(item: UnlockedItem): boolean {
   return item.type === "porcentaje" || item.type === "monto";
 }
 
-function unlockMessage(items: UnlockedItem[]): { title: string; body: string } {
+function unlockMessage(items: UnlockedItem[]): { title: string; body: string; en: { title: string; body: string } } {
   if (items.length === 1) {
     const item = items[0];
     const how = item.currency === "puntos" ? "tu saldo" : "tu cashback";
+    const howEn = item.currency === "puntos" ? "your balance" : "your cashback";
     if (isUnlockable(item)) {
       return {
         title: item.type === "monto" ? "Bono desbloqueado 🔓" : "Descuento desbloqueado 🔓",
         body: `Ya puedes activar ${unlockLabel(item)} en ${item.merchant} con ${how}. Ábrelo en MonAvi para usarlo.`,
+        en: {
+          title: item.type === "monto" ? "Bonus unlocked 🔓" : "Discount unlocked 🔓",
+          body: `You can now activate ${unlockLabel(item, true)} at ${item.merchant} with ${howEn}. Open MonAvi to use it.`,
+        },
       };
     }
     return {
       title: "Premio disponible 🎁",
       body: `Ya puedes canjear ${item.name} en ${item.merchant} con ${how}. Ábrelo en MonAvi para canjearlo.`,
+      en: {
+        title: "Reward available 🎁",
+        body: `You can now redeem ${item.name} at ${item.merchant} with ${howEn}. Open MonAvi to redeem it.`,
+      },
     };
   }
   const names = items.slice(0, 2).map((item) => `${unlockLabel(item)} en ${item.merchant}`).join(" y ");
+  const namesEn = items.slice(0, 2).map((item) => `${unlockLabel(item, true)} at ${item.merchant}`).join(" and ");
   return {
     title: `${items.length} beneficios desbloqueados 🔓`,
     body: `Entre ellos, ${names}. Ábrelos en MonAvi para usarlos.`,
+    en: {
+      title: `${items.length} benefits unlocked 🔓`,
+      body: `Including ${namesEn}. Open MonAvi to use them.`,
+    },
   };
 }
 
@@ -111,6 +126,10 @@ async function sendBenefitInvoiceReminders(supabase: Supabase): Promise<number> 
     const result = await sendPushToUser(supabase, row.user_id, {
       title: `¿Pediste tu factura en ${row.merchant}? 🧾`,
       body: "Escanéala en MonAvi y gana cashback, además del descuento que ya usaste.",
+      en: {
+        title: `Did you get your receipt at ${row.merchant}? 🧾`,
+        body: "Scan it in MonAvi and earn cashback, on top of the discount you already used.",
+      },
       data: { screen: "home" },
       threadId: "monavi-facturas",
     });
@@ -178,9 +197,14 @@ async function issueCouponsWithPush(supabase: Supabase): Promise<{ issued: numbe
     user_id: string; coupon_name: string; merchant: string; reason: string; expires_at: string; image_url: string | null;
   }[]) {
     const until = new Date(row.expires_at).toLocaleDateString("es-PA", { day: "2-digit", month: "2-digit", timeZone: "America/Panama" });
+    const untilEn = new Date(row.expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/Panama" });
     const result = await sendPushToUser(supabase, row.user_id, {
       title: `🎁 Tienes un cupón nuevo: ${row.coupon_name} en ${row.merchant}`,
       body: `Te lo ganaste ${row.reason}. Toca para ver tu código y úsalo en caja antes del ${until}.`,
+      en: {
+        title: `🎁 You have a new coupon: ${row.coupon_name} at ${row.merchant}`,
+        body: `You earned it for your good habits. Tap to see your code and use it at checkout before ${untilEn}.`,
+      },
       data: { screen: "redemptions" },
       threadId: "monavi-regalos",
       imageUrl: row.image_url,
@@ -219,9 +243,16 @@ async function sendExpiringCouponReminders(supabase: Supabase): Promise<number> 
     const when = panamaDay(expires) === today
       ? "vence hoy a las " + expires.toLocaleTimeString("es-PA", { hour: "numeric", minute: "2-digit", timeZone: "America/Panama" })
       : "vence mañana";
+    const whenEn = panamaDay(expires) === today
+      ? "expires today at " + expires.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Panama" })
+      : "expires tomorrow";
     const result = await sendPushToUser(supabase, row.user_id, {
       title: `⏰ Tu ${row.coupon} en ${row.merchant} ${when}`,
       body: "Úsalo antes de que se venza: toca para ver tu código y muéstralo en caja.",
+      en: {
+        title: `⏰ Your ${row.coupon} at ${row.merchant} ${whenEn}`,
+        body: "Use it before it expires: tap to see your code and show it at checkout.",
+      },
       data: { screen: "redemptions" },
       threadId: "monavi-regalos",
       imageUrl: row.image_url,
@@ -273,6 +304,11 @@ Deno.serve(async (req) => {
         title: "¡Ya tienes tu cashback! 💸",
         body: "Registraste tus ingresos y liberamos $" + (row.released_cents / 100).toFixed(2) +
           " de cashback pendiente. Úsalo en los comercios aliados.",
+        en: {
+          title: "Your cashback is here! 💸",
+          body: "You logged your income and we released $" + (row.released_cents / 100).toFixed(2) +
+            " in pending cashback. Use it at partner merchants.",
+        },
         data: { screen: "points" },
       });
     }
@@ -284,10 +320,11 @@ Deno.serve(async (req) => {
     let pushSent = 0;
     for (const row of (unlocks ?? []) as { user_id: string; items: UnlockedItem[] }[]) {
       if (!row.items?.length) continue;
-      const { title, body } = unlockMessage(row.items);
+      const { title, body, en } = unlockMessage(row.items);
       const result = await sendPushToUser(supabase, row.user_id, {
         title,
         body,
+        en,
         data: { screen: "rewards" },
         threadId: "monavi-premios",
       });

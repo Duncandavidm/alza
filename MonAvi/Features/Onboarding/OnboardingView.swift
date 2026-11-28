@@ -11,6 +11,9 @@ struct OnboardingView: View {
     @State private var step = 0
     /// Cuentas ya creadas: falta solo el paso de la primera factura.
     @State private var isShowingFirstInvoice = false
+    /// Idioma de la app (1.1.0), elegible desde la primera pantalla.
+    @State private var language = AppLanguage.current
+    @State private var languageChanged = false
 
     private let totalSteps = 16
 
@@ -83,6 +86,29 @@ struct OnboardingView: View {
 
     @ViewBuilder
     private var welcomeStep: some View {
+        Section {
+            Picker(selection: $language) {
+                ForEach(AppLanguage.allCases) { option in
+                    Text(verbatim: option.nativeName).tag(option)
+                }
+            } label: {
+                Text(verbatim: "Idioma · Language")
+            }
+            .pickerStyle(.segmented)
+            .onChange(of: language) { _, newValue in
+                guard newValue != AppLanguage.current else { languageChanged = false; return }
+                AppLanguage.choose(newValue)
+                Task { await appState.saveLanguagePreference(newValue) }
+                languageChanged = true
+            }
+        } footer: {
+            if languageChanged {
+                Text(verbatim: language == .english
+                    ? "Close MonAvi and open it again to continue in English."
+                    : "Cierra MonAvi y vuelve a abrirla para continuar en español.")
+            }
+        }
+
         Section {
             VStack(alignment: .leading, spacing: 8) {
                 Text("¡Bienvenido a MonAvi!")

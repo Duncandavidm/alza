@@ -79,6 +79,32 @@ export interface PushMessage {
   /// La baja la extension MonAviNotificationService de la app 1.0.3+; en
   /// versiones viejas el aviso llega igual, sin imagen.
   imageUrl?: string | null;
+  /// Versión en inglés (1.1.0): se usa si la persona tiene la app en inglés
+  /// (profiles.language = 'en'). Sin ella, todos reciben el texto en español.
+  en?: { title: string; body: string };
+}
+
+/// Ids de las personas con la app en inglés (profiles.language = 'en').
+export async function englishUserIds(supabase: SupabaseClient, userIds: string[]): Promise<Set<string>> {
+  const english = new Set<string>();
+  for (let i = 0; i < userIds.length; i += 300) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id")
+      .in("id", userIds.slice(i, i + 300))
+      .eq("language", "en");
+    if (error) {
+      console.error("profiles.language", error.message);
+      continue;
+    }
+    for (const row of (data ?? []) as { id: string }[]) english.add(row.id);
+  }
+  return english;
+}
+
+/// El mensaje en el idioma de la persona.
+function localized(message: PushMessage, english: boolean): PushMessage {
+  return english && message.en ? { ...message, title: message.en.title, body: message.en.body } : message;
 }
 
 function buildPayload(message: PushMessage, defaultThread: string): string {
@@ -119,7 +145,8 @@ export async function sendPushToUser(
     return { sent: 0, failed: tokens.length, skipped: "bad_key" };
   }
 
-  const payload = buildPayload(message, "monavi-puntos");
+  const english = message.en ? (await englishUserIds(supabase, [userId])).has(userId) : false;
+  const payload = buildPayload(localized(message, english), "monavi-puntos");
 
   let sent = 0;
   let failed = 0;
@@ -185,7 +212,9 @@ export async function sendPushToUsers(
   if (rows.length === 0) return { sent: 0, failed: 0, people: 0, skipped: "no_tokens" };
 
   const jwt = await providerToken();
-  const payload = buildPayload(message, "monavi-ofertas");
+  const english = message.en ? await englishUserIds(supabase, userIds) : new Set<string>();
+  const payloadEs = buildPayload(message, "monavi-ofertas");
+  const payloadEn = message.en ? buildPayload(localized(message, true), "monavi-ofertas") : payloadEs;
 
   let sent = 0;
   let failed = 0;
@@ -205,7 +234,7 @@ export async function sendPushToUsers(
             "apns-priority": "10",
             "content-type": "application/json",
           },
-          body: payload,
+          body: english.has(row.user_id) ? payloadEn : payloadEs,
         });
         if (response.ok) {
           sent++;
@@ -230,7 +259,7 @@ export async function sendPushToUsers(
 /// capuchino"). Devuelve a cuantas personas les llego.
 export async function sendPersonalizedPushes(
   supabase: SupabaseClient,
-  messages: { userId: string; title: string; body: string; imageUrl?: string | null }[],
+  messages: { userId: string; title: string; body: string; imageUrl?: string | null; en?: { title: string; body: string } }[],
   extra: { data?: Record<string, unknown>; threadId?: string },
 ): Promise<{ people: number; failed: number }> {
   let people = 0;
@@ -240,6 +269,7 @@ export async function sendPersonalizedPushes(
       title: message.title,
       body: message.body,
       imageUrl: message.imageUrl,
+      en: message.en,
       data: extra.data,
       threadId: extra.threadId,
     });

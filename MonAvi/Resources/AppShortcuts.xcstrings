@@ -1,0 +1,114 @@
+{
+  "sourceLanguage": "es",
+  "strings": {
+    "Registra con voz en ${applicationName}": {
+      "localizations": {
+        "en": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Log by voice in ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "Anota un movimiento en ${applicationName}": {
+      "localizations": {
+        "en": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Log a transaction in ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "Anota en ${applicationName}": {
+      "localizations": {
+        "en": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Log in ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "Anota un gasto en ${applicationName}": {
+      "localizations": {
+        "en": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Log an expense in ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "Registra un gasto en ${applicationName}": {
+      "localizations": {
+        "en": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Record an expense in ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "Anota un gasto rápido en ${applicationName}": {
+      "localizations": {
+        "en": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Log a quick expense in ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "Gasto rápido en ${applicationName}": {
+      "localizations": {
+        "en": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Quick expense in ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "Escanea una factura en ${applicationName}": {
+      "localizations": {
+        "en": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Scan a receipt in ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "Escanear factura con ${applicationName}": {
+      "localizations": {
+        "en": {
+          "stringSet": {
+            "state": "translated",
+            "values": [
+              "Scan receipt with ${applicationName}"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

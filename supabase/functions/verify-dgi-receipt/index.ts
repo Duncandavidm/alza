@@ -483,9 +483,13 @@ async function notifyUser(
   entry: UserSummary,
 ): Promise<number> {
   if (entry.points <= 0 && entry.held <= 0) return 0;
-  const merchantText = entry.receipts === 1 && entry.merchants.size === 1
+  const oneMerchant = entry.receipts === 1 && entry.merchants.size === 1;
+  const merchantText = oneMerchant
     ? `Tu factura de ${titleCase([...entry.merchants][0])} fue verificada.`
     : `${entry.receipts} facturas fueron verificadas.`;
+  const merchantTextEn = oneMerchant
+    ? `Your receipt from ${titleCase([...entry.merchants][0])} was verified.`
+    : `${entry.receipts} receipts were verified.`;
   // 1 punto = US$0.01 de cashback.
   const money = (points: number) => "$" + (points / 100).toFixed(2);
   const message = entry.points > 0
@@ -494,11 +498,21 @@ async function notifyUser(
       body: entry.held > 0
         ? `${merchantText} Tienes ${money(entry.held)} más pendientes: registra tus ingresos para recibirlos.`
         : `${merchantText} Úsalo en los comercios aliados de MonAvi.`,
+      en: {
+        title: `You earned ${money(entry.points)} in cashback! 💸`,
+        body: entry.held > 0
+          ? `${merchantTextEn} You have ${money(entry.held)} more pending: log your income to receive it.`
+          : `${merchantTextEn} Use it at MonAvi partner merchants.`,
+      },
       data: { screen: "points" },
     }
     : {
       title: `Tienes ${money(entry.held)} de cashback pendiente`,
       body: `${merchantText} Para recibirlo, registra tus ingresos del mes en MonAvi: el cashback se respalda con lo que ganas.`,
+      en: {
+        title: `You have ${money(entry.held)} in pending cashback`,
+        body: `${merchantTextEn} To receive it, log this month's income in MonAvi: cashback is backed by what you earn.`,
+      },
       data: { screen: "home" },
     };
   const result = await sendPushToUser(supabase, userId, message);

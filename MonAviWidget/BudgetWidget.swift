@@ -79,7 +79,7 @@ struct BudgetWidgetView: View {
         let isOver = item.ratio >= 1
         return VStack(alignment: .leading, spacing: 3) {
             HStack {
-                Text("\(item.emoji) \(item.category)")
+                (Text(verbatim: "\(item.emoji) ") + Text(LocalizedStringKey(item.category)))
                     .font(.caption2.weight(.medium))
                     .lineLimit(1)
                 Spacer()

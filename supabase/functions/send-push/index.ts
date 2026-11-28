@@ -130,24 +130,38 @@ Deno.serve(async (req) => {
         let title: string;
         let text: string;
         let screen: string;
+        // Versión en inglés (1.1.0) para quien usa la app en inglés. El
+        // mensaje propio del panel (bonus.message) va igual a todos.
+        let en: { title: string; body: string };
         if (bonus.kind === "cashback") {
           title = "🎁 ¡Te regalamos " + formatCents(bonus.amount) + " de cashback!";
           text = bonus.message || "Ya está en tu saldo. Úsalo en los comercios aliados de MonAvi.";
+          en = {
+            title: "🎁 Here's " + formatCents(bonus.amount) + " in cashback for you!",
+            body: bonus.message || "It's already in your balance. Use it at MonAvi partner merchants.",
+          };
           screen = "rewards";
         } else if (bonus.kind === "puntos") {
           title = "🎁 ¡Tienes un regalo de MonAvi!";
           text = bonus.message || "Ya está en tu saldo. Úsalo en los comercios aliados.";
+          en = { title: "🎁 You have a gift from MonAvi!", body: bonus.message || "It's already in your balance. Use it at partner merchants." };
           screen = "rewards";
         } else {
           const item = bonus.reward_items as { name?: string; partner_merchants?: { name?: string } } | null;
           title = "🎁 Tienes un cupón nuevo: " + (item?.name ?? "un cupón") +
             (item?.partner_merchants?.name ? " en " + item.partner_merchants.name : "");
           text = bonus.message || "Toca para ver tu código y úsalo en caja.";
+          en = {
+            title: "🎁 You have a new coupon: " + (item?.name ?? "a coupon") +
+              (item?.partner_merchants?.name ? " at " + item.partner_merchants.name : ""),
+            body: bonus.message || "Tap to see your code and use it at checkout.",
+          };
           screen = "redemptions";
         }
         push = await sendPushToUsers(supabase, userIds, {
           title,
           body: text,
+          en,
           data: { screen, bonus_id: bonus.id },
           threadId: "monavi-regalos",
         });

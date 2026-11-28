@@ -129,6 +129,7 @@ targets:
         CFBundleDevelopmentRegion: es
         CFBundleLocalizations:
           - es
+          - en
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     entitlements:

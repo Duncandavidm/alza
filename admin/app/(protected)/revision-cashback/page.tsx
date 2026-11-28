@@ -21,6 +21,7 @@ const REASONS: Record<string, string> = {
   muchas_facturas: "Muchas facturas de comercios distintos en pocas horas",
   dispositivo_compartido: "Varias cuentas en el mismo iPhone",
   telefono_repetido: "Teléfono repetido en otra cuenta",
+  apple_id_compartido: "Misma suscripción de Apple usada en otra cuenta",
   manual: "Revisión manual",
 };
 
@@ -44,6 +45,8 @@ function detailText(review: Review): string {
       return `${d.accounts_on_device} cuentas en el mismo iPhone.`;
     case "telefono_repetido":
       return `Teléfono terminado en ${d.phone_tail}.`;
+    case "apple_id_compartido":
+      return "Restauró una suscripción Pro que estaba en otra cuenta; Pro pasó a esta cuenta y la otra lo perdió.";
     default:
       return "";
   }

@@ -85,7 +85,7 @@ enum HabitCouponsMath {
             guard let rate = month.savingsRate else { return L("Anota tus ingresos del mes para medir tu ahorro (meta %@%%).", "\(number(rule.threshold))") }
             return L("Este mes vas en %@%% de ahorro (meta %@%%).", "\(number(rate))", "\(number(rule.threshold))")
         case "presupuestos":
-            if month.budgets == 0 { return "Crea al menos \(max(1, Int(rule.threshold))) presupuestos y cúmplelos este mes." }
+            if month.budgets == 0 { return L("Crea al menos %@ presupuestos y cúmplelos este mes.", "\(max(1, Int(rule.threshold)))") }
             return L("Vas cumpliendo %@ de %@ presupuestos.", "\(month.budgetsMet)", "\(month.budgets)")
         case "dias_registrados":
             return L("Llevas %@ de %@ días anotados este mes.", "\(month.loggedDays)", "\(Int(rule.threshold))")

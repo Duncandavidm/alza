@@ -394,7 +394,7 @@ struct RewardsView: View {
     ) -> some View {
         if !entries.isEmpty || !items.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
-                marketplaceHeader(title, actionTitle: seeAll == nil ? nil : "Ver todo", action: seeAll ?? {})
+                marketplaceHeader(title, actionTitle: seeAll == nil ? nil : L("Ver todo"), action: seeAll ?? {})
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(alignment: .top, spacing: 12) {
                         ForEach(entries) { (entry: BenefitEntry) in

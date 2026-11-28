@@ -37,7 +37,7 @@ struct AddDebtView: View {
                 Text(errorMessage).foregroundStyle(.red)
             }
         }
-        .navigationTitle(existing == nil ? "Nueva deuda" : "Editar deuda")
+        .navigationTitle(existing == nil ? L("Nueva deuda") : L("Editar deuda"))
         .onAppear(perform: load)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) { Button("Cancelar") { dismiss() } }

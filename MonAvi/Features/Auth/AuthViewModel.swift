@@ -110,7 +110,7 @@ final class AuthViewModel: ObservableObject {
 
         isSigningIn = true
         defer { isSigningIn = false }
-        showSignInOverlay(message: emailAuthMode == .signIn ? "Bienvenido" : "Creando tu cuenta…")
+        showSignInOverlay(message: emailAuthMode == .signIn ? L("Bienvenido") : L("Creando tu cuenta…"))
 
         do {
             switch emailAuthMode {
@@ -149,7 +149,7 @@ final class AuthViewModel: ObservableObject {
                 // Supabase rechazo una contraseña muy comun o filtrada.
                 errorMessage = L("Esa contraseña es muy común o apareció en filtraciones de otros sitios. Elige otra (por ejemplo, una frase con números).")
             } else {
-                errorMessage = "No se pudo \(emailAuthMode == .signIn ? "iniciar sesion" : "crear la cuenta"): \(error.localizedDescription)"
+                errorMessage = emailAuthMode == .signIn ? L("No se pudo iniciar sesión: %@", error.localizedDescription) : L("No se pudo crear la cuenta: %@", error.localizedDescription)
             }
         }
     }

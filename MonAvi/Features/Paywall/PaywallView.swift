@@ -243,7 +243,7 @@ struct PaywallView: View {
         if let product = subscriptionStore.selectedProduct,
            subscriptionStore.freeTrialDurationText != nil {
             let price = subscriptionStore.formattedPrice(product)
-            let cadence = subscriptionStore.selectedPlan == .annual ? "al año" : "al mes"
+            let cadence = subscriptionStore.selectedPlan == .annual ? L("al año") : L("al mes")
             VStack(spacing: 4) {
                 Label("Hoy no pagas nada.", systemImage: "checkmark.seal.fill")
                     .font(.footnote.weight(.semibold))

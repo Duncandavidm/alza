@@ -152,7 +152,7 @@ private struct ContributeToGoalView: View {
                     .disabled(goal.currentAmount <= 0)
 
                     AmountField(
-                        placeholder: mode == .deposit ? "Monto del aporte" : "Monto a retirar",
+                        placeholder: mode == .deposit ? L("Monto del aporte") : L("Monto a retirar"),
                         text: $amountText
                     )
                 } header: {
@@ -172,7 +172,7 @@ private struct ContributeToGoalView: View {
                     Text(errorMessage).foregroundStyle(MonAviBrand.alert)
                 }
             }
-            .navigationTitle(mode == .deposit ? "Agregar aporte" : "Retirar")
+            .navigationTitle(mode == .deposit ? L("Agregar aporte") : L("Retirar"))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") { dismiss() }

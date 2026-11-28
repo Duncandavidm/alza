@@ -175,7 +175,7 @@ struct AuthView: View {
             Button {
                 Task { await viewModel.submitEmailForm() }
             } label: {
-                Text(viewModel.emailAuthMode == .signIn ? "Iniciar sesión" : "Crear cuenta")
+                Text(viewModel.emailAuthMode == .signIn ? L("Iniciar sesión") : L("Crear cuenta"))
                     .font(.system(.headline, design: MonAviBrand.fontDesign))
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
@@ -191,7 +191,7 @@ struct AuthView: View {
                     viewModel.errorMessage = nil
                     viewModel.infoMessage = nil
                 } label: {
-                    Text(viewModel.emailAuthMode == .signIn ? "¿No tienes cuenta? Créala" : "¿Ya tienes cuenta? Inicia sesión")
+                    Text(viewModel.emailAuthMode == .signIn ? L("¿No tienes cuenta? Créala") : L("¿Ya tienes cuenta? Inicia sesión"))
                         .font(.footnote)
                 }
 

@@ -36,7 +36,7 @@ struct AccountTransferView: View {
                     }
                     Picker("Hacia", selection: $toId) {
                         ForEach(destinations) { account in
-                            Text(account.type == .creditCard ? "\(account.name) (abono a la tarjeta)" : account.name)
+                            Text(account.type == .creditCard ? L("%@ (abono a la tarjeta)", "\(account.name)") : account.name)
                                 .tag(Optional(account.id))
                         }
                     }
@@ -159,7 +159,7 @@ struct AccountDetailView: View {
                 LabeledContent("Tipo", value: account.type.displayName)
                 LabeledContent(account.type == .creditCard ? "Debes" : "Saldo", value: (shownAmount ?? account.displayAmount).formatted(.currency(code: account.currency)))
                 if isEditingBalance {
-                    AmountField(placeholder: account.type == .creditCard ? "Lo que debes hoy" : "Saldo de hoy", text: $balanceText)
+                    AmountField(placeholder: account.type == .creditCard ? L("Lo que debes hoy") : L("Saldo de hoy"), text: $balanceText)
                     Button(isSaving ? L("Guardando…") : L("Guardar saldo")) { Task { await saveBalance() } }
                         .disabled(isSaving || RecurringAmountParser.parse(balanceText) == nil)
                 } else {
@@ -221,7 +221,7 @@ struct AccountDetailView: View {
                         isShowingDeleteOptions = true
                     }
                 } label: {
-                    Label(isDeleting ? "Eliminando…" : "Eliminar esta cuenta", systemImage: "trash")
+                    Label(isDeleting ? L("Eliminando…") : L("Eliminar esta cuenta"), systemImage: "trash")
                 }
                 .disabled(isDeleting)
                 if let actionMessage {
@@ -272,7 +272,7 @@ struct AccountDetailView: View {
     private var deleteMessage: String {
         var parts: [String] = []
         if movementCount > 0 {
-            parts.append("Tiene \(movementCount) \(movementCount == 1 ? "movimiento" : "movimientos"). Puedes pasarlos a otra cuenta para no perder tu historial (el saldo de esa cuenta no cambia).")
+            parts.append(movementCount == 1 ? L("Tiene 1 movimiento. Puedes pasarlo a otra cuenta para no perder tu historial (el saldo de esa cuenta no cambia).") : L("Tiene %@ movimientos. Puedes pasarlos a otra cuenta para no perder tu historial (el saldo de esa cuenta no cambia).", "\(movementCount)"))
         }
         if !account.type.isLiability, account.balance != 0 {
             parts.append(L("Su saldo deja de contarse; si ese dinero sigue existiendo, pásalo antes con «Pasar a otra cuenta»."))

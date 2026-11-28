@@ -157,7 +157,7 @@ struct RewardItem: Codable, Identifiable, Hashable {
     /// "¡Desbloqueaste un bono de $20.00 en Súper X!"
     var unlockedTitle: String {
         let what: String
-        if kind == .monto { what = "un " + name.prefix(1).lowercased() + name.dropFirst() } else { what = name }
+        if kind == .monto { what = L("un ") + name.prefix(1).lowercased() + name.dropFirst() } else { what = name }
         return L("¡Desbloqueaste %@ en %@!", "\(what)", "\(merchantName)")
     }
 
@@ -438,7 +438,7 @@ enum RewardsMath {
 
     /// "Tienes 1 cupón" / "Tienes 3 cupones".
     static func giftCountText(_ count: Int) -> String {
-        count == 1 ? "Tienes 1 cupón" : "Tienes \(count) cupones"
+        count == 1 ? L("Tienes 1 cupón") : L("Tienes %@ cupones", "\(count)")
     }
 
     /// Lo que codifica el QR del canje:
@@ -463,7 +463,7 @@ enum RewardsMath {
     /// limite o ya no queda (en ese caso ni se muestra).
     static func remainingText(_ remaining: Int?) -> String? {
         guard let remaining, remaining > 0 else { return nil }
-        return remaining == 1 ? "¡Queda 1!" : "Quedan \(remaining)"
+        return remaining == 1 ? L("¡Queda 1!") : L("Quedan %@", "\(remaining)")
     }
 
     /// Completa el producto de los canjes que llegaron sin el (la RLS lo
@@ -585,7 +585,7 @@ enum RewardsMath {
     static func branchesText(_ merchant: PartnerMerchant?) -> String? {
         let count = merchant?.sortedBranches.count ?? 0
         guard count > 0 else { return nil }
-        return count == 1 ? "y 1 sucursal más" : "y \(count) sucursales más"
+        return count == 1 ? L("y 1 sucursal más") : L("y %@ sucursales más", "\(count)")
     }
 }
 

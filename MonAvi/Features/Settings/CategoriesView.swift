@@ -211,7 +211,7 @@ struct UserCategoryEditorView: View {
                     }
                 }
             }
-            .navigationTitle(existing == nil ? "Nueva categoría" : "Editar categoría")
+            .navigationTitle(existing == nil ? L("Nueva categoría") : L("Editar categoría"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

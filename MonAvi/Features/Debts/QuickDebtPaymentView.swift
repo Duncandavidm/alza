@@ -93,7 +93,7 @@ struct QuickDebtPaymentView: View {
                     Text(errorMessage).foregroundStyle(MonAviBrand.alert)
                 }
             }
-            .navigationTitle(selectedDebt?.isCard == true ? "Pagar tarjeta" : "Pago de deuda")
+            .navigationTitle(selectedDebt?.isCard == true ? L("Pagar tarjeta") : L("Pago de deuda"))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") { dismiss() }

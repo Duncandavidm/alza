@@ -76,7 +76,7 @@ struct FinancialPlan {
 
     /// Ingreso extra de fin de año para el colchón: el décimo tercer mes en
     /// Panamá, la prima en Colombia.
-    private var bonusName: String { country == .colombia ? "la prima" : "el décimo tercer mes" }
+    private var bonusName: String { country == .colombia ? L("la prima") : L("el décimo tercer mes") }
 
     private var snapshot: FinancialSnapshot { inputs.snapshot }
 
@@ -162,7 +162,7 @@ struct FinancialPlan {
             progress: done ? 1 : Double(inputs.budgetsCount) / Double(Self.budgetsGoal),
             detail: inputs.budgetsCount == 0
                 ? L("Todavía no tienes presupuestos.")
-                : "Tienes \(inputs.budgetsCount) \(inputs.budgetsCount == 1 ? "presupuesto" : "presupuestos").",
+                : (inputs.budgetsCount == 1 ? L("Tienes 1 presupuesto.") : L("Tienes %@ presupuestos.", "\(inputs.budgetsCount)")),
             mission: done
                 ? L("El día que cobres, aparta primero tu ahorro y vive con el resto.")
                 : L("Crea presupuestos para tus categorías principales (comida, transporte, gustos). Te faltan %@.", "\(Self.budgetsGoal - inputs.budgetsCount)")

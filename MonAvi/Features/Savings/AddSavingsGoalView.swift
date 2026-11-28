@@ -75,7 +75,7 @@ struct AddSavingsGoalView: View {
                             Text(monthlyContributionNeeded, format: .appCurrency)
                                 .font(.title2.bold())
                                 .foregroundStyle(MonAviBrand.primary)
-                            Text("por mes durante \(monthsRemaining) mes\(monthsRemaining == 1 ? "" : "es") para llegar a tiempo.")
+                            Text(monthsRemaining == 1 ? L("por mes durante 1 mes para llegar a tiempo.") : L("por mes durante %@ meses para llegar a tiempo.", "\(monthsRemaining)"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -87,7 +87,7 @@ struct AddSavingsGoalView: View {
                     Text(errorMessage).foregroundStyle(MonAviBrand.alert)
                 }
             }
-            .navigationTitle(existingGoal == nil ? "Nueva meta de ahorro" : "Editar meta")
+            .navigationTitle(existingGoal == nil ? L("Nueva meta de ahorro") : L("Editar meta"))
             .onAppear(perform: loadExistingGoal)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

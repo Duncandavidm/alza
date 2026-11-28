@@ -14,7 +14,7 @@ struct DetectedMovementsCard: View {
                 HStack(spacing: 8) {
                     Image(systemName: "bell.badge.fill")
                         .foregroundStyle(MonAviBrand.primary)
-                    Text(store.pending.count == 1 ? "1 movimiento por confirmar" : "\(store.pending.count) movimientos por confirmar")
+                    Text(store.pending.count == 1 ? L("1 movimiento por confirmar") : L("%@ movimientos por confirmar", "\(store.pending.count)"))
                         .font(.subheadline.weight(.semibold))
                     Spacer()
                 }

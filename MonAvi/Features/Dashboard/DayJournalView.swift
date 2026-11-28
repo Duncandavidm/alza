@@ -814,7 +814,7 @@ struct DayJournalView: View {
                     HStack(alignment: .top, spacing: 10) {
                         Text("💳")
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(days == 0 ? "Hoy vence \(item.debt.creditor)" : "\(item.debt.creditor) vence en \(days) día\(days == 1 ? "" : "s")")
+                            Text(days == 0 ? L("Hoy vence %@", "\(item.debt.creditor)") : (days == 1 ? L("%@ vence en 1 día", "\(item.debt.creditor)") : L("%@ vence en %@ días", "\(item.debt.creditor)", "\(days)")))
                                 .font(.subheadline.weight(.semibold))
                             Text("Debes \(item.debt.balance.formatted(.appCurrency)) · mínimo \(item.debt.estimatedMinimum.formatted(.appCurrency))")
                                 .font(.footnote)

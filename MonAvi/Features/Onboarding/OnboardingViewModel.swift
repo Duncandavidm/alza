@@ -147,7 +147,7 @@ final class OnboardingViewModel: ObservableObject {
             let first = days.min() ?? 15
             let second = days.max() ?? 30
             // Mismo dia dos veces no es quincenal: una sola fila mensual.
-            guard first != second else { return [income("Salario / ingreso fijo", day: first)] }
+            guard first != second else { return [income(L("Salario / ingreso fijo"), day: first)] }
             return [
                 income("Salario (1ra quincena)", day: first),
                 income("Salario (2da quincena)", day: second),

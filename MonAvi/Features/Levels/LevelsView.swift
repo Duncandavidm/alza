@@ -74,7 +74,7 @@ struct LevelsView: View {
             }
 
             HStack(spacing: 0) {
-                stat(value: "\(progress.currentStreak)", label: progress.currentStreak == 1 ? "día seguido 🔥" : "días seguidos 🔥")
+                stat(value: "\(progress.currentStreak)", label: progress.currentStreak == 1 ? L("día seguido 🔥") : L("días seguidos 🔥"))
                 Divider().frame(height: 32).overlay(MonAviBrand.onDarkSurface.opacity(0.3))
                 stat(value: "\(progress.earnedBadges.count)/\(progress.badges.count)", label: "insignias")
                 Divider().frame(height: 32).overlay(MonAviBrand.onDarkSurface.opacity(0.3))

@@ -76,7 +76,7 @@ struct IncomeVerificationView: View {
                         Label("Elegir PDF", systemImage: "doc")
                     }
                     if fileData != nil {
-                        Label(fileIsPDF ? "PDF listo para enviar" : "Foto lista para enviar", systemImage: "checkmark.circle.fill")
+                        Label(fileIsPDF ? L("PDF listo para enviar") : L("Foto lista para enviar"), systemImage: "checkmark.circle.fill")
                             .foregroundStyle(MonAviBrand.primary)
                     }
                 }

@@ -129,7 +129,7 @@ struct QuickAddView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .contentShape(Rectangle())
             .onTapGesture { descriptionFocused = false }
-            .navigationTitle(existingTransaction == nil ? "Anotar movimiento" : "Editar movimiento")
+            .navigationTitle(existingTransaction == nil ? L("Anotar movimiento") : L("Editar movimiento"))
             .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .bottom) {
                 VStack(spacing: 8) {
@@ -269,7 +269,7 @@ struct QuickAddView: View {
         Button {
             Task { await save() }
         } label: {
-            Text(existingTransaction == nil ? "Guardar" : "Guardar cambios")
+            Text(existingTransaction == nil ? L("Guardar") : L("Guardar cambios"))
                 .font(.headline)
                 .frame(maxWidth: .infinity)
                 .frame(height: 48)

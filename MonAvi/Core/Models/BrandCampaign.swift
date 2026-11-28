@@ -147,7 +147,7 @@ enum BrandCampaignText {
     /// "Hasta 3 unidades por factura" / "Hasta 1 unidad por factura".
     static func unitsLimitText(_ maxUnits: Int?) -> String? {
         guard let maxUnits, maxUnits > 0 else { return nil }
-        return "Hasta \(maxUnits) \(maxUnits == 1 ? "unidad" : "unidades") por factura"
+        return maxUnits == 1 ? L("Hasta 1 unidad por factura") : L("Hasta %@ unidades por factura", "\(maxUnits)")
     }
 
     /// "Válida hasta el 30 de noviembre".

@@ -180,7 +180,7 @@ struct FinancialSnapshot {
         if let over = overspending {
             return Alert(
                 title: L("Estás gastando más de lo que ganas"),
-                message: "En \(realMonths == 1 ? "el último mes" : "los últimos \(realMonths) meses") gastaste en promedio \(Self.money(realSpending ?? 0)) al mes y te entraron \(Self.money(realIncome ?? 0)): te sobregiras \(Self.money(over)) al mes. Si lo cubres con la tarjeta, tu deuda crece cada mes."
+                message: L("En %@ gastaste en promedio %@ al mes y te entraron %@: te sobregiras %@ al mes. Si lo cubres con la tarjeta, tu deuda crece cada mes.", realMonths == 1 ? L("el último mes") : L("los últimos %@ meses", "\(realMonths)"), Self.money(realSpending ?? 0), Self.money(realIncome ?? 0), Self.money(over))
             )
         }
         guard debtLevel >= .high else { return nil }
@@ -220,7 +220,7 @@ struct FinancialSnapshot {
     /// De dónde salen los números, para decirlo claro.
     var sourceText: String {
         if usesRealData {
-            return "Con tus movimientos reales de \(realMonths == 1 ? "el último mes" : "los últimos \(realMonths) meses"), tus pagos fijos, deudas y cuentas."
+            return L("Con tus movimientos reales de %@, tus pagos fijos, deudas y cuentas.", realMonths == 1 ? L("el último mes") : L("los últimos %@ meses", "\(realMonths)"))
         }
         return L("Con lo que nos contaste. Cuando tengas un mes de movimientos anotados, lo calculamos con tus números reales.")
     }
@@ -355,7 +355,7 @@ struct FinancialSnapshot {
     static func months(_ value: Double) -> String {
         let whole = Int(value.rounded(.down))
         if whole >= 12 { return L("más de un año") }
-        return whole == 1 ? "1 mes" : "\(whole) meses"
+        return whole == 1 ? L("1 mes") : L("%@ meses", "\(whole)")
     }
 
     static func decimalText(_ value: Decimal) -> String {

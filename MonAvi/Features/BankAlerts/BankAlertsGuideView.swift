@@ -74,7 +74,7 @@ struct BankAlertsGuideView: View {
                 Button {
                     Task { await test() }
                 } label: {
-                    Label(isTesting ? "Probando…" : "Probar con este aviso", systemImage: "play.circle.fill")
+                    Label(isTesting ? L("Probando…") : L("Probar con este aviso"), systemImage: "play.circle.fill")
                 }
                 .disabled(isTesting || sampleText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 if let testResult {

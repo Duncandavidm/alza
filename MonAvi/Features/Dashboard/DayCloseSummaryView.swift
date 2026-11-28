@@ -61,7 +61,7 @@ struct DayCloseSummaryView: View {
                     .padding(.horizontal, 24)
             }
             .padding(.bottom, 20)
-            .navigationTitle(summary.headline == nil ? "Tu día" : "Tu día de ayer")
+            .navigationTitle(summary.headline == nil ? L("Tu día") : L("Tu día de ayer"))
         }
     }
 

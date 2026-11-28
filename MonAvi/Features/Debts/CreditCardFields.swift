@@ -70,7 +70,7 @@ struct CreditCardFieldsSections: View {
                 }
             }
             .pickerStyle(.segmented)
-            LabeledContent(draft.ratePeriod == .annual ? "Interés al año" : "Interés al mes") {
+            LabeledContent(draft.ratePeriod == .annual ? L("Interés al año") : L("Interés al mes")) {
                 PercentField(placeholder: draft.ratePeriod == .annual ? "ej. 24" : "ej. 2", text: $draft.rateText)
                     .multilineTextAlignment(.trailing)
             }

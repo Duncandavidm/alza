@@ -90,7 +90,7 @@ struct DebtsView: View {
                                 dayText = debt.paymentDay.map(String.init) ?? ""
                                 dayDebt = debt
                             } label: {
-                                Label(debt.paymentDay.map { "Vence el día \($0)" } ?? "Poner día de pago", systemImage: "calendar")
+                                Label(debt.paymentDay.map { L("Vence el día %@", "\($0)") } ?? L("Poner día de pago"), systemImage: "calendar")
                             }
                             Button {
                                 editingDebt = debt

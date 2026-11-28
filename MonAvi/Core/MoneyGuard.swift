@@ -193,13 +193,13 @@ struct MoneyGuard {
         let cash = availableCash
         guard total > cash, total - cash >= minimumAmount else { return [] }
         let overdue = soon.filter { calendar.startOfDay(for: $0.dueDateValue) < today }.count
-        let count = soon.count == 1 ? "un pago" : "\(soon.count) pagos"
+        let count = soon.count == 1 ? L("un pago") : L("%@ pagos", "\(soon.count)")
         return [Warning(
             id: "bills-week",
             severity: overdue > 0 ? .danger : .caution,
             emoji: "📅",
             title: L("No te alcanza para los pagos de la semana"),
-            message: "Tienes \(count) por \(Self.money(total))\(overdue > 0 ? " (\(overdue == 1 ? "uno vencido" : "\(overdue) vencidos"))" : "") y solo \(Self.money(cash)) disponible. Paga primero lo esencial (casa, luz, agua, comida) y evita gastos extra hasta cubrirlos.",
+            message: L("Tienes %@ por %@%@ y solo %@ disponible. Paga primero lo esencial (casa, luz, agua, comida) y evita gastos extra hasta cubrirlos.", count, Self.money(total), overdue > 0 ? (overdue == 1 ? L(" (uno vencido)") : L(" (%@ vencidos)", "\(overdue)")) : "", Self.money(cash)),
             action: .openBills,
             actionTitle: L("Ver pagos")
         )]

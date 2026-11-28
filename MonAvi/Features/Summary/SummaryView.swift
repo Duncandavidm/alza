@@ -606,7 +606,7 @@ struct SummaryView: View {
 
     private func emptyState(_ snapshot: SummarySnapshot) -> some View {
         ContentUnavailableView(
-            snapshot.kind == .expenses ? "Sin gastos en este periodo" : "Sin ingresos en este periodo",
+            snapshot.kind == .expenses ? L("Sin gastos en este periodo") : L("Sin ingresos en este periodo"),
             systemImage: "chart.pie",
             description: Text("Toca + para anotar un movimiento.")
         )

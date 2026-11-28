@@ -152,7 +152,7 @@ enum NotificationManager {
             let dueDate = bill.dueDateValue
             let amountText = formattedAmount(bill.amount)
             let urgency = (bill.priority == .critica || bill.priority == .alta)
-                ? " — prioridad \(bill.priority.displayName.lowercased())"
+                ? L(" — prioridad %@", bill.priority.displayName.lowercased())
                 : ""
 
             if let leadDate = Calendar.current.date(byAdding: .day, value: -reminderLeadDays, to: dueDate),
@@ -160,7 +160,7 @@ enum NotificationManager {
                 schedule(
                     id: leadId,
                     title: L("Cuenta por vencer"),
-                    body: "Recuerda tu pago de \(bill.name) por \(amountText) — vence en \(reminderLeadDays) día\(reminderLeadDays == 1 ? "" : "s")\(urgency).",
+                    body: L("Recuerda tu pago de %@ por %@ — vence en %@ día%@%@.", "\(bill.name)", "\(amountText)", "\(reminderLeadDays)", "\(reminderLeadDays == 1 ? "" : "s")", "\(urgency)"),
                     date: atReminderHour(leadDate)
                 )
             }
@@ -239,7 +239,7 @@ enum NotificationManager {
                 schedule(
                     id: "recurring-\(item.id)",
                     title: L("Pago fijo por vencer"),
-                    body: "Recuerda tu pago de \(item.name) por \(amountText) — vence en \(reminderLeadDays) día\(reminderLeadDays == 1 ? "" : "s").",
+                    body: L("Recuerda tu pago de %@ por %@ — vence en %@ día%@.", "\(item.name)", "\(amountText)", "\(reminderLeadDays)", "\(reminderLeadDays == 1 ? "" : "s")"),
                     date: atReminderHour(leadDate)
                 )
             }
@@ -332,7 +332,7 @@ enum NotificationManager {
         schedule(
             id: negativeBalanceId,
             title: L("«%@» sigue en negativo", "\(account.name)"),
-            body: "Está en -\(formattedAmount(abs(account.balance)))\(others > 0 ? " y hay \(others) cuenta\(others == 1 ? "" : "s") más en negativo" : ""). No se puede gastar dinero que no hay: ¿te falta anotar un ingreso o el gasto salió de otra cuenta? Toca para revisarlo.",
+            body: L("Está en -%@%@. No se puede gastar dinero que no hay: ¿te falta anotar un ingreso o el gasto salió de otra cuenta? Toca para revisarlo.", formattedAmount(abs(account.balance)), others > 0 ? (others == 1 ? L(" y hay 1 cuenta más en negativo") : L(" y hay %@ cuentas más en negativo", "\(others)")) : ""),
             date: atReminderHour(tomorrow)
         )
     }

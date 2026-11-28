@@ -105,7 +105,7 @@ extension Account {
 
     var balanceCaption: String {
         switch type {
-        case .creditCard: return balance <= 0 ? "Debes" : "A favor"
+        case .creditCard: return balance <= 0 ? L("Debes") : L("A favor")
         case .loan: return L("Debes")
         default: return type.displayName
         }

@@ -164,10 +164,10 @@ final class SubscriptionStore: ObservableObject {
     private static func formattedPeriod(_ period: Product.SubscriptionPeriod) -> String {
         let value = period.value
         switch period.unit {
-        case .day: return value == 1 ? "1 dia" : "\(value) dias"
-        case .week: return value == 1 ? "1 semana" : "\(value) semanas"
-        case .month: return value == 1 ? "1 mes" : "\(value) meses"
-        case .year: return value == 1 ? "1 año" : "\(value) años"
+        case .day: return value == 1 ? L("1 día") : L("%@ días", "\(value)")
+        case .week: return value == 1 ? L("1 semana") : L("%@ semanas", "\(value)")
+        case .month: return value == 1 ? L("1 mes") : L("%@ meses", "\(value)")
+        case .year: return value == 1 ? L("1 año") : L("%@ años", "\(value)")
         @unknown default: return "\(value)"
         }
     }

@@ -83,7 +83,7 @@ struct IncomeVerificationView: View {
 
                 Section {
                     Toggle(isOn: $consent) {
-                        Text("Acepto que MonAvi revise este documento, con ayuda de IA, solo para verificar mis ingresos. Se borra al terminar la revisión.")
+                        Text("Acepto que MonAvi revise este documento solo para verificar mis ingresos. Se borra al terminar la revisión.")
                             .font(.footnote)
                     }
                     Button {

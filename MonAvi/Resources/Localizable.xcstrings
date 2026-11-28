@@ -1291,12 +1291,12 @@
         }
       }
     },
-    "Acepto que MonAvi revise este documento, con ayuda de IA, solo para verificar mis ingresos. Se borra al terminar la revisión.": {
+    "Acepto que MonAvi revise este documento solo para verificar mis ingresos. Se borra al terminar la revisión.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "I agree that MonAvi may review this document, with the help of AI, only to verify my income. It's deleted when the review is done."
+            "value": "I agree that MonAvi may review this document only to verify my income. It's deleted once the review is done."
           }
         }
       }

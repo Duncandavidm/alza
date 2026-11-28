@@ -79,7 +79,7 @@ struct ScanReviewView: View {
                             Picker("Categoría", selection: $draft.category) {
                                 Text("Sin categoría").tag(TransactionCategory?.none)
                                 ForEach(TransactionCategory.allCases) { category in
-                                    Text("\(category.emoji) \(category.rawValue)").tag(Optional(category))
+                                    Text("\(category.emoji) \(category.displayName)").tag(Optional(category))
                                 }
                             }
                         }
@@ -106,7 +106,7 @@ struct ScanReviewView: View {
                             LabeledContent {
                                 Text(line.amount, format: .currency(code: "USD"))
                             } label: {
-                                Text("\(line.category?.emoji ?? "🏷️") \(line.categoryName)")
+                                Text("\(line.category?.emoji ?? "🏷️") \(CategoryDisplay.label(for: line.categoryName))")
                             }
                         }
                     } header: {

@@ -9,8 +9,8 @@ enum SummaryKind: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .expenses: return "Gastos"
-        case .income: return "Ingresos"
+        case .expenses: return L("Gastos")
+        case .income: return L("Ingresos")
         }
     }
 
@@ -38,11 +38,11 @@ enum SummaryPeriod: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .week: return "Semanal"
-        case .month: return "Mensual"
-        case .quarter: return "Trimestral"
-        case .last6Months: return "Últimos 6 meses"
-        case .yearToDate: return "Año hasta la fecha"
+        case .week: return L("Semanal")
+        case .month: return L("Mensual")
+        case .quarter: return L("Trimestral")
+        case .last6Months: return L("Últimos 6 meses")
+        case .yearToDate: return L("Año hasta la fecha")
         }
     }
 
@@ -119,7 +119,7 @@ struct SummarySnapshot: Equatable {
 
 /// Todos los calculos del Resumen, sin red ni UI, para poder probarlos.
 struct SummaryCalculator {
-    static let uncategorizedKey = "Sin categoría"
+    static let uncategorizedKey = L("Sin categoría")
 
     var calendar: Calendar = .current
     var now: Date = Date()
@@ -273,7 +273,7 @@ struct SummaryCalculator {
             return "\(formatted(interval.start, "MMM")) – \(formatted(lastInstant, "MMM yyyy"))"
                 .replacingOccurrences(of: ".", with: "").capitalized
         case .yearToDate:
-            return "\(calendar.component(.year, from: interval.start)) hasta el \(formatted(lastInstant, "d MMM"))"
+            return L("%@ hasta el %@", "\(calendar.component(.year, from: interval.start))", "\(formatted(lastInstant, "d MMM"))")
                 .replacingOccurrences(of: ".", with: "")
         }
     }
@@ -282,7 +282,7 @@ struct SummaryCalculator {
     func selectionTitle(for bucket: DateInterval, period: SummaryPeriod) -> String {
         switch period.bucketComponent {
         case .day:
-            return capitalizedFirst(formatted(bucket.start, "EEEE d 'de' MMMM"))
+            return capitalizedFirst(formatted(bucket.start, L("EEEE d 'de' MMMM")))
         case .weekOfYear:
             return "Semana del \(formatted(bucket.start, "d MMM"))".replacingOccurrences(of: ".", with: "")
         default:
@@ -295,7 +295,7 @@ struct SummaryCalculator {
         if calendar.isDate(day, inSameDayAs: now) { return "Hoy" }
         if let yesterday = calendar.date(byAdding: .day, value: -1, to: now),
            calendar.isDate(day, inSameDayAs: yesterday) {
-            return "Ayer"
+            return L("Ayer")
         }
         return capitalizedFirst(formatted(day, "EEEE, d MMM")).replacingOccurrences(of: ".", with: "")
     }
@@ -306,7 +306,7 @@ struct SummaryCalculator {
         case .month: return "frente a \(formatted(previous.start, "MMMM"))"
         case .quarter: return "vs trimestre anterior"
         case .last6Months: return "vs 6 meses anteriores"
-        case .yearToDate: return "vs mismo periodo de \(calendar.component(.year, from: previous.start))"
+        case .yearToDate: return L("vs mismo periodo de %@", "\(calendar.component(.year, from: previous.start))")
         }
     }
 

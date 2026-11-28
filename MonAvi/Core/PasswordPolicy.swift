@@ -20,20 +20,20 @@ enum PasswordPolicy {
     }
 
     /// Texto de ayuda a mostrar bajo el campo de contraseña.
-    static let requirementsText = "Al menos \(minimumLength) caracteres, con letras y numeros."
+    static let requirementsText = L("Al menos %@ caracteres, con letras y numeros.", "\(minimumLength)")
 
     /// Mensaje de error especifico segun que le falta, para no dejar al
     /// usuario adivinando por que no puede continuar.
     static func failureReason(for password: String) -> String {
         if password.count < minimumLength {
-            return "La contraseña debe tener al menos \(minimumLength) caracteres."
+            return L("La contraseña debe tener al menos %@ caracteres.", "\(minimumLength)")
         }
         if !password.contains(where: { $0.isLetter }) {
-            return "La contraseña debe incluir al menos una letra."
+            return L("La contraseña debe incluir al menos una letra.")
         }
         if !password.contains(where: { $0.isNumber }) {
-            return "La contraseña debe incluir al menos un numero."
+            return L("La contraseña debe incluir al menos un numero.")
         }
-        return "La contraseña no es valida."
+        return L("La contraseña no es valida.")
     }
 }

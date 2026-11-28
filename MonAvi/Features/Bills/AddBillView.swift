@@ -39,7 +39,7 @@ struct AddBillView: View {
 
                 Picker("Categoría", selection: $category) {
                     ForEach(TransactionCategory.allCases) { category in
-                        Text("\(category.emoji) \(category.rawValue)").tag(category)
+                        Text("\(category.emoji) \(category.displayName)").tag(category)
                     }
                 }
 

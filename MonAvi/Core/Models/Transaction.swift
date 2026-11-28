@@ -24,11 +24,11 @@ enum MovementType: String, Codable, CaseIterable, Identifiable, Hashable {
 
     var displayName: String {
         switch self {
-        case .ingreso: return "Ingreso"
-        case .gasto: return "Gasto"
+        case .ingreso: return L("Ingreso")
+        case .gasto: return L("Gasto")
         case .pagoProveedor: return "Pago a proveedor"
-        case .inversion: return "Inversión"
-        case .transferencia: return "Transferencia"
+        case .inversion: return L("Inversión")
+        case .transferencia: return L("Transferencia")
         }
     }
 
@@ -162,6 +162,9 @@ enum TransactionCategory: String, CaseIterable, Identifiable, Hashable {
     case other = "Otro"
 
     var id: String { rawValue }
+
+    /// Nombre para mostrar (1.1.0): traducido; en la base se guarda rawValue.
+    var displayName: String { L(rawValue) }
 
     /// Se usa como el "producto" que cae en el carrito de CartLoadingView
     /// al guardar un movimiento, y como icono en listas y graficas.

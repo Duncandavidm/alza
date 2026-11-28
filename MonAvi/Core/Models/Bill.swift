@@ -10,10 +10,10 @@ enum BillPriority: String, Codable, CaseIterable, Identifiable, Hashable {
 
     var displayName: String {
         switch self {
-        case .critica: return "Critica"
-        case .alta: return "Alta"
-        case .normal: return "Normal"
-        case .baja: return "Baja"
+        case .critica: return L("Critica")
+        case .alta: return L("Alta")
+        case .normal: return L("Normal")
+        case .baja: return L("Baja")
         }
     }
 }

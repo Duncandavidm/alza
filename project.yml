@@ -196,6 +196,12 @@ schemes:
       config: Debug
     test:
       config: Debug
+      # Las pruebas comparan textos en español: se corren siempre en
+      # español aunque el simulador esté en inglés (1.1.0).
+      language: es
+      region: PA
+      commandLineArguments:
+        "-AppleLanguages (es)": true
       targets:
         - MonAviTests
     archive:

@@ -103,7 +103,7 @@ struct RecurringTransaction: Codable, Identifiable, Hashable {
         case .weekly:
             return "cada \(Self.weekdayName(weekday ?? 2))"
         case .daily:
-            return "cada día"
+            return L("cada día")
         }
     }
 

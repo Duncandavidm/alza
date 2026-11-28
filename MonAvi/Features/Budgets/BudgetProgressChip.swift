@@ -9,7 +9,7 @@ struct BudgetProgressChip: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 4) {
                 Text(categoryEmoji)
-                Text(progress.budget.category)
+                Text(CategoryDisplay.label(for: progress.budget.category))
                     .font(.caption.weight(.medium))
                     .lineLimit(1)
             }

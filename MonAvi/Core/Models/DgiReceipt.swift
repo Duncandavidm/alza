@@ -10,10 +10,10 @@ enum DgiReceiptStatus: String, Codable, CaseIterable, Identifiable, Hashable {
 
     var displayName: String {
         switch self {
-        case .pendiente: return "Pendiente"
-        case .confirmada: return "Confirmada"
-        case .rechazada: return "Rechazada"
-        case .expirada: return "Expirada"
+        case .pendiente: return L("Pendiente")
+        case .confirmada: return L("Confirmada")
+        case .rechazada: return L("Rechazada")
+        case .expirada: return L("Expirada")
         }
     }
 
@@ -21,10 +21,10 @@ enum DgiReceiptStatus: String, Codable, CaseIterable, Identifiable, Hashable {
     /// significa el estado o cuanto tiene que esperar.
     var statusExplanation: String {
         switch self {
-        case .pendiente: return "Pendiente: la estamos verificando."
+        case .pendiente: return L("Pendiente: la estamos verificando.")
         case .confirmada: return "Verificada — cashback acreditado."
-        case .rechazada: return "Rechazada — el código no es válido o ya fue usado por otra cuenta."
-        case .expirada: return "No se pudo verificar a tiempo. El gasto queda registrado, sin cashback."
+        case .rechazada: return L("Rechazada — el código no es válido o ya fue usado por otra cuenta.")
+        case .expirada: return L("No se pudo verificar a tiempo. El gasto queda registrado, sin cashback.")
         }
     }
 }
@@ -41,7 +41,7 @@ enum DgiCashbackStatus: String, Codable, CaseIterable, Hashable {
     var explanation: String {
         switch self {
         case .acreditado: return "Cashback acreditado"
-        case .sinIngreso: return "Cashback pendiente: registra tus ingresos para recibirlo"
+        case .sinIngreso: return L("Cashback pendiente: registra tus ingresos para recibirlo")
         case .vencido: return "Cashback vencido (sin ingresos registrados)"
         }
     }

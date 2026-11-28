@@ -448,7 +448,7 @@ struct SummaryView: View {
 
         return HStack(spacing: 12) {
             CategoryIcon(emoji: item.emoji, color: tint)
-            Text(item.key)
+            Text(CategoryDisplay.label(for: item.key))
                 .font(.body.weight(.medium))
                 .lineLimit(1)
             Text("\(item.count)")

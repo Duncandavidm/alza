@@ -13,13 +13,13 @@ enum AccountType: String, Codable, CaseIterable, Identifiable, Hashable {
 
     var displayName: String {
         switch self {
-        case .checking: return "Cuenta de cheques"
-        case .savings: return "Ahorro"
-        case .creditCard: return "Tarjeta de credito"
-        case .investment: return "Inversion"
-        case .cash: return "Efectivo"
-        case .loan: return "Prestamo"
-        case .other: return "Otra"
+        case .checking: return L("Cuenta de cheques")
+        case .savings: return L("Ahorro")
+        case .creditCard: return L("Tarjeta de credito")
+        case .investment: return L("Inversion")
+        case .cash: return L("Efectivo")
+        case .loan: return L("Prestamo")
+        case .other: return L("Otra")
         }
     }
 }
@@ -106,7 +106,7 @@ extension Account {
     var balanceCaption: String {
         switch type {
         case .creditCard: return balance <= 0 ? "Debes" : "A favor"
-        case .loan: return "Debes"
+        case .loan: return L("Debes")
         default: return type.displayName
         }
     }

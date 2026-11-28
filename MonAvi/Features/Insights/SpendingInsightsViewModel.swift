@@ -9,7 +9,7 @@ enum SpendingPeriod: String, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .thisMonth: return "Este mes"
-        case .last3Months: return "Últimos 3 meses"
+        case .last3Months: return L("Últimos 3 meses")
         }
     }
 }
@@ -63,7 +63,7 @@ final class SpendingInsightsViewModel: ObservableObject {
             allTransactions = try await TransactionsRepository.shared.fetchAll(userId: userId)
             recompute()
         } catch {
-            errorMessage = "No se pudo cargar tus gastos: \(error.localizedDescription)"
+            errorMessage = L("No se pudo cargar tus gastos: %@", "\(error.localizedDescription)")
         }
     }
 

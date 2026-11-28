@@ -118,7 +118,7 @@ final class ReferralRepository {
                 return message
             }
         }
-        return "No se pudo usar el código. Revisa tu conexión e inténtalo de nuevo."
+        return L("No se pudo usar el código. Revisa tu conexión e inténtalo de nuevo.")
     }
 }
 

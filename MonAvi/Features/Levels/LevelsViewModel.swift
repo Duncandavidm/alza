@@ -67,7 +67,7 @@ final class LevelsViewModel: ObservableObject {
             }
             goalsById = Dictionary(uniqueKeysWithValues: goals.map { ($0.id, $0) })
         } catch {
-            errorMessage = "No se pudo cargar tu nivel. Intenta de nuevo más tarde."
+            errorMessage = L("No se pudo cargar tu nivel. Intenta de nuevo más tarde.")
         }
     }
 }

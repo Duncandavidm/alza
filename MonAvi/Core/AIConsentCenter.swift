@@ -108,7 +108,7 @@ final class AIConsentCenter {
     }
 
     /// Mensaje cuando la persona elige "Ahora no".
-    static let declinedMessage = "Para usar esta función necesitas permitir el uso de IA. Puedes activarlo en Ajustes > Privacidad."
+    static let declinedMessage = L("Para usar esta función necesitas permitir el uso de IA. Puedes activarlo en Ajustes > Privacidad.")
 }
 
 /// Pantalla de permiso de IA (una sola vez).
@@ -136,18 +136,18 @@ struct AIConsentSheet: View {
 
                 item(
                     icon: "arrow.up.doc.fill",
-                    title: "Qué se envía",
-                    text: "Solo lo necesario para responder: tu perfil (nombre, edad, ocupación y metas), tus cuentas, movimientos, presupuestos, deudas y cuentas por pagar, y lo que escribes o dices. Nunca tu correo ni tu contraseña."
+                    title: L("Qué se envía"),
+                    text: L("Solo lo necesario para responder: tu perfil (nombre, edad, ocupación y metas), tus cuentas, movimientos, presupuestos, deudas y cuentas por pagar, y lo que escribes o dices. Nunca tu correo ni tu contraseña.")
                 )
                 item(
                     icon: "lock.shield.fill",
-                    title: "Cómo se usa",
-                    text: "Anthropic procesa los datos para generar la respuesta y no los usa para entrenar sus modelos."
+                    title: L("Cómo se usa"),
+                    text: L("Anthropic procesa los datos para generar la respuesta y no los usa para entrenar sus modelos.")
                 )
                 item(
                     icon: "hand.raised.fill",
-                    title: "Tú decides",
-                    text: "Sin tu permiso no se envía nada. Lo puedes cambiar cuando quieras en Ajustes > Privacidad. El resto de la app funciona igual."
+                    title: L("Tú decides"),
+                    text: L("Sin tu permiso no se envía nada. Lo puedes cambiar cuando quieras en Ajustes > Privacidad. El resto de la app funciona igual.")
                 )
 
                 if let errorMessage {
@@ -163,7 +163,7 @@ struct AIConsentSheet: View {
                             errorMessage = nil
                             let ok = await onAllow()
                             isSaving = false
-                            if !ok { errorMessage = "No se pudo guardar. Revisa tu conexión e intenta de nuevo." }
+                            if !ok { errorMessage = L("No se pudo guardar. Revisa tu conexión e intenta de nuevo.") }
                         }
                     } label: {
                         Text("Permitir")

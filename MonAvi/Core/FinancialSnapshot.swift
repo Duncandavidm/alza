@@ -22,8 +22,8 @@ struct FinancialSnapshot {
         var title: String {
             switch self {
             case .good: return "Vas bien"
-            case .fair: return "Vas bien, con cosas por ajustar"
-            case .attention: return "Hay que poner orden"
+            case .fair: return L("Vas bien, con cosas por ajustar")
+            case .attention: return L("Hay que poner orden")
             }
         }
 
@@ -139,9 +139,9 @@ struct FinancialSnapshot {
             switch self {
             case .none: return "Sin deudas"
             case .healthy: return "Deuda sana"
-            case .caution: return "Cuidado"
-            case .high: return "Te estás sobreendeudando"
-            case .critical: return "Sobreendeudado"
+            case .caution: return L("Cuidado")
+            case .high: return L("Te estás sobreendeudando")
+            case .critical: return L("Sobreendeudado")
             }
         }
     }
@@ -179,25 +179,25 @@ struct FinancialSnapshot {
     var debtAlert: Alert? {
         if let over = overspending {
             return Alert(
-                title: "Estás gastando más de lo que ganas",
+                title: L("Estás gastando más de lo que ganas"),
                 message: "En \(realMonths == 1 ? "el último mes" : "los últimos \(realMonths) meses") gastaste en promedio \(Self.money(realSpending ?? 0)) al mes y te entraron \(Self.money(realIncome ?? 0)): te sobregiras \(Self.money(over)) al mes. Si lo cubres con la tarjeta, tu deuda crece cada mes."
             )
         }
         guard debtLevel >= .high else { return nil }
         var parts: [String] = []
         if let total = debtToIncome {
-            parts.append("Debes \(Self.money(totalDebt)), el \(Self.percent(total)) de lo que ganas en un mes")
+            parts.append(L("Debes %@, el %@ de lo que ganas en un mes", "\(Self.money(totalDebt))", "\(Self.percent(total))"))
         } else {
-            parts.append("Debes \(Self.money(totalDebt)) y no vemos ingresos para pagarlo")
+            parts.append(L("Debes %@ y no vemos ingresos para pagarlo", "\(Self.money(totalDebt))"))
         }
         if let payments = paymentShare {
-            parts.append("los pagos mínimos se llevan el \(Self.percent(payments)) de tus ingresos (lo sano es menos del 36%)")
+            parts.append(L("los pagos mínimos se llevan el %@ de tus ingresos (lo sano es menos del 36%%)", "\(Self.percent(payments))"))
         }
         var message = parts.joined(separator: " y ") + "."
         if let increase = incomeNeededIncrease {
-            message += " Para no sobreendeudarte necesitas aumentar tus ingresos en unos \(Self.money(increase)) al mes o bajar tus deudas, y no usar más la tarjeta por ahora."
+            message += L(" Para no sobreendeudarte necesitas aumentar tus ingresos en unos %@ al mes o bajar tus deudas, y no usar más la tarjeta por ahora.", "\(Self.money(increase))")
         } else {
-            message += " No tomes deuda nueva y usa la tarjeta solo si la pagas completa."
+            message += L(" No tomes deuda nueva y usa la tarjeta solo si la pagas completa.")
         }
         return Alert(title: debtLevel.title, message: message)
     }
@@ -222,64 +222,64 @@ struct FinancialSnapshot {
         if usesRealData {
             return "Con tus movimientos reales de \(realMonths == 1 ? "el último mes" : "los últimos \(realMonths) meses"), tus pagos fijos, deudas y cuentas."
         }
-        return "Con lo que nos contaste. Cuando tengas un mes de movimientos anotados, lo calculamos con tus números reales."
+        return L("Con lo que nos contaste. Cuando tengas un mes de movimientos anotados, lo calculamos con tus números reales.")
     }
 
     /// Lo que se ve en los números, en frases cortas.
     var observations: [Line] {
         var lines: [Line] = []
         if usesRealData, let real = realIncome {
-            lines.append(Line("💵", "Te entran en promedio \(Self.money(real)) al mes (lo que anotaste como ingreso)."))
+            lines.append(Line("💵", L("Te entran en promedio %@ al mes (lo que anotaste como ingreso).", "\(Self.money(real))")))
             if monthlyIncome > 0, real < monthlyIncome * Decimal(string: "0.85")! {
-                lines.append(Line("📉", "Es menos que el ingreso fijo que nos dijiste (\(Self.money(monthlyIncome))). ¿Te falta anotar algún ingreso?"))
+                lines.append(Line("📉", L("Es menos que el ingreso fijo que nos dijiste (%@). ¿Te falta anotar algún ingreso?", "\(Self.money(monthlyIncome))")))
             }
             if let spending = realSpending {
                 let share = ratio(spending, real) ?? 0
-                lines.append(Line(spending > real ? "🔴" : "🧾", "Gastas en promedio \(Self.money(spending)) al mes: el \(Self.percent(share)) de lo que te entra."))
+                lines.append(Line(spending > real ? "🔴" : "🧾", L("Gastas en promedio %@ al mes: el %@ de lo que te entra.", "\(Self.money(spending))", "\(Self.percent(share))")))
             }
         } else if monthlyIncome > 0 {
-            lines.append(Line("💵", "Te entran unos \(Self.money(monthlyIncome)) al mes de ingreso fijo\(hasVariableIncome ? ", más lo que varía" : "")."))
+            lines.append(Line("💵", L("Te entran unos %@ al mes de ingreso fijo%@.", "\(Self.money(monthlyIncome))", "\(hasVariableIncome ? ", más lo que varía" : "")")))
         } else {
             lines.append(Line("💵", hasVariableIncome
-                ? "Tus ingresos varían: anota cada entrada para que MonAvi calcule cuánto te entra al mes."
-                : "No anotaste un ingreso fijo: cuando registres tus ingresos, el análisis se vuelve más preciso."))
+                ? L("Tus ingresos varían: anota cada entrada para que MonAvi calcule cuánto te entra al mes.")
+                : L("No anotaste un ingreso fijo: cuando registres tus ingresos, el análisis se vuelve más preciso.")))
         }
 
         if income > 0 {
             if let share = fixedShare, fixedExpenses > 0 {
-                lines.append(Line("🏠", "Tus gastos fijos son \(Self.money(fixedExpenses)) al mes: el \(Self.percent(share)) de tu ingreso\(share > 0.5 ? " (lo sano es 50% o menos)" : "")."))
+                lines.append(Line("🏠", L("Tus gastos fijos son %@ al mes: el %@ de tu ingreso%@.", "\(Self.money(fixedExpenses))", "\(Self.percent(share))", "\(share > 0.5 ? " (lo sano es 50% o menos)" : "")")))
             }
             if freeMoney >= 0 {
-                lines.append(Line("🟢", "Después de lo fijo y los pagos de deudas te quedan unos \(Self.money(freeMoney)) al mes."))
+                lines.append(Line("🟢", L("Después de lo fijo y los pagos de deudas te quedan unos %@ al mes.", "\(Self.money(freeMoney))")))
             } else {
-                lines.append(Line("🔴", "Tus pagos fijos y de deudas superan tu ingreso por \(Self.money(-freeMoney)) al mes."))
+                lines.append(Line("🔴", L("Tus pagos fijos y de deudas superan tu ingreso por %@ al mes.", "\(Self.money(-freeMoney))")))
             }
         } else if fixedExpenses > 0 {
-            lines.append(Line("🏠", "Tus gastos fijos suman \(Self.money(fixedExpenses)) al mes."))
+            lines.append(Line("🏠", L("Tus gastos fijos suman %@ al mes.", "\(Self.money(fixedExpenses))")))
         }
 
         if totalDebt > 0 {
             if let total = debtToIncome {
-                lines.append(Line(debtLevel >= .high ? "🚨" : "📋", "Debes \(Self.money(totalDebt)) en total: el \(Self.percent(total)) de lo que ganas en un mes."))
+                lines.append(Line(debtLevel >= .high ? "🚨" : "📋", L("Debes %@ en total: el %@ de lo que ganas en un mes.", "\(Self.money(totalDebt))", "\(Self.percent(total))")))
             } else {
-                lines.append(Line("📋", "Debes \(Self.money(totalDebt)) en total."))
+                lines.append(Line("📋", L("Debes %@ en total.", "\(Self.money(totalDebt))")))
             }
             if let payments = paymentShare {
-                lines.append(Line(payments > 0.36 ? "⚠️" : "💳", "Los pagos mínimos de tus deudas (\(Self.money(debtPayments)) al mes) se llevan el \(Self.percent(payments)) de tus ingresos\(payments > 0.36 ? ": más del 36% es sobreendeudamiento" : "")."))
+                lines.append(Line(payments > 0.36 ? "⚠️" : "💳", L("Los pagos mínimos de tus deudas (%@ al mes) se llevan el %@ de tus ingresos%@.", "\(Self.money(debtPayments))", "\(Self.percent(payments))", "\(payments > 0.36 ? ": más del 36% es sobreendeudamiento" : "")")))
             }
         }
 
         for debt in debts {
             if let use = Self.utilization(of: debt), let limit = debt.creditLimit {
                 let available = max(limit - debt.balance, 0)
-                lines.append(Line(use > 0.3 ? "⚠️" : "💳", "\(debt.name): debes \(Self.money(debt.balance)) de \(Self.money(limit)) de cupo (te quedan \(Self.money(available)) disponibles), usas el \(Self.percent(use))\(use > 0.3 ? "; lo ideal es menos del 30%" : "")."))
+                lines.append(Line(use > 0.3 ? "⚠️" : "💳", L("%@: debes %@ de %@ de cupo (te quedan %@ disponibles), usas el %@%@.", "\(debt.name)", "\(Self.money(debt.balance))", "\(Self.money(limit))", "\(Self.money(available))", "\(Self.percent(use))", "\(use > 0.3 ? "; lo ideal es menos del 30%" : "")")))
             }
         }
         if let months = emergencyMonths {
             if months >= 1 {
-                lines.append(Line("🛟", "Con lo que tienes en cuentas y ahorros cubres \(Self.months(months)) de pagos fijos."))
+                lines.append(Line("🛟", L("Con lo que tienes en cuentas y ahorros cubres %@ de pagos fijos.", "\(Self.months(months))")))
             } else {
-                lines.append(Line("🛟", "Lo que tienes guardado no alcanza para un mes de pagos fijos: todavía no tienes colchón para imprevistos."))
+                lines.append(Line("🛟", L("Lo que tienes guardado no alcanza para un mes de pagos fijos: todavía no tienes colchón para imprevistos.")))
             }
         }
         return lines
@@ -290,18 +290,18 @@ struct FinancialSnapshot {
         var steps: [Line] = []
 
         if let overdue = overdueDebts.first {
-            steps.append(Line("⏰", "Ponte al día con \(overdue.name). La mora suma intereses y recargos, y afecta tu historial de crédito."))
+            steps.append(Line("⏰", L("Ponte al día con %@. La mora suma intereses y recargos, y afecta tu historial de crédito.", "\(overdue.name)")))
         }
         if let over = overspending {
-            steps.append(Line("✂️", "Deja de sobregirarte: necesitas gastar \(Self.money(over)) menos al mes o ganar eso de más. Empieza por lo que no es necesario."))
+            steps.append(Line("✂️", L("Deja de sobregirarte: necesitas gastar %@ menos al mes o ganar eso de más. Empieza por lo que no es necesario.", "\(Self.money(over))")))
         } else if income > 0, freeMoney < 0 {
-            steps.append(Line("✂️", "Recorta \(Self.money(-freeMoney)) al mes en gastos fijos: revisa suscripciones que no uses y planes que puedas bajar."))
+            steps.append(Line("✂️", L("Recorta %@ al mes en gastos fijos: revisa suscripciones que no uses y planes que puedas bajar.", "\(Self.money(-freeMoney))")))
         }
         if debtLevel >= .high {
             if let increase = incomeNeededIncrease {
-                steps.append(Line("📈", "Para salir del sobreendeudamiento, aumenta tus ingresos en unos \(Self.money(increase)) al mes (un trabajo extra, ventas) y no tomes deuda nueva."))
+                steps.append(Line("📈", L("Para salir del sobreendeudamiento, aumenta tus ingresos en unos %@ al mes (un trabajo extra, ventas) y no tomes deuda nueva.", "\(Self.money(increase))")))
             } else {
-                steps.append(Line("🛑", "No tomes deuda nueva ni uses la tarjeta para gastos del día a día hasta bajar lo que debes."))
+                steps.append(Line("🛑", L("No tomes deuda nueva ni uses la tarjeta para gastos del día a día hasta bajar lo que debes.")))
             }
         }
         let sortedByUse = debts
@@ -310,28 +310,28 @@ struct FinancialSnapshot {
         if let top = sortedByUse.first, top.1 > 0.3, let limit = top.0.creditLimit {
             let card = top.0
             let target = (limit * Decimal(30) / Decimal(100)).roundedTo(0)
-            steps.append(Line("💳", "Baja \(card.name) a menos de \(Self.money(target)) (30% del cupo). Mientras tanto, evita usarla para gastos del día a día."))
+            steps.append(Line("💳", L("Baja %@ a menos de %@ (30%% del cupo). Mientras tanto, evita usarla para gastos del día a día.", "\(card.name)", "\(Self.money(target))")))
         }
         if let expensive = expensiveDebts.max(by: { ($0.monthlyRate ?? 0) < ($1.monthlyRate ?? 0) }), steps.count < 3 {
-            steps.append(Line("🔥", "Abona extra a \(expensive.name) primero: es tu deuda más cara (\(Self.decimalText(expensive.monthlyRate ?? 0))% al mes)."))
+            steps.append(Line("🔥", L("Abona extra a %@ primero: es tu deuda más cara (%@%% al mes).", "\(expensive.name)", "\(Self.decimalText(expensive.monthlyRate ?? 0))")))
         }
         if (emergencyMonths ?? 0) < 1, steps.count < 3 {
             let goal = max(commitments, 100).roundedTo(0)
             let monthly = income > 0 && freeMoney > 0
-                ? " Separa \(Self.money(max((freeMoney * Decimal(20) / Decimal(100)).roundedTo(0), 5))) al mes (20% de lo que te queda libre)."
+                ? L(" Separa %@ al mes (20%% de lo que te queda libre).", "\(Self.money(max((freeMoney * Decimal(20) / Decimal(100)).roundedTo(0), 5)))")
                 : ""
-            steps.append(Line("🛟", "Arma un fondo de emergencia de \(Self.money(goal)), un mes de tus pagos fijos.\(monthly)"))
+            steps.append(Line("🛟", L("Arma un fondo de emergencia de %@, un mes de tus pagos fijos.%@", "\(Self.money(goal))", "\(monthly)")))
         }
         if let share = fixedShare, share > 0.5, freeMoney >= 0, steps.count < 3 {
-            steps.append(Line("🏠", "Busca bajar tus gastos fijos al 50% de tu ingreso (\(Self.money((income / 2).roundedTo(0))) al mes)."))
+            steps.append(Line("🏠", L("Busca bajar tus gastos fijos al 50%% de tu ingreso (%@ al mes).", "\(Self.money((income / 2).roundedTo(0)))")))
         }
         if steps.count < 3 {
             if income > 0, freeMoney > 0, overspending == nil {
                 let monthly = max((freeMoney * Decimal(20) / Decimal(100)).roundedTo(0), 5)
-                let goal = firstGoal.map { " para «\($0)»" } ?? ""
-                steps.append(Line("🎯", "Ahorra \(Self.money(monthly)) al mes\(goal) apenas te paguen, antes de gastar."))
+                let goal = firstGoal.map { L(" para «%@»", "\($0)") } ?? ""
+                steps.append(Line("🎯", L("Ahorra %@ al mes%@ apenas te paguen, antes de gastar.", "\(Self.money(monthly))", "\(goal)")))
             }
-            steps.append(Line("📝", "Anota tus gastos del día en MonAvi (con la voz es un segundo) para ver en qué se va lo variable."))
+            steps.append(Line("📝", L("Anota tus gastos del día en MonAvi (con la voz es un segundo) para ver en qué se va lo variable.")))
         }
         return Array(steps.prefix(3))
     }
@@ -354,7 +354,7 @@ struct FinancialSnapshot {
 
     static func months(_ value: Double) -> String {
         let whole = Int(value.rounded(.down))
-        if whole >= 12 { return "más de un año" }
+        if whole >= 12 { return L("más de un año") }
         return whole == 1 ? "1 mes" : "\(whole) meses"
     }
 

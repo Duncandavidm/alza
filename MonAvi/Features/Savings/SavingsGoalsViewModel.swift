@@ -22,7 +22,7 @@ final class SavingsGoalsViewModel: ObservableObject {
                 .execute()
                 .value
         } catch {
-            errorMessage = "No se pudieron cargar tus metas de ahorro: \(error.localizedDescription)"
+            errorMessage = L("No se pudieron cargar tus metas de ahorro: %@", "\(error.localizedDescription)")
         }
     }
 
@@ -122,7 +122,7 @@ final class SavingsGoalsViewModel: ObservableObject {
                     amount: -amount,
                     movementType: .transferencia,
                     category: TransactionCategory.savings.rawValue,
-                    description: amount > 0 ? "Aporte a meta: \(goal.name)" : "Retiro de meta: \(goal.name)",
+                    description: amount > 0 ? "Aporte a meta: \(goal.name)" : L("Retiro de meta: %@", "\(goal.name)"),
                     occurredAt: Date()
                 )
             )
@@ -144,7 +144,7 @@ enum SavingsGoalError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .withdrawalExceedsBalance:
-            return "No puedes retirar más de lo que tienes ahorrado en esta meta."
+            return L("No puedes retirar más de lo que tienes ahorrado en esta meta.")
         }
     }
 }

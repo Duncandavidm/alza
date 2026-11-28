@@ -161,15 +161,15 @@ struct SwipeActionsRow<Content: View>: View {
 
 /// Textos para eliminar o tocar un movimiento (Hoy y Resumen).
 enum TransactionRowText {
-    static let deleteTitle = "¿Eliminar este movimiento?"
+    static let deleteTitle = L("¿Eliminar este movimiento?")
 
     static func deleteMessage(for transaction: FinanceTransaction) -> String {
         if transaction.isFromInvoice {
-            return "Se borra de tus movimientos, su monto vuelve al saldo de la cuenta y se quita el cashback de esa factura."
+            return L("Se borra de tus movimientos, su monto vuelve al saldo de la cuenta y se quita el cashback de esa factura.")
         }
-        return "Se borra de tus movimientos y su monto vuelve al saldo de la cuenta."
+        return L("Se borra de tus movimientos y su monto vuelve al saldo de la cuenta.")
     }
 
-    static let lockedTitle = "Movimiento con factura"
-    static let lockedMessage = "Este movimiento viene de una factura: el monto es el de la factura y no se puede cambiar. Puedes cambiar la categoría y la descripción, o eliminarlo (se quita su cashback)."
+    static let lockedTitle = L("Movimiento con factura")
+    static let lockedMessage = L("Este movimiento viene de una factura: el monto es el de la factura y no se puede cambiar. Puedes cambiar la categoría y la descripción, o eliminarlo (se quita su cashback).")
 }

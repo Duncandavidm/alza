@@ -10,7 +10,7 @@ enum DgiReceiptError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .alreadyScanned:
-            return "Esta factura ya fue registrada (por ti o por otra cuenta)."
+            return L("Esta factura ya fue registrada (por ti o por otra cuenta).")
         }
     }
 }

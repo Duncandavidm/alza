@@ -29,7 +29,7 @@ final class InsightsViewModel: ObservableObject {
                 .execute()
                 .value
         } catch {
-            errorMessage = "No se pudo cargar tu análisis: \(error.localizedDescription)"
+            errorMessage = L("No se pudo cargar tu análisis: %@", "\(error.localizedDescription)")
         }
     }
 
@@ -58,7 +58,7 @@ final class InsightsViewModel: ObservableObject {
             )
             await refresh(userId: userId)
         } catch {
-            errorMessage = Self.friendlyAIError(error, action: "generar tu análisis")
+            errorMessage = Self.friendlyAIError(error, action: L("generar tu análisis"))
         }
     }
 
@@ -84,7 +84,7 @@ final class InsightsViewModel: ObservableObject {
             )
             lastAnswer = response.answer
         } catch {
-            errorMessage = Self.friendlyAIError(error, action: "responder tu pregunta")
+            errorMessage = Self.friendlyAIError(error, action: L("responder tu pregunta"))
         }
     }
 
@@ -112,16 +112,16 @@ final class InsightsViewModel: ObservableObject {
         }
         if let functionsError = error as? FunctionsError, case .httpError(let code, _) = functionsError {
             if code == 429 {
-                return "Hiciste muchas consultas seguidas. Espera un momento e intenta de nuevo."
+                return L("Hiciste muchas consultas seguidas. Espera un momento e intenta de nuevo.")
             }
             if code >= 500 {
-                return "El asistente de IA no está disponible en este momento. Intenta de nuevo más tarde."
+                return L("El asistente de IA no está disponible en este momento. Intenta de nuevo más tarde.")
             }
         }
         if (error as? URLError) != nil {
-            return "No hay conexión a internet. Revisa tu conexión e intenta de nuevo."
+            return L("No hay conexión a internet. Revisa tu conexión e intenta de nuevo.")
         }
-        return "No se pudo \(action). Intenta de nuevo más tarde."
+        return L("No se pudo %@. Intenta de nuevo más tarde.", "\(action)")
     }
 
     func clearAnswer() {

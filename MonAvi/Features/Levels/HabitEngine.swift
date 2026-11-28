@@ -53,7 +53,7 @@ struct HabitEngine {
 
         var title: String {
             switch self {
-            case .logging: return "Anotar tus movimientos"
+            case .logging: return L("Anotar tus movimientos")
             case .savings: return "Ahorro constante"
             case .budgets: return "Presupuestos cumplidos"
             }
@@ -69,9 +69,9 @@ struct HabitEngine {
 
         var rule: String {
             switch self {
-            case .logging: return "+\(Rules.xpPerLoggedDay) puntos por cada día que anotas algo"
-            case .savings: return "+\(Rules.xpPerSavingsWeek) puntos por cada semana con un aporte que madura (30 días sin retirar)"
-            case .budgets: return "+\(Rules.xpPerMonthlyBudgetMet) puntos por mes (+\(Rules.xpPerWeeklyBudgetMet) por semana) sin pasarte de un presupuesto"
+            case .logging: return L("+%@ puntos por cada día que anotas algo", "\(Rules.xpPerLoggedDay)")
+            case .savings: return L("+%@ puntos por cada semana con un aporte que madura (30 días sin retirar)", "\(Rules.xpPerSavingsWeek)")
+            case .budgets: return L("+%@ puntos por mes (+%@ por semana) sin pasarte de un presupuesto", "\(Rules.xpPerMonthlyBudgetMet)", "\(Rules.xpPerWeeklyBudgetMet)")
             }
         }
     }
@@ -390,39 +390,39 @@ struct HabitEngine {
 
         return [
             HabitBadge(id: "first_step", emoji: "👣", title: "Primer paso",
-                       detail: "Anota tu primer movimiento.",
+                       detail: L("Anota tu primer movimiento."),
                        current: loggedDays.isEmpty ? 0 : 1, target: 1),
-            HabitBadge(id: "streak_7", emoji: "🔥", title: "Una semana seguida",
-                       detail: "Anota algo 7 días seguidos.",
+            HabitBadge(id: "streak_7", emoji: "🔥", title: L("Una semana seguida"),
+                       detail: L("Anota algo 7 días seguidos."),
                        current: bestStreak, target: 7),
             HabitBadge(id: "streak_30", emoji: "⚡", title: "Mes imparable",
-                       detail: "Anota algo 30 días seguidos.",
+                       detail: L("Anota algo 30 días seguidos."),
                        current: bestStreak, target: 30),
             HabitBadge(id: "full_month", emoji: "📅", title: "Mes completo",
-                       detail: "Anota movimientos en 20 días de un mismo mes.",
+                       detail: L("Anota movimientos en 20 días de un mismo mes."),
                        current: maxDaysInAMonth, target: 20),
             HabitBadge(id: "first_goal", emoji: "🎯", title: "Primera meta",
-                       detail: "Crea una meta de ahorro.",
+                       detail: L("Crea una meta de ahorro."),
                        current: input.goals.isEmpty ? 0 : 1, target: 1),
             HabitBadge(id: "saver_4", emoji: "🐷", title: "Ahorro constante",
-                       detail: "4 semanas seguidas con un aporte que madura.",
+                       detail: L("4 semanas seguidas con un aporte que madura."),
                        current: bestSavingsRun, target: 4),
-            HabitBadge(id: "saver_12", emoji: "🏦", title: "Ahorrador de hierro",
-                       detail: "12 semanas seguidas con un aporte que madura.",
+            HabitBadge(id: "saver_12", emoji: "🏦", title: L("Ahorrador de hierro"),
+                       detail: L("12 semanas seguidas con un aporte que madura."),
                        current: bestSavingsRun, target: 12),
             HabitBadge(id: "goal_done", emoji: "🏆", title: "Meta cumplida",
-                       detail: "Completa una meta solo con aportes maduros.",
+                       detail: L("Completa una meta solo con aportes maduros."),
                        current: completedGoal ? 1 : 0, target: 1),
             HabitBadge(id: "budget_1", emoji: "✅", title: "Presupuesto cumplido",
-                       detail: "Termina un periodo sin pasarte de un presupuesto.",
+                       detail: L("Termina un periodo sin pasarte de un presupuesto."),
                        current: budgetPeriodsMet.count, target: 1),
             HabitBadge(id: "budget_3", emoji: "🧭", title: "Disciplina",
                        detail: "Cumple 3 presupuestos mensuales.",
                        current: monthlyBudgetsMet, target: 3),
             HabitBadge(id: "receipt_1", emoji: "🧾", title: "Factura verificada",
-                       detail: "Escanea una factura que se verifique.",
+                       detail: L("Escanea una factura que se verifique."),
                        current: input.verifiedReceiptDates.count, target: 1),
-            HabitBadge(id: "receipt_10", emoji: "🔎", title: "Cazador de facturas",
+            HabitBadge(id: "receipt_10", emoji: "🔎", title: L("Cazador de facturas"),
                        detail: "10 facturas verificadas.",
                        current: input.verifiedReceiptDates.count, target: 10),
         ]

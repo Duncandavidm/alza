@@ -86,7 +86,7 @@ final class NotificationRouter: ObservableObject {
         if let payload {
             sharedInvoicePayload = payload
         } else {
-            sharedInvoiceError = "No encontramos el código QR de una factura en ese archivo. Abre la factura y escanea su QR con la cámara."
+            sharedInvoiceError = L("No encontramos el código QR de una factura en ese archivo. Abre la factura y escanea su QR con la cámara.")
         }
     }
 

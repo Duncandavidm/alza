@@ -114,7 +114,7 @@ struct BrandCampaign: Decodable, Identifiable, Hashable {
 
 /// Textos de la tarjeta de una campaña de marca — logica pura (testeable).
 enum BrandCampaignText {
-    static let instruction = "Compra, escanea tu factura y el premio llega cuando verifiquemos tu factura."
+    static let instruction = L("Compra, escanea tu factura y el premio llega cuando verifiquemos tu factura.")
 
     /// "+10 pts por unidad", "+25¢ por unidad", "Doble cashback",
     /// "+2¢ por cada $1", "+5 pts por cada $1". nil si la campaña no trae
@@ -127,18 +127,18 @@ enum BrandCampaignText {
         if let perUnit, perUnit > 0 {
             switch currency {
             case .puntos:
-                return "+\(perUnit) pts por unidad"
+                return L("+%@ pts por unidad", "\(perUnit)")
             case .cashback:
-                return "+\(centsText(perUnit)) por unidad"
+                return L("+%@ por unidad", "\(centsText(perUnit))")
             }
         }
         if let percent, percent > 0 {
             switch currency {
             case .cashback:
                 if abs(percent - 1) < 0.0001 { return "Doble cashback" }
-                return "+\(number(percent))¢ por cada $1"
+                return L("+%@¢ por cada $1", "\(number(percent))")
             case .puntos:
-                return "+\(number(percent)) pts por cada $1"
+                return L("+%@ pts por cada $1", "\(number(percent))")
             }
         }
         return nil
@@ -156,7 +156,7 @@ enum BrandCampaignText {
         let style = Date.FormatStyle(date: .omitted, time: .omitted, locale: .monavi, calendar: calendar, timeZone: calendar.timeZone)
             .day()
             .month(.wide)
-        return "Válida hasta el \(endsAt.formatted(style))"
+        return L("Válida hasta el %@", "\(endsAt.formatted(style))")
     }
 
     /// Centavos: menos de un dolar como "25¢", si no "$1.50".

@@ -22,7 +22,7 @@ final class FeedbackViewModel: ObservableObject {
                 .execute()
                 .value
         } catch {
-            errorMessage = "No se pudieron cargar tus sugerencias: \(error.localizedDescription)"
+            errorMessage = L("No se pudieron cargar tus sugerencias: %@", "\(error.localizedDescription)")
         }
     }
 

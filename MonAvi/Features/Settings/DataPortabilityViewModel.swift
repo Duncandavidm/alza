@@ -28,7 +28,7 @@ final class DataPortabilityViewModel: ObservableObject {
             try csv.write(to: url, atomically: true, encoding: .utf8)
             exportURL = url
         } catch {
-            errorMessage = "No se pudo exportar: \(error.localizedDescription)"
+            errorMessage = L("No se pudo exportar: %@", "\(error.localizedDescription)")
         }
     }
 
@@ -37,7 +37,7 @@ final class DataPortabilityViewModel: ObservableObject {
         defer { isImporting = false }
 
         guard url.startAccessingSecurityScopedResource() else {
-            errorMessage = "No se pudo leer el archivo."
+            errorMessage = L("No se pudo leer el archivo.")
             return
         }
         defer { url.stopAccessingSecurityScopedResource() }
@@ -81,9 +81,9 @@ final class DataPortabilityViewModel: ObservableObject {
                 }
             }
 
-            importSummary = "Se importaron \(importedTransactions) movimientos y \(importedRecurring) recurrentes."
+            importSummary = L("Se importaron %@ movimientos y %@ recurrentes.", "\(importedTransactions)", "\(importedRecurring)")
         } catch {
-            errorMessage = "No se pudo importar: \(error.localizedDescription)"
+            errorMessage = L("No se pudo importar: %@", "\(error.localizedDescription)")
         }
     }
 }

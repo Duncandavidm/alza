@@ -96,11 +96,11 @@ enum DgiReceiptValidation {
         case .full:
             return nil
         case .half:
-            return "Registraste esta factura entre \(fullCashbackDays + 1) y \(halfCashbackDays) días después de la compra: ganas la mitad del cashback. Regístrala el mismo día para ganarlo completo."
+            return L("Registraste esta factura entre %@ y %@ días después de la compra: ganas la mitad del cashback. Regístrala el mismo día para ganarlo completo.", "\(fullCashbackDays + 1)", "\(halfCashbackDays)")
         case .quarter:
-            return "Registraste esta factura más de \(halfCashbackDays) días después de la compra: ganas un cuarto del cashback. Regístrala el mismo día para ganarlo completo."
+            return L("Registraste esta factura más de %@ días después de la compra: ganas un cuarto del cashback. Regístrala el mismo día para ganarlo completo.", "\(halfCashbackDays)")
         case .none:
-            return "Esta factura es del mes pasado: se registra el gasto en su fecha, pero ya no gana cashback."
+            return L("Esta factura es del mes pasado: se registra el gasto en su fecha, pero ya no gana cashback.")
         }
     }
 }

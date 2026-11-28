@@ -9,9 +9,9 @@ enum DebtStatus: String, Codable, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .active: return "Activa"
-        case .inRestructuring: return "En reestructuracion"
-        case .paidOff: return "Pagada"
+        case .active: return L("Activa")
+        case .inRestructuring: return L("En reestructuracion")
+        case .paidOff: return L("Pagada")
         }
     }
 }

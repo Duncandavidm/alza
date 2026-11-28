@@ -81,6 +81,13 @@ enum CategoryDisplay {
         return custom(for: raw)?.emoji
     }
 
+    /// Nombre traducido para mostrar (1.1.0): las fijas en el idioma de la
+    /// app; las propias tal como las escribió la persona.
+    static func label(for raw: String?) -> String {
+        if let builtIn = TransactionCategory(rawValue: raw ?? "") { return builtIn.displayName }
+        return name(for: raw) ?? L("Sin categoría")
+    }
+
     /// El nombre a mostrar, o nil si no hay categoria.
     static func name(for raw: String?) -> String? {
         if let builtIn = TransactionCategory(rawValue: raw ?? "") { return builtIn.rawValue }
@@ -123,7 +130,7 @@ enum CategoryChoice: Hashable, Identifiable {
         }
     }
 
-    var title: String { storedValue }
+    var title: String { CategoryDisplay.label(for: storedValue) }
 
     var builtIn: TransactionCategory? {
         if case .builtIn(let category) = self { return category }

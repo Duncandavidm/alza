@@ -216,7 +216,7 @@ struct VoiceCaptureView: View {
                     .multilineTextAlignment(.center)
 
                 if let category = transaction.category.flatMap(TransactionCategory.init(rawValue:)) {
-                    Text("\(category.emoji) \(category.rawValue)")
+                    Text("\(category.emoji) \(category.displayName)")
                         .font(.subheadline.weight(.medium))
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)

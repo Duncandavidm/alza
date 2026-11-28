@@ -9,17 +9,17 @@ struct DaySummary {
 
         var title: String {
             switch self {
-            case .good: return "¡Buen día!"
-            case .normal: return "Día normal"
-            case .slow: return "Día flojo"
+            case .good: return L("¡Buen día!")
+            case .normal: return L("Día normal")
+            case .slow: return L("Día flojo")
             }
         }
 
         var message: String {
             switch self {
-            case .good: return "Te fue mejor que en un día normal. ¡Sigue así!"
-            case .normal: return "Un día como cualquier otro. Todo en orden."
-            case .slow: return "Estuvo más flojo de lo normal, pero ya quedó anotado."
+            case .good: return L("Te fue mejor que en un día normal. ¡Sigue así!")
+            case .normal: return L("Un día como cualquier otro. Todo en orden.")
+            case .slow: return L("Estuvo más flojo de lo normal, pero ya quedó anotado.")
             }
         }
 
@@ -134,7 +134,7 @@ final class DayJournalViewModel: ObservableObject {
             NotificationManager.scheduleCardPayments(debts)
             NotificationManager.scheduleSavingsAvailability(accounts)
         } catch {
-            errorMessage = "No se pudo cargar tu día: \(error.localizedDescription)"
+            errorMessage = L("No se pudo cargar tu día: %@", "\(error.localizedDescription)")
         }
     }
 
@@ -281,7 +281,7 @@ final class DayJournalViewModel: ObservableObject {
             income: income,
             expense: expense,
             mood: mood,
-            headline: "Así estuvo tu día de ayer",
+            headline: L("Así estuvo tu día de ayer"),
             dayLabel: label.prefix(1).uppercased() + label.dropFirst()
         )
     }

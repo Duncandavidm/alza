@@ -104,10 +104,10 @@ enum PayFrequency: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .monthly: return "Mensual"
-        case .biweekly: return "Quincenal"
-        case .weekly: return "Semanal"
-        case .daily: return "Diario"
+        case .monthly: return L("Mensual")
+        case .biweekly: return L("Quincenal")
+        case .weekly: return L("Semanal")
+        case .daily: return L("Diario")
         }
     }
 

@@ -49,9 +49,9 @@ struct AIQuotaEntry: Decodable, Equatable {
         let left = max(remaining, 0)
         let when = period == "day" ? "hoy" : "este mes"
         switch left {
-        case 0: return "Ya no te quedan preguntas \(when)"
-        case 1: return "Te queda 1 pregunta \(when)"
-        default: return "Te quedan \(left) preguntas \(when)"
+        case 0: return L("Ya no te quedan preguntas %@", "\(when)")
+        case 1: return L("Te queda 1 pregunta %@", "\(when)")
+        default: return L("Te quedan %@ preguntas %@", "\(left)", "\(when)")
         }
     }
 }

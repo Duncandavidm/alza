@@ -18,10 +18,10 @@ enum BenefitPeriod: String, Codable, Hashable {
     /// "por semana", "por día", "por mes", "en total".
     var label: String {
         switch self {
-        case .dia: return "por día"
-        case .semana: return "por semana"
-        case .mes: return "por mes"
-        case .siempre: return "en total"
+        case .dia: return L("por día")
+        case .semana: return L("por semana")
+        case .mes: return L("por mes")
+        case .siempre: return L("en total")
         }
     }
 }
@@ -143,7 +143,7 @@ enum BenefitsMath {
         let style = Date.FormatStyle(locale: .monavi, calendar: calendar, timeZone: calendar.timeZone)
             .weekday(.abbreviated).day().month(.abbreviated)
         let day = date.formatted(style)
-        return "Disponible de nuevo el \(day)"
+        return L("Disponible de nuevo el %@", "\(day)")
     }
 
     /// Cuenta regresiva del codigo: "14:32" (minutos:segundos), o nil si
@@ -167,7 +167,7 @@ enum BenefitsMath {
 
     /// Titulo del dialogo antes de generar el codigo.
     static func confirmationTitle(for item: RewardItem) -> String {
-        "¿Usar \(item.name) en \(item.merchantName) ahora?"
+        L("¿Usar %@ en %@ ahora?", "\(item.name)", "\(item.merchantName)")
     }
 }
 

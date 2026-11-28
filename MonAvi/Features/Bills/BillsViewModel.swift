@@ -27,7 +27,7 @@ final class BillsViewModel: ObservableObject {
                 .value
             NotificationManager.scheduleBillReminders(bills)
         } catch {
-            errorMessage = "No se pudieron cargar tus cuentas por pagar: \(error.localizedDescription)"
+            errorMessage = L("No se pudieron cargar tus cuentas por pagar: %@", "\(error.localizedDescription)")
         }
     }
 

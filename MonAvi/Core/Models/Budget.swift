@@ -8,8 +8,8 @@ enum BudgetPeriod: String, Codable, CaseIterable, Identifiable, Hashable {
 
     var displayName: String {
         switch self {
-        case .weekly: return "Semanal"
-        case .monthly: return "Mensual"
+        case .weekly: return L("Semanal")
+        case .monthly: return L("Mensual")
         }
     }
 

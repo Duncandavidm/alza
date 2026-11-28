@@ -7,17 +7,17 @@ extension DgiUrlParseError {
     var userMessage: String {
         switch self {
         case .notDgiHost:
-            return "Ese código no es de una factura electrónica."
+            return L("Ese código no es de una factura electrónica.")
         case .missingParams:
-            return "El código QR está incompleto."
+            return L("El código QR está incompleto.")
         case .notProduction:
-            return "Ese código es de ambiente de pruebas, no de una factura real."
+            return L("Ese código es de ambiente de pruebas, no de una factura real.")
         case .cufeWrongLength, .cufeBadPrefix, .cufeMalformed:
-            return "El código de la factura (CUFE) no tiene el formato esperado."
+            return L("El código de la factura (CUFE) no tiene el formato esperado.")
         case .ambienteMismatch, .jwtFieldMismatch:
-            return "Los datos del código QR no coinciden entre sí — podría estar alterado."
+            return L("Los datos del código QR no coinciden entre sí — podría estar alterado.")
         case .jwtMalformed:
-            return "No se pudo leer la firma del código QR."
+            return L("No se pudo leer la firma del código QR.")
         }
     }
 }
@@ -153,7 +153,7 @@ final class DgiReceiptsViewModel: ObservableObject {
                 .execute()
             hasConsented = true
         } catch {
-            errorMessage = "No se pudo guardar tu confirmación: \(error.localizedDescription)"
+            errorMessage = L("No se pudo guardar tu confirmación: %@", "\(error.localizedDescription)")
         }
     }
 
@@ -178,17 +178,17 @@ final class DgiReceiptsViewModel: ObservableObject {
         let cashbackTier: DgiReceiptValidation.CashbackTier
         switch DgiReceiptValidation.checkFreshness(fechaISO: parsed.fields.fechaISO) {
         case .future:
-            return .invalid("Esta factura tiene fecha futura — revisa que sea el código correcto.")
+            return .invalid(L("Esta factura tiene fecha futura — revisa que sea el código correcto."))
         case .tooOld:
-            return .invalid("Esta factura es de un mes anterior — solo se pueden registrar facturas del mes en curso (o del mes pasado durante los primeros \(DgiReceiptValidation.previousMonthGraceDays) días del mes).")
+            return .invalid(L("Esta factura es de un mes anterior — solo se pueden registrar facturas del mes en curso (o del mes pasado durante los primeros %@ días del mes).", "\(DgiReceiptValidation.previousMonthGraceDays)"))
         case .invalidDate:
-            return .invalid("No se pudo leer la fecha de la factura.")
+            return .invalid(L("No se pudo leer la fecha de la factura."))
         case .ok(let tier):
             cashbackTier = tier
         }
 
         if await repository.isAlreadyScannedByMe(cufe: parsed.cufe, userId: userId) {
-            return .invalid("Ya escaneaste esta factura antes.")
+            return .invalid(L("Ya escaneaste esta factura antes."))
         }
 
         let merchant = await repository.merchant(forRUC: parsed.fields.ruc)
@@ -303,7 +303,7 @@ final class DgiReceiptsViewModel: ObservableObject {
             try await repository.delete(receipt)
             receipts.removeAll { $0.id == receipt.id }
         } catch {
-            errorMessage = "No se pudo borrar: \(error.localizedDescription)"
+            errorMessage = L("No se pudo borrar: %@", "\(error.localizedDescription)")
         }
     }
 }

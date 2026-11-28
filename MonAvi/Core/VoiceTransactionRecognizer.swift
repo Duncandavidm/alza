@@ -37,13 +37,13 @@ enum VoiceRecognitionError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .permissionDenied:
-            return "Necesitamos permiso de micrófono y reconocimiento de voz. Actívalos en Ajustes > MonAvi."
+            return L("Necesitamos permiso de micrófono y reconocimiento de voz. Actívalos en Ajustes > MonAvi.")
         case .recognizerUnavailable:
-            return "El reconocimiento de voz no está disponible ahora mismo. Revisa tu conexión a internet e intenta de nuevo."
+            return L("El reconocimiento de voz no está disponible ahora mismo. Revisa tu conexión a internet e intenta de nuevo.")
         case .emptyTranscript:
-            return "No se escuchó nada. Intenta de nuevo."
+            return L("No se escuchó nada. Intenta de nuevo.")
         case .parseFailed:
-            return "No se pudo entender el movimiento. Intenta decirlo de otra forma, con el monto."
+            return L("No se pudo entender el movimiento. Intenta decirlo de otra forma, con el monto.")
         }
     }
 }
@@ -165,7 +165,7 @@ final class VoiceTransactionRecognizer: NSObject, ObservableObject {
             try session.setCategory(.record, mode: .measurement, options: .duckOthers)
             try session.setActive(true, options: .notifyOthersOnDeactivation)
         } catch {
-            errorMessage = "No se pudo activar el micrófono."
+            errorMessage = L("No se pudo activar el micrófono.")
             return
         }
 
@@ -194,7 +194,7 @@ final class VoiceTransactionRecognizer: NSObject, ObservableObject {
         do {
             try audioEngine.start()
         } catch {
-            errorMessage = "No se pudo empezar a grabar."
+            errorMessage = L("No se pudo empezar a grabar.")
             return
         }
 
@@ -324,7 +324,7 @@ final class VoiceTransactionRecognizer: NSObject, ObservableObject {
 
         // Frase que el telefono no entiende: hace falta la IA (con permiso).
         guard await AIConsentCenter.shared.requestIfNeeded() else {
-            errorMessage = "Sin permiso de IA solo entiendo frases simples, como \"gasté 12 en almuerzo\". Puedes activarlo en Ajustes > Privacidad."
+            errorMessage = L("Sin permiso de IA solo entiendo frases simples, como \"gasté 12 en almuerzo\". Puedes activarlo en Ajustes > Privacidad.")
             return nil
         }
 
@@ -349,7 +349,7 @@ final class VoiceTransactionRecognizer: NSObject, ObservableObject {
 
     private func answerQuestion(_ question: String) async {
         guard await AIConsentCenter.shared.requestIfNeeded() else {
-            errorMessage = "Para responder preguntas necesito tu permiso de IA. Puedes activarlo en Ajustes > Privacidad. Para anotar, di algo como \"gasté 12 en almuerzo\"."
+            errorMessage = L("Para responder preguntas necesito tu permiso de IA. Puedes activarlo en Ajustes > Privacidad. Para anotar, di algo como \"gasté 12 en almuerzo\".")
             return
         }
 
@@ -369,13 +369,13 @@ final class VoiceTransactionRecognizer: NSObject, ObservableObject {
             )
             let text = response.answer.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !text.isEmpty else {
-                errorMessage = "No pude responder tu pregunta. Intenta decirla de otra forma."
+                errorMessage = L("No pude responder tu pregunta. Intenta decirla de otra forma.")
                 return
             }
             answer = VoiceAnswer(question: question, answer: text)
         } catch {
             errorMessage = AIErrorMessage.userMessage(from: error)
-                ?? "No pude responder tu pregunta ahora. Revisa tu conexión e intenta de nuevo."
+                ?? L("No pude responder tu pregunta ahora. Revisa tu conexión e intenta de nuevo.")
         }
     }
 

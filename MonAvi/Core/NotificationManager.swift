@@ -159,7 +159,7 @@ enum NotificationManager {
                leadDate > Date() {
                 schedule(
                     id: leadId,
-                    title: "Cuenta por vencer",
+                    title: L("Cuenta por vencer"),
                     body: "Recuerda tu pago de \(bill.name) por \(amountText) — vence en \(reminderLeadDays) día\(reminderLeadDays == 1 ? "" : "s")\(urgency).",
                     date: atReminderHour(leadDate)
                 )
@@ -168,8 +168,8 @@ enum NotificationManager {
             if atReminderHour(dueDate) > Date() {
                 schedule(
                     id: overdueId,
-                    title: "Cuenta vence hoy",
-                    body: "\(bill.name) por \(amountText) vence hoy. Cuando la pagues, márcala como pagada en MonAvi.",
+                    title: L("Cuenta vence hoy"),
+                    body: L("%@ por %@ vence hoy. Cuando la pagues, márcala como pagada en MonAvi.", "\(bill.name)", "\(amountText)"),
                     date: atReminderHour(dueDate),
                     timeSensitive: true
                 )
@@ -181,7 +181,7 @@ enum NotificationManager {
                 schedule(
                     id: "bill-late-\(bill.id)",
                     title: "Cuenta vencida",
-                    body: "\(bill.name) por \(amountText) venció ayer y sigue pendiente. ¿Ya la pagaste? Regístralo en MonAvi.",
+                    body: L("%@ por %@ venció ayer y sigue pendiente. ¿Ya la pagaste? Regístralo en MonAvi.", "\(bill.name)", "\(amountText)"),
                     date: atReminderHour(lateDate),
                     timeSensitive: true
                 )
@@ -238,7 +238,7 @@ enum NotificationManager {
                atReminderHour(leadDate) > Date() {
                 schedule(
                     id: "recurring-\(item.id)",
-                    title: "Pago fijo por vencer",
+                    title: L("Pago fijo por vencer"),
                     body: "Recuerda tu pago de \(item.name) por \(amountText) — vence en \(reminderLeadDays) día\(reminderLeadDays == 1 ? "" : "s").",
                     date: atReminderHour(leadDate)
                 )
@@ -248,10 +248,10 @@ enum NotificationManager {
                 let isIncome = item.movementType.isInflow
                 schedule(
                     id: "recurring-due-\(item.id)",
-                    title: isIncome ? "¿Ya recibiste \(item.name)?" : "Hoy toca pagar \(item.name)",
+                    title: isIncome ? "¿Ya recibiste \(item.name)?" : L("Hoy toca pagar %@", "\(item.name)"),
                     body: isIncome
-                        ? "Hoy es el día de \(item.name) (\(amountText)). ¿Ya lo recibiste? Mantén presionado para registrarlo."
-                        : "\(item.name), normalmente \(amountText). ¿Ya lo pagaste? Mantén presionado para registrarlo; si fue otro monto, elige «Pagué otro monto».",
+                        ? L("Hoy es el día de %@ (%@). ¿Ya lo recibiste? Mantén presionado para registrarlo.", "\(item.name)", "\(amountText)")
+                        : L("%@, normalmente %@. ¿Ya lo pagaste? Mantén presionado para registrarlo; si fue otro monto, elige «Pagué otro monto».", "\(item.name)", "\(amountText)"),
                     date: atReminderHour(candidate.dueDate),
                     timeSensitive: !isIncome,
                     categoryIdentifier: isIncome ? recurringIncomeCategory : recurringExpenseCategory,
@@ -305,8 +305,8 @@ enum NotificationManager {
             let id = savingsId(account.id)
             schedule(
                 id: id,
-                title: "¿Ya está disponible tu dinero de \(account.name)?",
-                body: "Hoy es la fecha que marcaste para \(account.name) (\(formattedAmount(account.balance))). Si ya está libre, pásalo a otra cuenta, como tu cuenta principal.",
+                title: L("¿Ya está disponible tu dinero de %@?", "\(account.name)"),
+                body: L("Hoy es la fecha que marcaste para %@ (%@). Si ya está libre, pásalo a otra cuenta, como tu cuenta principal.", "\(account.name)", "\(formattedAmount(account.balance))"),
                 date: date,
                 categoryIdentifier: savingsCategory,
                 userInfo: ["screen": "account_transfer", "accountId": account.id.uuidString]
@@ -331,7 +331,7 @@ enum NotificationManager {
         let others = negativeAccounts.count - 1
         schedule(
             id: negativeBalanceId,
-            title: "«\(account.name)» sigue en negativo",
+            title: L("«%@» sigue en negativo", "\(account.name)"),
             body: "Está en -\(formattedAmount(abs(account.balance)))\(others > 0 ? " y hay \(others) cuenta\(others == 1 ? "" : "s") más en negativo" : ""). No se puede gastar dinero que no hay: ¿te falta anotar un ingreso o el gasto salió de otra cuenta? Toca para revisarlo.",
             date: atReminderHour(tomorrow)
         )
@@ -351,15 +351,15 @@ enum NotificationManager {
             try await AccountTransfers.setAvailableOn(nextWeek, accountId: accountId)
             sendImmediate(
                 id: "savings-snoozed-\(accountId)",
-                title: "Te preguntamos en una semana",
-                body: "Cambiamos la fecha a \(SavingsAvailability.label(SavingsAvailability.string(from: nextWeek)) ?? "la próxima semana"). Puedes cambiarla en Ajustes > Cuentas."
+                title: L("Te preguntamos en una semana"),
+                body: L("Cambiamos la fecha a %@. Puedes cambiarla en Ajustes > Cuentas.", "\(SavingsAvailability.label(SavingsAvailability.string(from: nextWeek)) ?? "la próxima semana")")
             )
             NotificationCenter.default.post(name: .recurringLoggedFromNotification, object: nil)
         } catch {
             sendImmediate(
                 id: "savings-snoozed-\(accountId)",
-                title: "No se pudo cambiar la fecha",
-                body: "Abre MonAvi para cambiar cuándo estará disponible tu dinero.",
+                title: L("No se pudo cambiar la fecha"),
+                body: L("Abre MonAvi para cambiar cuándo estará disponible tu dinero."),
                 userInfo: ["screen": "home"]
             )
         }
@@ -388,17 +388,17 @@ enum NotificationManager {
         var ids: [String] = []
         for (debt, date) in due {
             let what = debt.isCard ? "tu \(debt.creditor)" : debt.creditor
-            let amounts = "Debes \(formattedAmount(debt.balance)) (mínimo \(formattedAmount(debt.estimatedMinimum)))."
+            let amounts = L("Debes %@ (mínimo %@).", "\(formattedAmount(debt.balance))", "\(formattedAmount(debt.estimatedMinimum))")
             let userInfo: [AnyHashable: Any] = ["screen": "card_payment", "debtId": debt.id.uuidString]
             let dayText = date.formatted(.dateTime.day().month(.wide).locale(.monavi))
             if let before = calendar.date(byAdding: .day, value: -3, to: date), atReminderHour(before) > now {
                 let id = "card-before-\(debt.id)"
-                schedule(id: id, title: "En 3 días vence \(what)", body: "\(amounts) Vence el \(dayText). Toca para registrar el pago y de qué cuenta sale.", date: atReminderHour(before), userInfo: userInfo)
+                schedule(id: id, title: L("En 3 días vence %@", "\(what)"), body: L("%@ Vence el %@. Toca para registrar el pago y de qué cuenta sale.", "\(amounts)", "\(dayText)"), date: atReminderHour(before), userInfo: userInfo)
                 ids.append(id)
             }
             if atReminderHour(date) > now {
                 let id = "card-due-\(debt.id)"
-                schedule(id: id, title: "Hoy vence \(what)", body: "\(amounts) Toca para registrar el pago y de qué cuenta salió el dinero.", date: atReminderHour(date), timeSensitive: true, userInfo: userInfo)
+                schedule(id: id, title: L("Hoy vence %@", "\(what)"), body: L("%@ Toca para registrar el pago y de qué cuenta salió el dinero.", "\(amounts)"), date: atReminderHour(date), timeSensitive: true, userInfo: userInfo)
                 ids.append(id)
             }
         }
@@ -437,8 +437,8 @@ enum NotificationManager {
             let id = suggestedId(suggestion.id)
             schedule(
                 id: id,
-                title: "¿Ya pagaste \(suggestion.name) este mes?",
-                body: "Pagaste \(suggestion.name) \(suggestion.datesText) (\(formattedAmount(suggestion.amount))). ¿Lo registramos este mes? Mantén presionado para responder si fue el mismo monto u otro.",
+                title: L("¿Ya pagaste %@ este mes?", "\(suggestion.name)"),
+                body: L("Pagaste %@ %@ (%@). ¿Lo registramos este mes? Mantén presionado para responder si fue el mismo monto u otro.", "\(suggestion.name)", "\(suggestion.datesText)", "\(formattedAmount(suggestion.amount))"),
                 date: suggestedReminderDate(due: due),
                 categoryIdentifier: suggestedCategory,
                 userInfo: [
@@ -484,7 +484,7 @@ enum NotificationManager {
                 sendImmediate(
                     id: "suggested-done-\(key)",
                     title: "Guardado como gasto fijo",
-                    body: "Te recordaremos \(name) el día \(day) de cada mes. Cuando lo pagues, regístralo con un toque."
+                    body: L("Te recordaremos %@ el día %@ de cada mes. Cuando lo pagues, regístralo con un toque.", "\(name)", "\(day)")
                 )
             default:
                 var paid = baseAmount
@@ -492,8 +492,8 @@ enum NotificationManager {
                     guard let parsed = RecurringAmountParser.parse(typedText) else {
                         sendImmediate(
                             id: "suggested-failed-\(key)",
-                            title: "No entendimos el monto",
-                            body: "Escribe solo el número, por ejemplo 52.30. Abre MonAvi para registrar \(name).",
+                            title: L("No entendimos el monto"),
+                            body: L("Escribe solo el número, por ejemplo 52.30. Abre MonAvi para registrar %@.", "\(name)"),
                             userInfo: ["screen": "home"]
                         )
                         return
@@ -507,15 +507,15 @@ enum NotificationManager {
                 sendImmediate(
                     id: "suggested-done-\(key)",
                     title: "Listo",
-                    body: "Registramos \(name) por \(formattedAmount(paid)) y lo guardamos como gasto fijo: te lo recordaremos cada mes."
+                    body: L("Registramos %@ por %@ y lo guardamos como gasto fijo: te lo recordaremos cada mes.", "\(name)", "\(formattedAmount(paid))")
                 )
             }
             NotificationCenter.default.post(name: .recurringLoggedFromNotification, object: nil)
         } catch {
             sendImmediate(
                 id: "suggested-failed-\(key)",
-                title: "No se pudo registrar",
-                body: "Abre MonAvi para registrar \(name). Revisa tu conexión a internet.",
+                title: L("No se pudo registrar"),
+                body: L("Abre MonAvi para registrar %@. Revisa tu conexión a internet.", "\(name)"),
                 userInfo: ["screen": "home"]
             )
         }
@@ -527,29 +527,29 @@ enum NotificationManager {
     static func registerNotificationCategories() {
         let snooze = UNNotificationAction(
             identifier: recurringSnoozeAction,
-            title: "Recordarme más tarde",
+            title: L("Recordarme más tarde"),
             options: []
         )
         let paid = UNNotificationAction(
             identifier: recurringConfirmAction,
-            title: "Sí, ya lo pagué",
+            title: L("Sí, ya lo pagué"),
             options: []
         )
         let received = UNNotificationAction(
             identifier: recurringConfirmAction,
-            title: "Sí, ya lo recibí",
+            title: L("Sí, ya lo recibí"),
             options: []
         )
         let otherPaid = UNTextInputNotificationAction(
             identifier: recurringOtherAmountAction,
-            title: "Pagué otro monto",
+            title: L("Pagué otro monto"),
             options: [],
             textInputButtonTitle: "Registrar",
             textInputPlaceholder: "Monto, ej. 52.30"
         )
         let otherReceived = UNTextInputNotificationAction(
             identifier: recurringOtherAmountAction,
-            title: "Recibí otro monto",
+            title: L("Recibí otro monto"),
             options: [],
             textInputButtonTitle: "Registrar",
             textInputPlaceholder: "Monto, ej. 480"
@@ -572,7 +572,7 @@ enum NotificationManager {
                 UNNotificationAction(identifier: suggestedSameAction, title: "Sí, el mismo monto", options: []),
                 UNTextInputNotificationAction(
                     identifier: suggestedOtherAction,
-                    title: "Sí, pero otro monto",
+                    title: L("Sí, pero otro monto"),
                     options: [],
                     textInputButtonTitle: "Registrar",
                     textInputPlaceholder: "Monto, ej. 52.30"
@@ -619,8 +619,8 @@ enum NotificationManager {
                 }
                 sendImmediate(
                     id: "recurring-done-\(id)",
-                    title: "Ya estaba registrado",
-                    body: "\(item.name) ya está anotado \(period) en MonAvi."
+                    title: L("Ya estaba registrado"),
+                    body: L("%@ ya está anotado %@ en MonAvi.", "\(item.name)", "\(period)")
                 )
                 return
             }
@@ -630,8 +630,8 @@ enum NotificationManager {
                 guard let parsed = RecurringAmountParser.parse(typedAmount) else {
                     sendImmediate(
                         id: "recurring-failed-\(id)",
-                        title: "No entendimos el monto",
-                        body: "Escribe solo el número, por ejemplo 52.30. Abre MonAvi para registrar \(item.name).",
+                        title: L("No entendimos el monto"),
+                        body: L("Escribe solo el número, por ejemplo 52.30. Abre MonAvi para registrar %@.", "\(item.name)"),
                         userInfo: ["screen": "home"]
                     )
                     return
@@ -642,15 +642,15 @@ enum NotificationManager {
             sendImmediate(
                 id: "recurring-done-\(id)",
                 title: "Listo",
-                body: "Listo: registramos \(item.name) por \(formattedAmount(amount ?? item.amount))."
+                body: L("Listo: registramos %@ por %@.", "\(item.name)", "\(formattedAmount(amount ?? item.amount))")
             )
             // Si la app esta abierta, Hoy se recarga (DayJournalView).
             NotificationCenter.default.post(name: .recurringLoggedFromNotification, object: nil)
         } catch {
             sendImmediate(
                 id: "recurring-failed-\(id)",
-                title: "No se pudo registrar",
-                body: "Abre MonAvi para registrar este pago fijo. Revisa tu conexión a internet.",
+                title: L("No se pudo registrar"),
+                body: L("Abre MonAvi para registrar este pago fijo. Revisa tu conexión a internet."),
                 userInfo: ["screen": "home"]
             )
         }
@@ -694,11 +694,11 @@ enum NotificationManager {
 
     /// Textos del recordatorio diario; rotan un dia tras otro.
     static let dailyLogMessages = [
-        "¿Cómo te fue hoy con tus gastos? Anótalos en 10 segundos y mantén tus buenos hábitos.",
-        "Antes de terminar el día: anota lo que gastaste y mira cómo vas.",
-        "¿Pediste factura fiscal hoy? Escanéala en MonAvi y gana cashback 🧾",
-        "Tu día en números: ¿cuánto gastaste hoy? Anótalo y mantén tus buenos hábitos.",
-        "Anotar tus gastos te acerca a tus metas y a nuevos cupones 🎁",
+        L("¿Cómo te fue hoy con tus gastos? Anótalos en 10 segundos y mantén tus buenos hábitos."),
+        L("Antes de terminar el día: anota lo que gastaste y mira cómo vas."),
+        L("¿Pediste factura fiscal hoy? Escanéala en MonAvi y gana cashback 🧾"),
+        L("Tu día en números: ¿cuánto gastaste hoy? Anótalo y mantén tus buenos hábitos."),
+        L("Anotar tus gastos te acerca a tus metas y a nuevos cupones 🎁"),
     ]
 
     /// Recordatorio diario a las 8 p. m. los proximos 7 dias.
@@ -743,7 +743,7 @@ enum NotificationManager {
     /// del cliente (su deuda, su meta de ahorro, o un consejo por rango).
     static func sendSurplusAdvice(_ message: String) {
         let content = UNMutableNotificationContent()
-        content.title = "Te sobró dinero: qué hacer con él"
+        content.title = L("Te sobró dinero: qué hacer con él")
         content.body = message
         content.sound = brandSound
 
@@ -778,8 +778,8 @@ enum NotificationManager {
         defaults.set(Array(sent.suffix(30)), forKey: partnerCardHintSentKey)
 
         let content = UNMutableNotificationContent()
-        content.title = "Pagaste en \(merchantName) 💳"
-        content.body = "Escanea tu factura para ganar tu cashback y el bono por pagar con tarjeta."
+        content.title = L("Pagaste en %@ 💳", "\(merchantName)")
+        content.body = L("Escanea tu factura para ganar tu cashback y el bono por pagar con tarjeta.")
         content.sound = brandSound
         content.userInfo = ["screen": NotificationDestination.points.rawValue]
 
@@ -798,8 +798,8 @@ enum NotificationManager {
     /// simulador). Da tiempo de salir de la app para verlo como llega.
     static func sendTestNotification() {
         let content = UNMutableNotificationContent()
-        content.title = "Hoy toca pagar la luz"
-        content.body = "Así te van a llegar los recordatorios de MonAvi: con este sonido y vibración."
+        content.title = L("Hoy toca pagar la luz")
+        content.body = L("Así te van a llegar los recordatorios de MonAvi: con este sonido y vibración.")
         content.sound = brandSound
         content.threadIdentifier = "monavi-recordatorios"
 

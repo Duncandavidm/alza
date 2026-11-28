@@ -71,7 +71,7 @@ struct AddTransactionView: View {
                 if isAdvancedMode {
                     Picker("Categoría (opcional)", selection: $category) {
                         ForEach(sortedCategories) { category in
-                            Text("\(category.emoji) \(category.rawValue)").tag(category)
+                            Text("\(category.emoji) \(category.displayName)").tag(category)
                         }
                     }
 

@@ -77,10 +77,10 @@ struct MoneyGuard {
                 id: "negative-\(account.id)",
                 severity: .danger,
                 emoji: "🚨",
-                title: "«\(account.name)» está en negativo",
-                message: "Quedó en -\(money). No se puede gastar dinero que no hay: ¿te falta anotar un ingreso, o ese gasto salió de otra cuenta o de una tarjeta? Corrígelo para que tus números digan la verdad.",
+                title: L("«%@» está en negativo", "\(account.name)"),
+                message: L("Quedó en -%@. No se puede gastar dinero que no hay: ¿te falta anotar un ingreso, o ese gasto salió de otra cuenta o de una tarjeta? Corrígelo para que tus números digan la verdad.", "\(money)"),
                 action: .recordIncome(accountId: account.id),
-                actionTitle: "Anotar el ingreso"
+                actionTitle: L("Anotar el ingreso")
             )
         }
     }
@@ -138,10 +138,10 @@ struct MoneyGuard {
                 id: "no-income",
                 severity: .caution,
                 emoji: "🤔",
-                title: "¿De dónde sale el dinero?",
-                message: "Este mes llevas \(Self.money(spent)) en gastos y no hay ningún ingreso anotado. Si cobraste, anótalo; si estás usando tus ahorros o la tarjeta, ten cuidado: así el dinero se acaba o la deuda crece.",
+                title: L("¿De dónde sale el dinero?"),
+                message: L("Este mes llevas %@ en gastos y no hay ningún ingreso anotado. Si cobraste, anótalo; si estás usando tus ahorros o la tarjeta, ten cuidado: así el dinero se acaba o la deuda crece.", "\(Self.money(spent))"),
                 action: .recordIncome(accountId: mainAccountId),
-                actionTitle: "Anotar un ingreso"
+                actionTitle: L("Anotar un ingreso")
             )]
         }
 
@@ -150,10 +150,10 @@ struct MoneyGuard {
                 id: "overspending-month",
                 severity: .danger,
                 emoji: "🔥",
-                title: "Este mes gastas más de lo que te entra",
-                message: "Llevas \(Self.money(spent)) en gastos y te entran \(Self.money(reference)): son \(Self.money(spent - reference)) de más. Ese dinero sale de tus ahorros o de deuda. Frena los gastos que no sean necesarios hasta fin de mes.",
+                title: L("Este mes gastas más de lo que te entra"),
+                message: L("Llevas %@ en gastos y te entran %@: son %@ de más. Ese dinero sale de tus ahorros o de deuda. Frena los gastos que no sean necesarios hasta fin de mes.", "\(Self.money(spent))", "\(Self.money(reference))", "\(Self.money(spent - reference))"),
                 action: .openSpending,
-                actionTitle: "Ver en qué se va"
+                actionTitle: L("Ver en qué se va")
             )]
         }
 
@@ -168,10 +168,10 @@ struct MoneyGuard {
             id: "pace-month",
             severity: .caution,
             emoji: "⏱️",
-            title: "A este ritmo no te alcanza el mes",
-            message: "Vas en \(Self.money(spent)) y si sigues así terminarías el mes en unos \(Self.money(projected)), más de lo que te entra (\(Self.money(reference))). Para llegar bien, gasta como máximo \(Self.money(max(perDay, 0))) al día lo que queda del mes.",
+            title: L("A este ritmo no te alcanza el mes"),
+            message: L("Vas en %@ y si sigues así terminarías el mes en unos %@, más de lo que te entra (%@). Para llegar bien, gasta como máximo %@ al día lo que queda del mes.", "\(Self.money(spent))", "\(Self.money(projected))", "\(Self.money(reference))", "\(Self.money(max(perDay, 0)))"),
             action: .openSpending,
-            actionTitle: "Ver en qué se va"
+            actionTitle: L("Ver en qué se va")
         )]
     }
 
@@ -198,7 +198,7 @@ struct MoneyGuard {
             id: "bills-week",
             severity: overdue > 0 ? .danger : .caution,
             emoji: "📅",
-            title: "No te alcanza para los pagos de la semana",
+            title: L("No te alcanza para los pagos de la semana"),
             message: "Tienes \(count) por \(Self.money(total))\(overdue > 0 ? " (\(overdue == 1 ? "uno vencido" : "\(overdue) vencidos"))" : "") y solo \(Self.money(cash)) disponible. Paga primero lo esencial (casa, luz, agua, comida) y evita gastos extra hasta cubrirlos.",
             action: .openBills,
             actionTitle: "Ver pagos"
@@ -217,8 +217,8 @@ struct MoneyGuard {
                     id: "budget-\(progress.budget.id)",
                     severity: .caution,
                     emoji: CategoryDisplay.emoji(for: progress.budget.category) ?? "📊",
-                    title: "Te pasaste en \(progress.budget.category)",
-                    message: "Gastaste \(Self.money(progress.spent)) de \(Self.money(progress.budget.limitAmount)): \(Self.money(progress.spent - progress.budget.limitAmount)) por encima de tu límite. Lo que gastes de más aquí sale de otra cosa.",
+                    title: L("Te pasaste en %@", "\(progress.budget.category)"),
+                    message: L("Gastaste %@ de %@: %@ por encima de tu límite. Lo que gastes de más aquí sale de otra cosa.", "\(Self.money(progress.spent))", "\(Self.money(progress.budget.limitAmount))", "\(Self.money(progress.spent - progress.budget.limitAmount))"),
                     action: .openBudget(budgetId: progress.budget.id),
                     actionTitle: "Ver presupuesto"
                 )
@@ -282,8 +282,8 @@ struct MoneyGuard {
                 id: "spike-\(spike.category)",
                 severity: .caution,
                 emoji: CategoryDisplay.emoji(for: spike.category) ?? "📈",
-                title: "Mucho gasto en \(spike.category)",
-                message: "Este mes llevas \(Self.money(spike.current)), un \(spike.percentAbove)% más que tu promedio (\(Self.money(spike.average)) al mes). ¿Vale la pena? Bájale un poco o ponle un presupuesto.",
+                title: L("Mucho gasto en %@", "\(spike.category)"),
+                message: L("Este mes llevas %@, un %@%% más que tu promedio (%@ al mes). ¿Vale la pena? Bájale un poco o ponle un presupuesto.", "\(Self.money(spike.current))", "\(spike.percentAbove)", "\(Self.money(spike.average))"),
                 action: .openSpending,
                 actionTitle: "Ver detalle"
             )

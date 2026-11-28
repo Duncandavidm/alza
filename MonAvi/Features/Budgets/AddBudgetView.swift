@@ -20,7 +20,7 @@ struct AddBudgetView: View {
                 Section {
                     Picker("Categoría", selection: $category) {
                         ForEach(TransactionCategory.allCases) { category in
-                            Text("\(category.emoji) \(category.rawValue)").tag(category.rawValue)
+                            Text("\(category.emoji) \(category.displayName)").tag(category.rawValue)
                         }
                         ForEach(userCategories.applicable(isInflow: false)) { custom in
                             Text("\(custom.emoji) \(custom.name)").tag(custom.name)

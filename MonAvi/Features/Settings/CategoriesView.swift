@@ -60,7 +60,7 @@ struct CategoriesView: View {
                 ForEach(TransactionCategory.allCases) { category in
                     HStack(spacing: 12) {
                         CategoryIcon(category: category, size: 36)
-                        Text(category.rawValue)
+                        Text(category.displayName)
                         Spacer()
                         if category == .income {
                             Text("Ingreso")

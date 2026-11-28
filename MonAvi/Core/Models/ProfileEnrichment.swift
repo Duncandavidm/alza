@@ -15,11 +15,11 @@ enum MaritalStatus: String, Codable, CaseIterable, Identifiable, Hashable {
 
     var displayName: String {
         switch self {
-        case .soltero: return "Soltero/a"
-        case .casado: return "Casado/a"
+        case .soltero: return L("Soltero/a")
+        case .casado: return L("Casado/a")
         case .unionLibre: return "Union libre"
-        case .divorciado: return "Divorciado/a"
-        case .viudo: return "Viudo/a"
+        case .divorciado: return L("Divorciado/a")
+        case .viudo: return L("Viudo/a")
         }
     }
 }
@@ -34,7 +34,7 @@ enum RiskTolerance: String, Codable, CaseIterable, Identifiable, Hashable {
     var displayName: String {
         switch self {
         case .bajo: return "Baja — prefiero seguridad"
-        case .medio: return "Media — un balance"
+        case .medio: return L("Media — un balance")
         case .alto: return "Alta — busco crecimiento"
         }
     }
@@ -53,10 +53,10 @@ enum ProfileGender: String, Codable, CaseIterable, Identifiable, Hashable {
 
     var displayName: String {
         switch self {
-        case .femenino: return "Femenino"
-        case .masculino: return "Masculino"
-        case .otro: return "Otro"
-        case .prefieroNoDecir: return "Prefiero no decir"
+        case .femenino: return L("Femenino")
+        case .masculino: return L("Masculino")
+        case .otro: return L("Otro")
+        case .prefieroNoDecir: return L("Prefiero no decir")
         }
     }
 }

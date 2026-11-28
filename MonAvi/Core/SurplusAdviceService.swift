@@ -32,7 +32,7 @@ enum SurplusAdviceService {
 
         if let worstDebt = debts.first {
             let rateText = worstDebt.interestRateMonthly.map { rate in
-                " (\(rate.formatted(.number.precision(.fractionLength(1))))%/mes de interes)"
+                L(" (%@%%/mes de interes)", "\(rate.formatted(.number.precision(.fractionLength(1))))")
             } ?? ""
             // Si ya tiene algo apartado en alguna meta (posible colchon —
             // no sabemos si es "fondo de emergencia" porque MonAvi no distingue
@@ -44,29 +44,29 @@ enum SurplusAdviceService {
             // ningun ahorro rinde mas que dejar de pagar esos intereses.
             let hasSomeReserve = goals.contains { $0.currentAmount > 0 }
             if hasSomeReserve {
-                return "Pagaste tus cuentas y te quedaron \(amountText). Tienes deuda con \(worstDebt.creditor)\(rateText) — abonarla rinde mas que cualquier ahorro, pero antes revisa si tu colchon actual te alcanza para imprevistos. Si si, destinalo a la deuda; si no, considera repartirlo entre tu reserva y la deuda."
+                return L("Pagaste tus cuentas y te quedaron %@. Tienes deuda con %@%@ — abonarla rinde mas que cualquier ahorro, pero antes revisa si tu colchon actual te alcanza para imprevistos. Si si, destinalo a la deuda; si no, considera repartirlo entre tu reserva y la deuda.", "\(amountText)", "\(worstDebt.creditor)", "\(rateText)")
             }
-            return "Pagaste tus cuentas y te quedaron \(amountText). Antes de ahorrarlo o invertirlo, te conviene abonarlo a tu deuda con \(worstDebt.creditor)\(rateText) — ningun ahorro te rinde mas que dejar de pagar esos intereses."
+            return L("Pagaste tus cuentas y te quedaron %@. Antes de ahorrarlo o invertirlo, te conviene abonarlo a tu deuda con %@%@ — ningun ahorro te rinde mas que dejar de pagar esos intereses.", "\(amountText)", "\(worstDebt.creditor)", "\(rateText)")
         }
 
         if let goal = goals.first(where: { !$0.isAchieved }) {
             if surplus >= goal.remainingAmount {
-                return "Pagaste tus cuentas y te quedaron \(amountText) — eso alcanza para completar tu meta \"\(goal.name)\" \(goal.emoji). ¿Lo aportamos?"
+                return L("Pagaste tus cuentas y te quedaron %@ — eso alcanza para completar tu meta \"%@\" %@. ¿Lo aportamos?", "\(amountText)", "\(goal.name)", "\(goal.emoji)")
             }
             let newProgress = min(1, NSDecimalNumber(decimal: (goal.currentAmount + surplus) / goal.targetAmount).doubleValue)
             let pct = Int((newProgress * 100).rounded())
-            return "Pagaste tus cuentas y te quedaron \(amountText). Si lo aportas a tu meta \"\(goal.name)\" \(goal.emoji), llegarias al \(pct)% — vas en \(Int((goal.progress * 100).rounded()))% ahorita."
+            return L("Pagaste tus cuentas y te quedaron %@. Si lo aportas a tu meta \"%@\" %@, llegarias al %@%% — vas en %@%% ahorita.", "\(amountText)", "\(goal.name)", "\(goal.emoji)", "\(pct)", "\(Int((goal.progress * 100).rounded()))")
         }
 
         switch surplus {
         case ..<20:
-            return "Pagaste tus cuentas y te quedaron \(amountText). Es poco para invertir, pero es perfecto para empezar tu fondo de emergencia — cada poquito cuenta."
+            return L("Pagaste tus cuentas y te quedaron %@. Es poco para invertir, pero es perfecto para empezar tu fondo de emergencia — cada poquito cuenta.", "\(amountText)")
         case 20..<100:
-            return "Pagaste tus cuentas y te quedaron \(amountText). Buen momento para crear una meta de ahorro en MonAvi — hasta un fondo de emergencia chico te da colchon para el proximo imprevisto."
+            return L("Pagaste tus cuentas y te quedaron %@. Buen momento para crear una meta de ahorro en MonAvi — hasta un fondo de emergencia chico te da colchon para el proximo imprevisto.", "\(amountText)")
         case 100..<500:
-            return "Pagaste tus cuentas y te quedaron \(amountText). Si ya tienes de 3 a 6 meses de gastos ahorrados, es buen monto para empezar a invertir; si no, te conviene completar ese fondo primero."
+            return L("Pagaste tus cuentas y te quedaron %@. Si ya tienes de 3 a 6 meses de gastos ahorrados, es buen monto para empezar a invertir; si no, te conviene completar ese fondo primero.", "\(amountText)")
         default:
-            return "Pagaste tus cuentas y te quedaron \(amountText) — un sobrante grande. Antes de invertirlo, confirma que ya cubres de 3 a 6 meses de gastos en tu fondo de emergencia; si ya los tienes, este es buen momento para ponerlo a trabajar."
+            return L("Pagaste tus cuentas y te quedaron %@ — un sobrante grande. Antes de invertirlo, confirma que ya cubres de 3 a 6 meses de gastos en tu fondo de emergencia; si ya los tienes, este es buen momento para ponerlo a trabajar.", "\(amountText)")
         }
     }
 }

@@ -48,7 +48,7 @@ final class PointsViewModel: ObservableObject {
                 }
             }
         } catch {
-            errorMessage = "No se pudo actualizar la tarjeta: \(error.localizedDescription)"
+            errorMessage = L("No se pudo actualizar la tarjeta: %@", "\(error.localizedDescription)")
         }
     }
 }

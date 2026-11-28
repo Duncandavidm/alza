@@ -35,8 +35,8 @@ enum RewardCurrency: String, Codable, CaseIterable, Hashable {
     /// Badge de cada comercio: "Canje con puntos" / "Canje con cashback".
     var badgeText: String {
         switch self {
-        case .cashback: return "Canje con cashback"
-        case .puntos: return "Canje con puntos"
+        case .cashback: return L("Canje con cashback")
+        case .puntos: return L("Canje con puntos")
         }
     }
 
@@ -150,7 +150,7 @@ struct RewardItem: Codable, Identifiable, Hashable {
     /// "En compras desde $25.00", o nil si no tiene compra minima.
     var minPurchaseText: String? {
         guard let minPurchase, minPurchase > 0 else { return nil }
-        return "En compras desde \(minPurchase.formatted(.currency(code: "USD")))"
+        return L("En compras desde %@", "\(minPurchase.formatted(.currency(code: "USD")))")
     }
 
     /// "¡Desbloqueaste 20% de descuento en Café La Esquina!" /
@@ -158,7 +158,7 @@ struct RewardItem: Codable, Identifiable, Hashable {
     var unlockedTitle: String {
         let what: String
         if kind == .monto { what = "un " + name.prefix(1).lowercased() + name.dropFirst() } else { what = name }
-        return "¡Desbloqueaste \(what) en \(merchantName)!"
+        return L("¡Desbloqueaste %@ en %@!", "\(what)", "\(merchantName)")
     }
 
     var merchantName: String { merchant?.name ?? "Comercio aliado" }
@@ -193,10 +193,10 @@ enum RewardRedemptionStatus: String, Codable, CaseIterable, Identifiable, Hashab
     /// Texto del badge en "Mis canjes".
     var displayName: String {
         switch self {
-        case .emitido: return "Listo para usar"
-        case .entregado: return "Entregado"
-        case .cancelado: return "Cancelado"
-        case .vencido: return "Vencido"
+        case .emitido: return L("Listo para usar")
+        case .entregado: return L("Entregado")
+        case .cancelado: return L("Cancelado")
+        case .vencido: return L("Vencido")
         }
     }
 }
@@ -302,7 +302,7 @@ struct RewardRedemption: Codable, Identifiable, Hashable {
 
     var merchantName: String { displayMerchant?.name ?? "Comercio aliado" }
 
-    var itemName: String { item?.name ?? "tu producto" }
+    var itemName: String { item?.name ?? L("tu producto") }
 
     /// Moneda en la que se pago este canje.
     var displayCurrency: RewardCurrency {
@@ -364,7 +364,7 @@ enum RewardsMath {
 
     /// "Tienes $6.50 de cashback".
     static func balanceText(cents: Int) -> String {
-        "Tienes \(Cashback.format(cents: max(0, cents))) de cashback"
+        L("Tienes %@ de cashback", "\(Cashback.format(cents: max(0, cents)))")
     }
 
     /// "Tienes 150 pts".
@@ -376,7 +376,7 @@ enum RewardsMath {
     static func missingText(cost: Int, balance: Int, currency: RewardCurrency = .cashback) -> String? {
         let missing = pointsMissing(cost: cost, balance: balance)
         guard missing > 0 else { return nil }
-        return "Te faltan \(currency.format(missing))"
+        return L("Te faltan %@", "\(currency.format(missing))")
     }
 
     /// "¿Canjear Capuchino en Café X por $3.50 de cashback?" /
@@ -389,9 +389,9 @@ enum RewardsMath {
     ) -> String {
         switch currency {
         case .cashback:
-            return "¿Canjear \(itemName) en \(merchantName) por \(Cashback.format(cents: cost)) de cashback?"
+            return L("¿Canjear %@ en %@ por %@ de cashback?", "\(itemName)", "\(merchantName)", "\(Cashback.format(cents: cost))")
         case .puntos:
-            return "¿Canjear \(itemName) en \(merchantName) por \(RewardCurrency.formatPoints(cost))?"
+            return L("¿Canjear %@ en %@ por %@?", "\(itemName)", "\(merchantName)", "\(RewardCurrency.formatPoints(cost))")
         }
     }
 

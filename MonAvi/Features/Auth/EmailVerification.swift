@@ -28,8 +28,8 @@ enum EmailVerificationLogic {
     /// Titulo del boton de reenviar: con la cuenta regresiva mientras dura
     /// la espera.
     static func resendTitle(remainingSeconds: Int) -> String {
-        guard remainingSeconds > 0 else { return "Reenviar código" }
-        return "Reenviar código en \(cooldownClock(remainingSeconds))"
+        guard remainingSeconds > 0 else { return L("Reenviar código") }
+        return L("Reenviar código en %@", "\(cooldownClock(remainingSeconds))")
     }
 
     /// 60 -> "1:00", 45 -> "0:45", 5 -> "0:05".
@@ -40,9 +40,9 @@ enum EmailVerificationLogic {
 
     static func explanation(email: String?) -> String {
         guard let email, !email.isEmpty else {
-            return "Para canjear premios, confirma tu correo. Te enviamos un código de 6 dígitos."
+            return L("Para canjear premios, confirma tu correo. Te enviamos un código de 6 dígitos.")
         }
-        return "Para canjear premios, confirma tu correo. Te enviamos un código de 6 dígitos a \(email)."
+        return L("Para canjear premios, confirma tu correo. Te enviamos un código de 6 dígitos a %@.", "\(email)")
     }
 
     /// true si el mensaje de error del canje es el de "falta verificar el
@@ -62,27 +62,27 @@ enum EmailVerificationLogic {
             return "Demasiados intentos. Espera unos minutos y vuelve a intentarlo."
         }
         if isNetwork(lower) {
-            return "No hay conexión. Revisa tu internet e inténtalo de nuevo."
+            return L("No hay conexión. Revisa tu internet e inténtalo de nuevo.")
         }
         if lower.contains("expired") || lower.contains("otp_expired") {
-            return "El código es incorrecto o ya venció. Revísalo o pide uno nuevo."
+            return L("El código es incorrecto o ya venció. Revísalo o pide uno nuevo.")
         }
         if lower.contains("invalid") || lower.contains("token") || lower.contains("otp") {
-            return "El código no es correcto. Revísalo o pide uno nuevo."
+            return L("El código no es correcto. Revísalo o pide uno nuevo.")
         }
-        return "No se pudo verificar el código. Inténtalo de nuevo."
+        return L("No se pudo verificar el código. Inténtalo de nuevo.")
     }
 
     /// Error al enviar (o reenviar) el codigo.
     static func sendErrorMessage(forErrorText text: String) -> String {
         let lower = text.lowercased()
         if isRateLimit(lower) {
-            return "Ya te enviamos un código hace poco. Espera un momento antes de pedir otro."
+            return L("Ya te enviamos un código hace poco. Espera un momento antes de pedir otro.")
         }
         if isNetwork(lower) {
-            return "No hay conexión. Revisa tu internet e inténtalo de nuevo."
+            return L("No hay conexión. Revisa tu internet e inténtalo de nuevo.")
         }
-        return "No se pudo enviar el código. Inténtalo de nuevo en un momento."
+        return L("No se pudo enviar el código. Inténtalo de nuevo en un momento.")
     }
 
     private static func isRateLimit(_ lower: String) -> Bool {

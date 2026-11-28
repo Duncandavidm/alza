@@ -54,7 +54,7 @@ final class DashboardViewModel: ObservableObject {
             accounts = try await accountsTask
             recentTransactions = try await transactionsTask
         } catch {
-            errorMessage = "No se pudo cargar tu información: \(error.localizedDescription)"
+            errorMessage = L("No se pudo cargar tu información: %@", "\(error.localizedDescription)")
         }
     }
 
@@ -66,7 +66,7 @@ final class DashboardViewModel: ObservableObject {
         do {
             searchResults = try await TransactionsRepository.shared.search(userId: userId, query: query)
         } catch {
-            errorMessage = "No se pudo buscar: \(error.localizedDescription)"
+            errorMessage = L("No se pudo buscar: %@", "\(error.localizedDescription)")
         }
     }
 

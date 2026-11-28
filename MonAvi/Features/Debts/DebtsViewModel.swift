@@ -28,7 +28,7 @@ final class DebtsViewModel: ObservableObject {
                 .value
             NotificationManager.scheduleCardPayments(debts)
         } catch {
-            errorMessage = "No se pudo cargar tus deudas: \(error.localizedDescription)"
+            errorMessage = L("No se pudo cargar tus deudas: %@", "\(error.localizedDescription)")
         }
     }
 
@@ -45,7 +45,7 @@ final class DebtsViewModel: ObservableObject {
                 debts[index].creditLimit = limit
             }
         } catch {
-            errorMessage = "No se pudo guardar el cupo: \(error.localizedDescription)"
+            errorMessage = L("No se pudo guardar el cupo: %@", "\(error.localizedDescription)")
         }
     }
 
@@ -62,7 +62,7 @@ final class DebtsViewModel: ObservableObject {
             }
             NotificationManager.scheduleCardPayments(debts)
         } catch {
-            errorMessage = "No se pudo guardar el día de pago: \(error.localizedDescription)"
+            errorMessage = L("No se pudo guardar el día de pago: %@", "\(error.localizedDescription)")
         }
     }
 
@@ -151,7 +151,7 @@ final class DebtsViewModel: ObservableObject {
             try await supabase.from("debts").delete().eq("id", value: debt.id).execute()
             debts.removeAll { $0.id == debt.id }
         } catch {
-            errorMessage = "No se pudo borrar: \(error.localizedDescription)"
+            errorMessage = L("No se pudo borrar: %@", "\(error.localizedDescription)")
         }
     }
 }

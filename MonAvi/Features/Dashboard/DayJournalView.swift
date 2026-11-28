@@ -1147,7 +1147,7 @@ struct DayJournalView: View {
                     Text(transaction.occurredAt.formatted(Date.FormatStyle(date: .omitted, time: .shortened, locale: .monavi)))
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    if transaction.description != nil, let categoryName = CategoryDisplay.name(for: transaction.category) {
+                    if transaction.description != nil, let categoryName = CategoryDisplay.name(for: transaction.category).map({ CategoryDisplay.label(for: $0) }) {
                         Text("· \(categoryName)")
                             .font(.caption)
                             .foregroundStyle(.secondary)

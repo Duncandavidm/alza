@@ -95,7 +95,7 @@ final class SubscriptionStore: ObservableObject {
             products = byPlan
 
             if byPlan.isEmpty {
-                purchaseError = "No se encontraron los productos de suscripcion. Revisa que existan en App Store Connect (o en el archivo .storekit local) con esos Product IDs exactos."
+                purchaseError = L("No se encontraron los productos de suscripcion. Revisa que existan en App Store Connect (o en el archivo .storekit local) con esos Product IDs exactos.")
             } else if byPlan[selectedPlan] == nil {
                 // Si el plan preferido (anual) no cargo, cae al otro que si.
                 selectedPlan = SubscriptionPlan.allCases.first { byPlan[$0] != nil } ?? selectedPlan
@@ -104,7 +104,7 @@ final class SubscriptionStore: ObservableObject {
             await refreshRenewalInfo()
             await refreshFreeTrialEligibility()
         } catch {
-            purchaseError = "No se pudo cargar el producto: \(error.localizedDescription)"
+            purchaseError = L("No se pudo cargar el producto: %@", "\(error.localizedDescription)")
         }
     }
 
@@ -215,7 +215,7 @@ final class SubscriptionStore: ObservableObject {
             switch result {
             case .success(let verification):
                 guard case .verified(let transaction) = verification else {
-                    purchaseError = "No se pudo verificar la compra."
+                    purchaseError = L("No se pudo verificar la compra.")
                     return
                 }
                 await onVerifiedTransaction?(transaction)
@@ -223,12 +223,12 @@ final class SubscriptionStore: ObservableObject {
             case .userCancelled:
                 break
             case .pending:
-                purchaseError = "La compra quedo pendiente de aprobacion (ej. control parental)."
+                purchaseError = L("La compra quedo pendiente de aprobacion (ej. control parental).")
             @unknown default:
-                purchaseError = "Resultado de compra desconocido."
+                purchaseError = L("Resultado de compra desconocido.")
             }
         } catch {
-            purchaseError = "La compra fallo: \(error.localizedDescription)"
+            purchaseError = L("La compra fallo: %@", "\(error.localizedDescription)")
         }
     }
 
@@ -237,7 +237,7 @@ final class SubscriptionStore: ObservableObject {
         do {
             try await AppStore.sync()
         } catch {
-            purchaseError = "No se pudo restaurar: \(error.localizedDescription)"
+            purchaseError = L("No se pudo restaurar: %@", "\(error.localizedDescription)")
         }
     }
 

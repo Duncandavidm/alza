@@ -70,7 +70,7 @@ final class AuthViewModel: ObservableObject {
                 let idToken = String(data: tokenData, encoding: .utf8),
                 let nonce = currentAppleNonce
             else {
-                errorMessage = "No se pudo leer la credencial de Apple."
+                errorMessage = L("No se pudo leer la credencial de Apple.")
                 return
             }
 
@@ -85,7 +85,7 @@ final class AuthViewModel: ObservableObject {
                 scheduleOverlayFallbackDismiss()
             } catch {
                 await hideSignInOverlay()
-                errorMessage = "No se pudo iniciar sesión con Apple: \(error.localizedDescription)"
+                errorMessage = L("No se pudo iniciar sesión con Apple: %@", "\(error.localizedDescription)")
             }
         }
     }
@@ -101,9 +101,9 @@ final class AuthViewModel: ObservableObject {
             if emailAuthMode == .signUp && !PasswordPolicy.isValid(password) {
                 errorMessage = PasswordPolicy.failureReason(for: password)
             } else if emailAuthMode == .signUp && password != confirmPassword {
-                errorMessage = "Las contraseñas no coinciden."
+                errorMessage = L("Las contraseñas no coinciden.")
             } else {
-                errorMessage = "Escribe un correo valido."
+                errorMessage = L("Escribe un correo valido.")
             }
             return
         }
@@ -128,7 +128,7 @@ final class AuthViewModel: ObservableObject {
                     // Respaldo por si "Confirm email" sigue encendido: no
                     // hay sesion, se vuelve al formulario con el aviso.
                     await hideSignInOverlay()
-                    infoMessage = "Te mandamos un correo a \(trimmedEmail) para confirmar tu cuenta. Confirma y vuelve a iniciar sesión."
+                    infoMessage = L("Te mandamos un correo a %@ para confirmar tu cuenta. Confirma y vuelve a iniciar sesión.", "\(trimmedEmail)")
                     emailAuthMode = .signIn
                     password = ""
                     confirmPassword = ""
@@ -141,7 +141,7 @@ final class AuthViewModel: ObservableObject {
             let detail = error.localizedDescription.lowercased()
             if detail.contains("weak") || detail.contains("pwned") || detail.contains("leaked") || detail.contains("easy to guess") {
                 // Supabase rechazo una contraseña muy comun o filtrada.
-                errorMessage = "Esa contraseña es muy común o apareció en filtraciones de otros sitios. Elige otra (por ejemplo, una frase con números)."
+                errorMessage = L("Esa contraseña es muy común o apareció en filtraciones de otros sitios. Elige otra (por ejemplo, una frase con números).")
             } else {
                 errorMessage = "No se pudo \(emailAuthMode == .signIn ? "iniciar sesion" : "crear la cuenta"): \(error.localizedDescription)"
             }

@@ -65,7 +65,7 @@ struct RewardsView: View {
                 referralBanner
                 Picker("Ver", selection: pickerSelection) {
                     ForEach(Self.pickerModes) { (option: Mode) in
-                        Text(option.rawValue).tag(option)
+                        Text(L(option.rawValue)).tag(option)
                     }
                 }
                 .pickerStyle(.segmented)

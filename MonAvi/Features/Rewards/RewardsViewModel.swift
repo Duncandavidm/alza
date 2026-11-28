@@ -49,7 +49,7 @@ final class RewardsViewModel: ObservableObject {
             items = fetched
             errorMessage = nil
         } catch {
-            errorMessage = "No pudimos cargar los comercios aliados. Desliza hacia abajo para intentar de nuevo."
+            errorMessage = L("No pudimos cargar los comercios aliados. Desliza hacia abajo para intentar de nuevo.")
         }
         balance = await balanceTask
         benefits = await benefitsTask

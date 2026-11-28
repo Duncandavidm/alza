@@ -25,7 +25,7 @@ final class SummaryViewModel: ObservableObject {
             allTransactions = try await TransactionsRepository.shared.fetchAll(userId: userId)
             recompute()
         } catch {
-            errorMessage = "No se pudo cargar tu resumen: \(error.localizedDescription)"
+            errorMessage = L("No se pudo cargar tu resumen: %@", "\(error.localizedDescription)")
         }
     }
 

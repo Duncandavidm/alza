@@ -10,8 +10,8 @@ enum InterestPeriod: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .annual: return "Al año"
-        case .monthly: return "Al mes"
+        case .annual: return L("Al año")
+        case .monthly: return L("Al mes")
         }
     }
 }
@@ -56,14 +56,14 @@ enum CreditCardMath {
         guard let available = available(limit: limit, used: used),
               let use = utilization(limit: limit, used: used) else { return nil }
         if available < 0 {
-            return "Te pasaste del cupo por \(FinancialSnapshot.money(-available))"
+            return L("Te pasaste del cupo por %@", "\(FinancialSnapshot.money(-available))")
         }
-        return "Disponible \(FinancialSnapshot.money(available)) · usas el \(FinancialSnapshot.percent(use)) del cupo"
+        return L("Disponible %@ · usas el %@ del cupo", "\(FinancialSnapshot.money(available))", "\(FinancialSnapshot.percent(use))")
     }
 
     /// "2% al mes (24% al año)".
     static func rateText(monthly: Decimal) -> String {
-        "\(number(monthly))% al mes (\(number(annualRate(monthly: monthly)))% al año)"
+        L("%@%% al mes (%@%% al año)", "\(number(monthly))", "\(number(annualRate(monthly: monthly)))")
     }
 
     private static func number(_ value: Decimal) -> String {

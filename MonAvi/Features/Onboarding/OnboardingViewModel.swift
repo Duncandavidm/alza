@@ -176,7 +176,7 @@ final class OnboardingViewModel: ObservableObject {
                 )
             )
             guard let accountId = accountsViewModel.accounts.first?.id else {
-                errorMessage = "No se pudo crear tu cuenta principal."
+                errorMessage = L("No se pudo crear tu cuenta principal.")
                 return false
             }
 
@@ -344,7 +344,7 @@ final class OnboardingViewModel: ObservableObject {
 
             return true
         } catch {
-            errorMessage = "No se pudo guardar tu información: \(error.localizedDescription)"
+            errorMessage = L("No se pudo guardar tu información: %@", "\(error.localizedDescription)")
             return false
         }
     }

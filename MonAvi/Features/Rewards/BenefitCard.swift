@@ -112,10 +112,10 @@ struct BenefitCard: View {
 
     private var primaryTitle: String {
         switch state {
-        case .locked: return "Desbloquear"
+        case .locked: return L("Desbloquear")
         case .active: return "Ver mi código"
-        case .available: return "Usar"
-        case .cooldown, .usedUp: return "Usado"
+        case .available: return L("Usar")
+        case .cooldown, .usedUp: return L("Usado")
         }
     }
 

@@ -15,15 +15,15 @@ enum DebtPayoffStrategy: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .avalanche: return "Avalancha"
-        case .snowball: return "Bola de nieve"
+        case .avalanche: return L("Avalancha")
+        case .snowball: return L("Bola de nieve")
         }
     }
 
     var explanation: String {
         switch self {
-        case .avalanche: return "Primero la deuda con mayor tasa de interes — ahorras mas a largo plazo."
-        case .snowball: return "Primero la deuda con menor saldo — la liquidas rapido y ganas impulso."
+        case .avalanche: return L("Primero la deuda con mayor tasa de interes — ahorras mas a largo plazo.")
+        case .snowball: return L("Primero la deuda con menor saldo — la liquidas rapido y ganas impulso.")
         }
     }
 }

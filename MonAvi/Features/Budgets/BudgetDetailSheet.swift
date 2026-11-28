@@ -31,7 +31,7 @@ struct BudgetDetailSheet: View {
                         .frame(width: 84, height: 84)
                         .background(Circle().fill(selectedColor.opacity(0.18)))
 
-                    Text(progress.budget.category)
+                    Text(CategoryDisplay.label(for: progress.budget.category))
                         .font(.system(.title3, design: MonAviBrand.fontDesign, weight: .bold))
 
                     if let averageMonthly {

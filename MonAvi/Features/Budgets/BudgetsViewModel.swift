@@ -30,7 +30,7 @@ final class BudgetsViewModel: ObservableObject {
             progresses = results
             publishWidgetSnapshot()
         } catch {
-            errorMessage = "No se pudieron cargar tus presupuestos: \(error.localizedDescription)"
+            errorMessage = L("No se pudieron cargar tus presupuestos: %@", "\(error.localizedDescription)")
         }
     }
 

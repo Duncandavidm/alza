@@ -100,9 +100,9 @@ struct PartnerMerchantOffer: Codable, Identifiable, Hashable {
     var summaryText: String {
         switch offerType {
         case .percent:
-            return "\(value.formatted(.number.precision(.fractionLength(0))))% de cashback"
+            return L("%@%% de cashback", "\(value.formatted(.number.precision(.fractionLength(0))))")
         case .fixed:
-            return "\(Cashback.format(cents: NSDecimalNumber(decimal: value).intValue)) de cashback por compra"
+            return L("%@ de cashback por compra", "\(Cashback.format(cents: NSDecimalNumber(decimal: value).intValue))")
         }
     }
 }

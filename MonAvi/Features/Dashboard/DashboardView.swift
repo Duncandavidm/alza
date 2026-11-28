@@ -104,7 +104,7 @@ struct DashboardView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(transaction.description ?? transaction.category ?? transaction.movementType.displayName)
                 if let category = transaction.category {
-                    Text(category)
+                    Text(CategoryDisplay.label(for: category))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

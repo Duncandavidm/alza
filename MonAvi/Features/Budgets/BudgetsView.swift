@@ -61,7 +61,7 @@ struct BudgetsView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(CategoryDisplay.emoji(for: progress.budget.category) ?? "🛍️")
-                Text(progress.budget.category)
+                Text(CategoryDisplay.label(for: progress.budget.category))
                     .font(.headline)
                 Spacer()
                 Text(progress.budget.period.displayName)

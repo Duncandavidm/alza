@@ -273,7 +273,7 @@ struct DetectedMovementReviewView: View {
             Section("Límite de gasto") {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text("\(category.emoji) \(category.rawValue)")
+                        Text("\(category.emoji) \(category.displayName)")
                         Spacer()
                         Text("\(projected.formatted(.appCurrency)) de \(limit.formatted(.appCurrency))")
                             .font(.subheadline.weight(.semibold))

@@ -35,7 +35,7 @@ struct CategoryPickerSheet: View {
                     } label: {
                         HStack(spacing: 12) {
                             CategoryIcon(category: category, size: 36)
-                            Text(category.rawValue)
+                            Text(category.displayName)
                                 .foregroundStyle(Color.primary)
                             Spacer()
                             if selection == category {

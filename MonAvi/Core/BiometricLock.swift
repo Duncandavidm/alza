@@ -51,7 +51,7 @@ final class BiometricLock: ObservableObject {
         case .faceID: return "Face ID"
         case .touchID: return "Touch ID"
         case .opticID: return "Optic ID"
-        case .passcode: return "el código del iPhone"
+        case .passcode: return L("el código del iPhone")
         case .none: return "Face ID"
         }
     }
@@ -68,7 +68,7 @@ final class BiometricLock: ObservableObject {
     /// Activa o desactiva. Para activar pide autenticar primero.
     func setEnabled(_ enabled: Bool) async -> Bool {
         if enabled {
-            guard await authenticate(reason: "Activa el desbloqueo de MonAvi") else { return false }
+            guard await authenticate(reason: L("Activa el desbloqueo de MonAvi")) else { return false }
         }
         isEnabled = enabled
         UserDefaults.standard.set(enabled, forKey: Self.enabledKey)

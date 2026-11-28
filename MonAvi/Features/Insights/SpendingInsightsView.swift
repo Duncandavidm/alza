@@ -71,7 +71,7 @@ struct SpendingInsightsView: View {
     private func categoryRow(_ item: CategorySpend) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(item.category).font(.subheadline.weight(.medium))
+                Text(CategoryDisplay.label(for: item.category)).font(.subheadline.weight(.medium))
                 if let percent = viewModel.percent(of: item) {
                     Text("\(percent, format: .number.precision(.fractionLength(0)))% del total")
                         .font(.caption)

@@ -13,7 +13,7 @@ enum CardBrand: String, Codable, CaseIterable, Identifiable, Hashable {
         case .visa: return "Visa"
         case .mastercard: return "Mastercard"
         case .amex: return "American Express"
-        case .other: return "Otra"
+        case .other: return L("Otra")
         }
     }
 }
@@ -27,9 +27,9 @@ enum LinkedCardStatus: String, Codable, CaseIterable, Identifiable, Hashable {
 
     var displayName: String {
         switch self {
-        case .active: return "Activa"
-        case .paused: return "Pausada"
-        case .removed: return "Eliminada"
+        case .active: return L("Activa")
+        case .paused: return L("Pausada")
+        case .removed: return L("Eliminada")
         }
     }
 }

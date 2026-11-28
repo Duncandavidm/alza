@@ -28,7 +28,7 @@ final class RecurringTransactionsViewModel: ObservableObject {
                 .value
             NotificationManager.scheduleRecurringReminders(items)
         } catch {
-            errorMessage = "No se pudieron cargar tus recurrentes: \(error.localizedDescription)"
+            errorMessage = L("No se pudieron cargar tus recurrentes: %@", "\(error.localizedDescription)")
         }
     }
 

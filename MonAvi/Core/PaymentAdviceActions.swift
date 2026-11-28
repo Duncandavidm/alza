@@ -62,7 +62,7 @@ enum PaymentAdviceActions {
             .execute()
             .value) ?? []
         if let card = linked.first, card.id != accountId {
-            let sourceName = (try? await accountName(accountId)) ?? "tu cuenta"
+            let sourceName = (try? await accountName(accountId)) ?? L("tu cuenta")
             try await TransactionsRepository.shared.add(
                 NewTransaction(
                     userId: userId,

@@ -82,7 +82,7 @@ struct AmountKeypad: View {
         switch key {
         case .digit(let value): return "\(value)"
         case .dot: return "Punto decimal"
-        case .delete: return "Borrar"
+        case .delete: return L("Borrar")
         }
     }
 
